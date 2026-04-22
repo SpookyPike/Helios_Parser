@@ -1,0 +1,9 @@
+case,model,model_label,instrument_fwhm_ev,status,peak_energy_ev,peak_fwhm_ev,observable_free_fraction,observable_bound_fraction,observable_elastic_fraction
+driven_al_article_state,quantum_hydrodynamic,Quantum hydrodynamic (experimental),0.2,valid,9.373900201889029e-08,0.2690931795875086,0.7098731958831022,0.0,0.29012680411689784
+driven_al_article_state,quantum_hydrodynamic,Quantum hydrodynamic (experimental),1.0,valid,4.858353189928217e-06,1.0161896258018448,0.7098731958831022,0.0,0.29012680411689784
+driven_al_article_state,quantum_hydrodynamic,Quantum hydrodynamic (experimental),3.5,valid,27.1805894149877,4.590609528418234,0.7098731958831022,0.0,0.29012680411689784
+driven_al_article_state,quantum_hydrodynamic,Quantum hydrodynamic (experimental),5.0,valid,27.170997347711012,5.846719328345074,0.7098731958831022,0.0,0.29012680411689784
+driven_al_article_state,finite_t_stls,Finite-T STLS (experimental),0.2,valid,1.9079792397601227e-06,0.269733273166293,0.6991437350129608,0.0,0.30085626498703927
+driven_al_article_state,finite_t_stls,Finite-T STLS (experimental),1.0,valid,0.00015833536354140117,1.0175047787839238,0.6991437350129608,0.0,0.30085626498703927
+driven_al_article_state,finite_t_stls,Finite-T STLS (experimental),3.5,valid,26.956062401806133,5.109684509656486,0.6991437350129608,0.0,0.30085626498703927
+driven_al_article_state,finite_t_stls,Finite-T STLS (experimental),5.0,valid,26.755392919897737,6.644560917054871,0.6991437350129608,0.0,0.30085626498703927

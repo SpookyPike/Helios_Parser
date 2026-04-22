@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HELIOS Parse / View User Guide</title>
+  <link rel="stylesheet" href="assets/manual.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img class="brand-icon" src="assets/app_icon.png" alt="HELIOS Parse / View icon">
+      <div class="brand-copy">
+        <h1>User Guide</h1>
+        <p>
+          Practical guide for scientists and analysts using HELIOS Parse / View 0.9.1.
+          This page explains the actual current UI: Parser, Viewer, legacy Shock, WaveFront,
+          XRD, Plasmon, Transmission, Spectroscopy, Warnings, and Preheat.
+        </p>
+      </div>
+    </div>
+    <div class="page-links">
+      <a href="index.html">Documentation Index</a>
+      <a href="developer-guide.html">Developer Guide</a>
+      <a href="release-notes.html">Release Notes</a>
+      <a href="../README.md">README</a>
+    </div>
+  </header>
+
+  <nav>
+    <a href="#quickstart">Quick Start</a>
+    <a href="#parser">Parser</a>
+    <a href="#viewer">Viewer</a>
+    <a href="#derived">Derived</a>
+    <a href="#wavefront">WaveFront</a>
+    <a href="#preheat">Preheat</a>
+    <a href="#modules">Other Modules</a>
+    <a href="#interpretation">Interpretation</a>
+    <a href="#troubleshooting">Troubleshooting</a>
+  </nav>
+
+  <main>
+    <section id="quickstart">
+      <h2>Quick start</h2>
+      <ol class="steps">
+        <li>Open a HELIOS <code>.log</code> in Parser mode or a stabilized <code>.h5</code> file directly.</li>
+        <li>Use Viewer mode to inspect geometry, field maps, lineouts, and region/material boundaries.</li>
+        <li>Switch to Derived / Analysis for fast legacy Shock. Open WaveFront or Preheat only when you need advanced diagnostics.</li>
+      </ol>
+      <div class="callout">
+        Derived mode is intentionally split into a <strong>fast quick-look path</strong> and <strong>lazy advanced tabs</strong>.
+        The app should feel immediate on Shock and only spend time on heavier analysis when you open WaveFront or Preheat.
+      </div>
+    </section>
+
+    <section id="parser">
+      <h2>Parser mode</h2>
+      <div class="two-col">
+        <div>
+          <p>Parser mode previews HELIOS logs and writes stabilized HDF5.</p>
+          <ul>
+            <li>Fast preview gives snapshot count, geometry, field list, and approximate data size.</li>
+            <li>Malformed numeric tokens are normalized only when needed.</li>
+            <li>A damaged final block is dropped without discarding earlier valid snapshots.</li>
+            <li>Run status is preserved as <code>completed</code>, <code>aborted</code>, <code>truncated</code>, or <code>unknown</code>.</li>
+          </ul>
+        </div>
+        <figure class="shot">
+          <a class="shot-link" href="assets/screenshots/parser_preview_current.png">
+            <img src="assets/screenshots/parser_preview_current.png" alt="Parser preview">
+          </a>
+          <figcaption>Parser preview for a HELIOS log before conversion.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="viewer">
+      <h2>Viewer mode</h2>
+      <p>
+        Viewer mode is the main field-inspection environment. The reader already exposes center and edge coordinates explicitly,
+        and the viewer uses them consistently:
+      </p>
+      <ul>
+        <li>maps and moving-mesh geometry use edges</li>
+        <li>lineouts and probes use zone-centered values</li>
+        <li>planar runs use <code>x</code>; cylindrical runs use <code>radius</code></li>
+        <li>boundaries are drawn on true edges</li>
+      </ul>
+      <div class="grid">
+        <figure class="shot">
+          <a class="shot-link" href="assets/screenshots/viewer_zone_index_current.png">
+            <img src="assets/screenshots/viewer_zone_index_current.png" alt="Viewer zone index view">
+          </a>
+          <figcaption>Zone-index workflow with edge-based boundaries.</figcaption>
+        </figure>
+        <figure class="shot">
+          <a class="shot-link" href="assets/screenshots/viewer_cylindrical_radius_current.png">
+            <img src="assets/screenshots/viewer_cylindrical_radius_current.png" alt="Viewer cylindrical view">
+          </a>
+          <figcaption>Cylindrical view using explicit radius semantics.</figcaption>
+        </figure>
+        <figure class="shot">
+          <a class="shot-link" href="assets/screenshots/viewer_mouse_probe_current.png">
+            <img src="assets/screenshots/viewer_mouse_probe_current.png" alt="Viewer mouse probe">
+          </a>
+          <figcaption>Mouse-mode probe on a moving-mesh run.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="derived">
+      <h2>Derived / Analysis mode</h2>
+      <p>
+        Derived mode follows the active run and, by default, the current Viewer subset. It is where the app separates fast and advanced diagnostics.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Tab</th><th>Role</th><th>What to expect</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Shock</td><td>fast legacy quick look</td><td>opens first, gives position/speed/breakout quickly</td></tr>
+          <tr><td>WaveFront</td><td>advanced multi-branch wave tracking</td><td>lazy, cached, and heavier on first open</td></tr>
+          <tr><td>Preheat</td><td>target conditioning before shock entry</td><td>lazy, cached, region-of-interest aware</td></tr>
+          <tr><td>XRD</td><td>compression-oriented quick look</td><td>lazy module traces and profiles</td></tr>
+          <tr><td>Plasmon</td><td>XRTS / plasmon regime quick look</td><td>lazy module traces and summary metrics</td></tr>
+          <tr><td>Transmission</td><td>model-aware attenuation panel</td><td>selected-mode traces and snapshot profiles with optional cold-material XCOM path</td></tr>
+          <tr><td>Spectroscopy</td><td>Doppler / broadening quick look</td><td>lazy traces and snapshot profiles</td></tr>
+          <tr><td>Warnings</td><td>analysis caveats and quality notes</td><td>read this whenever outputs look suspicious</td></tr>
+        </tbody>
+      </table>
+      <figure class="shot">
+        <a class="shot-link" href="assets/screenshots/derived_shock_current.png">
+          <img src="assets/screenshots/derived_shock_current.png" alt="Derived Shock tab">
+        </a>
+        <figcaption>Shock is intentionally the first derived tab so you get a quick answer before opening heavier analysis.</figcaption>
+      </figure>
+    </section>
+
+    <section id="wavefront">
+      <h2>WaveFront</h2>
+      <p>
+        WaveFront is the advanced branch tracker. It is separate from legacy Shock and only computes when you open it or when its result is not already cached.
+      </p>
+      <ul>
+        <li><strong>Primary branch views</strong> show the tracker-selected primary compressive branch.</li>
+        <li><strong>Branch position / evidence / speed / width</strong> help inspect branch evolution.</li>
+        <li><strong>Interface-event summary</strong> shows wave-interface outcomes, ambiguity, support, pressure impulse, and diagnostic transfer quantities.</li>
+        <li><strong>Warnings / suppressed detections</strong> explain why some branches are provisional, weak, or hidden from default views.</li>
+      </ul>
+      <div class="two-col">
+        <figure class="shot">
+          <a class="shot-link" href="assets/screenshots/wavefront_primary_current.png">
+            <img src="assets/screenshots/wavefront_primary_current.png" alt="WaveFront primary branch">
+          </a>
+          <figcaption>Primary-branch view with advanced position and speed context.</figcaption>
+        </figure>
+        <figure class="shot">
+          <a class="shot-link" href="assets/screenshots/wavefront_events_current.png">
+            <img src="assets/screenshots/wavefront_events_current.png" alt="WaveFront interface-event table">
+          </a>
+          <figcaption>Interface-event summary with support, significance, and ambiguity labeling.</figcaption>
+        </figure>
+      </div>
+      <h3>Support and significance labels</h3>
+      <ul>
+        <li><strong>Provisional</strong>: fewer than 3 supporting samples. Not shown as a meaningful tracked branch by default.</li>
+        <li><strong>Short / weak</strong>: enough support to show as a weak branch, but not as trustworthy as a tracked branch.</li>
+        <li><strong>Tracked branch</strong>: the default branch class for main WaveFront plots and tables.</li>
+      </ul>
+      <p>
+        Significance is not the same thing as local fit confidence. A one-sample spike may have a sharp local score but still be low-significance as a physical branch.
+      </p>
+    </section>
+
+    <section id="preheat">
+      <h2>Preheat</h2>
+      <p>
+        Preheat is a separate advanced tab. It evaluates target modification before the primary compressive branch enters the selected region of interest.
+      </p>
+      <ul>
+        <li>Choose <strong>Auto guess</strong> or override the region of interest manually.</li>
+        <li>Use <strong>Before shock entry</strong> mode for pre-entry offsets, or <strong>Manual snapshot / time</strong> mode to inspect any snapshot directly.</li>
+        <li>Review target-entry timing, onset markers, affected depth/fraction, energy/source budgets, and notes on what could or could not be measured.</li>
+      </ul>
+      <figure class="shot">
+        <a class="shot-link" href="assets/screenshots/derived_preheat_current.png">
+          <img src="assets/screenshots/derived_preheat_current.png" alt="Preheat tab">
+        </a>
+        <figcaption>Preheat tab with region-of-interest selector, local time mode, snapshot plot/profile controls, summary tables, and budget notes.</figcaption>
+      </figure>
+      <div class="callout">
+        The automatic target guess is only a heuristic. On sandwich targets, the deepest region reached by the shock may be a window or backing material rather than the intended sample, so the manual override matters.
+      </div>
+    </section>
+
+    <section id="modules">
+      <h2>XRD, Plasmon, Transmission, Spectroscopy, and Warnings</h2>
+      <div class="grid">
+        <figure class="shot">
+          <a class="shot-link" href="assets/screenshots/derived_transmission_current.png">
+            <img src="assets/screenshots/derived_transmission_current.png" alt="Transmission tab">
+          </a>
+          <figcaption>Transmission as a model-aware panel with explicit mode selection, selected-result traces, and region-level tau accounting.</figcaption>
+        </figure>
+        <figure class="shot">
+          <a class="shot-link" href="assets/screenshots/derived_plasmon_current.png">
+            <img src="assets/screenshots/derived_plasmon_current.png" alt="Plasmon tab">
+          </a>
+          <figcaption>Plasmon/XRTS quick-look metrics and time/profile bundles.</figcaption>
+        </figure>
+      </div>
+      <ul>
+        <li><strong>XRD</strong>: useful for quick compression-oriented trend inspection, not a full crystallographic solver.</li>
+        <li><strong>Plasmon</strong>: regime-oriented XRTS quick look, not a complete scattering calculation.</li>
+        <li><strong>Transmission</strong>: now supports explicit mode selection for <code>Auto hybrid</code>, <code>Thomson</code>, <code>Free-free</code>, <code>Free-free + Thomson</code>, and <code>XCOM</code>. It remains a quick-look attenuation workflow rather than a full opacity package.</li>
+        <li><strong>Spectroscopy</strong>: useful for broadening/shift intuition, not line-formation physics.</li>
+        <li><strong>Warnings</strong>: read this tab whenever geometry, filtering, branch support, or interpretation quality may be limiting the result.</li>
+      </ul>
+      <div class="callout">
+        Plasmon remains a quick-look XRTS tool. The GUI can warn when the selected state is degenerate, non-collective, or outside the validated domain of a chosen approximation. Treat those warnings as real applicability limits rather than cosmetic messages.
+      </div>
+      <div class="callout">
+        The current XCOM path is live-backend first. If the native backend cannot run on the local machine, Transmission can still use the bundled precomputed cold-XCOM attenuation table for supported cold materials. The UI should make the source explicit instead of pretending a live backend succeeded.
+      </div>
+      <h3>How to read Transmission now</h3>
+      <ul>
+        <li><strong>Mode</strong> controls which transmission result is computed and shown, not just a label.</li>
+        <li><strong>Requested vs Applied</strong> tells you whether the selected result really ran or whether local fallback was needed.</li>
+        <li><strong>Source</strong> should tell you whether cold-material attenuation came from the live XCOM backend, the precomputed fallback table, or a further fallback path.</li>
+        <li><strong>Photon energy units</strong> can be entered as <code>eV</code>, <code>keV</code>, <code>Angstrom</code>, or <code>nm</code>; the UI converts the displayed value rather than silently reinterpreting it.</li>
+        <li><strong>Region table</strong> shows separate Thomson, Free-free, XCOM, and total tau contributions plus regime fractions, so you can see what part of the selected LOS is actually being treated by which model.</li>
+      </ul>
+    </section>
+
+    <section id="interpretation">
+      <h2>Interpretation examples</h2>
+      <div class="card-grid">
+        <div class="card">
+          <h3>Legacy Shock for quick inspection</h3>
+          <p>If you only need a fast estimate of front position, speed, breakout, or crossing times, stay on Shock. It is intentionally lighter than WaveFront.</p>
+        </div>
+        <div class="card">
+          <h3>WaveFront for advanced branch analysis</h3>
+          <p>If legacy Shock and WaveFront primary differ slightly on a simple case, that is acceptable. WaveFront is a multi-cue tracker, so it should be comparable, not identical.</p>
+        </div>
+        <div class="card">
+          <h3>Interface-event interpretation</h3>
+          <p>Treat interface-event transfer fractions as diagnostic and conditional. If the UI flags ambiguity or overlap, trust the warning and avoid overclaiming a clean split.</p>
+        </div>
+        <div class="card">
+          <h3>Preheat interpretation</h3>
+          <p>Use Preheat to answer whether the target changed before main shock arrival, how deep the change penetrated, and which source terms plausibly contributed. The residual budget is not an error term; it is honest unclosed remainder.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="troubleshooting">
+      <h2>Troubleshooting and expectations</h2>
+      <ul>
+        <li>If Derived opens and Shock appears quickly but WaveFront is still empty, that is expected. Open WaveFront to trigger advanced tracking.</li>
+        <li>If a heavy advanced tab is running, the busy/progress bar and elapsed status text should remain visible.</li>
+        <li>If small crossing times no longer show as <code>0.000 s</code>, that is intentional. The UI now uses adaptive units and scientific formatting for tiny times.</li>
+        <li>If a branch is missing from the default WaveFront view, check whether it is provisional or short/weak rather than assuming the tracker ignored it.</li>
+        <li>If Preheat does not show a meaningful result, check whether a reliable primary compressive branch and target-entry time were available for the selected region.</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,56 @@
+{
+  "generated_at": "2026-03-13T01:35:57",
+  "files": [
+    {
+      "file": "5Fe+4.9TW+light_stabilized.h5",
+      "open_seconds": 0.23,
+      "first_render_visible": true,
+      "field": "density",
+      "render_mode": "mesh",
+      "export_1600x900": {
+        "path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\exports\\phase34_small_field_map_1600x900.png",
+        "size": [
+          1600,
+          900
+        ]
+      },
+      "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase34_small_mouse_light.png",
+      "mouse_mode_vertical_visible": true,
+      "mouse_mode_horizontal_visible": true
+    },
+    {
+      "file": "Cu_0166_stabilized.h5",
+      "open_seconds": 0.843,
+      "first_render_visible": true,
+      "field": "density",
+      "render_mode": "mesh",
+      "export_1920x1080": {
+        "path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\exports\\phase34_cu_field_map_1920x1080.png",
+        "size": [
+          1920,
+          1080
+        ]
+      },
+      "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase34_cu_slice_light.png"
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "open_seconds": 4.115,
+      "first_render_visible": true,
+      "field": "density",
+      "render_mode": "mesh",
+      "export_2000x2000": {
+        "path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\exports\\phase34_large_field_map_2000x2000.png",
+        "size": [
+          2000,
+          2000
+        ]
+      },
+      "probe_adjustment_render_delta": 0,
+      "probe_adjustment_mesh_delta": 0,
+      "mouse_mode_vertical_visible": true,
+      "mouse_mode_horizontal_visible": true,
+      "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase34_large_mouse_dark.png"
+    }
+  ]
+}

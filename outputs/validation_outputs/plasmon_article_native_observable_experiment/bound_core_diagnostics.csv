@@ -1,0 +1,17 @@
+case,model,model_label,backend,observable_mode,observable_bound_fraction,observable_bound_core_mode,observable_bound_shell_summary
+ambient_al_t0,finite_t_stls,Finite-T STLS (experimental),finite_t_stls,xrts_article_native_al,0.0,shell_thresholded_zero_below_al_l_shell,K(2@1559.6eV)=inactive; L(8@72.6eV)=inactive; core_electrons=10.0; nominal_valence=3.0
+ambient_al_t0,finite_t_stls,Finite-T STLS (experimental),finite_t_stls,xrts_observable,0.0,,
+ambient_al_t0,quantum_hydrodynamic,Quantum hydrodynamic (experimental),quantum_hydrodynamic,xrts_article_native_al,0.0,shell_thresholded_zero_below_al_l_shell,K(2@1559.6eV)=inactive; L(8@72.6eV)=inactive; core_electrons=10.0; nominal_valence=3.0
+ambient_al_t0,quantum_hydrodynamic,Quantum hydrodynamic (experimental),quantum_hydrodynamic,xrts_observable,0.0,,
+ambient_al_t0,rpa,RPA,classical_maxwellian,xrts_article_native_al,0.0,shell_thresholded_zero_below_al_l_shell,K(2@1559.6eV)=inactive; L(8@72.6eV)=inactive; core_electrons=10.0; nominal_valence=3.0
+ambient_al_t0,rpa,RPA,classical_maxwellian,xrts_observable,0.0,,
+ambient_al_t0,rpa_static_lfc,RPA + static LFC,classical_maxwellian,xrts_article_native_al,0.0,shell_thresholded_zero_below_al_l_shell,K(2@1559.6eV)=inactive; L(8@72.6eV)=inactive; core_electrons=10.0; nominal_valence=3.0
+ambient_al_t0,rpa_static_lfc,RPA + static LFC,classical_maxwellian,xrts_observable,0.0,,
+driven_al_article_state,finite_t_stls,Finite-T STLS (experimental),finite_t_stls,xrts_article_native_al,0.0,shell_thresholded_zero_below_al_l_shell,K(2@1559.6eV)=inactive; L(8@72.6eV)=inactive; core_electrons=10.0; nominal_valence=3.0
+driven_al_article_state,finite_t_stls,Finite-T STLS (experimental),finite_t_stls,xrts_observable,0.0,,
+driven_al_article_state,quantum_hydrodynamic,Quantum hydrodynamic (experimental),quantum_hydrodynamic,xrts_article_native_al,0.0,shell_thresholded_zero_below_al_l_shell,K(2@1559.6eV)=inactive; L(8@72.6eV)=inactive; core_electrons=10.0; nominal_valence=3.0
+driven_al_article_state,quantum_hydrodynamic,Quantum hydrodynamic (experimental),quantum_hydrodynamic,xrts_observable,0.0,,
+driven_al_article_state,rpa,RPA,classical_maxwellian,xrts_article_native_al,0.0,shell_thresholded_zero_below_al_l_shell,K(2@1559.6eV)=inactive; L(8@72.6eV)=inactive; core_electrons=10.0; nominal_valence=3.0
+driven_al_article_state,rpa,RPA,classical_maxwellian,xrts_observable,0.0,,
+driven_al_article_state,rpa_static_lfc,RPA + static LFC,classical_maxwellian,xrts_article_native_al,0.0,shell_thresholded_zero_below_al_l_shell,K(2@1559.6eV)=inactive; L(8@72.6eV)=inactive; core_electrons=10.0; nominal_valence=3.0
+driven_al_article_state,rpa_static_lfc,RPA + static LFC,classical_maxwellian,xrts_observable,0.0,,

@@ -1,0 +1,21 @@
+case,model,model_label,benchmark_policy_mae_min_ev,benchmark_policy_mae_max_ev,benchmark_policy_mae_spread_ev,raw_minus_article_mae_ev,article_mae_ev,raw_mae_ev,raw_input_policy_status
+ambient_al_t0,lindhard,Finite-T Lindhard,11.181160139375244,11.181160139375244,0.0,0.0,11.181160139375244,11.181160139375244,invalid_input_policy
+ambient_al_t0,lindhard_mermin,Finite-T Lindhard + Mermin,11.18123595114778,11.18123595114778,0.0,0.0,11.18123595114778,11.18123595114778,invalid_input_policy
+ambient_al_t0,quicklook,Quick look,6.528350621293546,6.528350621293546,0.0,15.097770802715003,6.528350621293546,21.62612142400855,invalid_input_policy
+ambient_al_t0,auto_best,Auto best per state,nan,nan,nan,nan,nan,nan,invalid_input_policy
+ambient_al_t0,lindhard_mermin_static_lfc,Finite-T Lindhard + Mermin + static LFC,nan,nan,nan,nan,nan,nan,invalid_input_policy
+ambient_al_t0,lindhard_static_lfc,Finite-T Lindhard + static LFC,nan,nan,nan,nan,nan,nan,invalid_input_policy
+ambient_al_t0,mermin,Mermin,nan,nan,nan,nan,nan,nan,invalid_input_policy
+ambient_al_t0,mermin_static_lfc,Mermin + static LFC,nan,nan,nan,nan,nan,nan,invalid_input_policy
+ambient_al_t0,rpa,RPA,nan,nan,nan,nan,nan,nan,invalid_input_policy
+ambient_al_t0,rpa_static_lfc,RPA + static LFC,nan,nan,nan,nan,nan,nan,invalid_input_policy
+driven_al_dense_slab,lindhard,Finite-T Lindhard,11.002579088218882,11.002579088218882,0.0,0.0,11.002579088218882,11.002579088218882,invalid_input_policy
+driven_al_dense_slab,lindhard_mermin,Finite-T Lindhard + Mermin,10.51580773310376,10.51580773310376,0.0,0.0,10.51580773310376,10.51580773310376,invalid_input_policy
+driven_al_dense_slab,quicklook,Quick look,5.0846841060597985,5.0846841060597985,0.0,13.922678662471606,5.0846841060597985,19.007362768531404,invalid_input_policy
+driven_al_dense_slab,auto_best,Auto best per state,nan,nan,nan,nan,nan,nan,invalid_input_policy
+driven_al_dense_slab,lindhard_mermin_static_lfc,Finite-T Lindhard + Mermin + static LFC,nan,nan,nan,nan,nan,nan,invalid_input_policy
+driven_al_dense_slab,lindhard_static_lfc,Finite-T Lindhard + static LFC,nan,nan,nan,nan,nan,nan,invalid_input_policy
+driven_al_dense_slab,mermin,Mermin,nan,nan,nan,nan,nan,nan,invalid_input_policy
+driven_al_dense_slab,mermin_static_lfc,Mermin + static LFC,nan,nan,nan,nan,nan,nan,invalid_input_policy
+driven_al_dense_slab,rpa,RPA,nan,nan,nan,nan,nan,nan,invalid_input_policy
+driven_al_dense_slab,rpa_static_lfc,RPA + static LFC,nan,nan,nan,nan,nan,nan,invalid_input_policy

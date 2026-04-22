@@ -1,0 +1,49 @@
+{
+  "screenshots": {
+    "parser_empty": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase31_parser_empty_light.png",
+    "parser_preview": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase31_parser_preview_5Fe_light.png",
+    "parser_after_parse": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase31_parser_after_parse_5Fe_light.png",
+    "viewer_slice_light": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase31_viewer_slice_light_5Fe.png",
+    "viewer_mouse_light": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase31_viewer_mouse_light_5Fe.png",
+    "viewer_diagnostics_light": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase31_viewer_diagnostics_light_5Fe.png",
+    "parser_to_viewer_auto_open": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase31_parser_to_viewer_auto_open_5Fe.png",
+    "viewer_slice_dark": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase31_viewer_slice_dark_cu.png",
+    "viewer_diagnostics_dark": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase31_viewer_diagnostics_dark_cu.png",
+    "viewer_moving_mesh_dark": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase31_viewer_moving_mesh_dark_10ns.png",
+    "viewer_mouse_dark": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase31_viewer_mouse_dark_10ns.png"
+  },
+  "checks": {
+    "parser_empty_mode": true,
+    "parser_preview_time_s": 0.078,
+    "parser_preview_sensible": {
+      "zones": 500,
+      "snapshots": 8,
+      "fields": 26
+    },
+    "manual_parse_time_s": 0.09,
+    "cu_open": {
+      "zones": 300,
+      "snapshots": 461,
+      "has_radiation_sink": true
+    },
+    "heavy_open_time_s": 0.268,
+    "heavy_mouse_mode": {
+      "map_render_mode": "mesh",
+      "mouse_state": "Frozen slice inspection",
+      "tabs": 3
+    },
+    "export": {
+      "png_exists": true,
+      "pdf_exists": true,
+      "png_size": 47469,
+      "pdf_size": 228824
+    },
+    "recent_files_count": 5,
+    "restart_persistence": {
+      "compression": "gzip",
+      "auto_open": false,
+      "overwrite": false,
+      "theme": "dark"
+    }
+  }
+}

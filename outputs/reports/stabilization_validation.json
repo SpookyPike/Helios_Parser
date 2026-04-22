@@ -1,0 +1,125 @@
+{
+  "5Fe+4.9TW+light.log": {
+    "inspect_s": 0.023189499974250793,
+    "preview_s": 0.024457800027448684,
+    "parse_s": 0.06314789998577908,
+    "write_s": 0.10343850002391264,
+    "hdf5_groups": [
+      "diagnostics",
+      "fields",
+      "grid",
+      "materials",
+      "metadata",
+      "regions",
+      "time"
+    ],
+    "density_shape": [
+      8,
+      500
+    ],
+    "regions_shape": [
+      1
+    ],
+    "n_zones": 500,
+    "n_regions": 1,
+    "n_materials": 1,
+    "preview_has_snapshot": true,
+    "preview_fields": [
+      "artificial_viscosity",
+      "compression",
+      "density",
+      "electron_density",
+      "electron_energy"
+    ],
+    "n_snapshots": 8,
+    "diagnostics": [
+      "energy_balance",
+      "energy_exchange",
+      "energy_summary",
+      "radiation_boundary_fluxes"
+    ],
+    "output": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\5Fe+4.9TW+light_stabilized.h5"
+  },
+  "Cu_0166.log": {
+    "inspect_s": 0.3358419999713078,
+    "preview_s": 0.39205630001379177,
+    "parse_s": 2.5677532999543473,
+    "write_s": 1.9172737999469973,
+    "hdf5_groups": [
+      "diagnostics",
+      "fields",
+      "grid",
+      "materials",
+      "metadata",
+      "regions",
+      "time"
+    ],
+    "density_shape": [
+      461,
+      300
+    ],
+    "regions_shape": [
+      1
+    ],
+    "n_zones": 300,
+    "n_regions": 1,
+    "n_materials": 1,
+    "preview_has_snapshot": true,
+    "preview_fields": [
+      "artificial_viscosity",
+      "compression",
+      "density",
+      "electron_density",
+      "electron_energy"
+    ],
+    "n_snapshots": 461,
+    "diagnostics": [
+      "energy_balance",
+      "energy_exchange",
+      "energy_summary",
+      "radiation_boundary_fluxes"
+    ],
+    "output": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\Cu_0166_stabilized.h5"
+  },
+  "10ns+10Si+60Al+15Si+4.27TW.log": {
+    "inspect_s": 3.2469224000233226,
+    "preview_s": 1.5964914999785833,
+    "parse_s": 12.395042199990712,
+    "write_s": 11.586012399988249,
+    "hdf5_groups": [
+      "diagnostics",
+      "fields",
+      "grid",
+      "materials",
+      "metadata",
+      "regions",
+      "time"
+    ],
+    "density_shape": [
+      701,
+      1300
+    ],
+    "regions_shape": [
+      3
+    ],
+    "n_zones": 1300,
+    "n_regions": 3,
+    "n_materials": 2,
+    "preview_has_snapshot": true,
+    "preview_fields": [
+      "artificial_viscosity",
+      "compression",
+      "density",
+      "electron_density",
+      "electron_energy"
+    ],
+    "n_snapshots": 701,
+    "diagnostics": [
+      "energy_balance",
+      "energy_exchange",
+      "energy_summary",
+      "radiation_boundary_fluxes"
+    ],
+    "output": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\10ns+10Si+60Al+15Si+4.27TW_stabilized.h5"
+  }
+}

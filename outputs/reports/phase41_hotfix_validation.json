@@ -1,0 +1,83 @@
+{
+  "generated_at": "2026-03-15T23:35:43",
+  "files": [
+    {
+      "file": "5Fe+4.9TW+light_stabilized.h5",
+      "base_selected_zones": 500,
+      "empty_selection_warning_count": 11,
+      "empty_selection_selected_zones": 0,
+      "empty_panels_hidden": {
+        "xrd_time_enabled": false,
+        "plasmon_time_enabled": false,
+        "spectroscopy_profile_enabled": false
+      },
+      "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase411_small_empty_selection_light.png"
+    },
+    {
+      "file": "Cu_0166_stabilized.h5",
+      "xrd_display_time_key": "q_compressed",
+      "spectroscopy_metrics_contains_ev": true,
+      "warning_summary": "Warnings: info=4",
+      "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase411_cu_derived_q_light.png"
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "initial_selected_zones": 1300,
+      "weighted_selected_zones": 1300,
+      "filtered_selected_zones": 900,
+      "xrd_last_layer_density_before": 2.329,
+      "xrd_last_layer_density_mass_weighted": 2.329,
+      "xrd_last_layer_density_after": 2.7,
+      "plasmon_te_before": 0.025000000000017463,
+      "plasmon_te_mass_weighted": 0.02500000538087685,
+      "plasmon_te_after": 0.024999999999999994,
+      "spectroscopy_bulk_velocity_before_cm_s": 0.0,
+      "spectroscopy_bulk_velocity_mass_weighted_cm_s": 0.0,
+      "spectroscopy_bulk_velocity_after_cm_s": 0.0,
+      "shock_breakout_time_ns": null,
+      "xrd_zoom_reset": {
+        "initial": [
+          [
+            -0.20999896999999998,
+            7.20999997
+          ],
+          [
+            2.733134530710203,
+            3.314454707728602
+          ]
+        ],
+        "zoomed": [
+          [
+            1.0000000000000002e-06,
+            2.8000006
+          ],
+          [
+            2.733134530710203,
+            3.314454707728602
+          ]
+        ],
+        "reset": [
+          [
+            -0.20999896999999998,
+            7.20999997
+          ],
+          [
+            2.733134530710203,
+            3.314454707728602
+          ]
+        ],
+        "double_click": [
+          [
+            -0.20999896999999998,
+            7.20999997
+          ],
+          [
+            2.733134530710203,
+            3.314454707728602
+          ]
+        ]
+      },
+      "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase411_large_filtered_dark.png"
+    }
+  ]
+}

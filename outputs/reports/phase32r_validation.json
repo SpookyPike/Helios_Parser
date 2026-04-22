@@ -1,0 +1,56 @@
+{
+  "direct_open": {
+    "small": {
+      "path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\5Fe+4.9TW+light_stabilized.h5",
+      "elapsed_s": 0.154,
+      "current_field": "density",
+      "render_mode": "image",
+      "visible_without_reset": true,
+      "line_plot_visible": true
+    },
+    "medium": {
+      "path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\Cu_0166_stabilized.h5",
+      "elapsed_s": 0.133,
+      "current_field": "density",
+      "render_mode": "image",
+      "visible_without_reset": true,
+      "line_plot_visible": true
+    },
+    "large": {
+      "path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "elapsed_s": 0.199,
+      "current_field": "density",
+      "render_mode": "image",
+      "visible_without_reset": true,
+      "line_plot_visible": true
+    }
+  },
+  "auto_open_after_parse": {
+    "output_path": "C:\\Users\\dimab\\AppData\\Local\\Temp\\tmpdx_4boax\\phase32r_auto_open_small.h5",
+    "elapsed_s": 1.045,
+    "mode": "viewer",
+    "current_field": "density",
+    "render_mode": "image",
+    "visible_without_reset": true,
+    "line_plot_visible": true
+  },
+  "interaction_checks": {
+    "large": {
+      "moving_mesh_render_mode": "mesh",
+      "moving_mesh_visible_without_reset": true,
+      "mouse_mode_probe_state": "frozen",
+      "mouse_vertical_points": 1300,
+      "mouse_horizontal_points": 701
+    }
+  },
+  "export_checks": {
+    "png_path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\png\\phase32r_slice_plot.png",
+    "png_exists": true,
+    "transparent_png_path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\png\\phase32r_slice_plot_transparent.png",
+    "transparent_png_exists": true,
+    "line_pdf_path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\pdf\\phase32r_slice_plot.pdf",
+    "line_pdf_exists": true,
+    "field_map_pdf_disabled": true,
+    "field_map_pdf_written": false
+  }
+}

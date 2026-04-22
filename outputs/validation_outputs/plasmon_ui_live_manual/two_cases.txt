@@ -1,0 +1,1 @@
+Snapshot 630 @ 6.300 ns | Regime: collective | weighting=electron_column | model=lindhard | exec=benchmark | benchmark=valid | pending recompute | front side | LOS cos=1.000 | profile=zone | planar LOS: exact (unchanged)

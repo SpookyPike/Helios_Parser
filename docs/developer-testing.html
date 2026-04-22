@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HELIOS Parse / View Developer Testing Guide</title>
+  <link rel="stylesheet" href="assets/manual.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img class="brand-icon" src="assets/app_icon.png" alt="HELIOS Parse / View icon">
+      <div class="brand-copy">
+        <h1>Developer Testing Guide</h1>
+        <p>
+          Testing expectations for parser, runtime, viewer, derived analysis, WaveFront, and Preheat.
+          This is the practical test guide for feature work, bug fixes, and release validation.
+        </p>
+      </div>
+    </div>
+    <div class="page-links">
+      <a href="index.html">Documentation Index</a>
+      <a href="developer-guide.html">Developer Guide</a>
+      <a href="maintenance.html">Maintenance</a>
+      <a href="../README.md">README</a>
+    </div>
+  </header>
+
+  <nav>
+    <a href="#categories">Test Categories</a>
+    <a href="#commands">Commands</a>
+    <a href="#targeted">Targeted Runs</a>
+    <a href="#manual">Manual QA</a>
+    <a href="#performance">Performance Checks</a>
+    <a href="#done">Definition of Done</a>
+  </nav>
+
+  <main>
+    <section id="categories">
+      <h2>Test categories</h2>
+      <table>
+        <thead>
+          <tr><th>Category</th><th>Examples</th><th>Why it matters</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>parser and schema</td><td><code>test_coordinate_semantics.py</code>, <code>test_run_status.py</code>, <code>test_reader.py</code></td><td>protect explicit center/edge semantics, run status, and compatibility loading</td></tr>
+          <tr><td>viewer UI</td><td><code>test_viewer_*.py</code>, <code>test_app_phase412.py</code></td><td>protect geometry, overlays, settings propagation, snapshot sync, and shell integration</td></tr>
+          <tr><td>derived backend</td><td><code>test_derived_backend_optimization.py</code>, <code>test_derived_services_phase4.py</code></td><td>protect shared caches, result models, and backend correctness seams</td></tr>
+          <tr><td>plasmon staged models</td><td><code>test_plasmon_phase*.py</code>, <code>test_plasmon_ui_phase*.py</code></td><td>protect spectral branches, benchmark gating, LOS integration, export, and workspace wiring</td></tr>
+          <tr><td>derived workspace/controller</td><td><code>test_derived_stability.py</code>, <code>test_wave6_derived.py</code></td><td>protect lazy loading, WaveFront, Preheat, breakout routing, and UI-state stability</td></tr>
+          <tr><td>smoke and manual QA</td><td><code>tests/smoke_test.py</code>, screenshot scripts, visual QA scripts</td><td>catch cross-layer integration problems not visible in narrow unit tests</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="commands">
+      <h2>Core commands</h2>
+      <pre><code>python -m unittest discover -v -s tests -p "test_coordinate_semantics.py"
+python -m unittest discover -v -s tests -p "test_run_status.py"
+python -m unittest discover -v -s tests -p "test_reader.py"
+python -m unittest discover -v -s tests -p "test_viewer_phase34.py"
+python -m unittest discover -v -s tests -p "test_viewer_phase4.py"
+python -m unittest discover -v -s tests -p "test_app_phase412.py"
+python -m unittest discover -v -s tests -p "test_derived_phase41.py"
+python -m unittest discover -v -s tests -p "test_derived_services_phase4.py"
+python -m unittest discover -v -s tests -p "test_derived_backend_optimization.py"
+python -m unittest discover -v -s tests -p "test_derived_stability.py"
+python -m unittest discover -v -s tests -p "test_plasmon_phase*.py"
+python -m unittest discover -v -s tests -p "test_plasmon_ui_phase*.py"
+python -m unittest discover -v -s tests -p "test_wave6_derived.py"
+python tests\smoke_test.py</code></pre>
+      <p>
+        Use targeted runs for the area you touched before falling back to broad suite execution. When a change affects shell/viewer/derived routing,
+        you usually need both a focused derived test and at least one shell-level test.
+      </p>
+    </section>
+
+    <section id="targeted">
+      <h2>What to run for common changes</h2>
+      <div class="card-grid">
+        <div class="card">
+          <h3>Parser, reader, schema</h3>
+          <p>Run coordinate, run-status, reader, and smoke coverage. Use at least one real damaged/truncated or legacy-style file if the parser changed.</p>
+        </div>
+        <div class="card">
+          <h3>Viewer layout or settings</h3>
+          <p>Run viewer phase tests, shell settings propagation, and manual screenshot validation for the touched workflow.</p>
+        </div>
+        <div class="card">
+          <h3>Derived orchestration or caching</h3>
+          <p>Run backend optimization, derived stability, and WaveFront/Preheat UI tests. Check that legacy Shock is still fast and that advanced tabs remain lazy.</p>
+        </div>
+        <div class="card">
+          <h3>Plasmon/XRTS spectral work</h3>
+          <p>Run the plasmon phase and UI suites, then use the validation scripts for benchmark overlays, cache reuse, snapshot refresh, and LOS-vs-effective-state checks before shipping docs or UI claims.</p>
+        </div>
+        <div class="card">
+          <h3>WaveFront or Preheat UI</h3>
+          <p>Run <code>test_wave6_derived.py</code>, then do manual visual validation on at least one real run where the affected advanced tab has meaningful content.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="manual">
+      <h2>Manual QA expectations</h2>
+      <p>Automated tests are not enough for major UI or orchestration changes. Manual QA is expected when:</p>
+      <ul>
+        <li>tabs, selectors, splitters, or scroll behavior changed</li>
+        <li>busy/progress behavior changed</li>
+        <li>WaveFront or Preheat UI changed</li>
+        <li>screenshots or docs are being updated</li>
+        <li>a fix is explicitly about interaction feel or stale UI state</li>
+      </ul>
+      <p>Useful scripts already in the tree:</p>
+      <pre><code>python scripts\capture_docs_assets.py
+python scripts\visual_qa_wavefront.py
+python scripts\phase34_gui_validation.py
+python scripts\phase4_gui_validation.py
+python scripts\validate_plasmon_phase8.py
+python scripts\validate_plasmon_step11_lindhard_hydro.py</code></pre>
+    </section>
+
+    <section id="performance">
+      <h2>Performance and timing checks</h2>
+      <p>
+        Use the existing instrumentation rather than guessing. Important checks include:
+      </p>
+      <ul>
+        <li>legacy Derived open remains fast</li>
+        <li>WaveFront first-load timing is visible and cached reopen is meaningfully faster</li>
+        <li>Preheat reuses WaveFront/interface context and does not force full recompute on ROI-only changes</li>
+        <li>snapshot browsing stays lightweight after advanced data are already loaded</li>
+        <li>heavy background work still shows progress/busy feedback</li>
+      </ul>
+      <pre><code>python scripts\bench_wave6_derived.py
+python scripts\microbench_wave1.py
+python scripts\bench_streaming_conversion.py
+python scripts\bench_hdf5_access.py</code></pre>
+    </section>
+
+    <section id="done">
+      <h2>Definition of done for nontrivial work</h2>
+      <ol class="steps">
+        <li>The touched backend/UI path has focused automated regression coverage.</li>
+        <li>Smoke coverage still passes.</li>
+        <li>Manual QA was performed for interaction-heavy changes.</li>
+        <li>Busy/progress and cache/lazy behavior still match the intended UX.</li>
+        <li>Documentation was updated if the visible behavior or workflow changed.</li>
+      </ol>
+      <p>
+        For large features, also keep at least one real-file validation note. The most common late regressions are not numerical;
+        they are stale state, lazy-load drift, broken tab ownership, and settings propagation mismatches.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

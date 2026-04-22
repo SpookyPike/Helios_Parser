@@ -1,0 +1,80 @@
+{
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "theme": "light",
+    "open_seconds": 0.471,
+    "zones": 500,
+    "snapshots": 8,
+    "fields": 26,
+    "dynamic_radius_loaded": true,
+    "laser_entry_info": {
+      "origin_zone_index": 501,
+      "propagation_direction": "Rmin",
+      "propagation_direction_text": "toward Rmin",
+      "incident_boundary": "high-index boundary",
+      "first_physical_zone": 500,
+      "incident_region": 1,
+      "incident_region_boundary": "Region 1 high-index boundary",
+      "boundary_kind": "high"
+    },
+    "field_title": "Density map | time on x, static x on y | all zones (500/500) | linear scale",
+    "line_title": "Density lineout | snapshot 0 | t=1.0000e-15 s | static x | all zones (500/500) | linear",
+    "analysis_label": "Active analysis: snapshot lineout (static x)",
+    "theme_name": "light",
+    "render_mode": "image",
+    "laser_overlay_visible": true,
+    "boundary_count": 0,
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\5Fe+4.9TW+light_stabilized_phase2_light.png"
+  },
+  "Cu_0166_stabilized.h5": {
+    "theme": "light",
+    "open_seconds": 0.423,
+    "zones": 300,
+    "snapshots": 461,
+    "fields": 27,
+    "dynamic_radius_loaded": true,
+    "laser_entry_info": {
+      "origin_zone_index": 301,
+      "propagation_direction": "Rmin",
+      "propagation_direction_text": "toward Rmin",
+      "incident_boundary": "high-index boundary",
+      "first_physical_zone": 300,
+      "incident_region": 1,
+      "incident_region_boundary": "Region 1 high-index boundary",
+      "boundary_kind": "high"
+    },
+    "field_title": "Density map | time on x, static x on y | all zones (300/300) | linear scale",
+    "line_title": "Density lineout | snapshot 0 | t=1.0000e-15 s | static x | all zones (300/300) | linear",
+    "analysis_label": "Active analysis: snapshot lineout (static x)",
+    "theme_name": "light",
+    "render_mode": "image",
+    "laser_overlay_visible": true,
+    "boundary_count": 0,
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\Cu_0166_stabilized_phase2_light.png"
+  },
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "theme": "dark",
+    "open_seconds": 8.94,
+    "zones": 1300,
+    "snapshots": 701,
+    "fields": 26,
+    "dynamic_radius_loaded": true,
+    "laser_entry_info": {
+      "origin_zone_index": 1301,
+      "propagation_direction": "Rmin",
+      "propagation_direction_text": "toward Rmin",
+      "incident_boundary": "high-index boundary",
+      "first_physical_zone": 1300,
+      "incident_region": 3,
+      "incident_region_boundary": "Region 3 high-index boundary",
+      "boundary_kind": "high"
+    },
+    "field_title": "Density map | time on x, moving-mesh radius on y | all zones (1300/1300) | linear scale",
+    "line_title": "Density vertical slice | frozen | snapshot 40 | t=4.0096e-10 s | moving-mesh radius | linear",
+    "analysis_label": "Active analysis: mouse mode (frozen) | map=moving-mesh radius",
+    "theme_name": "dark",
+    "render_mode": "mesh",
+    "laser_overlay_visible": true,
+    "boundary_count": 2,
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\10ns+10Si+60Al+15Si+4.27TW_stabilized_phase2_dark.png"
+  }
+}

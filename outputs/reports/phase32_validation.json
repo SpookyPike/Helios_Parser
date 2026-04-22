@@ -1,0 +1,206 @@
+{
+  "preview": {
+    "small": {
+      "path": "C:\\Users\\dimab\\Documents\\Helios_parser\\5Fe+4.9TW+light.log",
+      "elapsed_s": 0.059,
+      "simulation_name": "5Fe+4.9TW+light",
+      "n_snapshots": 8,
+      "n_zones": 500,
+      "n_regions": 1,
+      "n_materials": 1,
+      "n_fields": 26,
+      "first_time_s": 1e-15,
+      "last_time_s": 6.6497e-10,
+      "field_sample": [
+        "radius",
+        "zone_width",
+        "density",
+        "velocity",
+        "temperature_radiation",
+        "temperature_i",
+        "temperature_e",
+        "pressure_i"
+      ]
+    },
+    "medium": {
+      "path": "C:\\Users\\dimab\\Documents\\Helios_parser\\Cu_0166.log",
+      "elapsed_s": 0.303,
+      "simulation_name": "Cu_0166",
+      "n_snapshots": 461,
+      "n_zones": 300,
+      "n_regions": 1,
+      "n_materials": 1,
+      "n_fields": 27,
+      "first_time_s": 1e-15,
+      "last_time_s": 4.6e-09,
+      "field_sample": [
+        "radius",
+        "zone_width",
+        "density",
+        "velocity",
+        "temperature_radiation",
+        "temperature_i",
+        "temperature_e",
+        "pressure_i"
+      ]
+    },
+    "large": {
+      "path": "C:\\Users\\dimab\\Documents\\Helios_parser\\10ns+10Si+60Al+15Si+4.27TW.log",
+      "elapsed_s": 1.914,
+      "simulation_name": "10ns+10Si+60Al+15Si+4.27TW",
+      "n_snapshots": 701,
+      "n_zones": 1300,
+      "n_regions": 3,
+      "n_materials": 2,
+      "n_fields": 26,
+      "first_time_s": 1e-15,
+      "last_time_s": 7e-09,
+      "field_sample": [
+        "radius",
+        "zone_width",
+        "density",
+        "velocity",
+        "temperature_radiation",
+        "temperature_i",
+        "temperature_e",
+        "pressure_i"
+      ]
+    }
+  },
+  "parse": {
+    "small": {
+      "source": "C:\\Users\\dimab\\Documents\\Helios_parser\\5Fe+4.9TW+light.log",
+      "output": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\phase32_ui_small.h5",
+      "elapsed_s": 0.168,
+      "auto_open": true,
+      "progress_events": 13,
+      "stages": [
+        "prepare",
+        "snapshots",
+        "finalize",
+        "done"
+      ],
+      "snapshot_stage_seen": true,
+      "final_stage": "done",
+      "final_fraction": 1.0,
+      "final_progress_format": "100% | complete in 0.08 s",
+      "ui_status": "Parse complete: phase32_ui_small.h5"
+    },
+    "medium": {
+      "source": "C:\\Users\\dimab\\Documents\\Helios_parser\\Cu_0166.log",
+      "output": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\phase32_ui_medium.h5",
+      "elapsed_s": 1.985,
+      "auto_open": false,
+      "progress_events": 466,
+      "stages": [
+        "prepare",
+        "snapshots",
+        "finalize",
+        "done"
+      ],
+      "snapshot_stage_seen": true,
+      "final_stage": "done",
+      "final_fraction": 1.0,
+      "final_progress_format": "100% | complete in 1.95 s",
+      "ui_status": "Parse complete: phase32_ui_medium.h5"
+    },
+    "large": {
+      "source": "C:\\Users\\dimab\\Documents\\Helios_parser\\10ns+10Si+60Al+15Si+4.27TW.log",
+      "output": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\phase32_ui_large.h5",
+      "elapsed_s": 11.477,
+      "auto_open": false,
+      "progress_events": 706,
+      "stages": [
+        "prepare",
+        "snapshots",
+        "finalize",
+        "done"
+      ],
+      "snapshot_stage_seen": true,
+      "final_stage": "done",
+      "final_fraction": 1.0,
+      "final_progress_format": "100% | complete in 11.46 s",
+      "ui_status": "Parse complete: phase32_ui_large.h5"
+    }
+  },
+  "viewer_open": {
+    "small": {
+      "path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\5Fe+4.9TW+light_stabilized.h5",
+      "elapsed_s": 0.17,
+      "n_zones": 500,
+      "n_snapshots": 8,
+      "n_regions": 1,
+      "n_materials": 1,
+      "tabs": [
+        "Slice View",
+        "Diagnostics",
+        "Mouse Mode"
+      ],
+      "field_count": 26,
+      "current_field": "density",
+      "export_action_enabled": true
+    },
+    "medium": {
+      "path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\Cu_0166_stabilized.h5",
+      "elapsed_s": 0.12,
+      "n_zones": 300,
+      "n_snapshots": 461,
+      "n_regions": 1,
+      "n_materials": 1,
+      "tabs": [
+        "Slice View",
+        "Diagnostics",
+        "Mouse Mode"
+      ],
+      "field_count": 27,
+      "current_field": "density",
+      "export_action_enabled": true,
+      "has_radiation_sink": true
+    },
+    "large": {
+      "path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "elapsed_s": 0.095,
+      "n_zones": 1300,
+      "n_snapshots": 701,
+      "n_regions": 3,
+      "n_materials": 2,
+      "tabs": [
+        "Slice View",
+        "Diagnostics",
+        "Mouse Mode"
+      ],
+      "field_count": 26,
+      "current_field": "density",
+      "export_action_enabled": true,
+      "moving_mesh_render_mode": "mesh"
+    }
+  },
+  "exports": {
+    "svg_path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\svg\\phase32_slice_plot.svg",
+    "svg_elapsed_s": 0.006,
+    "svg_has_svg_tag": true,
+    "svg_has_image_tag": false,
+    "svg_has_vector_content": true,
+    "pdf_path": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\pdf\\phase32_slice_plot.pdf",
+    "pdf_elapsed_s": 0.01,
+    "pdf_size_bytes": 24031,
+    "pdf_has_font": true,
+    "pdf_has_image_xobject": false
+  },
+  "recent_files": [
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\Cu_0166_stabilized.h5",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\5Fe+4.9TW+light_stabilized.h5",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\phase32_ui_large.h5",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\10ns+10Si+60Al+15Si+4.27TW.log",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\phase32_ui_medium.h5",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\Cu_0166.log",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\phase32_ui_small.h5",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\5Fe+4.9TW+light.log"
+  ],
+  "mode_switch": {
+    "elapsed_s": 1.408,
+    "current_mode": "viewer",
+    "viewer_has_run": true
+  }
+}

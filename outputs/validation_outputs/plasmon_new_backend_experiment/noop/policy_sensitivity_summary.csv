@@ -1,0 +1,45 @@
+case,model,model_label,benchmark_policy_mae_min_ev,benchmark_policy_mae_max_ev,benchmark_policy_mae_spread_ev,raw_minus_article_mae_ev,article_mae_ev,article_driven_increment_mae_ev,benchmark_valence_aware_mae_ev,valence_locked_mae_ev,raw_mae_ev,raw_input_policy_status
+ambient_al_t0,auto_best,Auto best per state,4.502873079427154,4.502873079427154,0.0,nan,4.502873079427154,4.502873079427154,4.502873079427154,4.502873079427154,nan,invalid_input_policy
+ambient_al_t0,lindhard,Finite-T Lindhard,3.485417419038936,3.485417419038936,0.0,7.695742720336308,3.485417419038936,3.485417419038936,3.485417419038936,3.485417419038936,11.181160139375244,invalid_input_policy
+ambient_al_t0,lindhard_mermin,Finite-T Lindhard + Mermin,4.646976862897811,4.646976862897811,0.0,6.534259088249969,4.646976862897811,4.646976862897811,4.646976862897811,4.646976862897811,11.18123595114778,invalid_input_policy
+ambient_al_t0,lindhard_mermin_static_lfc,Finite-T Lindhard + Mermin + static LFC,7.214863399499241,7.214863399499241,0.0,nan,7.214863399499241,7.214863399499241,7.214863399499241,7.214863399499241,nan,invalid_input_policy
+ambient_al_t0,lindhard_static_lfc,Finite-T Lindhard + static LFC,5.481794909097744,5.481794909097744,0.0,nan,5.481794909097744,5.481794909097744,5.481794909097744,5.481794909097744,nan,invalid_input_policy
+ambient_al_t0,mermin,Mermin,6.481936133184554,6.481936133184554,0.0,nan,6.481936133184554,6.481936133184554,6.481936133184554,6.481936133184554,nan,invalid_input_policy
+ambient_al_t0,mermin_static_lfc,Mermin + static LFC,4.502873079427154,4.502873079427154,0.0,nan,4.502873079427154,4.502873079427154,4.502873079427154,4.502873079427154,nan,invalid_input_policy
+ambient_al_t0,quantum_hydrodynamic,Quantum hydrodynamic (experimental),3.9496115282791466,3.9496115282791466,0.0,nan,3.9496115282791466,3.9496115282791466,3.9496115282791466,3.9496115282791466,nan,invalid_input_policy
+ambient_al_t0,quicklook,Quick look,6.528350621293546,6.528350621293546,0.0,15.097770802715003,6.528350621293546,6.528350621293546,6.528350621293546,6.528350621293546,21.62612142400855,invalid_input_policy
+ambient_al_t0,rpa,RPA,6.480396122585867,6.480396122585867,0.0,nan,6.480396122585867,6.480396122585867,6.480396122585867,6.480396122585867,nan,invalid_input_policy
+ambient_al_t0,rpa_static_lfc,RPA + static LFC,4.501893033336921,4.501893033336921,0.0,nan,4.501893033336921,4.501893033336921,4.501893033336921,4.501893033336921,nan,invalid_input_policy
+driven_al_article_state,auto_best,Auto best per state,2.8235800445754764,2.8235800445754764,0.0,nan,2.8235800445754764,2.8235800445754764,2.8235800445754764,2.8235800445754764,nan,
+driven_al_article_state,lindhard,Finite-T Lindhard,5.77557285013875,5.77557285013875,0.0,nan,5.77557285013875,5.77557285013875,5.77557285013875,5.77557285013875,nan,
+driven_al_article_state,lindhard_mermin,Finite-T Lindhard + Mermin,6.5480233861229165,6.5480233861229165,0.0,nan,6.5480233861229165,6.5480233861229165,6.5480233861229165,6.5480233861229165,nan,
+driven_al_article_state,lindhard_mermin_static_lfc,Finite-T Lindhard + Mermin + static LFC,7.293684018663653,7.293684018663653,0.0,nan,7.293684018663653,7.293684018663653,7.293684018663653,7.293684018663653,nan,
+driven_al_article_state,lindhard_static_lfc,Finite-T Lindhard + static LFC,6.591001522696248,6.591001522696248,0.0,nan,6.591001522696248,6.591001522696248,6.591001522696248,6.591001522696248,nan,
+driven_al_article_state,mermin,Mermin,4.444627949706578,4.444627949706578,0.0,nan,4.444627949706578,4.444627949706578,4.444627949706578,4.444627949706578,nan,
+driven_al_article_state,mermin_static_lfc,Mermin + static LFC,2.8235800445754764,2.8235800445754764,0.0,nan,2.8235800445754764,2.8235800445754764,2.8235800445754764,2.8235800445754764,nan,
+driven_al_article_state,quantum_hydrodynamic,Quantum hydrodynamic (experimental),5.80020495552752,5.80020495552752,0.0,nan,5.80020495552752,5.80020495552752,5.80020495552752,5.80020495552752,nan,
+driven_al_article_state,rpa,RPA,4.431431233474577,4.431431233474577,0.0,nan,4.431431233474577,4.431431233474577,4.431431233474577,4.431431233474577,nan,
+driven_al_article_state,rpa_static_lfc,RPA + static LFC,2.819395931259386,2.819395931259386,0.0,nan,2.819395931259386,2.819395931259386,2.819395931259386,2.819395931259386,nan,
+driven_al_article_state,quicklook,Quick look,nan,nan,nan,nan,nan,nan,nan,nan,nan,
+driven_al_best_hydro_slab,auto_best,Auto best per state,2.918576641378384,2.918576641378384,0.0,nan,2.918576641378384,nan,nan,nan,nan,
+driven_al_best_hydro_slab,lindhard,Finite-T Lindhard,5.89853697584505,5.89853697584505,0.0,nan,5.89853697584505,nan,nan,nan,nan,
+driven_al_best_hydro_slab,lindhard_mermin,Finite-T Lindhard + Mermin,6.660190359135732,6.660190359135732,0.0,nan,6.660190359135732,nan,nan,nan,nan,
+driven_al_best_hydro_slab,lindhard_mermin_static_lfc,Finite-T Lindhard + Mermin + static LFC,7.406385205092513,7.406385205092513,0.0,nan,7.406385205092513,nan,nan,nan,nan,
+driven_al_best_hydro_slab,lindhard_static_lfc,Finite-T Lindhard + static LFC,6.712518430415761,6.712518430415761,0.0,nan,6.712518430415761,nan,nan,nan,nan,
+driven_al_best_hydro_slab,mermin,Mermin,4.5432887930623265,4.5432887930623265,0.0,nan,4.5432887930623265,nan,nan,nan,nan,
+driven_al_best_hydro_slab,mermin_static_lfc,Mermin + static LFC,2.918576641378384,2.918576641378384,0.0,nan,2.918576641378384,nan,nan,nan,nan,
+driven_al_best_hydro_slab,quantum_hydrodynamic,Quantum hydrodynamic (experimental),5.834379419939316,5.834379419939316,0.0,nan,5.834379419939316,nan,nan,nan,nan,
+driven_al_best_hydro_slab,quicklook,Quick look,5.210595389040399,5.210595389040399,0.0,nan,5.210595389040399,nan,nan,nan,nan,
+driven_al_best_hydro_slab,rpa,RPA,4.522271382982731,4.522271382982731,0.0,nan,4.522271382982731,nan,nan,nan,nan,
+driven_al_best_hydro_slab,rpa_static_lfc,RPA + static LFC,2.910764261924723,2.910764261924723,0.0,nan,2.910764261924723,nan,nan,nan,nan,
+driven_al_dense_slab,auto_best,Auto best per state,2.867825370373005,2.867825370373005,0.0,nan,2.867825370373005,nan,nan,nan,nan,
+driven_al_dense_slab,lindhard,Finite-T Lindhard,5.999621495519137,5.999621495519137,0.0,nan,5.999621495519137,nan,nan,nan,nan,
+driven_al_dense_slab,lindhard_mermin,Finite-T Lindhard + Mermin,6.757945442339206,6.757945442339206,0.0,nan,6.757945442339206,nan,nan,nan,nan,
+driven_al_dense_slab,lindhard_mermin_static_lfc,Finite-T Lindhard + Mermin + static LFC,7.502014082644214,7.502014082644214,0.0,nan,7.502014082644214,nan,nan,nan,nan,
+driven_al_dense_slab,lindhard_static_lfc,Finite-T Lindhard + static LFC,6.801772873629015,6.801772873629015,0.0,nan,6.801772873629015,nan,nan,nan,nan,
+driven_al_dense_slab,mermin,Mermin,4.436565711882831,4.436565711882831,0.0,nan,4.436565711882831,nan,nan,nan,nan,
+driven_al_dense_slab,mermin_static_lfc,Mermin + static LFC,2.867825370373005,2.867825370373005,0.0,nan,2.867825370373005,nan,nan,nan,nan,
+driven_al_dense_slab,quantum_hydrodynamic,Quantum hydrodynamic (experimental),5.93013528025144,5.93013528025144,0.0,nan,5.93013528025144,nan,nan,nan,nan,
+driven_al_dense_slab,quicklook,Quick look,5.0846841060597985,5.0846841060597985,0.0,nan,5.0846841060597985,nan,nan,nan,nan,
+driven_al_dense_slab,rpa,RPA,4.41351352477881,4.41351352477881,0.0,nan,4.41351352477881,nan,nan,nan,nan,
+driven_al_dense_slab,rpa_static_lfc,RPA + static LFC,2.858650013461382,2.858650013461382,0.0,nan,2.858650013461382,nan,nan,nan,nan,

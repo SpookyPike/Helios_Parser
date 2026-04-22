@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HELIOS Parse / View Maintenance Guide</title>
+  <link rel="stylesheet" href="assets/manual.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img class="brand-icon" src="assets/app_icon.png" alt="HELIOS Parse / View icon">
+      <div class="brand-copy">
+        <h1>Maintenance Guide</h1>
+        <p>
+          Practical maintenance notes for dependencies, screenshots, packaging, release hygiene,
+          and the common places where parser/viewer/derived changes tend to break.
+        </p>
+      </div>
+    </div>
+    <div class="page-links">
+      <a href="index.html">Documentation Index</a>
+      <a href="developer-testing.html">Developer Testing</a>
+      <a href="release-notes.html">Release Notes</a>
+      <a href="../README.md">README</a>
+    </div>
+  </header>
+
+  <nav>
+    <a href="#dependencies">Dependencies</a>
+    <a href="#launch">Launching</a>
+    <a href="#docs">Documentation Upkeep</a>
+    <a href="#samples">Sample Files</a>
+    <a href="#release">Release Process</a>
+    <a href="#risks">Regression Risks</a>
+  </nav>
+
+  <main>
+    <section id="dependencies">
+      <h2>Dependency management</h2>
+      <p>
+        The repository now publishes release-facing metadata through <code>pyproject.toml</code>.
+        For the desktop application, the practical dependency set is the <code>desktop</code> extra:
+      </p>
+      <pre><code>pip install -e .[desktop]</code></pre>
+      <p>That covers the shipping desktop workflow:</p>
+      <ul>
+        <li><code>numpy</code></li>
+        <li><code>h5py</code></li>
+        <li><code>PySide6</code></li>
+        <li><code>pyqtgraph</code></li>
+        <li><code>matplotlib</code> for validation/export-supporting paths</li>
+      </ul>
+    </section>
+
+    <section id="launch">
+      <h2>Launching and packaging</h2>
+      <p>Direct developer launch:</p>
+      <pre><code>python -m helios_app</code></pre>
+      <p>
+        The shareable release bundle created in this pass includes top-level Windows and Linux launcher/bootstrap scripts.
+        Those scripts create a local virtual environment, install the desktop extra, and launch the app from the unpacked bundle.
+      </p>
+      <p>
+        Maintenance rule: if the packaging or launch path changes, update <strong>both</strong> the scripts and the quick-start documentation together.
+      </p>
+    </section>
+
+    <section id="docs">
+      <h2>Documentation upkeep</h2>
+      <ol class="steps">
+        <li>Update the relevant user/developer/testing/maintenance docs whenever visible behavior, workflow, or architecture changes.</li>
+        <li>Refresh screenshots when the UI changes materially.</li>
+        <li>Keep release number, date, and About dialog metadata in sync.</li>
+        <li>Prefer a few clear screenshots to a giant stale archive.</li>
+      </ol>
+      <p>Current screenshot maintenance commands:</p>
+      <pre><code>python scripts\capture_docs_assets.py
+python scripts\visual_qa_wavefront.py</code></pre>
+      <p>
+        Store documentation screenshots under <code>docs/assets/screenshots/</code>. Visual-QA artifacts can stay under
+        <code>outputs/screenshots/visual_qa/</code> and be copied into docs only when they represent the current shipping UI.
+      </p>
+    </section>
+
+    <section id="samples">
+      <h2>Sample and demo files</h2>
+      <p>
+        Do not blindly ship every large or historically convenient dataset. The release bundle should only contain
+        small or moderate redistributable examples that are actually useful for onboarding.
+      </p>
+      <p>Current bundle strategy:</p>
+      <ul>
+        <li>include a small planar run for basic open/browse/derived checks</li>
+        <li>include a cylindrical run so coordinate semantics can be demonstrated</li>
+        <li>include one moderate quick-look derived example</li>
+        <li>do not bundle the heaviest layered advanced-analysis datasets unless there is a clear redistribution reason</li>
+      </ul>
+    </section>
+
+    <section id="release">
+      <h2>Release and versioning expectations</h2>
+      <p>
+        The chosen release for this documentation and bundle pass is <strong>0.9.0</strong>. The project is substantial and shareable,
+        but still clearly pre-1.0 because the scientific stack continues to evolve and several advanced interpretations remain intentionally quick-look.
+      </p>
+      <p>Maintenance checklist for a release-facing update:</p>
+      <ul>
+        <li>update release metadata in About text, README, docs, and package metadata</li>
+        <li>refresh current screenshots</li>
+        <li>create and inspect the shareable zip bundle</li>
+        <li>verify top-level quick-start instructions against actual included scripts</li>
+        <li>check that docs links are valid inside the bundle tree</li>
+      </ul>
+    </section>
+
+    <section id="risks">
+      <h2>Common regression risks</h2>
+      <ul>
+        <li>viewer/derived settings drift, especially units and default coordinate handling</li>
+        <li>stale lazy-load cache invalidation between Shock, WaveFront, and Preheat</li>
+        <li>tab-local controls accidentally affecting the wrong module</li>
+        <li>snapshot navigation drifting out of sync between shell, viewer, and derived</li>
+        <li>breaking scroll, popup, or splitter behavior in dense scientific UIs</li>
+        <li>WaveFront or Preheat becoming eager by accident after a controller change</li>
+        <li>docs/screenshots quietly describing an older UI</li>
+      </ul>
+      <div class="callout">
+        If an architectural change touches parser, runtime, viewer, and derived together, plan a validation pass across all layers.
+        These are the changes most likely to look locally correct while breaking real workflows.
+      </div>
+    </section>
+  </main>
+</body>
+</html>

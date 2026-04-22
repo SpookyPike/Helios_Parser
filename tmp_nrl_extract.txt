@@ -1,0 +1,3431 @@
+
+===== PAGE 1 =====
+EST. 
+U.5.NAVAL
+ESEARC
+LABORATORY 
+===== PAGE 2 =====
+2023 NRL PLASMA FORMULARY
+A. Beresnyak
+Radiation Hydrodynamics Branch
+Plasma Physics Division
+Naval Research Laboratory
+Washington, DC 20375
+Supported by
+The Office of Naval Research
+===== PAGE 3 =====
+CONTENTS
+Numerical and Algebraic . . . . . . . . . . . . . . . . . . . . 3
+Vector Identities . . . . . . . . . . . . . . . . . . . . . . . 4
+Differential Operators in Curvilinear Coordinates . . . . . . . . . 6
+Dimensions and Units . . . . . . . . . . . . . . . . . . . . . 10
+International System (SI) Nomenclature . . . . . . . . . . . . . 13
+Metric Prefixes . . . . . . . . . . . . . . . . . . . . . . . . 13
+Physical Constants (SI) . . . . . . . . . . . . . . . . . . . . . 14
+Physical Constants (cgs) . . . . . . . . . . . . . . . . . . . . 16
+Formula Conversion . . . . . . . . . . . . . . . . . . . . . . 18
+Maxwell’s Equations . . . . . . . . . . . . . . . . . . . . . . 19
+Electricity and Magnetism . . . . . . . . . . . . . . . . . . . 20
+Electromagnetic Frequency/Wavelength Bands . . . . . . . . . . 21
+AC Circuits . . . . . . . . . . . . . . . . . . . . . . . . . 22
+Dimensionless Numbers of Fluid Mechanics . . . . . . . . . . . . 23
+Shocks . . . . . . . . . . . . . . . . . . . . . . . . . . . 26
+Fundamental Plasma Parameters . . . . . . . . . . . . . . . . 28
+Plasma Dispersion Function . . . . . . . . . . . . . . . . . . 30
+Collisions and Transport . . . . . . . . . . . . . . . . . . . . 31
+Approximate Magnitudes in Some Typical Plasmas . . . . . . . . . 40
+Ionospheric Parameters . . . . . . . . . . . . . . . . . . . . 42
+Solar Physics Parameters . . . . . . . . . . . . . . . . . . . . 43
+Thermonuclear Fusion . . . . . . . . . . . . . . . . . . . . . 44
+Relativistic Electron Beams . . . . . . . . . . . . . . . . . . . 46
+Beam Instabilities . . . . . . . . . . . . . . . . . . . . . . . 48
+Lasers . . . . . . . . . . . . . . . . . . . . . . . . . . . . 51
+Atomic Physics and Radiation . . . . . . . . . . . . . . . . . . 53
+Atomic Spectroscopy . . . . . . . . . . . . . . . . . . . . . 59
+Complex (Dusty) Plasmas . . . . . . . . . . . . . . . . . . . 62
+References . . . . . . . . . . . . . . . . . . . . . . . . . . 66
+2
+===== PAGE 4 =====
+NUMERICAL AND ALGEBRAIC
+Gain in decibels of 𝑃2 relative to 𝑃1
+𝐺 = 10 log10(𝑃2/𝑃1).
+To within two percent
+(2𝜋)1/2 ≈ 2.5; 𝜋 2 ≈ 10; 𝑒3 ≈ 20; 210 ≈ 103.
+Euler-Mascheroni constant1 𝛾 = 0.57722
+Gamma Function Γ(𝑥 + 1) = 𝑥Γ(𝑥):
+Γ(1/6) = 5.5663 Γ(3/5) = 1.4892
+Γ(1/5) = 4.5908 Γ(2/3) = 1.3541
+Γ(1/4) = 3.6256 Γ(3/4) = 1.2254
+Γ(1/3) = 2.6789 Γ(4/5) = 1.1642
+Γ(2/5) = 2.2182 Γ(5/6) = 1.1288
+Γ(1/2) = 1.7725 =√𝜋 Γ(1) = 1.0
+Binomial Theorem (good for |𝑥| < 1 or 𝛼 =positive integer):
+(1 + 𝑥)𝛼 =
+∞
+∑
+𝑘=0
+( 𝛼
+𝑘) 𝑥𝑘 ≡ 1 + 𝛼𝑥 + 𝛼(𝛼 − 1)
+2! 𝑥2 + 𝛼(𝛼 − 1)(𝛼 − 2)
+3! 𝑥3 + …
+Rothe-Hagen identity2 (good for all complex 𝑥, 𝑦, 𝑧 except when singular):
+𝑛
+∑
+𝑘=0
+𝑥
+𝑥 + 𝑘𝑧( 𝑥 + 𝑘𝑧
+𝑘 ) 𝑦
+𝑦 + (𝑛 − 𝑘)𝑧( 𝑦 + (𝑛 − 𝑘)𝑧
+𝑛 − 𝑘 )
+= 𝑥 + 𝑦
+𝑥 + 𝑦 + 𝑛𝑧( 𝑥 + 𝑦 + 𝑛𝑧
+𝑛 ) .
+Newberger’s summation formula3 [good for 𝜇 nonintegral, Re (𝛼 + 𝛽) > −1]:
+∞
+∑
+𝑛=−∞
+(−1)𝑛𝐽𝛼−𝛾𝑛(𝑧)𝐽𝛽+𝛾𝑛(𝑧)
+𝑛 + 𝜇 = 𝜋
+sin 𝜇𝜋𝐽𝛼+𝛾𝜇(𝑧)𝐽𝛽−𝛾𝜇(𝑧).
+3
+===== PAGE 5 =====
+VECTOR IDENTITIES4
+Notation: 𝑓, 𝑔, are scalars; A, B, etc., are vectors; 𝙏 is a tensor; 𝙄 is the unit
+dyad. Summation over repeating indexes is assumed. The cross product can
+be defined through Levi-Civita symbol as (A × B)𝑖 = 𝜖 𝑖𝑗𝑘𝐴𝑗𝐵𝑘. The follow-
+ing convolutions can be used to derive vector identities: 𝜖𝑖𝑘𝑙𝜖𝑗𝑘𝑙 = 2𝛿 𝑖𝑗 and
+𝜖𝑖𝑗𝑘𝜖𝑙𝑚𝑘 = 𝛿 𝑖𝑙𝛿𝑗𝑚 − 𝛿𝑖𝑚𝛿𝑗𝑙 .
+(1) A ⋅ B × C = A × B ⋅ C = B ⋅ C × A
+= B × C ⋅ A = C ⋅ A × B = C × A ⋅ B
+A × (B × C) = (C × B) × A = (A ⋅ C)B − (A ⋅ B)C(2)
+A × (B × C) + B × (C × A) + C × (A × B) = 0(3)
+(A × B) ⋅ (C × D) = (A ⋅ C)(B ⋅ D) − (A ⋅ D)(B ⋅ C)(4)
+(A × B) × (C × D) = (A × B ⋅ D)C − (A × B ⋅ C)D(5)
+∇(𝑓𝑔) = ∇(𝑔𝑓) = 𝑓∇𝑔 + 𝑔∇𝑓(6)
+∇ ⋅ (𝑓A) = 𝑓∇ ⋅ A + A ⋅ ∇𝑓(7)
+∇ × (𝑓A) = 𝑓∇ × A + ∇𝑓 × A(8)
+∇ ⋅ (A × B) = B ⋅ ∇ × A − A ⋅ ∇ × B(9)
+∇ × (A × B) = A(∇ ⋅ B) − B(∇ ⋅ A) + (B ⋅ ∇)A − (A ⋅ ∇)B(10)
+A × (∇ × B) = (∇B) ⋅ A − (A ⋅ ∇)B(11)
+∇(A ⋅ B) = A × (∇ × B) + B × (∇ × A) + (A ⋅ ∇)B + (B ⋅ ∇)A(12)
+∇2𝑓 = ∇ ⋅ ∇𝑓(13)
+∇2A = ∇(∇ ⋅ A) − ∇ × ∇ ×A(14)
+∇ × ∇𝑓 = 0(15)
+∇ ⋅ ∇ × A = 0(16)
+If 𝐞1, 𝐞2, 𝐞3 are orthonormal unit vectors, a second-order tensor 𝙏 can be
+written in the dyadic form
+𝙏 = 𝑇𝑖𝑗𝐞𝑖𝐞𝑗(17)
+4
+===== PAGE 6 =====
+In cartesian coordinates the divergence of a tensor is a vector with compo-
+nents
+(∇ ⋅ 𝙏)𝑖 = ∂𝑇𝑗𝑖/∂𝑥𝑗(18)
+[This definition is required for consistency with Eq. (29)]. In general
+∇ ⋅ (AB) = (∇ ⋅ A)B + (A ⋅ ∇)B(19)
+∇ ⋅ (𝑓𝙏) = ∇𝑓 ⋅ 𝙏 + 𝑓∇ ⋅ 𝙏(20)
+Let r = i 𝑥 + j 𝑦 + k 𝑧 be the radius vector of magnitude 𝑟, from the origin to
+the point 𝑥, 𝑦, 𝑧. Then
+∇ ⋅ r = 3(21)
+∇ × r = 0(22)
+∇𝑟 = r/𝑟(23)
+∇(1/𝑟) = −r/𝑟3(24)
+∇ ⋅ (r/𝑟3) = 4𝜋𝛿(r)(25)
+∇r = 𝙄(26)
+If 𝑉 is a volume enclosed by a surface 𝑆 and 𝑑S = n𝑑𝑆, where n is the unit
+normal outward from 𝑉 ,
+∫
+𝑉
+𝑑𝑉 ∇𝑓 =∫
+𝑆
+𝑑S𝑓(27)
+∫
+𝑉
+𝑑𝑉 ∇ ⋅A = ∫
+𝑆
+𝑑S ⋅ A(28)
+∫
+𝑉
+𝑑𝑉 ∇ ⋅ 𝙏 = ∫
+𝑆
+𝑑S ⋅ 𝙏(29)
+∫
+𝑉
+𝑑𝑉 ∇ ×A = ∫
+𝑆
+𝑑S × 𝐴(30)
+∫
+𝑉
+𝑑𝑉 (𝑓∇2𝑔 − 𝑔∇2𝑓) = ∫
+𝑆
+𝑑S ⋅ (𝑓∇𝑔 − 𝑔∇𝑓)(31)
+(32) ∫
+𝑉
+𝑑𝑉 (A ⋅ ∇ × ∇ × B − B ⋅ ∇ × ∇ × A)
+= ∫
+𝑆
+𝑑S ⋅ (B × ∇ × A − A × ∇ × B)
+5
+===== PAGE 7 =====
+If 𝑆 is an open surface bounded by the contour 𝐶, of which the line element
+is 𝑑l,
+∫
+𝑆
+𝑑S × ∇𝑓 = ∮
+𝐶
+𝑑l𝑓(33)
+∫
+𝑆
+𝑑S ⋅ ∇ × A = ∮
+𝐶
+𝑑l ⋅ A(34)
+∫
+𝑆
+(𝑑S × ∇) × A = ∮
+𝐶
+𝑑l × A(35)
+∫
+𝑆
+𝑑S ⋅ (∇𝑓 × ∇𝑔) = ∮
+𝐶
+𝑓𝑑𝑔 = − ∮
+𝐶
+𝑔 𝑑𝑓(36)
+DIFFERENTIAL OPERATORS IN CURVILINEAR COORDINATES5
+Cylindrical Coordinates (𝑟, 𝜙, 𝑧)
+Differential volume Line element
+𝑑𝜏 = 𝑟 𝑑𝑟 𝑑𝜙 𝑑𝑧 𝑑𝐥 = 𝑑𝑟 𝐫 + 𝑟𝑑𝜙 𝛟 + 𝑑𝑧 𝐳
+Relation to cartesian coordinates
+𝑥 = 𝑟 cos 𝜙 𝐱 = cos 𝜙 𝐫 −sin 𝜙 𝛟
+𝑦 = 𝑟 sin 𝜙 𝐲 = sin 𝜙 𝐫 +cos 𝜙 𝛟
+𝑧 = 𝑧 𝐳 = 𝐳
+Divergence
+∇ ⋅ A = 1
+𝑟
+∂
+∂𝑟(𝑟𝐴𝑟) + 1
+𝑟
+∂𝐴𝜙
+∂𝜙 + ∂𝐴𝑧
+∂𝑧
+Gradient
+(∇𝑓)𝑟 = ∂𝑓
+∂𝑟 ; (∇𝑓) 𝜙 = 1
+𝑟
+∂𝑓
+∂𝜙; (∇𝑓) 𝑧 = ∂𝑓
+∂𝑧
+6
+===== PAGE 8 =====
+Curl
+(∇ × A)𝑟 = 1
+𝑟
+∂𝐴𝑧
+∂𝜙 −
+∂𝐴𝜙
+∂𝑧
+(∇ × A)𝜙 = ∂𝐴𝑟
+∂𝑧 − ∂𝐴𝑧
+∂𝑟
+(∇ × A)𝑧 = 1
+𝑟
+∂
+∂𝑟(𝑟𝐴𝜙) − 1
+𝑟
+∂𝐴𝑟
+∂𝜙
+Laplacian
+∇2𝑓 = 1
+𝑟
+∂
+∂𝑟 (𝑟∂𝑓
+∂𝑟 ) + 1
+𝑟2
+∂2𝑓
+∂𝜙2 + ∂2𝑓
+∂𝑧2
+Laplacian of a vector
+(∇2A)𝑟 = ∇2𝐴𝑟 − 2
+𝑟2
+∂𝐴𝜙
+∂𝜙 − 𝐴𝑟
+𝑟2
+(∇2A)𝜙 = ∇2𝐴𝜙 + 2
+𝑟2
+∂𝐴𝑟
+∂𝜙 −
+𝐴𝜙
+𝑟2
+(∇2A)𝑧 = ∇2𝐴𝑧
+Components of (A ⋅ ∇)B
+(A ⋅ ∇B)𝑟 = 𝐴𝑟
+∂𝐵𝑟
+∂𝑟 +
+𝐴𝜙
+𝑟
+∂𝐵𝑟
+∂𝜙 + 𝐴𝑧
+∂𝐵𝑟
+∂𝑧 −
+𝐴𝜙𝐵𝜙
+𝑟
+(A ⋅ ∇B)𝜙 = 𝐴𝑟
+∂𝐵𝜙
+∂𝑟 +
+𝐴𝜙
+𝑟
+∂𝐵𝜙
+∂𝜙 + 𝐴𝑧
+∂𝐵𝜙
+∂𝑧 +
+𝐴𝜙𝐵𝑟
+𝑟
+(A ⋅ ∇B)𝑧 = 𝐴𝑟
+∂𝐵𝑧
+∂𝑟 +
+𝐴𝜙
+𝑟
+∂𝐵𝑧
+∂𝜙 + 𝐴𝑧
+∂𝐵𝑧
+∂𝑧
+Divergence of a tensor
+(∇ ⋅ 𝙏)𝑟 = 1
+𝑟
+∂
+∂𝑟(𝑟𝑇𝑟𝑟) + 1
+𝑟
+∂𝑇𝜙𝑟
+∂𝜙 + ∂𝑇𝑧𝑟
+∂𝑧 −
+𝑇𝜙𝜙
+𝑟
+(∇ ⋅ 𝙏)𝜙 = 1
+𝑟
+∂
+∂𝑟(𝑟𝑇𝑟𝜙) + 1
+𝑟
+∂𝑇𝜙𝜙
+∂𝜙 +
+∂𝑇𝑧𝜙
+∂𝑧 +
+𝑇𝜙𝑟
+𝑟
+(∇ ⋅ 𝙏)𝑧 = 1
+𝑟
+∂
+∂𝑟(𝑟𝑇𝑟𝑧) + 1
+𝑟
+∂𝑇𝜙𝑧
+∂𝜙 + ∂𝑇𝑧𝑧
+∂𝑧
+7
+===== PAGE 9 =====
+Spherical Coordinates (𝑟, 𝜃, 𝜙)
+Differential volume Line element
+𝑑𝜏 = 𝑟2 sin 𝜃 𝑑𝑟 𝑑𝜃 𝑑𝜙 𝑑𝐥 = 𝑑𝑟 𝐫 + 𝑟𝑑𝜃 𝛉 + 𝑟sin 𝜃𝑑𝜙 𝛟
+Relation to cartesian coordinates
+𝑥 = 𝑟 sin 𝜃 cos 𝜙 𝐱 = sin 𝜃 cos 𝜙 𝐫 +cos 𝜃 cos 𝜙 𝛉 −sin 𝜙 𝛟
+𝑦 = 𝑟 sin 𝜃 sin 𝜙 𝐲 = sin 𝜃 sin 𝜙 𝐫 +cos 𝜃 sin 𝜙 𝛉 +cos 𝜙 𝛟
+𝑧 = 𝑟 cos 𝜃 𝐳 = cos 𝜃 𝐫 −sin 𝜃 𝛉
+Divergence
+∇ ⋅ A = 1
+𝑟2
+∂
+∂𝑟(𝑟2𝐴𝑟) + 1
+𝑟sin 𝜃
+∂
+∂𝜃 (sin 𝜃𝐴𝜃) + 1
+𝑟sin 𝜃
+∂𝐴𝜙
+∂𝜙
+Gradient
+(∇𝑓)𝑟 = ∂𝑓
+∂𝑟 ; (∇𝑓) 𝜃 = 1
+𝑟
+∂𝑓
+∂𝜃 ; (∇𝑓) 𝜙 = 1
+𝑟sin 𝜃
+∂𝑓
+∂𝜙
+Curl
+(∇ × A)𝑟 = 1
+𝑟sin 𝜃
+∂
+∂𝜃 (sin 𝜃𝐴𝜙) − 1
+𝑟sin 𝜃
+∂𝐴𝜃
+∂𝜙
+(∇ × A)𝜃 = 1
+𝑟sin 𝜃
+∂𝐴𝑟
+∂𝜙 − 1
+𝑟
+∂
+∂𝑟(𝑟𝐴𝜙)
+(∇ × A)𝜙 = 1
+𝑟
+∂
+∂𝑟(𝑟𝐴𝜃) − 1
+𝑟
+∂𝐴𝑟
+∂𝜃
+Laplacian
+∇2𝑓 = 1
+𝑟2
+∂
+∂𝑟 (𝑟2 ∂𝑓
+∂𝑟 ) + 1
+𝑟2 sin 𝜃
+∂
+∂𝜃 (sin 𝜃 ∂𝑓
+∂𝜃 ) + 1
+𝑟2 sin2 𝜃
+∂2𝑓
+∂𝜙2
+Laplacian of a vector
+(∇2A)𝑟 = ∇2𝐴𝑟 − 2𝐴𝑟
+𝑟2 − 2
+𝑟2
+∂𝐴𝜃
+∂𝜃 − 2 cot 𝜃𝐴𝜃
+𝑟2 − 2
+𝑟2 sin 𝜃
+∂𝐴𝜙
+∂𝜙
+(∇2A)𝜃 = ∇2𝐴𝜃 + 2
+𝑟2
+∂𝐴𝑟
+∂𝜃 − 𝐴𝜃
+𝑟2 sin2 𝜃
+− 2 cos 𝜃
+𝑟2 sin2 𝜃
+∂𝐴𝜙
+∂𝜙
+(∇2A)𝜙 = ∇2𝐴𝜙 −
+𝐴𝜙
+𝑟2 sin2 𝜃
++ 2
+𝑟2 sin 𝜃
+∂𝐴𝑟
+∂𝜙 + 2 cos 𝜃
+𝑟2 sin2 𝜃
+∂𝐴𝜃
+∂𝜙
+8
+===== PAGE 10 =====
+Components of (A ⋅ ∇)B
+(A ⋅ ∇B)𝑟 = 𝐴𝑟
+∂𝐵𝑟
+∂𝑟 + 𝐴𝜃
+𝑟
+∂𝐵𝑟
+∂𝜃 +
+𝐴𝜙
+𝑟sin 𝜃
+∂𝐵𝑟
+∂𝜙 −
+𝐴𝜃𝐵𝜃 + 𝐴𝜙𝐵𝜙
+𝑟
+(A ⋅ ∇B)𝜃 = 𝐴𝑟
+∂𝐵𝜃
+∂𝑟 + 𝐴𝜃
+𝑟
+∂𝐵𝜃
+∂𝜃 +
+𝐴𝜙
+𝑟sin 𝜃
+∂𝐵𝜃
+∂𝜙 + 𝐴𝜃𝐵𝑟
+𝑟 −
+cot 𝜃𝐴𝜙𝐵𝜙
+𝑟
+(A ⋅ ∇B)𝜙 = 𝐴𝑟
+∂𝐵𝜙
+∂𝑟 + 𝐴𝜃
+𝑟
+∂𝐵𝜙
+∂𝜃 +
+𝐴𝜙
+𝑟sin 𝜃
+∂𝐵𝜙
+∂𝜙 +
+𝐴𝜙𝐵𝑟
+𝑟 +
+cot 𝜃𝐴𝜙𝐵𝜃
+𝑟
+Divergence of a tensor
+(∇ ⋅ 𝙏)𝑟 = 1
+𝑟2
+∂
+∂𝑟(𝑟2𝑇𝑟𝑟) + 1
+𝑟sin 𝜃
+∂
+∂𝜃(sin 𝜃𝑇𝜃𝑟)
++ 1
+𝑟sin 𝜃
+∂𝑇𝜙𝑟
+∂𝜙 −
+𝑇𝜃𝜃 + 𝑇𝜙𝜙
+𝑟
+(∇ ⋅ 𝙏)𝜃 = 1
+𝑟2
+∂
+∂𝑟(𝑟2𝑇𝑟𝜃) + 1
+𝑟sin 𝜃
+∂
+∂𝜃 (sin 𝜃𝑇𝜃𝜃)
++ 1
+𝑟sin 𝜃
+∂𝑇𝜙𝜃
+∂𝜙 + 𝑇𝜃𝑟
+𝑟 −
+cot 𝜃𝑇𝜙𝜙
+𝑟
+(∇ ⋅ 𝙏)𝜙 = 1
+𝑟2
+∂
+∂𝑟(𝑟2𝑇𝑟𝜙) + 1
+𝑟sin 𝜃
+∂
+∂𝜃 (sin 𝜃𝑇𝜃𝜙)
++ 1
+𝑟sin 𝜃
+∂𝑇𝜙𝜙
+∂𝜙 +
+𝑇𝜙𝑟
+𝑟 +
+cot 𝜃𝑇𝜙𝜃
+𝑟
+9
+===== PAGE 11 =====
+DIMENSIONS AND UNITS
+To get the value of a quantity in Gaussian units, multiply the value expressed
+in SI units by the conversion factor. Multiples of 3 in the conversion factors
+result from approximating the speed of light 𝑐 = 2.9979 × 10 10 cm/sec ≈
+3 × 1010 cm/sec and 𝜇0 = 4𝜋 × 10−7.
+Physical
+Quantitiy
+Sym-
+bol
+Dimensions
+SI Gaussian SI Units Conversion
+Factor
+Gaussian
+Units
+Capaci-
+tance 𝐶 𝑡2𝑞2
+𝑚ℓ2
+ℓ farad 9 × 1011 cm
+Charge 𝑞 𝑞 𝑚1/2ℓ3/2
+𝑡
+coulomb 3 × 109 statcoulomb
+Charge
+density 𝜌 𝑞
+ℓ3
+𝑚1/2
+ℓ3/2𝑡
+coulomb
+/m3 3 × 103 statcoulomb
+/cm3
+Conduc-
+tance
+𝑡𝑞2
+𝑚ℓ2
+ℓ
+𝑡
+siemens 9 × 1011 cm/sec
+Conduc-
+tivity 𝜎 𝑡𝑞2
+𝑚ℓ3
+1
+𝑡
+siemens /m 9 × 109 sec−1
+Current 𝐼, 𝑖 𝑞
+𝑡
+𝑚1/2ℓ3/2
+𝑡2
+ampere 3 × 109 statampere
+Current
+density J, j 𝑞
+ℓ2𝑡
+𝑚1/2
+ℓ1/2𝑡2
+ampere /m2 3 × 105 statampere
+/cm2
+Density 𝜌 𝑚
+ℓ3
+𝑚
+ℓ3
+kg/m3 10−3 g/cm3
+Diffusivity 𝒟, 𝜈𝑚
+ℓ2
+𝑡
+ℓ2
+𝑡
+m2/s 104 cm2/s
+Displace-
+ment D 𝑞
+ℓ2
+𝑚1/2
+ℓ1/2𝑡
+coulomb
+/m2 12𝜋 × 105 statcoulomb
+/cm2
+Electric
+field E 𝑚ℓ
+𝑡2𝑞
+𝑚1/2
+ℓ1/2𝑡
+volt/m 1
+3 × 10−4 statvolt/cm
+Electro-
+motance
+ℰ,
+Emf
+𝑚ℓ2
+𝑡2𝑞
+𝑚1/2ℓ1/2
+𝑡
+volt 1
+3 × 10−2 statvolt
+Energy 𝑈, 𝑊 𝑚ℓ2
+𝑡2
+𝑚ℓ2
+𝑡2
+joule 107 erg
+10
+===== PAGE 12 =====
+Physical
+Quantitiy
+Sym-
+bol
+Dimensions
+SI Gaussian SI Units Conversion
+Factor
+Gaussian
+Units
+Energy
+Density 𝑤, 𝜖 𝑚
+ℓ𝑡2
+𝑚
+ℓ𝑡2
+joule/m3 10 erg/cm3
+Force F 𝑚ℓ
+𝑡2
+𝑚ℓ
+𝑡2
+newton 105 dyne
+Frequency 𝑓, 𝜈 1
+𝑡
+1
+𝑡
+hertz 1 hertz
+Impedance 𝑍 𝑚ℓ2
+𝑡𝑞2
+𝑡
+ℓ
+ohm 1
+9 × 10−11 sec/cm
+Inductance 𝐿 𝑚ℓ2
+𝑞2
+𝑡2
+ℓ
+henry 1
+9 × 10−11 sec2/cm
+Length ℓ ℓ ℓ meter (m) 102 centimeter
+(cm)
+Magnetic
+intensity H 𝑞
+ℓ𝑡
+𝑚1/2
+ℓ1/2𝑡
+ampere–
+turn/m 4𝜋 × 10−3 oersted
+Magnetic
+flux Φ 𝑚ℓ2
+𝑡𝑞
+𝑚1/2ℓ3/2
+𝑡
+weber 108 maxwell
+Magnetic
+induction B 𝑚
+𝑡𝑞
+𝑚1/2
+ℓ1/2𝑡
+tesla 104 gauss
+Magnetic
+moment 𝑚, 𝜇 𝑙2𝑞
+𝑡
+𝑚1/2𝑙5/2
+𝑡
+ampere–m2 103 oersted–cm3
+Magnet-
+ization M 𝑞
+ℓ𝑡
+𝑚1/2
+ℓ1/2𝑡
+ampere–
+turn/m 4𝜋 × 10−3 oersted
+Magneto-
+motance
+ℳ,
+Mmf
+𝑞
+𝑡
+𝑚1/2ℓ1/2
+𝑡2
+ampere–
+turn
+4𝜋
+10
+gilbert
+Mass 𝑚, 𝑀 𝑚 𝑚 kilogram
+(kg) 103 gram (g)
+Momentum p, P 𝑚ℓ
+𝑡
+𝑚ℓ
+𝑡
+kg–m/s 105 g–cm/sec
+Momentum
+density
+𝑚
+ℓ2𝑡
+𝑚
+ℓ2𝑡
+kg/m2–s 10−1 g/cm2–sec
+Permeability 𝜇 𝑚ℓ
+𝑞2
+1 henry/m 1
+4𝜋× 107 —
+11
+===== PAGE 13 =====
+Physical
+Quantitiy
+Sym-
+bol
+Dimensions
+SI Gaussian SI Units Conversion
+Factor
+Gaussian
+Units
+Permittivity 𝜖 𝑡2𝑞2
+𝑚ℓ3
+1 farad/m 36𝜋 × 109 —
+Polarization P 𝑞
+ℓ2
+𝑚1/2
+ℓ1/2𝑡
+coulomb
+/m2 3 × 105 statcoulomb
+/cm2
+Potential 𝑉 , 𝜙 𝑚ℓ2
+𝑡2𝑞
+𝑚1/2ℓ1/2
+𝑡
+volt 1
+3 × 10−2 statvolt
+Power 𝑃 𝑚ℓ2
+𝑡3
+𝑚ℓ2
+𝑡3
+watt 107 erg/sec
+Power
+density
+𝑚
+ℓ𝑡3
+𝑚
+ℓ𝑡3
+watt/m3 10 erg/cm3–sec
+Pressure 𝑝, 𝑃 𝑚
+ℓ𝑡2
+𝑚
+ℓ𝑡2
+pascal 10 dyne/cm2
+Reluctance ℛ 𝑞2
+𝑚ℓ2
+1
+ℓ
+ampere–
+turn /weber 4𝜋 × 10−9 cm−1
+Resistance 𝑅 𝑚ℓ2
+𝑡𝑞2
+𝑡
+ℓ
+ohm 1
+9 × 10−11 sec/cm
+Resistivity 𝜂, 𝜌 𝑚ℓ3
+𝑡𝑞2
+𝑡 ohm–m 1
+9 × 10−9 sec
+Thermal
+conduc-
+tivity
+𝜅, 𝑘 𝑚ℓ
+𝑡3
+𝑚ℓ
+𝑡3
+watt/m–deg
+(K) 105 erg/cm–sec–
+deg (K)
+Time 𝑡 𝑡 𝑡 second (s) 1 second (sec)
+Vector
+potential A 𝑚ℓ
+𝑡𝑞
+𝑚1/2ℓ1/2
+𝑡
+weber/m 106 gauss–cm
+Velocity v ℓ
+𝑡
+ℓ
+𝑡
+m/s 102 cm/sec
+Viscosity 𝜂, 𝜇 𝑚
+ℓ𝑡
+𝑚
+ℓ𝑡
+kg/m–s 10 poise
+Vorticity 𝜁 1
+𝑡
+1
+𝑡
+s−1 1 sec−1
+Work 𝑊 𝑚ℓ2
+𝑡2
+𝑚ℓ2
+𝑡2
+joule 107 erg
+12
+===== PAGE 14 =====
+INTERNATIONAL SYSTEM (SI) NOMENCLATURE6
+Physical
+Quantity
+Name
+of Unit
+Symbol
+for Unit
+*length meter m
+*mass kilogram kg
+*time second s
+*current ampere A
+*temperature kelvin K
+*amount of
+substance mole mol
+*luminous
+intensity candela cd
+†plane angle radian rad
+†solid angle steradian sr
+frequency hertz Hz
+energy joule J
+force newton N
+pressure pascal Pa
+power watt W
+electric
+charge coulomb C
+electric
+potential volt V
+*SI base unit †Supplementary unit
+Physical Quantity Name
+of Unit
+Symbol
+for Unit
+electric resistance ohm Ω
+electric
+conductance siemens S
+electric
+capacitance farad F
+magnetic flux weber Wb
+magnetic
+inductance henry H
+magnetic intensity tesla T
+luminous flux lumen lm
+illuminance lux lx
+‡activity (of a
+radioactive
+source)
+becquerel Bq
+§absorbed dose (of
+ionizing
+radiation)
+gray Gy
+‡Common non-SI unit is curie (Ci):
+1 Ci = 3.7 × 1010 Bq
+1 Bq = 1 decay per sec
+§Common non-SI unit is rad:
+100 rad = 1 Gy = 1 J / kG
+METRIC PREFIXES
+Multiple Prefix Symbol
+10−1 deci d
+10−2 centi c
+10−3 milli m
+10−6 micro μ
+10−9 nano n
+10−12 pico p
+10−15 femto f
+10−18 atto a
+Multiple Prefix Symbol
+10 deca da
+102 hecto h
+103 kilo k
+106 mega M
+109 giga G
+1012 tera T
+1015 peta P
+1018 exa E
+13
+===== PAGE 15 =====
+PHYSICAL CONSTANTS (SI)7
+Physical Quantitiy Symbol Value Units
+Boltzmann constant 𝑘 1.38065 × 10−23 J K−1
+Elementary charge 𝑒 1.60218 × 10−19 C
+Electron mass 𝑚𝑒 9.10938 × 10−31 kg
+Proton mass 𝑚𝑝 1.67262 × 10−27 kg
+Gravitational constant 𝐺 6.67430 × 10−11 m3s−2kg−1
+Planck constant ℎ
+ℏ = ℎ/2𝜋
+6.62607 × 10−34
+1.05457 × 10−34
+J s
+J s
+Speed of light in vacuum 𝑐 2.99792 × 108 m s−1
+Permittivity of free space 𝜖0 8.85419 × 10−12 F m−1
+Permeability of free space 𝜇0 1.25664 × 10−6 H m−1
+Proton/electron mass ratio 𝑚𝑝/𝑚𝑒 1.83615 × 103
+Electron charge/mass ratio 𝑒/𝑚𝑒 1.75882 × 1011 C kg−1
+Rydberg constant 𝑅∞ = 𝑚𝑒4
+8𝜖02𝑐ℎ3 1.09737 × 107 m−1
+Bohr radius 𝑎∞ =
+𝜖0ℎ2/𝜋𝑚𝑒2
+5.29177 × 10−11 m
+Atomic cross section 𝜋𝑎∞
+2 8.79736 × 10−21 m2
+Classical electron radius 𝑟𝑒 =
+𝑒2/4𝜋𝜖0𝑚𝑐2
+2.81794 × 10−15 m
+Thomson cross section (8𝜋/3)𝑟𝑒
+2 6.65246 × 10−29 m2
+Compton wavelength of
+electron
+ℎ/𝑚𝑒𝑐
+ℏ/𝑚𝑒𝑐
+2.42631 × 10−12
+3.86159 × 10−13
+m
+m
+Fine-structure constant 𝛼 = 𝑒2/2𝜖0ℎ𝑐
+𝛼−1
+7.29735 × 10−3
+137.036
+First radiation constant 𝑐1 = 2𝜋ℎ𝑐2 3.74177 × 10−16 W m2
+Second radiation constant 𝑐2 = ℎ𝑐/𝑘 1.43878 × 10−2 m K
+Stefan-Boltzmann
+constant
+𝜎 5.67037 × 10−8 W m−2K−4
+Wavelength associated
+with 1 eV
+𝜆0 = ℎ𝑐/𝑒 1.23984 × 10−6 m
+14
+===== PAGE 16 =====
+Physical Quantitiy Symbol Value Units
+Frequency associated with
+1 eV
+𝜈0 = 𝑒/ℎ 2.41799 × 1014 Hz
+Wave number associated
+with 1 eV
+𝑘0 = 𝑒/ℎ𝑐 8.06554 × 105 m−1
+Energy associated with
+with 1 eV
+ℎ𝜈0 1.60218 × 10−19 J
+Energy associated with
+1 m−1
+ℎ𝑐 1.98645 × 10−25 J
+Energy associated with
+1 Rydberg
+𝑚𝑒3/8𝜖0
+2ℎ2 13.6057 eV
+Energy associated with
+1 Kelvin
+𝑘/𝑒 8.61733 × 10−5 eV
+Temperature associated
+with 1 eV
+𝑒/𝑘 1.16045 × 104 K
+Avogadro number 𝑁𝐴 6.02214 × 1023 mol−1
+Faraday constant 𝐹 = 𝑁 𝐴𝑒 9.64853 × 104 C mol−1
+Gas constant 𝑅 = 𝑁𝐴𝑘 8.31446 J K−1mol−1
+Loschmidt’s number
+(no. density at STP)
+𝑛0 2.68678 × 1025 m−3
+Atomic mass unit 𝑚𝑢 1.66054 × 10−27 kg
+Standard temperature 𝑇0 273.15 K
+Atmospheric pressure 𝑝0 = 𝑛0𝑘𝑇0 1.01325 × 105 Pa
+Pressure of 1 mm Hg
+(1 torr)
+1.33322 × 102 Pa
+Molar volume at STP 𝑉0 = 𝑅𝑇0/𝑝0 2.24140 × 10−2 m3/mol
+Molar weight of air 𝑀air 2.89647 × 10−2 kg/mol
+calorie (cal) 4.184 J
+Gravitational acceleration 𝑔 9.80665 m s−2
+15
+===== PAGE 17 =====
+PHYSICAL CONSTANTS (CGS)7
+Physical Quantitiy Symbol Value Units
+Boltzmann constant 𝑘 1.38065 × 10−16 erg/deg (K)
+Elementary charge 𝑒 4.80320 × 10−10 statcoulomb
+(statcoul)
+Electron mass 𝑚𝑒 9.10938 × 10−28 g
+Proton mass 𝑚𝑝 1.67262 × 10−24 g
+Gravitational constant 𝐺 6.67430 × 10−8 dyne-
+cm2/g2
+Planck constant ℎ
+ℏ = ℎ/2𝜋
+6.62607 × 10−27
+1.05457 × 10−27
+erg-sec
+erg-sec
+Speed of light in vacuum 𝑐 2.99792 × 1010 cm/sec
+Proton/electron mass ratio 𝑚𝑝/𝑚𝑒 1.83615 × 103
+Electron charge/mass ratio 𝑒/𝑚𝑒 5.27281 × 1017 statcoul/g
+Rydberg constant 𝑅∞ = 2𝜋2𝑚𝑒4
+𝑐ℎ3 1.09737 × 105 cm−1
+Bohr radius 𝑎∞ = ℏ2/𝑚𝑒2 5.29177 × 10−9 cm
+Atomic cross section 𝜋𝑎∞
+2 8.79736 × 10−17 cm2
+Classical electron radius 𝑟𝑒 = 𝑒2/𝑚𝑐2 2.81794 × 10−13 cm
+Thomson cross section (8𝜋/3)𝑟𝑒
+2 6.65246 × 10−25 cm2
+Compton wavelength of
+electron
+ℎ/𝑚𝑒𝑐
+ℏ/𝑚𝑒𝑐
+2.42631 × 10−10
+3.86159 × 10−11
+cm
+cm
+Fine-structure constant 𝛼 = 𝑒2/ℏ𝑐
+𝛼−1
+7.29735 × 10−3
+137.036
+First radiation constant 𝑐1 = 2𝜋ℎ𝑐2 3.74177 × 10−5 erg-
+cm2/sec
+Second radiation constant 𝑐2 = ℎ𝑐/𝑘 1.43878 cm-deg (K)
+Stefan-Boltzmann
+constant
+𝜎 5.67037 × 10−5 erg/cm2-
+sec-deg4
+Wavelength associated
+with 1 eV
+𝜆0 1.23984 × 10−4 cm
+Frequency associated with
+1 eV
+𝜈0 2.41799 × 1014 Hz
+16
+===== PAGE 18 =====
+Physical Quantitiy Symbol Value Units
+Wave number associated
+with 1 eV
+𝑘0 8.06554 × 103 cm−1
+Energy associated with
+1 eV
+1.60218 × 10−12 erg
+Energy associated with
+1 cm−1
+1.98645 × 10−16 erg
+Energy associated with
+1 Rydberg
+13.6057 eV
+Energy associated with
+1 deg Kelvin
+8.61733 × 10−5 eV
+Temperature associated
+with 1 eV
+1.16045 × 104 deg (K)
+Avogadro number 𝑁𝐴 6.02214 × 1023 mol−1
+Faraday constant 𝐹 = 𝑁 𝐴𝑒 2.89256 × 1014 statcoul/mol
+Gas constant 𝑅 = 𝑁𝐴𝑘 8.31446 × 107 erg/deg-
+mol
+Loschmidt’s number
+(no. density at STP)
+𝑛0 2.68678 × 1019 cm−3
+Atomic mass unit 𝑚𝑢 1.66054 × 10−24 g
+Standard temperature 𝑇0 273.15 deg (K)
+Atmospheric pressure 𝑝0 = 𝑛0𝑘𝑇0 1.01325 × 106 dyne/cm2
+Pressure of 1 mm Hg
+(1 torr)
+1.33322 × 103 dyne/cm2
+Molar volume at STP 𝑉0 = 𝑅𝑇0/𝑝0 2.24140 × 104 cm3/mol
+Molar weight of air 𝑀air 28.9647 g/mol
+calorie (cal) 4.184 × 107 erg
+Gravitational acceleration 𝑔 980.665 cm/sec2
+17
+===== PAGE 19 =====
+FORMULA CONVERSION8
+Here 𝛼 = 102 cm m−1, 𝛽 = 107 erg J−1, 𝜖0 = 8.8542 × 10−12 F m−1, 𝜇0 = 4𝜋 ×
+10−7 H m−1, 𝑐 = (𝜖0𝜇0)−1/2 = 2.9979 × 108 m s−1, and ℏ = 1.0546 × 10−34 J s.
+To derive a dimensionally correct SI formula from one expressed in Gaussian
+units, substitute for each quantity according to ̄𝑄 = ̄𝑘𝑄, where ̄𝑘 is the co-
+efficient in the second column of the table corresponding to 𝑄 (overbars de-
+note variables expressed in Gaussian units). Thus, the formula ̄ 𝑎0 = ̄ℏ2/ ̄ 𝑚 ̄ 𝑒2
+for the Bohr radius becomes 𝛼𝑎0 = (ℏ𝛽)2/[(𝑚𝛽/𝛼2) (𝑒2𝛼𝛽/4𝜋𝜖0)], or 𝑎0 =
+𝜖0ℎ2/𝜋𝑚𝑒2. To go from SI to natural units in which ℏ = 𝑐 = 1 (distinguished
+by a circumflex), use 𝑄 = ̂𝑘−1 ̂𝑄, where ̂𝑘 is the coefficient corresponding to
+𝑄 in the third column. Thus ̂ 𝑎0 = 4𝜋𝜖0ℏ2/[( ̂ 𝑚ℏ/𝑐)( ̂ 𝑒2𝜖0ℏ𝑐)] = 4𝜋/ ̂ 𝑚 ̂ 𝑒2. (In
+transforming from SI units, do not substitute for 𝜖0, 𝜇0, or 𝑐.)
+Physical Quantity Gaussian Units to SI Natural Units to SI
+Capacitance 𝛼/4𝜋𝜖0 𝜖0
+−1
+Charge (𝛼𝛽/4𝜋𝜖0)1/2 (𝜖0ℏ𝑐)−1/2
+Charge density (𝛽/4𝜋𝛼5𝜖0)1/2 (𝜖0ℏ𝑐)−1/2
+Current (𝛼𝛽/4𝜋𝜖0)1/2 (𝜇0/ℏ𝑐)1/2
+Current density (𝛽/4𝜋𝛼3𝜖0)1/2 (𝜇0/ℏ𝑐)1/2
+Electric field (4𝜋𝛽𝜖0/𝛼3)1/2 (𝜖0/ℏ𝑐)1/2
+Electric potential (4𝜋𝛽𝜖0/𝛼)1/2 (𝜖0/ℏ𝑐)1/2
+Electric conductivity (4𝜋𝜖0)−1 𝜖0
+−1
+Energy 𝛽 (ℏ𝑐)−1
+Energy density 𝛽/𝛼3 (ℏ𝑐)−1
+Force 𝛽/𝛼 (ℏ𝑐)−1
+Frequency 1 𝑐−1
+Inductance 4𝜋𝜖0/𝛼 𝜇0
+−1
+Length 𝛼 1
+Magnetic induction (4𝜋𝛽/𝛼3𝜇0)1/2 (𝜇0ℏ𝑐)−1/2
+Magnetic intensity (4𝜋𝜇0𝛽/𝛼3)1/2 (𝜇0/ℏ𝑐)1/2
+Mass 𝛽/𝛼2 𝑐/ℏ
+Momentum 𝛽/𝛼 ℏ−1
+Power 𝛽 (ℏ𝑐2)−1
+Pressure 𝛽/𝛼3 (ℏ𝑐)−1
+Resistance 4𝜋𝜖0/𝛼 (𝜖0/𝜇0)1/2
+Time 1 𝑐
+Velocity 𝛼 𝑐−1
+18
+===== PAGE 20 =====
+MAXWELL’S EQUATIONS
+Name or Description SI Gaussian
+Faraday’s law ∇ × E = −∂B
+∂𝑡 ∇ × E = −1
+𝑐
+∂B
+∂𝑡
+Ampère’s law ∇ × 𝐇 = ∂D
+∂𝑡 + 𝐉 ∇ × 𝐇 = 1
+𝑐
+∂D
+∂𝑡 + 4𝜋
+𝑐 𝐉
+Poisson equation ∇ ⋅ D = 𝜌 ∇ ⋅ D = 4𝜋𝜌
+[Absence of magnetic
+monopoles]
+∇ ⋅ B = 0 ∇ ⋅ B = 0
+Lorentz force on charge 𝑞 𝑞 (E + 𝐯 ×B) 𝑞 (E + 1
+𝑐𝐯 × B)
+Constitutive relations D = 𝜖E D = 𝜖E
+B = 𝜇𝐇 B = 𝜇𝐇
+In empty space, 𝜇 ≈ 𝜇 0 = 4𝜋 × 10−7 H m−1 (Gaussian units: 𝜇 ≈ 1 ) and
+𝜖 ≈ 𝜖 0 = 8.8542 × 10−12 F m−1 (Gaussian: 𝜖 ≈ 1) . In collisionless plasma,
+when frequency goes to zero, dielectric tensor goes to infinity. In magnetized
+plasma, however, if one considers only the motion of particles perpendic-
+ular to the magnetic field, these drift motions will result in a finite perpen-
+dicular component of dielectric tensor 𝜖⟂/𝜖0 = 1 + 36𝜋 × 10 9𝜌/𝐵2 (SI)
+= 1 + 4𝜋𝜌𝑐2/𝐵2 = 1 + 𝑐2/𝑣2
+𝐴 (Gaussian), where 𝜌 is the mass density.
+The electromagnetic energy in volume 𝑉 is given by
+𝑊 = 1
+2 ∫
+𝑉
+𝑑𝑉 (𝐇 ⋅B + E ⋅ D) (SI)
+= 1
+8𝜋 ∫
+𝑉
+𝑑𝑉 (𝐇 ⋅B + E ⋅ D) (Gaussian).
+Poynting’s theorem is
+∂𝑊
+∂𝑡 + ∫
+𝑆
+𝐍 ⋅ 𝑑𝐒 = − ∫
+𝑉
+𝑑𝑉 𝐉 ⋅E,
+where 𝑆 is the closed surface bounding 𝑉 and the Poynting vector (energy
+flux across 𝑆) is given by 𝐍 = E × 𝐇 (SI) or 𝐍 = 𝑐E × 𝐇/4𝜋 (Gaussian).
+19
+===== PAGE 21 =====
+ELECTRICITY AND MAGNETISM
+In the following, 𝜖 = dielectric permittivity, 𝜇 = permeability of conductor,
+𝜇′ = permeability of surrounding medium, 𝜎 = conductivity, 𝑓 = 𝜔/2𝜋 =
+radiation frequency, 𝜅𝑚 = 𝜇/𝜇0 and 𝜅𝑒 = 𝜖/𝜖0. Where subscripts are used,
+‘1’ denotes a conducting medium and ‘2’ a propagating (lossless dielectric)
+medium. All units are SI unless otherwise specified.
+Permittivity of free space 𝜖0 = 8.8542 × 10−12 F m−1
+Permeability of free space 𝜇0 = 4𝜋 × 10−7 H m−1
+= 1.2566 × 10−6 H m−1
+Resistance of free space 𝑅0 = (𝜇0/𝜖0)1/2 = 376.73 Ω
+Capacity of parallel plates of area 𝐴,
+separated by distance 𝑑
+𝐶 = 𝜖𝐴/𝑑
+Capacity of concentric cylinders of
+length 𝑙, radii 𝑎, 𝑏
+𝐶 = 2𝜋𝜖𝑙/ln(𝑏/𝑎)
+Capacity of concentric spheres of
+radii 𝑎, 𝑏
+𝐶 = 4𝜋𝜖𝑎𝑏/(𝑏 − 𝑎)
+Self-inductance of wire of length 𝑙,
+carrying uniform current
+𝐿 = 𝜇𝑙/8𝜋
+Mutual inductance of parallel wires
+of length 𝑙, radius 𝑎, separated by
+distance 𝑑
+𝐿 = (𝜇′𝑙/4𝜋)[1 + 4ln(𝑑/𝑎)]
+Inductance of circular loop of radius
+𝑏, made of wire of radius 𝑎, carrying
+uniform current
+𝐿 = 𝑏{𝜇′ [ln(8𝑏/𝑎) − 2]+ 𝜇/4}
+Relaxation time in a lossy medium 𝜏 = 𝜖/𝜎
+Skin depth in a lossy medium 𝛿 = (2/𝜔𝜇𝜎)1/2 = (𝜋𝑓𝜇𝜎)−1/2
+Wave impedance in a lossy medium 𝑍 = [𝜇/(𝜖 + 𝑖𝜎/𝜔)]
+1/2
+Transmission coefficient at
+conducting surface9 (good only for
+𝑇 ≪ 1)
+𝑇 = 4.22 × 10−4(𝑓𝜅𝑚1𝜅𝑒2/𝜎)1/2
+Field at distance 𝑟 from straight wire
+carrying current 𝐼 (amperes)
+𝐵𝜃 = 𝜇𝐼/2𝜋𝑟tesla
+= 0.2𝐼/𝑟gauss (𝑟 in cm)
+Field at distance 𝑧 along axis from
+circular loop of radius 𝑎 carrying
+current 𝐼
+𝐵𝑧 = 𝜇𝑎2𝐼/[2(𝑎2 + 𝑧2)3/2]
+20
+===== PAGE 22 =====
+ELECTROMAGNETIC FREQUENCY/WAVELENGTH BANDS10
+Frequency Range Wavelength Range
+Designation Lower Upper Lower Upper
+ULF* 30 Hz 10 Mm
+VF* 30 Hz 300 Hz 1 Mm 10 Mm
+ELF 300 Hz 3 kHz 100 km 1 Mm
+VLF 3 kHz 30 kHz 10 km 100 km
+LF 30 kHz 300 kHz 1 km 10 km
+MF 300 kHz 3 MHz 100 m 1 km
+HF 3 MHz 30 MHz 10 m 100 m
+VHF 30 MHz 300 MHz 1 m 10 m
+UHF 300 MHz 3 GHz 10 cm 1 m
+SHF† 3 GHz 30 GHz 1 cm 10 cm
+S 2.6 3.95 7.6 11.5
+G 3.95 5.85 5.1 7.6
+J 5.3 8.2 3.7 5.7
+H 7.05 10.0 3.0 4.25
+X 8.2 12.4 2.4 3.7
+M 10.0 15.0 2.0 3.0
+P 12.4 18.0 1.67 2.4
+K 18.0 26.5 1.1 1.67
+R 26.5 40.0 0.75 1.1
+EHF 30 GHz 300 GHz 1 mm 1 cm
+Submillimeter 300 GHz 3 THz 100 μm 1 mm
+Infrared 3 THz 430 THz 700 nm 100 μm
+Visible 430 THz 750 THz 400 nm 700 nm
+Ultraviolet 750 THz 30 PHz 10 nm 400 nm
+X Ray 30 PHz 3 EHz 100 pm 10 nm
+Gamma Ray 3 EHz 100 pm
+In spectroscopy the angstrom (Å) is sometimes used ( 1Å = 10−8 cm = 0.1nm).
+*The boundary between ULF and VF (voice frequencies) is variously defined.
+†The SHF (microwave) band is further subdivided approximately as shown. 11
+21
+===== PAGE 23 =====
+AC CIRCUITS
+For a resistance 𝑅, inductance 𝐿, and capacitance 𝐶 in series with a voltage
+source 𝑉 = 𝑉 0 exp(𝑖𝜔𝑡)(here 𝑖 = √−1), the current is given by 𝐼 = 𝑑𝑞/𝑑𝑡,
+where 𝑞 satisfies
+𝐿𝑑2𝑞
+𝑑𝑡2 + 𝑅𝑑𝑞
+𝑑𝑡 + 𝑞
+𝐶 = 𝑉 .
+Solutions are 𝑞(𝑡) = 𝑞 𝑠 + 𝑞𝑡, 𝐼(𝑡) = 𝐼 𝑠 + 𝐼𝑡, where the steady state is 𝐼𝑠 =
+𝑖𝜔𝑞𝑠 = 𝑉 /𝑍in terms of the impedance 𝑍 = 𝑅 + 𝑖(𝜔𝐿 − 1/𝜔𝐶)and 𝐼𝑡 = 𝑑𝑞𝑡/𝑑𝑡.
+For initial conditions 𝑞(0) ≡ 𝑞0 = ̄ 𝑞0 + 𝑞𝑠, 𝐼(0) ≡ 𝐼0, the transients can be of
+three types, depending on Δ = 𝑅2 − 4𝐿/𝐶:
+(a) Overdamped, Δ > 0.
+𝑞𝑡 = 𝐼0 + 𝛾+ ̄ 𝑞0
+𝛾+ − 𝛾−
+exp(−𝛾−𝑡) − 𝐼0 + 𝛾− ̄ 𝑞0
+𝛾+ − 𝛾−
+exp(−𝛾+𝑡),
+𝐼𝑡 = 𝛾+(𝐼0 + 𝛾− ̄ 𝑞0)
+𝛾+ − 𝛾−
+exp(−𝛾+𝑡) − 𝛾−(𝐼0 + 𝛾+ ̄ 𝑞0)
+𝛾+ − 𝛾−
+exp(−𝛾−𝑡).
+(b) Critically damped, Δ = 0.
+𝑞𝑡 = [ ̄ 𝑞0 + (𝐼0 + 𝛾𝑅 ̄ 𝑞0)𝑡]exp(−𝛾𝑅𝑡),
+𝐼𝑡 = [𝐼0 − (𝐼0 + 𝛾𝑅 ̄ 𝑞0)𝛾𝑅𝑡]exp(−𝛾𝑅𝑡).
+(c) Underdamped, Δ < 0.
+𝑞𝑡 = [𝛾𝑅 ̄ 𝑞0 + 𝐼0
+𝜔1
+sin 𝜔1𝑡 + ̄ 𝑞0 cos 𝜔1𝑡]exp(−𝛾𝑅𝑡),
+𝐼𝑡 = [𝐼0 cos 𝜔1𝑡 − (𝜔1
+2 + 𝛾𝑅
+2) ̄ 𝑞0 + 𝛾𝑅𝐼0
+𝜔1
+sin(𝜔1𝑡)]exp(−𝛾𝑅𝑡).
+Here 𝛾± = (𝑅 ± Δ1/2)/2𝐿, 𝛾𝑅 = 𝑅/2𝐿, and 𝜔1 = 𝜔 0(1 − 𝑅2𝐶/4𝐿)1/2, where
+𝜔0 = (𝐿𝐶)−1/2is the resonant frequency. At 𝜔 = 𝜔 0, 𝑍 = 𝑅 . The quality
+of the circuit is 𝑄 = 𝜔 0𝐿/𝑅. Instability results when 𝐿, 𝑅, 𝐶 are not all of the
+same sign.
+22
+===== PAGE 24 =====
+DIMENSIONLESS NUMBERS OF FLUID MECHANICS 12
+Name(s) Symbol Definition Significance
+Alfvén, Kármán Al, Ka 𝑉𝐴/𝑉 *(Magnetic force/
+inertial force)1/2
+Bond Bd (𝜌′ − 𝜌)𝐿2𝑔/Σ Gravitational force/
+surface tension
+Boussinesq B 𝑉 /(2𝑔𝑅)1/2 (Inertial force/
+gravitational force)1/2
+Brinkman Br 𝜇𝑉2/𝑘Δ𝑇 Viscous heat/conducted heat
+Capillary Cp 𝜇𝑉 /Σ Viscous force/surface tension
+Carnot Ca (𝑇2 − 𝑇1)/𝑇2 Theoretical Carnot cycle efficiency
+Cauchy, Hooke Cy, Hk 𝜌𝑉2/Γ = M2 Inertial force/compressibility force
+Chandrasekhar Ch 𝐵2𝐿2/𝜌𝜈𝜂 Magnetic force/dissipative forces
+Clausius Cl 𝐿𝑉3𝜌/𝑘Δ𝑇 Kinetic energy flow rate/heat
+conduction rate
+Cowling C (𝑉𝐴/𝑉 )2 = Al2 Magnetic force/inertial force
+Crispation Cr 𝜇𝜅/Σ𝐿 Effect of diffusion/effect of surface
+tension
+Dean D 𝐷3/2𝑉 /𝜈(2𝑟)1/2 Transverse flow due to
+curvature/longitudinal flow
+Drag coefficient 𝐶𝐷 (𝜌′ − 𝜌)𝐿𝑔/
+𝜌′𝑉2
+Drag force/inertial force
+Eckert E 𝑉2/𝑐𝑝Δ𝑇 Kinetic energy/change in thermal
+energy
+Ekman Ek (𝜈/2Ω𝐿2)1/2 =
+(Ro/Re)1/2
+(Viscous force/Coriolis force)1/2
+Euler Eu Δ𝑝/𝜌𝑉2 Pressure drop due to
+friction/dynamic pressure
+Froude Fr 𝑉 /(𝑔𝐿)1/2
+𝑉 /𝑁𝐿
+†(Inertial force/gravitational or
+buoyancy force)1/2
+Gay–Lussac Ga 1/𝛽Δ𝑇 Inverse of relative change in
+volume during heating
+Grashof Gr 𝑔𝐿3𝛽Δ𝑇/𝜈2 Buoyancy force/viscous force
+Hall coefficient 𝐶𝐻 𝜆/𝑟𝐿 Gyrofrequency/collision frequency
+Hartmann H 𝐵𝐿/(𝜇𝜂)1/2 =
+(Rm Re C)1/2
+(Magnetic force/dissipative
+force)1/2
+Knudsen Kn 𝜆/𝐿 Hydrodynamic time/collision time
+*(†) Also defined as the inverse (square) of the quantity shown. 23
+===== PAGE 25 =====
+Name(s) Symbol Definition Significance
+Lewis Le 𝜅/𝒟 *Thermal conduction/molecular
+diffusion
+Lorentz Lo 𝑉 /𝑐 Magnitude of relativistic effects
+Lundquist Lu 𝜇0𝐿𝑉𝐴/𝜂 =
+Al Rm
+𝐉 × 𝐁 force/resistive magnetic
+diffusion force
+Mach M 𝑉 /𝐶𝑆 Magnitude of compressibility
+effects
+Magnetic Mach Mm 𝑉 /𝑉𝐴 = Al−1 (Inertial force/magnetic force)1/2
+Magnetic
+Reynolds
+Rm 𝜇0𝐿𝑉 /𝜂 Flow velocity/magnetic diffusion
+velocity
+Newton Nt 𝐹/𝜌𝐿2𝑉2 Imposed force/inertial force
+Nusselt N 𝛼𝐿/𝑘 Total heat transfer/thermal
+conduction
+Péclet Pe 𝐿𝑉 /𝜅 Heat convection/heat conduction
+Poisseuille Po 𝐷2Δ𝑝/𝜇𝐿𝑉 Pressure force/viscous force
+Prandtl Pr 𝜈/𝜅 Momentum diffusion/heat
+diffusion
+Rayleigh Ra 𝑔𝐻3𝛽Δ𝑇/𝜈𝜅 Buoyancy force/diffusion force
+Reynolds Re 𝐿𝑉 /𝜈 Inertial force/viscous force
+Richardson Ri (𝑁𝐻/Δ𝑉 )2 Buoyancy effects/vertical shear
+effects
+Rossby Ro 𝑉 /2Ω𝐿sin Λ Inertial force/Coriolis force
+Schmidt Sc 𝜈/𝒟 Momentum diffusion/molecular
+diffusion
+Stanton St 𝛼/𝜌𝑐𝑝𝑉 Thermal conduction loss/heat
+capacity
+Stefan Sf 𝜎𝐿𝑇3/𝑘 Radiated heat/conducted heat
+Stokes S 𝜈/𝐿2𝑓 Viscous damping rate/vibration
+frequency
+Strouhal Sr 𝑓𝐿/𝑉 Vibration speed/flow velocity
+Taylor Ta (2Ω𝐿2/𝜈)2 Centrifugal force/viscous force
+𝑅1/2(Δ𝑅)3/2
+⋅(Ω/𝜈)
+(Centrifugal force/viscous force)1/2
+Thring,
+Boltzmann
+Th, Bo 𝜌𝑐𝑝𝑉 /𝜖𝜎𝑇3 Convective heat transport/radiative
+heat transport
+Weber W 𝜌𝐿𝑉2/Σ Inertial force/surface tension
+24
+===== PAGE 26 =====
+Nomenclature:
+𝐵 Magnetic induction
+𝐶𝑠, 𝑐 Speeds of sound, light
+𝑐𝑝 Specific heat at constant pressure (units m 2 s−2 K−1)
+𝐷 = 2𝑅 Pipe diameter
+𝐹 Imposed force
+𝑓 Vibration frequency
+𝑔 Gravitational acceleration
+𝐻, 𝐿 Vertical, horizontal length scales
+𝑘 = 𝜌𝑐𝑝𝜅 Thermal conductivity (units kg m−1 s−2)
+𝑁 = (𝑔/𝐻)1/2 Brunt–Väisälä frequency
+𝑅 Radius of pipe or channel
+𝑟 Radius of curvature of pipe or channel
+𝑟𝐿 Larmor radius
+𝑇 Temperature
+𝑉 Characteristic flow velocity
+𝑉𝐴 = 𝐵/(𝜇0𝜌)1/2 Alfvén speed
+𝛼 Newton’s-law heat coefficient, 𝑘∂𝑇
+∂𝑥 = 𝛼Δ𝑇
+𝛽 Volumetric expansion coefficient, 𝑑𝑉 /𝑉 = 𝛽𝑑𝑇
+Γ Bulk modulus (units kg m−1 s−2)
+Δ𝑅, Δ𝑉 , Δ𝑝, Δ𝑇 Imposed differences in two radii, velocities,
+pressures, or temperatures
+𝜖 Surface emissivity
+𝜂 Electrical resistivity
+𝜅, 𝒟 Thermal, molecular diffusivities (units m 2 s−1)
+Λ Latitude of point on earth’s surface
+𝜆 Collisional mean free path
+𝜇 = 𝜌𝜈 Viscosity
+𝜇0 Permeability of free space
+𝜈 Kinematic viscosity (units m 2 s−1)
+𝜌 Mass density of fluid medium
+𝜌′ Mass density of bubble, droplet, or moving object
+Σ Surface tension (units kg s−2)
+𝜎 Stefan–Boltzmann constant
+Ω Solid-body rotational angular velocity
+25
+===== PAGE 27 =====
+SHOCKS
+At a shock front propagating in a magnetized fluid at an angle 𝜃 with respect
+to the magnetic induction 𝐁, the jump conditions are 13,14
+𝜌𝑈 = ̄𝜌 ̄𝑈 ≡ 𝑞;(1)
+𝜌𝑈 2 + 𝑝 + 𝐵 2
+⟂ /2𝜇 = ̄𝜌 ̄𝑈 2 + ̄ 𝑝 + ̄𝐵 2
+⟂ /2𝜇;(2)
+𝜌𝑈𝑉 − 𝐵∥𝐵⟂/𝜇 = ̄𝜌 ̄𝑈 ̄𝑉 − ̄𝐵∥ ̄𝐵⟂/𝜇;(3)
+𝐵∥ = ̄𝐵∥;(4)
+𝑈𝐵⟂ − 𝑉 𝐵∥ = ̄𝑈 ̄𝐵⟂ − ̄𝑉 ̄𝐵∥;(5)
+1
+2(𝑈2 + 𝑉2) + 𝑤 + (𝑈𝐵 2
+⟂ − 𝑉 𝐵∥𝐵⟂)/𝜇𝜌𝑈(6)
+= 1
+2( ̄𝑈 2 + ̄𝑉2) + ̄ 𝑤 + ( ̄𝑈 ̄𝐵 2
+⟂ − ̄𝑉 ̄𝐵∥ ̄𝐵⟂)/𝜇 ̄𝜌 ̄𝑈.
+Here 𝑈 and 𝑉 are components of the fluid velocity normal and tangential to
+the front in the shock frame; 𝜌 = 1/𝜐 is the mass density; 𝑝 is the pressure;
+𝐵⟂ = 𝐵 sin 𝜃, 𝐵∥ = 𝐵 cos 𝜃; 𝜇 is the magnetic permeability ( 𝜇 = 4𝜋 in cgs
+units); and the specific enthalpy is 𝑤 = 𝑒 + 𝑝𝜐 , where the specific internal
+energy 𝑒 satisfies 𝑑𝑒 = 𝑇𝑑𝑠 − 𝑝𝑑𝜐 in terms of the temperature 𝑇 and the
+specific entropy 𝑠. Quantities in the region behind (downstream from) the
+front are distinguished by a bar. If 𝐵 = 0, then15
+𝑈 − ̄𝑈 = [( ̄ 𝑝 − 𝑝)(𝜐 −̄𝜐)]
+1/2
+;(7)
+( ̄ 𝑝 − 𝑝)(𝜐 −̄𝜐)−1 = 𝑞2;(8)
+̄ 𝑤 − 𝑤 =1
+2( ̄ 𝑝 − 𝑝)(𝜐 +̄𝜐);(9)
+̄ 𝑒 − 𝑒 =1
+2( ̄ 𝑝 + 𝑝)(𝜐 −̄𝜐).(10)
+In what follows we assume that the fluid is a perfect gas with adiabatic index
+𝛾 = 1 + 2/𝑛, where 𝑛is the number of degrees of freedom. Then 𝑝 = 𝜌𝑅𝑇/𝑚,
+where 𝑅 is the universal gas constant and 𝑚 is the molar weight; the sound
+speed is given by 𝐶𝑠
+2 = (∂𝑝/∂𝜌)𝑠 = 𝛾𝑝𝜐; and 𝑤 = 𝛾𝑒 = 𝛾𝑝𝜐/(𝛾 − 1). For a gen-
+eral oblique shock in a perfect gas the quantity 𝑋 = 𝑟 −1(𝑈/𝑉𝐴)2 satisfies14
+(𝑋 − 𝛽/𝛼)(𝑋 −cos2 𝜃)2 = 𝑋 sin2 𝜃 {[1 + (𝑟 − 1)/2𝛼]𝑋 − cos2 𝜃},(11)
+where 𝑟 = ̄𝜌/𝜌, 𝛼 =
+1
+2
+[𝛾 + 1 − (𝛾 − 1)𝑟], and 𝛽 = 𝐶𝑠
+2/𝑉𝐴
+2 = 4𝜋𝛾𝑝/𝐵2.
+The density ratio is bounded by
+1 < 𝑟 < (𝛾 + 1)/(𝛾 − 1).(12)
+If the shock is normal to 𝐁 (i.e., if 𝜃 = 𝜋/2), then
+𝑈 2 = (𝑟/𝛼){𝐶𝑠
+2 + 𝑉𝐴
+2 [1 + (1 − 𝛾/2)(𝑟 − 1)]};(13)
+26
+===== PAGE 28 =====
+𝑈/ ̄𝑈 = ̄𝐵/𝐵 = 𝑟;(14)
+̄𝑉 = 𝑉 ;(15)
+̄ 𝑝 = 𝑝 + (1 − 𝑟−1)𝜌𝑈2 + (1 − 𝑟2)𝐵2/2𝜇.(16)
+If 𝜃 = 0 , there are two possibilities: switch-on shocks, which require 𝛽 < 1
+and for which
+𝑈 2 = 𝑟𝑉𝐴
+2;(17)
+̄𝑈 = 𝑉 𝐴
+2/𝑈;(18)
+̄𝐵 2
+⟂ = 2𝐵 2
+∥ (𝑟 − 1)(𝛼 − 𝛽);(19)
+̄𝑉 = ̄𝑈 ̄𝐵⟂/𝐵∥;(20)
+̄ 𝑝 = 𝑝 + 𝜌𝑈2(1 − 𝛼 + 𝛽)(1 − 𝑟−1),(21)
+and acoustic (hydrodynamic) shocks, for which
+𝑈 2 = (𝑟/𝛼)𝐶𝑠
+2;(22)
+̄𝑈 = 𝑈/𝑟;(23)
+̄𝑉 = ̄𝐵⟂ = 0;(24)
+̄ 𝑝 = 𝑝 + 𝜌𝑈2(1 − 𝑟−1).(25)
+For acoustic shocks the specific volume and pressure are related by
+̄𝜐/𝜐 =[(𝛾 + 1)𝑝 + (𝛾 − 1) ̄ 𝑝]/ [(𝛾 − 1)𝑝 + (𝛾 + 1) ̄ 𝑝].(26)
+In terms of the upstream Mach number 𝑀 = 𝑈/𝐶𝑠,
+̄𝜌/𝜌 = 𝜐/ ̄𝜐 = 𝑈/ ̄𝑈 = (𝛾 + 1)𝑀2/[(𝛾 − 1)𝑀2 + 2];(27)
+̄ 𝑝/𝑝 = (2𝛾𝑀2 − 𝛾 + 1)/(𝛾 + 1);(28)
+̄𝑇/𝑇 = [(𝛾 − 1)𝑀2 + 2](2𝛾𝑀2 − 𝛾 + 1)/(𝛾 + 1)2𝑀2;(29)
+̄𝑀2 = [(𝛾 − 1)𝑀2 + 2]/[2𝛾𝑀2 − 𝛾 + 1].(30)
+The entropy change across the shock is
+Δ𝑠 ≡ ̄ 𝑠 − 𝑠 = 𝑐𝜐 ln[( ̄ 𝑝/𝑝)(𝜌/̄𝜌)𝛾],(31)
+where 𝑐𝜐 = 𝑅/(𝛾 − 1)𝑚is the specific heat at constant volume; here 𝑅 is the
+gas constant. In the weak-shock limit ( 𝑀 → 1),
+Δ𝑠 → 𝑐𝜐
+2𝛾(𝛾 − 1)
+3(𝛾 + 1)(𝑀2 − 1)3 ≈ 16𝛾𝑅
+3(𝛾 + 1)𝑚(𝑀 − 1)3.(32)
+The radius at time 𝑡 of a strong spherical blast wave resulting from the explo-
+sive release of energy 𝐸 in a medium with uniform density 𝜌 is
+𝑅𝑆 = 𝐶0(𝐸𝑡2/𝜌)1/5,(33)
+where 𝐶0 is a constant depending on 𝛾. For 𝛾 = 7/5, 𝐶0 = 1.033.
+27
+===== PAGE 29 =====
+FUNDAMENTAL PLASMA PARAMETERS
+All quantities are in Gaussian cgs units except temperature ( 𝑇, 𝑇𝑒, 𝑇𝑖) ex-
+pressed in eV and ion mass ( 𝑚𝑖) expressed in units of the proton mass, 𝜇 =
+𝑚𝑖/𝑚𝑝; 𝑍 is charge state; 𝑘 is Boltzmann’s constant; 𝐾 is wavenumber; 𝛾 is
+the adiabatic index; ln Λ is the Coulomb logarithm.
+Frequencies
+electron gyrofrequency 𝑓𝑐𝑒 = 𝜔𝑐𝑒/2𝜋 = 2.80 × 106𝐵 Hz
+𝜔𝑐𝑒 = 𝑒𝐵/𝑚𝑒𝑐 = 1.76 × 107𝐵 rad/sec
+ion gyrofrequency 𝑓𝑐𝑖 = 𝜔𝑐𝑖/2𝜋 = 1.52 × 103𝑍𝜇−1𝐵 Hz
+𝜔𝑐𝑖 = 𝑍𝑒𝐵/𝑚𝑖𝑐 = 9.58 × 103𝑍𝜇−1𝐵 rad/sec
+electron plasma frequency 𝑓𝑝𝑒 = 𝜔𝑝𝑒/2𝜋 = 8.98 × 103𝑛𝑒
+1/2 Hz
+𝜔𝑝𝑒 = (4𝜋𝑛𝑒𝑒2/𝑚𝑒)1/2
+= 5.64 × 104𝑛𝑒
+1/2 rad/sec
+ion plasma frequency 𝑓𝑝𝑖 = 𝜔𝑝𝑖/2𝜋
+= 2.10 × 102𝑍𝜇−1/2𝑛𝑖
+1/2 Hz
+𝜔𝑝𝑖 = (4𝜋𝑛𝑖𝑍2𝑒2/𝑚𝑖)1/2
+= 1.32 × 103𝑍𝜇−1/2𝑛𝑖
+1/2 rad/sec
+electron trapping rate 𝜈𝑇𝑒 = (𝑒𝐾𝐸/𝑚𝑒)1/2
+= 7.26 × 108𝐾1/2𝐸1/2 sec−1
+ion trapping rate 𝜈𝑇𝑖 = (𝑍𝑒𝐾𝐸/𝑚𝑖)1/2
+= 1.69 × 107𝑍1/2𝐾1/2𝐸1/2𝜇−1/2 sec−1
+electron collision rate 𝜈𝑒 = 2.91 × 10−6𝑛𝑒 ln Λ𝑇𝑒
+−3/2 sec−1
+ion collision rate 𝜈𝑖 = 4.80 × 10−8𝑍4𝜇−1/2𝑛𝑖 ln Λ𝑇𝑖
+−3/2 sec−1
+Lengths
+electron deBroglie length ƛ = ℏ/(𝑚𝑒𝑘𝑇𝑒)1/2 = 2.76 × 10−8𝑇𝑒
+−1/2 cm
+classical distance of 𝑒2/𝑘𝑇 = 1.44 × 10−7𝑇−1 cm
+minimum approach
+electron gyroradius 𝑟𝑒 = 𝑣𝑇𝑒/𝜔𝑐𝑒 = 2.38𝑇𝑒
+1/2𝐵−1 cm
+ion gyroradius 𝑟𝑖 = 𝑣𝑇𝑖 /𝜔𝑐𝑖
+= 1.02 × 102𝜇1/2𝑍−1𝑇𝑖
+1/2𝐵−1 cm
+electron inertial length 𝑐/𝜔𝑝𝑒 = 5.31 × 105𝑛𝑒
+−1/2 cm
+ion inertial length 𝑐/𝜔𝑝𝑖 = 2.28 × 107𝑍−1(𝜇/𝑛𝑖)1/2 cm
+Debye length 𝜆𝐷 = (𝑘𝑇/4𝜋𝑛𝑒2)1/2 = 7.43 × 102𝑇1/2𝑛−1/2 cm
+magnetic Debye length 𝜆𝑀 = 𝐵/4𝜋𝑛𝑒𝑒 = 1.66 × 108𝐵𝑛−1
+𝑒 cm
+28
+===== PAGE 30 =====
+Velocities
+electron thermal velocity 𝑣𝑇𝑒 = (𝑘𝑇𝑒/𝑚𝑒)1/2
+= 4.19 × 107𝑇𝑒
+1/2 cm/sec
+ion thermal velocity 𝑣𝑇𝑖 = (𝑘𝑇𝑖/𝑚𝑖)1/2
+= 9.79 × 105𝜇−1/2𝑇𝑖
+1/2 cm/sec
+ion sound velocity 𝐶𝑠 = (𝛾𝑍𝑘𝑇𝑒/𝑚𝑖)1/2
+= 9.79 × 105(𝛾𝑍𝑇𝑒/𝜇)1/2 cm/sec
+Alfvén velocity 𝑣𝐴 = 𝐵/(4𝜋𝑛𝑖𝑚𝑖)1/2
+= 2.18 × 1011𝜇−1/2𝑛𝑖
+−1/2𝐵 cm/sec
+Dimensionless
+(electron/proton mass ratio)1/2 (𝑚𝑒/𝑚𝑝)1/2 = 2.33 × 10−2 = 1/42.9
+number of particles in (4𝜋/3)𝑛𝜆𝐷
+3 = 1.72 × 109𝑇3/2𝑛−1/2
+Debye sphere
+Alfvén velocity/speed of light 𝑣𝐴/𝑐 = 7.28𝜇−1/2𝑛𝑖
+−1/2𝐵
+electron plasma/gyrofrequency 𝜔𝑝𝑒/𝜔𝑐𝑒 = 3.21 × 10−3𝑛𝑒
+1/2𝐵−1
+ratio
+ion plasma/gyrofrequency ratio 𝜔𝑝𝑖/𝜔𝑐𝑖 = 0.137𝜇1/2𝑛𝑖
+1/2𝐵−1
+thermal/magnetic energy ratio 𝛽 = 8𝜋𝑛𝑘𝑇/𝐵2 = 4.03 × 10−11𝑛𝑇𝐵−2
+magnetic/ion rest energy ratio 𝐵2/8𝜋𝑛𝑖𝑚𝑖𝑐2 = 26.5𝜇−1𝑛𝑖
+−1𝐵2
+Miscellaneous
+Bohm diffusion coefficient 𝐷𝐵 = (𝑐𝑘𝑇/16𝑒𝐵)
+= 6.25 × 106𝑇𝐵−1 cm2/sec
+transverse Spitzer resistivity 𝜂⟂ = 1.15 × 10−14𝑍 ln Λ𝑇−3/2 sec
+= 1.03 × 10−2𝑍 ln Λ𝑇−3/2 Ω cm
+The anomalous electron collision rate due to ion-sound turbulence is
+𝜈* ≈ 𝜔𝑝𝑒˜𝑊 /𝑛𝑒𝑘𝑇𝑒 = 3.52 × 1016𝑛𝑒
+−1/2𝑇−1
+𝑒 ˜𝑊 sec−1,
+where ˜𝑊 is the total energy density of waves (erg/cm 3) with 𝜔 < 𝑘𝑣𝑇𝑖 .
+Magnetic pressure is given by
+𝑃mag = 𝐵2/8𝜋 = 3.98 × 106(𝐵/𝐵0)2 dynes/cm2 = 3.93(𝐵/𝐵0)2 atm,
+where 𝐵0 = 10 kG = 1 T.
+Detonation energy of 1 kiloton of high explosive is
+𝑊kT = 1012 cal = 4.2 × 1019 erg = 4.2 × 1012 J.
+29
+===== PAGE 31 =====
+PLASMA DISPERSION FUNCTION
+Definition16 (first form valid only for Im 𝜁 > 0):
+𝑍(𝜁) = 𝜋−1/2 ∫
++∞
+−∞
+𝑑𝑡 exp (−𝑡2)
+𝑡 − 𝜁 = 2𝑖exp (−𝜁2) ∫
+𝑖𝜁
+−∞
+𝑑𝑡 exp (−𝑡2) .
+Physically, 𝜁 = 𝑥 + 𝑖𝑦is the ratio of wave phase velocity to thermal velocity.
+Differential equation:
+𝑑𝑍
+𝑑𝜁 = −2(1 + 𝜁𝑍) , 𝑍(0) = 𝑖𝜋1/2; 𝑑2𝑍
+𝑑𝜁2 + 2𝜁𝑑𝑍
+𝑑𝜁 + 2𝑍 = 0.
+Real argument (𝑦 = 0):
+𝑍(𝑥) =exp (−𝑥2) (𝑖𝜋1/2 − 2∫
+𝑥
+0
+𝑑𝑡 exp (𝑡2)) .
+Imaginary argument (𝑥 = 0):
+𝑍(𝑖𝑦) = 𝑖𝜋1/2 exp (𝑦2) [1 −erf(𝑦)].
+Power series (small argument):
+𝑍(𝜁) = 𝑖𝜋1/2 exp (−𝜁2) − 2𝜁(1 − 2𝜁2/3 + 4𝜁4/15 − 8𝜁6/105 + ⋯) .
+Asymptotic series, |𝜁| ≫ 1 (Ref. 17):
+𝑍(𝜁) = 𝑖𝜋1/2𝜎 exp (−𝜁2) − 𝜁−1 (1 + 1/2𝜁2 + 3/4𝜁4 + 15/8𝜁6 + ⋯) ,
+where
+𝜎 =
+⎧
+⎨
+⎩
+0, 𝑦 > |𝑥| −1
+1, |𝑦| < |𝑥| −1
+2, 𝑦 < −|𝑥| −1
+Symmetry properties (the asterisk denotes complex conjugation):
+𝑍(𝜁*) = − [𝑍(−𝜁)]*;
+𝑍(𝜁*) = [𝑍(𝜁)]* + 2𝑖𝜋1/2 exp[−(𝜁*)2], (𝑦 > 0).
+Two-pole approximations18 (good for 𝜁 in upper half plane except when 𝑦 <
+𝜋1/2𝑥2 exp(−𝑥2), 𝑥 ≫ 1 ):
+𝑍(𝜁) ≈ 0.50 + 0.81𝑖
+𝑎 − 𝜁 − 0.50 − 0.81𝑖
+𝑎* + 𝜁 , 𝑎 = 0.51 − 0.81𝑖;
+𝑍′(𝜁) ≈ 0.50 + 0.96𝑖
+(𝑏 − 𝜁)2 + 0.50 − 0.96𝑖
+(𝑏* + 𝜁)2 , 𝑏 = 0.48 − 0.91𝑖.
+30
+===== PAGE 32 =====
+COLLISIONS AND TRANSPORT
+Temperatures are in eV; the corresponding value of Boltzmann’s constant is 𝑘 = 1.60 ×
+10−12 erg/eV; masses 𝜇, 𝜇′ are in units of the proton mass; 𝑒𝛼 = 𝑍 𝛼𝑒 is the charge of species
+𝛼. All other units are cgs except where noted.
+Relaxation Rates
+Rates are associated with four relaxation processes arising from the interac-
+tion of test particles (labeled 𝛼) streaming with velocity v𝛼 through a back-
+ground of field particles (labeled 𝛽):
+slowing down 𝑑v𝛼
+𝑑𝑡 = −𝜈𝛼\𝛽
+𝑠 v𝛼
+transverse diffusion 𝑑
+𝑑𝑡(v𝛼 − ̄v𝛼)2
+⟂ = 𝜈𝛼\𝛽
+⟂ 𝑣𝛼
+2
+parallel diffusion 𝑑
+𝑑𝑡(v𝛼 − ̄v𝛼)2
+∥ = 𝜈𝛼\𝛽
+∥ 𝑣𝛼
+2
+energy loss 𝑑
+𝑑𝑡𝑣𝛼
+2 = −𝜈𝛼\𝛽
+𝜖 𝑣𝛼
+2,
+where 𝑣𝛼 = |𝐯 𝛼| and the averages are performed over an ensemble of test
+particles and a Maxwellian field particle distribution. The exact formulas
+may be written19
+𝜈𝛼\𝛽
+𝑠 = (1 + 𝑚𝛼/𝑚𝛽)𝜓(𝑥𝛼\𝛽)𝜈𝛼\𝛽
+0 ;
+𝜈𝛼\𝛽
+⟂ = 2 [(1 − 1/2𝑥𝛼\𝛽)𝜓(𝑥𝛼\𝛽) + 𝜓′(𝑥𝛼\𝛽)]𝜈𝛼\𝛽
+0 ;
+𝜈𝛼\𝛽
+∥ = [𝜓(𝑥𝛼\𝛽)/𝑥𝛼\𝛽]𝜈𝛼\𝛽
+0 ;
+𝜈𝛼\𝛽
+𝜖 = 2 [(𝑚𝛼/𝑚𝛽)𝜓(𝑥𝛼\𝛽) − 𝜓′(𝑥𝛼\𝛽)]𝜈𝛼\𝛽
+0 ,
+where
+𝜈𝛼\𝛽
+0 = 4𝜋𝑒𝛼
+2𝑒𝛽
+2𝜆𝛼𝛽𝑛𝛽/𝑚𝛼
+2𝑣𝛼
+3; 𝑥 𝛼\𝛽 = 𝑚𝛽𝑣𝛼
+2/2𝑘𝑇𝛽;
+𝜓(𝑥) = 2
+√𝜋
+∫
+𝑥
+0
+𝑑𝑡 𝑡1/2𝑒−𝑡; 𝜓 ′(𝑥) = 𝑑𝜓
+𝑑𝑥,
+and 𝜆𝛼𝛽 = ln Λ𝛼𝛽 is the Coulomb logarithm (see below). Limiting forms of
+𝜈𝑠, 𝜈⟂ and 𝜈∥ are given in the following table. All the expressions shown have
+units cm3 sec−1. Test particle energy 𝜖 and field particle temperature 𝑇 are
+both in eV; 𝜇 = 𝑚𝑖/𝑚𝑝 where 𝑚𝑝 is the proton mass; 𝑍 is ion charge state; in
+electron–electron and ion–ion encounters, field particle quantities are distin-
+guished by a prime. The two expressions given below for each rate hold for
+31
+===== PAGE 33 =====
+very slow (𝑥𝛼\𝛽 ≪ 1) and very fast (𝑥𝛼\𝛽 ≫ 1) test particles, respectively.
+Slow Fast
+Electron–electron
+𝜈𝑒|𝑒
+𝑠 /𝑛𝑒𝜆𝑒𝑒 ≈ 5.8 × 10−6𝑇−3/2 ⟶ 7.7 × 10−6𝜖−3/2
+𝜈𝑒|𝑒
+⟂ /𝑛𝑒𝜆𝑒𝑒 ≈ 5.8 × 10−6𝑇−1/2𝜖−1 ⟶ 7.7 × 10−6𝜖−3/2
+𝜈𝑒|𝑒
+∥ /𝑛𝑒𝜆𝑒𝑒 ≈ 2.9 × 10−6𝑇−1/2𝜖−1 ⟶ 3.9 × 10−6𝑇𝜖−5/2
+Electron–ion
+𝜈𝑒|𝑖
+𝑠 /𝑛𝑖𝑍2𝜆𝑒𝑖 ≈ 0.23𝜇3/2𝑇−3/2 ⟶ 3.9 × 10−6𝜖−3/2
+𝜈𝑒|𝑖
+⟂ /𝑛𝑖𝑍2𝜆𝑒𝑖 ≈ 2.5 × 10−4𝜇1/2𝑇−1/2𝜖−1 ⟶ 7.7 × 10−6𝜖−3/2
+𝜈𝑒|𝑖
+∥ /𝑛𝑖𝑍2𝜆𝑒𝑖 ≈ 1.2 × 10−4𝜇1/2𝑇−1/2𝜖−1 ⟶ 2.1 × 10−9𝜇−1𝑇𝜖−5/2
+Ion–electron
+𝜈𝑖|𝑒
+𝑠 /𝑛𝑒𝑍2𝜆𝑖𝑒 ≈ 1.6 × 10−9𝜇−1𝑇−3/2 ⟶ 1.7 × 10−4𝜇1/2𝜖−3/2
+𝜈𝑖|𝑒
+⟂ /𝑛𝑒𝑍2𝜆𝑖𝑒 ≈ 3.2 × 10−9𝜇−1𝑇−1/2𝜖−1 ⟶ 1.8 × 10−7𝜇−1/2𝜖−3/2
+𝜈𝑖|𝑒
+∥ /𝑛𝑒𝑍2𝜆𝑖𝑒 ≈ 1.6 × 10−9𝜇−1𝑇−1/2𝜖−1 ⟶ 1.7 × 10−4𝜇1/2𝑇𝜖−5/2
+Ion–ion
+𝜈𝑖|𝑖′
+𝑠
+𝑛𝑖′ 𝑍2𝑍′2𝜆𝑖𝑖′
+≈ 6.8 × 10−8 𝜇′1/2
+𝜇 (1 + 𝜇′
+𝜇 ) 𝑇−3/2
+⟶ 9.0 × 10−8 ( 1
+𝜇 + 1
+𝜇′ ) 𝜇1/2
+𝜖3/2
+𝜈𝑖|𝑖′
+⟂
+𝑛𝑖′ 𝑍2𝑍′2𝜆𝑖𝑖′
+≈ 1.4 × 10−7𝜇′1/2𝜇−1𝑇−1/2𝜖−1
+⟶ 1.8 × 10−7𝜇−1/2𝜖−3/2
+𝜈𝑖|𝑖′
+∥
+𝑛𝑖′ 𝑍2𝑍′2𝜆𝑖𝑖′
+≈ 6.8 × 10−8𝜇′1/2𝜇−1𝑇−1/2𝜖−1
+⟶ 9.0 × 10−8𝜇1/2𝜇′−1𝑇𝜖−5/2
+In the same limits, the energy transfer rate follows from the identity
+𝜈𝜖 = 2𝜈𝑠 − 𝜈⟂ − 𝜈∥,
+except for the case of fast electrons or fast ions scattered by ions, where the
+leading terms cancel. Then the appropriate forms are
+𝜈𝑒|𝑖
+𝜖 ⟶ 4.2 × 10−9𝑛𝑖𝑍2𝜆𝑒𝑖
+[𝜖−3/2𝜇−1 − 8.9 × 104(𝜇/𝑇)1/2𝜖−1 exp(−1836𝜇𝜖/𝑇)] sec−1
+32
+===== PAGE 34 =====
+and
+𝜈𝑖|𝑖′
+𝜖 ⟶ 1.8 × 10−7𝑛𝑖′ 𝑍2𝑍′2𝜆𝑖𝑖′ {𝜖−3/2𝜇1/2/𝜇
+′
+−1.1[(𝜇 + 𝜇′)/𝜇𝜇′](𝜇′/𝑇′)1/2𝜖−1 exp(−𝜇′𝜖/𝜇𝑇′)} sec−1.
+In general, the energy transfer rate 𝜈𝛼\𝛽
+𝜖 is positive for 𝜖 > 𝜖∗
+𝛼 and negative for
+𝜖 < 𝜖∗
+𝛼, where 𝑥∗ = (𝑚𝛽/𝑚𝛼)𝜖∗
+𝛼/𝑇𝛽 is the solution of 𝜓′(𝑥∗) = (𝑚𝛼|𝑚𝛽)𝜓(𝑥∗).
+The ratio 𝜖∗
+𝛼/𝑇𝛽 is given for a number of specific 𝛼, 𝛽 in the following table:
+𝛼\𝛽: 𝑖|𝑒 𝑒|𝑒, 𝑖|𝑖 𝑒|𝑝 𝑒|D 𝑒|T, 𝑒|He3 𝑒|He4
+𝜖∗
+𝛼/𝑇𝛽: 1.5 0.98 4.8 × 10 −3 2.6 × 10−3 1.8 × 10−3 1.4 × 10−3
+When both species are near Maxwellian, with 𝑇𝑖 ≲ 𝑇 𝑒, there are just two
+characteristic collision rates. For 𝑍 = 1,
+𝜈𝑒 = 2.9 × 10−6𝑛𝜆𝑇𝑒
+−3/2 sec−1;
+𝜈𝑖 = 4.8 × 10−8𝑛𝜆𝑇𝑖
+−3/2𝜇−1/2 sec−1.
+Temperature Isotropization
+Isotropization is described by
+𝑑𝑇⟂
+𝑑𝑡 = −1
+2
+𝑑𝑇∥
+𝑑𝑡 = −𝜈𝛼
+𝑇 (𝑇⟂ − 𝑇∥),
+where, if 𝐴 ≡ 𝑇⟂/𝑇∥ − 1 > 0,
+𝜈𝛼
+𝑇 =
+2√𝜋𝑒2
+𝛼𝑒2
+𝛽𝑛𝛼𝜆𝛼𝛽
+𝑚1/2
+𝛼 (𝑘𝑇∥)3/2
+𝐴−2 [−3 + (𝐴 + 3)tan−1(𝐴1/2)
+𝐴1/2 ].
+If 𝐴 < 0, tan−1(𝐴1/2)/𝐴1/2 is replaced by tanh −1(−𝐴)1/2/(−𝐴)1/2.
+For 𝑇⟂ ≈ 𝑇∥ ≡ 𝑇,
+𝜈𝑒
+𝑇 = 8.2 × 10−7𝑛𝜆𝑇−3/2 sec−1;
+𝜈𝑖
+𝑇 = 1.9 × 10−8𝑛𝜆𝑍2𝜇−1/2𝑇−3/2 sec−1.
+Thermal Equilibration
+If the components of a plasma have different temperatures, but no relative
+drift, equilibration is described by
+𝑑𝑇𝛼
+𝑑𝑡 = ∑
+𝛽
+̄ 𝜈𝛼\𝛽
+𝜖 (𝑇𝛽 − 𝑇𝛼),
+33
+===== PAGE 35 =====
+where
+̄ 𝜈𝛼\𝛽
+𝜖 = 1.8 × 10−19 (𝑚𝛼𝑚𝛽)1/2𝑍2
+𝛼𝑍2
+𝛽𝑛𝛽𝜆𝛼𝛽
+(𝑚𝛼𝑇𝛽 + 𝑚𝛽𝑇𝛼)3/2 sec−1.
+For electrons and ions with 𝑇𝑒 ≈ 𝑇𝑖 ≡ 𝑇, this implies
+̄ 𝜈𝑒|𝑖
+𝜖 /𝑛𝑖 = ̄ 𝜈𝑖|𝑒
+𝜖 /𝑛𝑒 = 3.2 × 10−9𝑍2𝜆/𝜇𝑇3/2 cm3 sec−1.
+Coulomb Logarithm
+For test particles of mass 𝑚𝛼 and charge 𝑒𝛼 = 𝑍 𝛼𝑒 scattering off field par-
+ticles of mass 𝑚𝛽 and charge 𝑒𝛽 = 𝑍 𝛽𝑒, the Coulomb logarithm is defined
+as 𝜆 = ln Λ ≡ ln(𝑟max/𝑟min). Here 𝑟min is the larger of 𝑒𝛼𝑒𝛽/𝑚𝛼𝛽 ̄ 𝑢2 and
+ℏ/2𝑚𝛼𝛽 ̄ 𝑢, averaged over both particle velocity distributions, where 𝑚𝛼𝛽 =
+𝑚𝛼𝑚𝛽/(𝑚𝛼 + 𝑚𝛽) and 𝐮 = 𝐯 𝛼 − 𝐯𝛽; 𝑟max = (4𝜋 ∑𝑛𝛾𝑒2
+𝛾/𝑘𝑇𝛾)−1/2, where
+the summation extends over all species 𝛾 for which ̄ 𝑢2 < 𝑣 2
+𝑇𝛾 = 𝑘𝑇𝛾/𝑚𝛾. If
+this inequality cannot be satisfied, or if either ̄ 𝑢𝜔−1
+𝑐𝛼 < 𝑟 max or ̄ 𝑢𝜔−1
+𝑐𝛽 < 𝑟 max,
+the theory breaks down. Typically 𝜆 ≈ 10–20. Corrections to the transport co-
+efficients are 𝑂(𝜆−1); hence the theory is good only to ∼ 10% and fails when
+𝜆 ∼ 1.
+The following cases are of particular interest:
+(a) Thermal electron–electron collisions
+𝜆𝑒𝑒 = 23.5 −ln(𝑛1/2
+𝑒 𝑇−5/4
+𝑒 ) − [10−5 + (ln 𝑇𝑒 − 2)2/16]1/2.
+(b) Electron–ion collisions
+𝜆𝑒𝑖 = 𝜆𝑖𝑒 =
+⎧
+⎨
+⎩
+23 −ln (𝑛1/2
+𝑒 𝑍𝑇−3/2
+𝑒 ) , 𝑇 𝑖𝑚𝑒/𝑚𝑖 < 𝑇𝑒 < 10𝑍2 eV;
+24 −ln (𝑛1/2
+𝑒 𝑇−1
+𝑒 ) , 𝑇𝑖𝑚𝑒/𝑚𝑖 < 10𝑍2 eV < 𝑇𝑒;
+16 −ln (𝑛1/2
+𝑖 𝑇−3/2
+𝑖 𝑍2𝜇) , 𝑇 𝑒 < 𝑇𝑖𝑚𝑒/𝑚𝑖.
+(c) Mixed ion–ion collisions
+𝜆𝑖𝑖′ = 𝜆𝑖′𝑖 = 23 −ln [ 𝑍𝑍′(𝜇 + 𝜇′)
+𝜇𝑇𝑖′ + 𝜇′𝑇𝑖
+( 𝑛𝑖𝑍2
+𝑇𝑖
++ 𝑛𝑖′ 𝑍′2
+𝑇𝑖′
+)
+1/2
+] .
+(d) Counterstreaming ions (relative velocity 𝑣𝐷 = 𝛽 𝐷𝑐) in the presence of
+warm electrons, 𝑘𝑇𝑖/𝑚𝑖, 𝑘𝑇𝑖′ /𝑚𝑖′ < 𝑣2
+𝐷 < 𝑘𝑇𝑒/𝑚𝑒
+𝜆𝑖𝑖′ = 𝜆𝑖′𝑖 = 43 −ln [ 𝑍𝑍′(𝜇 + 𝜇′)
+𝜇𝜇′𝛽2
+𝐷
+( 𝑛𝑒
+𝑇𝑒
+)
+1/2
+] .
+34
+===== PAGE 36 =====
+Fokker-Planck Equation
+𝐷𝑓𝛼
+𝐷𝑡 ≡ ∂𝑓𝛼
+∂𝑡 + 𝐯 ⋅ ∇𝑓𝛼 + 𝐅 ⋅ ∇𝐯𝑓𝛼 = ( ∂𝑓𝛼
+∂𝑡 )
+coll
+,
+where 𝐅 is an external force field. The general form of the collision integral is
+(∂𝑓𝛼/∂𝑡)coll = − ∑𝛽 ∇𝐯 ⋅ 𝐉𝛼\𝛽, with
+𝐉𝛼\𝛽 = 2𝜋𝜆𝛼𝛽
+𝑒2
+𝛼𝑒2
+𝛽
+𝑚𝛼
+∫ 𝑑3𝑣′(𝑢2𝙄 − 𝐮𝐮)𝑢−3
+⋅ { 1
+𝑚𝛽
+𝑓𝛼(𝐯)∇𝐯′ 𝑓𝛽(𝐯′) − 1
+𝑚𝛼
+𝑓𝛽(𝐯′)∇𝐯𝑓𝛼(𝐯)} ,
+(Landau form) where 𝐮 = 𝐯′ − 𝐯 and 𝙄 is the unit dyad, or alternatively,
+𝐉𝛼\𝛽 = 4𝜋𝜆𝛼𝛽
+𝑒2
+𝛼𝑒2
+𝛽
+𝑚2𝛼
+{𝑓𝛼(𝐯)∇𝐯𝐻(𝐯) −1
+2∇𝐯 ⋅ [𝑓𝛼(𝐯)∇𝐯∇𝐯𝐺(𝐯)]} ,
+where the Rosenbluth potentials are
+𝐺(𝐯) = ∫ 𝑓𝛽(𝐯′)𝑢𝑑3𝑣′,
+𝐻(𝐯) =(1 + 𝑚𝛼
+𝑚𝛽
+) ∫ 𝑓𝛽(𝐯′)𝑢−1𝑑3𝑣′.
+If species 𝛼is a weak beam (number and energy density small compared
+with background) streaming through a Maxwellian plasma, then
+𝐉𝛼\𝛽 = − 𝑚𝛼
+𝑚𝛼 + 𝑚𝛽
+𝜈𝛼\𝛽
+𝑠 𝐯𝑓𝛼 − 1
+2𝜈𝛼\𝛽
+∥ 𝐯𝐯 ⋅ ∇𝐯𝑓𝛼
+− 1
+4𝜈𝛼\𝛽
+⟂ (𝑣2𝙄 − 𝐯𝐯) ⋅ ∇𝐯𝑓𝛼.
+B-G-K Collision Operator
+For distribution functions with no large gradients in velocity space, the Fokker-
+Planck collision terms can be approximated according to
+𝐷𝑓𝑒
+𝐷𝑡 = 𝜈𝑒𝑒(𝐹𝑒 − 𝑓𝑒) + 𝜈𝑒𝑖( ̄𝐹𝑒 − 𝑓𝑒);
+𝐷𝑓𝑖
+𝐷𝑡 = 𝜈𝑖𝑒( ̄𝐹𝑖 − 𝑓𝑖) + 𝜈𝑖𝑖(𝐹𝑖 − 𝑓𝑖).
+The respective slowing-down rates 𝜈𝛼\𝛽
+𝑠 given in the Relaxation Rate section
+above can be used for 𝜈𝛼𝛽, assuming slow ions and fast electrons, with 𝜖 re-
+35
+===== PAGE 37 =====
+placed by 𝑇𝛼. (For 𝜈𝑒𝑒 and 𝜈𝑖𝑖, one can equally well use 𝜈⟂, and the result is
+insensitive to whether the slow- or fast-test-particle limit is employed.) The
+Maxwellians 𝐹𝛼 and ̄𝐹𝛼 are given by
+𝐹𝛼 = 𝑛𝛼 ( 𝑚𝛼
+2𝜋𝑘𝑇𝛼
+)
+3/2
+exp {−[𝑚𝛼(𝐯 − 𝐯𝛼)2
+2𝑘𝑇𝛼
+]};
+̄𝐹𝛼 = 𝑛𝛼 ( 𝑚𝛼
+2𝜋𝑘 ̄𝑇𝛼
+)
+3/2
+exp {−[𝑚𝛼(𝐯 − ̄ 𝐯𝛼)2
+2𝑘 ̄𝑇𝛼
+]},
+where 𝑛𝛼, 𝐯𝛼 and 𝑇𝛼 are the number density, mean drift velocity, and effec-
+tive temperature obtained by taking moments of 𝑓𝛼. Some latitude in the
+definition of ̄𝑇𝛼 and ̄ 𝐯𝛼 is possible;20 one choice is ̄𝑇𝑒 = 𝑇𝑖, ̄𝑇𝑖 = 𝑇𝑒, ̄ 𝐯𝑒 = 𝐯𝑖,
+̄ 𝐯𝑖 = 𝐯𝑒.
+Transport Coefficients
+Transport equations for a multispecies plasma:
+𝑑𝛼𝑛𝛼
+𝑑𝑡 + 𝑛𝛼∇ ⋅ 𝐯 𝛼 = 0;
+𝑚𝛼𝑛𝛼
+𝑑𝛼𝐯𝛼
+𝑑𝑡 = −∇𝑝𝛼 − ∇ ⋅ 𝝥𝛼 + 𝑍𝛼𝑒𝑛𝛼 [𝐄 + 1
+𝑐𝐯𝛼 × 𝐁] + 𝐑𝛼;
+3
+2𝑛𝛼
+𝑑𝛼𝑘𝑇𝛼
+𝑑𝑡 + 𝑝𝛼∇ ⋅ 𝐯 𝛼 = −∇ ⋅ 𝐪 𝛼 − 𝝥𝛼 ∶ ∇𝐯𝛼 + 𝑄𝛼.
+Here 𝑑𝛼/𝑑𝑡 ≡ ∂/∂𝑡 + 𝐯𝛼 ⋅ ∇; 𝑝𝛼 = 𝑛𝛼𝑘𝑇𝛼, where 𝑘 is Boltzmann’s constant;
+𝐑𝛼 = ∑𝛽 𝐑𝛼𝛽 and 𝑄𝛼 = ∑𝛽 𝑄𝛼𝛽, where 𝐑𝛼𝛽 and 𝑄𝛼𝛽 are respectively the
+momentum and energy gained by the 𝛼th species through collisions with the
+𝛽th; 𝝥𝛼 is the stress tensor; and 𝐪𝛼 is the heat flow.
+The transport coefficients in a simple two-component plasma (electrons and
+singly charged ions) are tabulated below. Here ∥ and ⟂ refer to the directions
+relative to the magnetic field 𝐁 = 𝐛𝐵 ; 𝐮 = 𝐯 𝑒 − 𝐯𝑖 is the relative streaming
+velocity; 𝑛𝑒 = 𝑛𝑖 ≡ 𝑛; 𝐣 = −𝑛𝑒𝐮is the current; and the basic collisional times
+are taken to be
+𝜏𝑒 =
+3√𝑚𝑒(𝑘𝑇𝑒)3/2
+4√2𝜋 𝑛𝜆𝑒4
+= 3.44 × 105 𝑇3/2
+𝑒
+𝑛𝜆 sec,
+where 𝜆 is the Coulomb logarithm, and
+𝜏𝑖 =
+3√𝑚𝑖(𝑘𝑇𝑖)3/2
+4√𝜋𝑛 𝜆𝑒4
+= 2.09 × 107 𝑇3/2
+𝑖
+𝑛𝜆 𝜇1/2 sec.
+36
+===== PAGE 38 =====
+In the limit of large fields (𝜔𝑐𝛼𝜏𝛼 ≫ 1, 𝛼 = 𝑖, 𝑒) the transport processes may
+be summarized as follows: 21𝑎,𝑏
+momentum transfer R𝑒𝑖 = −R𝑖𝑒 ≡ R = R𝐮 + R𝑇 ;
+frictional force R𝐮 = 𝑛𝑒
+𝜎0
+(0.51𝐣∥ + 𝐣⟂); 𝜎 0 = 𝑛𝑒2𝜏𝑒/𝑚𝑒
+thermal force R𝑇 = −0.71𝑛∇∥(𝑘𝑇𝑒) − 3𝑛
+2𝜔𝑐𝑒𝜏𝑒
+𝐛 × ∇⟂(𝑘𝑇𝑒)
+ion heating 𝑄𝑖 = 3𝑚𝑒
+𝑚𝑖
+𝑛𝑘
+𝜏𝑒
+(𝑇𝑒 − 𝑇𝑖);
+electron heating 𝑄𝑒 = −𝑄𝑖 − R ⋅ 𝐮;
+ion heat flux 𝐪𝑖 = −𝜅𝑖
+∥∇∥(𝑘𝑇𝑖) − 𝜅𝑖
+⟂∇⟂(𝑘𝑇𝑖) + 𝜅𝑖
+∧𝐛 × ∇⟂(𝑘𝑇𝑖)
+ion thermal 𝜅𝑖
+∥ = 3.9𝑛𝑘𝑇𝑖𝜏𝑖
+𝑚𝑖
+; 𝜅 𝑖
+⟂ = 2𝑛𝑘𝑇𝑖
+𝑚𝑖𝜔2
+𝑐𝑖𝜏𝑖
+; 𝜅 𝑖
+∧ = 5𝑛𝑘𝑇𝑖
+2𝑚𝑖𝜔𝑐𝑖conductivities
+electron heat flux 𝐪𝑒 = 𝐪𝑒
+𝐮 + 𝐪𝑒
+𝑇
+frictional heat flux 𝐪𝑒
+𝐮 = 0.71𝑛𝑘𝑇𝑒𝐮∥ + 3𝑛𝑘𝑇𝑒
+2𝜔𝑐𝑒𝜏𝑒
+𝐛 × 𝐮⟂
+thermal gradient 𝐪𝑒
+𝑇 = −𝜅𝑒
+∥∇∥(𝑘𝑇𝑒) − 𝜅𝑒
+⟂∇⟂(𝑘𝑇𝑒) − 𝜅𝑒
+∧𝐛 × ∇⟂(𝑘𝑇𝑒)
+heat flux
+electron thermal 𝜅𝑒
+∥ = 3.2𝑛𝑘𝑇𝑒𝜏𝑒
+𝑚𝑒
+; 𝜅 𝑒
+⟂ = 4.7 𝑛𝑘𝑇𝑒
+𝑚𝑒𝜔2𝑐𝑒𝜏𝑒
+; 𝜅 𝑒
+∧ = 5𝑛𝑘𝑇𝑒
+2𝑚𝑒𝜔𝑐𝑒conductivities
+stress tensor (either 𝑥𝑥= −𝜂0
+2 (𝑊𝑥𝑥 + 𝑊𝑦𝑦 ) − 𝜂1
+2 (𝑊𝑥𝑥 − 𝑊𝑦𝑦 ) − 𝜂3𝑊𝑥𝑦;
+species)
+𝑦𝑦 = −𝜂0
+2 (𝑊𝑥𝑥 + 𝑊𝑦𝑦 ) + 𝜂1
+2 (𝑊𝑥𝑥 − 𝑊𝑦𝑦 ) + 𝜂3𝑊𝑥𝑦;
+𝑥𝑦 = 𝑦𝑥 = −𝜂1𝑊𝑥𝑦 + 𝜂3
+2 (𝑊𝑥𝑥 − 𝑊𝑦𝑦 );
+𝑥𝑧 = 𝑧𝑥 = −𝜂2𝑊𝑥𝑧 − 𝜂4𝑊𝑦𝑧;
+𝑦𝑧 = 𝑧𝑦 = −𝜂2𝑊𝑦𝑧 + 𝜂4𝑊𝑥𝑧;
+𝑧𝑧 = −𝜂0𝑊𝑧𝑧
+(here the 𝑧 axis is defined parallel to B);
+ion viscosity 𝜂𝑖
+0 = 0.96𝑛𝑘𝑇𝑖𝜏𝑖; 𝜂 𝑖
+1 = 3𝑛𝑘𝑇𝑖
+10𝜔2
+𝑐𝑖𝜏𝑖
+; 𝜂 𝑖
+2 = 6𝑛𝑘𝑇𝑖
+5𝜔2
+𝑐𝑖𝜏𝑖
+;
+𝜂𝑖
+3 = 𝑛𝑘𝑇𝑖
+2𝜔𝑐𝑖
+; 𝜂 𝑖
+4 = 𝑛𝑘𝑇𝑖
+𝜔𝑐𝑖
+;
+electron viscosity 𝜂𝑒
+0 = 0.73𝑛𝑘𝑇𝑒𝜏𝑒; 𝜂 𝑒
+1 = 0.51𝑛𝑘𝑇𝑒
+𝜔2𝑐𝑒𝜏𝑒
+; 𝜂 𝑒
+2 = 2.0𝑛𝑘𝑇𝑒
+𝜔2𝑐𝑒𝜏𝑒
+;
+𝜂𝑒
+3 = −𝑛𝑘𝑇𝑒
+2𝜔𝑐𝑒
+; 𝜂 𝑒
+4 = −𝑛𝑘𝑇𝑒
+𝜔𝑐𝑒
+.
+37
+===== PAGE 39 =====
+For both species the rate-of-strain tensor is defined as
+𝑊 𝑗𝑘 =
+∂𝑣𝑗
+∂𝑥𝑘
++ ∂𝑣𝑘
+∂𝑥𝑗
+− 2
+3𝛿𝑗𝑘∇ ⋅ 𝐯.
+When B = 0 the following simplifications occur:
+R𝐮 = 𝑛𝑒𝐣/𝜎∥; R𝑇 = −0.71𝑛∇(𝑘𝑇𝑒); 𝐪 𝑖 = −𝜅𝑖
+∥∇(𝑘𝑇𝑖);
+𝐪𝑒
+𝐮 = 0.71𝑛𝑘𝑇𝑒𝐮; 𝐪 𝑒
+𝑇 = −𝜅𝑒
+∥∇(𝑘𝑇𝑒); 𝑗𝑘 = −𝜂0𝑊 𝑗𝑘.
+For 𝜔𝑐𝑒𝜏𝑒 ≫ 1 ≫ 𝜔 𝑐𝑖𝜏𝑖, the electrons obey the high-field expressions and the
+ions obey the zero-field expressions.
+Collisional transport theory is applicable when (1) macroscopic time rates of
+change satisfy 𝑑/𝑑𝑡 ≪ 1/𝜏, where 𝜏 is the longest collisional time scale, and
+(in the absence of a magnetic field) (2) macroscopic length scales 𝐿 satisfy
+𝐿 ≫ 𝑙 , where 𝑙 = ̄ 𝑣𝜏 is the mean free path. In a strong field, 𝜔𝑐𝑒𝜏 ≫ 1 , con-
+dition (2) is replaced by 𝐿∥ ≫ 𝑙 and 𝐿⟂ ≫ √𝑙𝑟𝑒 (𝐿⟂ ≫ 𝑟𝑒 in a uniform field),
+where 𝐿∥ is a macroscopic scale parallel to the field B and 𝐿⟂ is the smaller
+of 𝐵/|∇⟂𝐵| and the transverse plasma dimension. In addition, the standard
+transport coefficients are valid only when (3) the Coulomb logarithm satis-
+fies 𝜆 ≫ 1 ; (4) the electron gyroradius satisfies 𝑟𝑒 ≫ 𝜆 𝐷, or 8𝜋𝑛𝑒𝑚𝑒𝑐2 ≫ 𝐵2;
+(5) relative drifts 𝐮 = 𝐯 𝛼 − 𝐯𝛽 between two species are small compared with
+the thermal velocities, i.e., 𝑢2 ≪ 𝑘𝑇𝛼/𝑚𝛼, 𝑘𝑇𝛽/𝑚𝛽; and (6) anomalous trans-
+port processes owing to microinstabilities are negligible.
+Weakly Ionized Plasmas
+Collision frequency for scattering of charged particles of species 𝛼by neu-
+trals is
+𝜈𝛼 = 𝑛0𝜎𝛼|0
+𝑠 (𝑘𝑇𝛼/𝑚𝛼)1/2,
+where 𝑛0 is the neutral density, 𝜎𝛼|0
+𝑠 is the cross section, typically ∼ 5 × 10−15
+cm2 and weakly dependent on temperature, and (𝑇0/𝑚0)1/2 <
+(𝑇𝛼/𝑚𝛼)1/2 where 𝑇0 and 𝑚0 are the temperature and mass of the neutrals.
+When the system is small compared with a Debye length, 𝐿 ≪ 𝜆 𝐷, the
+charged particle diffusion coefficients are
+𝐷𝛼 = 𝑘𝑇𝛼/𝑚𝛼𝜈𝛼,
+In the opposite limit, both species diffuse at the ambipolar rate
+𝐷𝐴 = 𝜇𝑖𝐷𝑒 − 𝜇𝑒𝐷𝑖
+𝜇𝑖 − 𝜇𝑒
+= (𝑇𝑖 + 𝑇𝑒)𝐷𝑖𝐷𝑒
+𝑇𝑖𝐷𝑒 + 𝑇𝑒𝐷𝑖
+,
+38
+===== PAGE 40 =====
+where 𝜇𝛼 = 𝑒 𝛼/𝑚𝛼𝜈𝛼 is the mobility. The conductivity 𝜎𝛼 satisfies 𝜎𝛼 =
+𝑛𝛼𝑒𝛼𝜇𝛼.
+In the presence of a magnetic field B the scalars 𝜇 and 𝜎 become tensors,
+𝐉𝛼 = 𝜎𝜎𝜎𝛼 ⋅ E = 𝜎𝛼
+∥ E∥ + 𝜎𝛼
+⟂ E⟂ + 𝜎𝛼
+∧ E × 𝐛,
+where 𝐛 = B/𝐵 and
+𝜎𝛼
+∥ = 𝑛𝛼𝑒2
+𝛼/𝑚𝛼𝜈𝛼;
+𝜎𝛼
+⟂ = 𝜎𝛼
+∥ 𝜈2
+𝛼/(𝜈2
+𝛼 + 𝜔2
+𝑐𝛼);
+𝜎𝛼
+∧ = 𝜎𝛼
+∥ 𝜈𝛼𝜔𝑐𝛼/(𝜈2
+𝛼 + 𝜔2
+𝑐𝛼).
+Here 𝜎⟂ and 𝜎∧ are the Pedersen and Hall conductivities, respectively.
+39
+===== PAGE 41 =====
+APPROXIMATE MAGNITUDES IN SOME TYPICAL PLASMAS
+Plasma Type 𝑛cm−3 𝑇 eV 𝜔𝑝𝑒 sec−1 𝜆𝐷 cm 𝑛𝜆𝐷
+3 𝜈𝑒𝑖 sec−1
+Interstellar gas 1 1 6 × 10 4 7 × 102 4 × 108 7 × 10−5
+Gaseous nebula 103 1 2 × 10 6 20 8 × 10 6 6 × 10−2
+Solar Corona 109 102 2 × 109 2 × 10−1 8 × 106 60
+Diffuse hot
+plasma 1012 102 6 × 1010 7 × 10−3 4 × 105 40
+Solar atmosphere,
+gas discharge 1014 1 6 × 10 11 7 × 10−5 40 2 × 10 9
+Warm plasma 1014 10 6 × 10 11 2 × 10−4 8 × 102 107
+Hot plasma 1014 102 6 × 1011 7 × 10−4 4 × 104 4 × 106
+Thermonuclear
+plasma 1015 104 2 × 1012 2 × 10−3 8 × 106 5 × 104
+Theta pinch 1016 102 6 × 1012 7 × 10−5 4 × 103 3 × 108
+Dense hot plasma 1018 102 6 × 1013 7 × 10−6 4 × 102 2 × 1010
+Laser Plasma 1020 102 6 × 1014 7 × 10−7 40 2 × 10 12
+The diagram (facing) gives comparable information in graphical form. 22
+40
+===== PAGE 42 =====
+λ
+D
+	>	1	cm
+>	1	cm
+	
+λ
+i-i
+	
+	
+λ
+e-e
+(4
+π
+/3)n
+λ
+D
+3
+	<	1
+ 50%	ionization hydrogen	plasma
+			High
+pressure
+				arcs
+Shock
+	tubes
+	Laser
+Plasma
+Focus
+Z-pinches
+Fusion
+reactor
+					Fusion
+experiments
+	Solar
+corona
+			Glow
+discharge
+			Low
+pressure
+Alkali
+metal
+plasma
+Flames
+Earth
+iono-
+shpere
+						Earth
+plasma	sheet
+Solar	Wind
+			(1	AU)
+log 10 	n	(cm -3 )
+0
+5
+10
+15
+20
+ 25
+log
+10
+	T	(eV)
+−2
+−1
+0
+1
+2
+3
+4
+5
+41
+===== PAGE 43 =====
+IONOSPHERIC PARAMETERS23
+The following tables give average nighttime values. Where two numbers are
+entered, the first refers to the lower and the second to the upper portion of
+the layer.
+Quantity E Region F Region
+Altitude (km) 90 − 160 160 − 500
+Number density (m −3) 1.5 × 1010 − 3.0 × 1010 5 × 1010 − 2 × 1011
+Height-integrated number
+density (m−2)
+9 × 1014 4.5 × 1015
+Ion-neutral collision
+frequency (sec−1)
+2 × 103 − 102 0.5 − 0.05
+Ion gyro-/collision
+frequency ratio 𝜅𝑖
+0.09 − 2.0 4.6 × 102 − 5.0 × 103
+Ion Pederson factor
+𝜅𝑖/(1 + 𝜅𝑖
+2)
+0.09 − 0.5 2.2 × 10−3 − 2 × 10−4
+Ion Hall factor
+𝜅𝑖
+2/(1 + 𝜅𝑖
+2)
+8 × 10−4 − 0.8 1.0
+Electron-neutral collision
+frequency
+1.5 × 104 − 9.0 × 102 80 − 10
+Electron gyro-/collision
+frequency ratio 𝜅𝑒
+4.1 × 102 − 6.9 × 103 7.8 × 104 − 6.2 × 105
+Electron Pedersen factor
+𝜅𝑒/(1 + 𝜅𝑒
+2)
+2.7×10−3−1.5×10−4 10−5 − 1.5 × 10−6
+Electron Hall factor
+𝜅𝑒
+2/(1 + 𝜅𝑒
+2)
+1.0 1.0
+Mean molecular weight 28 − 26 22 − 16
+Ion gyrofrequency (sec−1) 180 − 190 230 − 300
+Neutral diffusion
+coefficient (m2 sec−1)
+30 − 5 × 103 105
+The terrestrial magnetic field in the lower ionosphere at equatorial latitudes
+is approximately 𝐵0 = 0.35 × 10−4 T. The earth’s radius is 𝑅𝐸 = 6371km.
+42
+===== PAGE 44 =====
+SOLAR PHYSICS PARAMETERS24
+Parameter Symbol Value Units
+Total mass 𝑀⊙ 1.99 × 1033 g
+Radius 𝑅⊙ 6.96 × 1010 cm
+Surface gravity 𝑔⊙ 2.74 × 104 cm s−2
+Escape speed 𝑣∞ 6.18 × 107 cm s−1
+Upward mass flux in spicules — 1.6 × 10−9 g cm−2 s−1
+Vertically integrated atmospheric density — 4.28 g cm−2
+Sunspot magnetic field strength 𝐵max 2500–3500 G
+Surface effective temperature 𝑇0 5770 K
+Radiant power ℒ⊙ 3.83 × 1033 erg s−1
+Radiant flux density ℱ 6.28 × 10 10 erg cm−2 s−1
+Optical depth at 500 nm, measured from
+photosphere
+𝜏5 0.99 —
+Astronomical unit (radius of earth’s orbit) AU 1.50 × 1013 cm
+Solar constant (intensity at 1 AU) 𝑓 1.36 × 10 6 erg cm−2 s−1
+Chromosphere and Corona25
+Parameter (Units) Quiet
+Sun
+Coronal
+Hole
+Active
+Region
+Chromospheric radiation losses
+(erg cm−2 s−1)
+Low chromosphere 2 × 106 2 × 106 ≳ 107
+Middle chromosphere 2 × 106 2 × 106 107
+Upper chromosphere 3 × 105 3 × 105 2 × 106
+Total 4 × 106 4 × 106 ≳ 2 × 107
+Transition layer pressure (dyne cm−2) 0.2 0.07 2
+Coronal temperature (K) at 1.1 R⊙ 1.1 − 1.6 × 106 106 2.5 × 106
+Coronal energy losses (erg cm−2 s−1)
+Conduction 2 × 105 6 × 104 105 − 107
+Radiation 105 104 5 × 106
+Solar Wind ≲ 5 × 104 7 × 105 < 105
+Total 3 × 105 8 × 105 107
+Solar wind mass loss (g cm −2 s−1) ≲ 2 × 10−11 2 × 10−10 < 4×10−11
+43
+===== PAGE 45 =====
+THERMONUCLEAR FUSION26
+Natural abundance of isotopes:
+hydrogen 𝑛D/𝑛H = 1.5 × 10−4
+helium 𝑛He3 /𝑛He4 = 1.3 × 10−6
+lithium 𝑛Li6 /𝑛Li7 = 0.08
+Mass ratios:
+𝑚𝑒/𝑚D = 2.72 × 10−4 = 1/3670
+(𝑚𝑒/𝑚D)1/2 = 1.65 × 10−2 = 1/60.6
+𝑚𝑒/𝑚T = 1.82 × 10−4 = 1/5496
+(𝑚𝑒/𝑚T)1/2 = 1.35 × 10−2 = 1/74.1
+Fusion reactions (branching ratios are correct for energies near the cross sec-
+tion peaks; a negative yield means the reaction is endothermic): 27
+(1a) D + D ⃗50% T(1.01 MeV) + p(3.02 MeV)
+(1b) ⃗50% He3(0.82 MeV) + n(2.45 MeV)
+(2) D + T ⃗ He4(3.5 MeV) + n(14.1 MeV)
+(3) D + He 3
+⃗ He4(3.6 MeV) + p(14.7 MeV)
+(4) T + T ⃗ He4 + 2n + 11.3 MeV
+(5a) He 3 + T ⃗51% He4 + p + n + 12.1 MeV
+(5b) ⃗43% He4(4.8 MeV) + D(9.5 MeV)
+(5c) ⃗6% He5(1.89 MeV) + p(9.46 MeV)
+(6) p + Li 6
+⃗ He4(1.7 MeV) + He3(2.3 MeV)
+(7a) p + Li 7
+⃗20% 2 He4 + 17.3 MeV
+(7b) ⃗80% Be7 + n − 1.6 MeV
+(8) D + Li 6
+⃗ 2He4 + 22.4 MeV
+(9) p + B 11
+⃗ 3 He4 + 8.7 MeV
+(10) n + Li 6
+⃗ He4(2.1 MeV) + T(2.7 MeV)
+The total cross section in barns (1 barn = 10−24 cm2) as a function of 𝐸, the
+energy in keV of the incident particle [the first ion on the left side of Eqs. (1)–
+(5)], assuming the target ion at rest, can be fitted by 28𝑎
+𝜎𝑇 (𝐸) = 𝐴5 + [(𝐴4 − 𝐴3𝐸)2 + 1]
+−1
+𝐴2
+𝐸[exp(𝐴1𝐸−1/2) − 1]
+where the Duane coefficients 𝐴𝑗 for the principal fusion reactions are as fol-
+lows:
+44
+===== PAGE 46 =====
+D–D D–D D–T D–He3 T–T T–He 3
+(1a) (1b) (2) (3) (4) (5a–c)
+𝐴1 46.097 47.88 45.95 89.27 38.39 123.1
+𝐴2 372 482 5.02 × 104 2.59 × 104 448 11250
+𝐴3 4.36 × 10−4 3.08 × 10−4 1.368 × 10−2 3.98 × 10−3 1.02 × 10−3 0
+𝐴4 1.220 1.177 1.076 1.297 2.09 0
+𝐴5 0 0 409 647 0 0
+Reaction rates 𝜎𝑣 (in cm3 sec−1), averaged over Maxwellian distributions:
+Temperature D − D D − T D − He3 T − T T − He3
+(keV) (1a + 1b) (2) (3) (4) (5a–c)
+1.0 1.5 × 10 −22 5.5 × 10−21 10−26 3.3 × 10−22 10−28
+2.0 5.4 × 10 −21 2.6 × 10−19 1.4 × 10−23 7.1 × 10−21 10−25
+5.0 1.8 × 10 −19 1.3 × 10−17 6.7 × 10−21 1.4 × 10−19 2.1 × 10−22
+10.0 1.2 × 10 −18 1.1 × 10−16 2.3 × 10−19 7.2 × 10−19 1.2 × 10−20
+20.0 5.2 × 10 −18 4.2 × 10−16 3.8 × 10−18 2.5 × 10−18 2.6 × 10−19
+50.0 2.1 × 10 −17 8.7 × 10−16 5.4 × 10−17 8.7 × 10−18 5.3 × 10−18
+100.0 4.5 × 10 −17 8.5 × 10−16 1.6 × 10−16 1.9 × 10−17 2.7 × 10−17
+200.0 8.8 × 10 −17 6.3 × 10−16 2.4 × 10−16 4.2 × 10−17 9.2 × 10−17
+500.0 1.8 × 10 −16 3.7 × 10−16 2.3 × 10−16 8.4 × 10−17 2.9 × 10−16
+1000.0 2.2 × 10 −16 2.7 × 10−16 1.8 × 10−16 8.0 × 10−17 5.2 × 10−16
+For low energies (𝑇 ≲ 25 keV) the data may be represented by
+(𝜎𝑣)DD = 2.33 × 10−14𝑇−2/3 exp(−18.76𝑇−1/3) cm3 sec−1;
+(𝜎𝑣)DT = 3.68 × 10−12𝑇−2/3 exp(−19.94𝑇−1/3) cm3 sec−1,
+where 𝑇 is measured in keV .
+A three-parameter model has also been developed for fusion cross-sections of
+light nuclei.28𝑏
+The power density released in the form of charged particles is
+𝑃DD = 3.3 × 10−13𝑛D
+2(𝜎𝑣)DD watt cm−3 (including the subsequent
+prompt D–T reaction only);
+𝑃DT = 5.6 × 10−13𝑛D𝑛T(𝜎𝑣)DT watt cm−3;
+𝑃DHe3 = 2.9 × 10−12𝑛D𝑛He3 (𝜎𝑣)DHe3 watt cm−3.
+45
+===== PAGE 47 =====
+RELATIVISTIC ELECTRON BEAMS
+Here 𝛾 = (1 − 𝛽 2)−1/2 is the relativistic scaling factor; quantities in analytic
+formulas are expressed in SI or cgs units, as indicated; in numerical formulas,
+𝐼 is in amperes (A), 𝐵 is in gauss (G), electron linear density 𝑁 is in cm −1,
+and temperature, voltage and energy are in MeV; 𝛽𝑧 = 𝑣𝑧/𝑐; 𝑘 is Boltzmann’s
+constant.
+Relativistic electron gyroradius:
+𝑟𝑒 = 𝑚𝑐2
+𝑒𝐵 (𝛾2 − 1)1/2 (cgs) = 1.70 × 103(𝛾2 − 1)1/2𝐵−1 cm.
+Relativistic electron energy:
+𝑊 = 𝑚𝑐2𝛾 = 0.511𝛾MeV.
+Bennett pinch condition:
+𝐼2 = 2𝑁𝑘(𝑇𝑒 + 𝑇𝑖)𝑐2 (cgs) = 3.20 × 10−4𝑁(𝑇𝑒 + 𝑇𝑖) A2.
+Alfvén-Lawson limit:
+𝐼𝐴 = (𝑚𝑐3/𝑒)𝛽𝑧𝛾 (cgs) = (4𝜋𝑚𝑐/𝜇0𝑒)𝛽𝑧𝛾 (SI) = 1.70 × 104𝛽𝑧𝛾 A.
+The ratio of net current to 𝐼𝐴 is
+𝐼
+𝐼𝐴
+= 𝜈
+𝛾.
+Here 𝜈 = 𝑁𝑟𝑒 is the Budker number, where 𝑟𝑒 = 𝑒2/𝑚𝑐2 = 2.82 × 10−13 cm is
+the classical electron radius. Beam electron number density is
+𝑛𝑏 = 2.08 × 108𝐽𝛽−1 cm−3,
+where 𝐽 is the current density in A cm −2. For a uniform beam of radius 𝑎 (in
+cm),
+𝑛𝑏 = 6.63 × 107𝐼𝑎−2𝛽−1 cm−3,
+and
+2𝑟𝑒
+𝑎 = 𝜈
+𝛾.
+Child’s law: (non-relativistic) space-charge-limited current density between
+parallel plates with voltage drop 𝑉 (in MV) and separation 𝑑 (in cm) is
+𝐽 = 2.34 × 103𝑉3/2𝑑−2 A cm−2.
+46
+===== PAGE 48 =====
+The saturated parapotential current (magnetically self-limited flow along
+equipotentials in pinched diodes and transmission lines) is 29
+𝐼𝑝 = 8.5 × 103𝐺𝛾 ln [𝛾 + (𝛾2 − 1)1/2] A,
+where 𝐺 is a geometrical factor depending on the diode structure:
+𝐺 = 𝑤
+2𝜋𝑑
+for parallel plane cathode and anode of width
+𝑤, separation 𝑑;
+𝐺 = (ln 𝑅2
+𝑅1
+)
+−1
+for cylinders of radii 𝑅1 (inner) and 𝑅2 (outer);
+𝐺 = 𝑅𝑐
+𝑑0
+for conical cathode of radius 𝑅𝑐, maximum
+separation 𝑑0 (at 𝑟 = 𝑅𝑐) from plane anode.
+For 𝛽 → 0 (𝛾 → 1), both 𝐼𝐴 and 𝐼𝑝 vanish.
+The condition for a longitudinal magnetic field 𝐵𝑧 to suppress filamentation
+in a beam of current density 𝐽 (in A cm−2) is
+𝐵𝑧 > 47𝛽𝑧(𝛾𝐽)1/2 G.
+Voltage registered by Rogowski coil of minor cross-sectional area 𝐴, 𝑛turns,
+major radius 𝑎, inductance 𝐿, external resistance 𝑅 and capacitance 𝐶 (all in
+SI):
+externally integrated 𝑉 = (1/𝑅𝐶)(𝑛𝐴𝜇0𝐼/2𝜋𝑎);
+self-integrating 𝑉 = (𝑅/𝐿)(𝑛𝐴𝜇0𝐼/2𝜋𝑎) = 𝑅𝐼/𝑛.
+X-ray production, target with average atomic number 𝑍 (𝑉 ≲ 5 MeV):
+𝜂 ≡ x-ray power/beam power = 7 × 10−4𝑍𝑉 .
+X-ray dose at 1 meter generated by an e-beam normally-incident on material
+with atomic number 𝑍, depositing total charge 𝑄 while the pulse voltage is
+within 84% of peak ( 𝑉 ≥ 0.84𝑉max):
+𝐷 = 150𝑉2.8
+max 𝑄𝑍1/2 rads.
+47
+===== PAGE 49 =====
+BEAM INSTABILITIES30
+Name Conditions Saturation Mechanism
+Electron-electron 𝑉 𝑑 > ̄𝑉𝑒𝑗, 𝑗 = 1, 2 Electron trapping until
+̄𝑉𝑒𝑗 ∼ 𝑉 𝑑
+Buneman 𝑉 𝑑 > (𝑀/𝑚)1/3 ̄𝑉 𝑖,
+𝑉 𝑑 > ̄𝑉𝑒
+Electron trapping until
+̄𝑉𝑒 ∼ 𝑉 𝑑
+Beam-plasma 𝑉 𝑏 >
+(𝑛𝑝/𝑛𝑏)1/3 ̄𝑉 𝑏
+Trapping of beam electrons
+Weak beam-plasma 𝑉 𝑏 <
+(𝑛𝑝/𝑛𝑏)1/3 ̄𝑉 𝑏
+Quasilinear or nonlinear
+(mode coupling)
+Beam-plasma
+(hot-electron)
+̄𝑉𝑒 > 𝑉 𝑏 > ̄𝑉 𝑏 Quasilinear or nonlinear
+Ion acoustic 𝑇𝑒 ≫ 𝑇𝑖, 𝑉 𝑑 ≫ 𝐶𝑠 Quasilinear, ion tail formation,
+nonlinear scattering, or
+resonance broadening.
+Anisotropic
+temperature (hydro)
+𝑇𝑒⟂ > 2𝑇𝑒∥ Isotropization
+Ion cyclotron 𝑉 𝑑 > 20 ̄𝑉 𝑖
+(for 𝑇𝑒 ≈ 𝑇𝑖)
+Ion heating
+Beam-cyclotron
+(hydro)
+𝑉 𝑑 > 𝐶𝑠 Resonance broadening
+Modified two-stream
+(hydro)
+𝑉 𝑑 < (1 + 𝛽)1/2𝑉𝐴,
+𝑉 𝑑 > 𝐶𝑠
+Trapping
+Ion-ion (equal beams) 𝑈 < 2(1 + 𝛽)1/2𝑉𝐴 Ion trapping
+Ion-ion (equal beams) 𝑈 < 2𝐶𝑠 Ion trapping
+For nomenclature, see p. 50.
+48
+===== PAGE 50 =====
+Parameters of Most Unstable Mode
+Name Growth Rate Frequency Wave
+Number
+Group
+Velocity
+Electron-
+electron
+1
+2𝜔𝑒 0 0.9 𝜔𝑒
+𝑉 𝑑
+0
+Buneman 0.7( 𝑚
+𝑀)
+1/3
+𝜔𝑒 0.4( 𝑚
+𝑀)
+1/3
+𝜔𝑒
+𝜔𝑒
+𝑉 𝑑
+2
+3𝑉 𝑑
+Beam-plasma 0.7( 𝑛𝑏
+𝑛𝑝
+)
+1/3
+𝜔𝑒 𝜔𝑒 − 0.4( 𝑛𝑏
+𝑛𝑝
+)
+1/3
+𝜔𝑒
+𝜔𝑒
+𝑉 𝑏
+2
+3𝑉 𝑏
+Weak
+beam-plasma
+𝑛𝑏
+2𝑛𝑝
+( 𝑉 𝑏
+̄𝑉 𝑏
+)
+2
+𝜔𝑒 𝜔𝑒
+𝜔𝑒
+𝑉 𝑏
+3 ̄𝑉2
+𝑒
+𝑉 𝑏
+Beam-plasma
+(hot-electron)
+( 𝑛𝑏
+𝑛𝑝
+)
+1/2 ̄𝑉𝑒
+𝑉 𝑏
+𝜔𝑒
+𝑉 𝑏
+̄𝑉𝑒
+𝜔𝑒 𝜆−1
+𝐷 𝑉 𝑏
+Ion acoustic ( 𝑚
+𝑀)
+1/2
+𝜔𝑖 𝜔𝑖 𝜆−1
+𝐷 𝐶𝑠
+Anisotropic
+temperature
+(hydro)
+Ω𝑒 𝜔𝑒 cos 𝜃 ∼ Ω 𝑒 𝑟−1
+𝑒 ̄𝑉𝑒⟂
+Ion cyclotron 0.1Ω𝑖 1.2Ω𝑖 𝑟−1
+𝑖
+1
+3
+̄𝑉 𝑖
+Beam-cyclotron
+(hydro)
+0.7Ω𝑒 𝑛Ω𝑒 0.7𝜆−1
+𝐷 ≳ 𝑉 𝑑;
+≲ 𝐶𝑠
+Modified
+two-stream
+(hydro)
+1
+2Ω𝐻 0.9Ω𝐻 1.7Ω𝐻
+𝑉 𝑑
+1
+2𝑉 𝑑
+Ion-ion
+(equal beams)
+0.4Ω𝐻 0 1.2Ω𝐻
+𝑈 0
+Ion-ion
+(equal beams)
+0.4𝜔𝑖 0 1.2𝜔𝑖
+𝑈 0
+For nomenclature, see p. 50.
+49
+===== PAGE 51 =====
+In the preceding tables, subscripts 𝑒, 𝑖, 𝑑, 𝑏, 𝑝 stand for “electron,” “ion,”
+“drift,” “beam,” and “plasma,” respectively. Thermal velocities are denoted
+by a bar. In addition, the following are used:
+𝑚 electron mass 𝑟𝑒, 𝑟𝑖 gyroradius
+𝑀 ion mass 𝛽 plasma/magnetic energy
+𝑉 velocity density ratio
+𝑇 temperature 𝑉𝐴 Alfvén speed
+𝑛𝑒, 𝑛𝑖 number density Ω𝑒, Ω𝑖 gyrofrequency
+𝑛 harmonic number Ω𝐻 hybrid gyrofrequency,
+𝐶𝑠 = (𝑇𝑒/𝑀)1/2 ion sound speed Ω𝐻
+2 = Ω𝑒Ω𝑖
+𝜔𝑒, 𝜔𝑖 plasma frequency 𝑈 relative drift velocity of
+𝜆𝐷 Debye length two ion species
+50
+===== PAGE 52 =====
+LASERS
+System Parameters
+Efficiencies and power levels are approximate. 31
+Wavelength Power levels available (W)
+Type (μm) Efficiency Pulsed CW
+CO2 10.6 0.01 − 0.02
+(pulsed)
+> 2 × 1013 > 105
+CO 5 0.4 > 109 > 100
+Holmium 2.06 0.03† − 0.1‡ > 10 7 80
+Iodine 1.315 0.003 3 × 1012 −
+Nd-glass 1.06 − 1.25 × 1015 −
+Nd:YAG 1.064 − 109 > 104
+Nd:YLF 1.045,
+1.54, 1.313
+− 4 × 108 80
+Nd:YVO4 1.064 − − > 20
+Er:YAG 2.94 − 1.5 × 105 −
+*Color center 1 − 4 10−3 5 × 108 1
+*Ti:Sapphire 0.7 − 1.5 0.4 × 𝜂 𝑝 1014 150
+Ruby 0.6943 < 10−3 1010 1
+He-Ne 0.6328 10−4 − 1 − 50 × 10−3
+*Argon ion 0.45 − 0.60 10−3 5 × 104 150
+*OPO 0.3 − 10 > 0.1 × 𝜂 𝑝 1010 5
+N2 0.3371 0.001 − 0.05 106 −
+*Dye 0.3 − 1.1 10−3 5 × 107 > 100
+KrF 0.248 0.08 1012 500
+ArF 0.193 0.1 1012 300
+Xenon 0.175 0.02 > 108 −
+Ytterbium fiber 1.05 − 1.1 0.55 5 × 107 104
+Erbium fiber 1.534 − 7 × 106 100
+Semiconductor 0.375 − 1.9 > 0.5 3 × 109 > 103
+*Tunable sources †lamp-driven ‡diode-driven
+Nd stands for Neodymium; Er stands for Erbium; Ti stands for Titanium;
+YAG stands for Yttrium–Aluminum Garnet; YLF stands for Yttrium Lithium
+Fluoride; YVO5 stands for Yttrium Vanadate; OPO for Optical Parametric
+Oscillator; 𝜂𝑝 is pump laser efficiency.
+51
+===== PAGE 53 =====
+Formulas
+An e-m wave with 𝐤 ∥ 𝐁 has an index of refraction given by
+𝑛± = [1 − 𝜔 2
+𝑝𝑒/𝜔(𝜔 ∓ 𝜔𝑐𝑒)]1/2,
+where ± refers to the helicity. The rate of change of polarization angle 𝜃 as a
+function of displacement 𝑠 (Faraday rotation) is given by
+𝑑𝜃/𝑑𝑠 = (𝑘/2)(𝑛− − 𝑛+) = 2.36 × 104𝑁𝐵𝑓−2 cm−1,
+where 𝑁 is the electron number density, 𝐵 is the field strength, and 𝑓 is the
+wave frequency, all in cgs.
+The quiver velocity of an electron in an e-m field of angular frequency 𝜔 is
+𝑣0 = 𝑒𝐸max/𝑚𝜔 = 25.6𝐼1/2𝜆0 cm sec−1
+in terms of the laser flux 𝐼 = 𝑐𝐸 2
+max/8𝜋, with 𝐼 in watt/cm2, laser wavelength
+𝜆0 in μm. The ratio of quiver energy to thermal energy is
+𝑊qu/𝑊th = 𝑚𝑒𝑣0
+2/2𝑘𝑇 = 1.81 × 10−13𝜆0
+2𝐼/𝑇,
+where 𝑇 is given in eV . For example, if𝐼 = 10 15 W cm−2, 𝜆0 = 1 μm, 𝑇 =
+2 keV , then𝑊qu/𝑊th ≈ 0.1.
+Pondermotive force:
+ℱℱℱ = 𝑁∇⟨𝐸 2⟩/8𝜋𝑁𝑐,
+where
+𝑁𝑐 = 1.1 × 1021𝜆−2
+0 cm−3.
+For uniform illumination of a lens with 𝑓-number 𝐹, the diameter 𝑑 at focus
+(85% of the energy) and the depth of focus 𝑙 (distance to first zero in inten-
+sity) are given by
+𝑑 ≈ 2.44𝐹𝜆𝜃/𝜃𝐷𝐿 and 𝑙 ≈ ±2𝐹 2𝜆𝜃/𝜃𝐷𝐿.
+Here 𝜃 is the beam divergence containing 85% of energy and 𝜃𝐷𝐿 is the diffrac-
+tion-limited divergence:
+𝜃𝐷𝐿 = 2.44𝜆/𝑏,
+where 𝑏 is the aperture. These formulas are modified for nonuniform (such
+as Gaussian) illumination of the lens or for pathological laser profiles.
+52
+===== PAGE 54 =====
+ATOMIC PHYSICS AND RADIATION
+Energies and temperatures are in eV; all other units are cgs except where
+noted. 𝑍 is the charge state ( 𝑍 = 0 refers to a neutral atom); the subscript 𝑒
+labels electrons. 𝑁 refers to number density, 𝑛to principal quantum number.
+Asterisk superscripts on level population densities denote local thermody-
+namic equilibrium (LTE). Thus 𝑁𝑛* is the LTE number density of atoms (or
+ions) in level 𝑛.
+Characteristic atomic collision cross section:
+𝜋𝑎0
+2 = 8.80 × 10−17 cm2.(1)
+Binding energy of outer electron in level labeled by quantum numbers 𝑛, 𝑙:
+𝐸𝑍
+∞(𝑛, 𝑙) = − 𝑍2𝐸𝐻
+∞
+(𝑛 − Δ𝑙)2 ,(2)
+where 𝐸𝐻
+∞ = 13.6 eV is the hydrogen ionization energy and Δ𝑙 = 0.75𝑙−5,
+𝑙 ≳ 5 , is the quantum defect.
+Excitation and Decay
+Cross section (Bethe approximation) for electron excitation by dipole allowed
+transition 𝑚 → 𝑛 (Refs. 32, 33):
+𝜎𝑚𝑛 = 2.36 × 10−13 𝑓𝑚𝑛𝑔(𝑛, 𝑚)
+𝜖Δ𝐸𝑛𝑚
+cm2,(3)
+where 𝑓𝑚𝑛 is the oscillator strength, 𝑔(𝑛, 𝑚)is the Gaunt factor, 𝜖 is the inci-
+dent electron energy, and Δ𝐸𝑛𝑚 = 𝐸𝑛 − 𝐸𝑚.
+Electron excitation rate averaged over Maxwellian velocity distribution, 𝑋𝑚𝑛
+= 𝑁𝑒⟨𝜎𝑚𝑛𝑣⟩ (Refs. 34, 35):
+𝑋𝑚𝑛 = 1.6 × 10−5 𝑓𝑚𝑛⟨𝑔(𝑛, 𝑚)⟩𝑁𝑒
+Δ𝐸𝑛𝑚𝑇1/2
+𝑒
+exp (−Δ𝐸𝑛𝑚
+𝑇𝑒
+) sec−1,(4)
+where ⟨𝑔(𝑛, 𝑚)⟩denotes the thermal averaged Gaunt factor (generally ∼ 1 for
+atoms, ∼ 0.2 for ions).
+53
+===== PAGE 55 =====
+Rate for electron collisional deexcitation:
+𝑌𝑛𝑚 = (𝑁𝑚*/𝑁𝑛*)𝑋𝑚𝑛.(5)
+Here 𝑁𝑚*/𝑁𝑛* = (𝑔 𝑚/𝑔𝑛) exp(Δ𝐸𝑛𝑚/𝑇𝑒) is the Boltzmann relation for level
+population densities, where 𝑔𝑛 is the statistical weight of level 𝑛.
+Rate for spontaneous decay 𝑛 → 𝑚 (Einstein 𝐴 coefficient)34
+𝐴𝑛𝑚 = 4.3 × 107(𝑔𝑚/𝑔𝑛)𝑓𝑚𝑛(Δ𝐸𝑛𝑚)2 sec−1.(6)
+Intensity emitted per unit volume from the transition 𝑛 → 𝑚 in an optically
+thin plasma:
+𝐼𝑛𝑚 = 1.6 × 10−19𝐴𝑛𝑚𝑁𝑛Δ𝐸𝑛𝑚 watt/cm3.(7)
+Condition for steady state in a corona model:
+𝑁0𝑁𝑒⟨𝜎0𝑛𝑣⟩ = 𝑁𝑛𝐴𝑛0,(8)
+where the ground state is labelled by a zero subscript.
+Hence for a transition 𝑛 → 𝑚 in ions, where ⟨𝑔(𝑛, 0)⟩ ≈ 0.2,
+𝐼𝑛𝑚 = 5.1 × 10−25 𝑓𝑛𝑚𝑔𝑚𝑁𝑒𝑁0
+𝑔0𝑇1/2
+𝑒
+( Δ𝐸𝑛𝑚
+Δ𝐸𝑛0
+)
+3
+exp (−Δ𝐸𝑛0
+𝑇𝑒
+) watt
+cm3 .(9)
+Ionization and Recombination
+In a general time-dependent situation the number density of the charge state
+𝑍 satisfies
+(10) 𝑑𝑁(𝑍)
+𝑑𝑡 = 𝑁𝑒[− 𝑆(𝑍)𝑁(𝑍) − 𝛼(𝑍)𝑁(𝑍)
++ 𝑆(𝑍 − 1)𝑁(𝑍 − 1) + 𝛼(𝑍 + 1)𝑁(𝑍 + 1)].
+Here 𝑆(𝑍)is the ionization rate. The recombination rate 𝛼(𝑍)has the form
+𝛼(𝑍) = 𝛼𝑟(𝑍) + 𝑁𝑒𝛼3(𝑍), where 𝛼𝑟 and 𝛼3 are the radiative and three-body
+recombination rates, respectively.
+54
+===== PAGE 56 =====
+Classical ionization cross-section 36 for any atomic shell 𝑗
+𝜎𝑖 = 6 × 10−14𝑏𝑗𝑔𝑗(𝑥)/𝑈𝑗
+2 cm2.(11)
+Here 𝑏𝑗 is the number of shell electrons; 𝑈𝑗 is the binding energy of the
+ejected electron; 𝑥 = 𝜖/𝑈 𝑗, where 𝜖 is the incident electron energy; and 𝑔
+is a universal function with a minimum value 𝑔min ≈ 0.2 at 𝑥 ≈ 4.
+Ionization from the ground state, averaged over Maxwellian electron distri-
+bution, for 0.02 ≲ 𝑇𝑒/𝐸𝑍
+∞ ≲ 100(Ref. 35):
+𝑆(𝑍) = 10−5 (𝑇𝑒/𝐸𝑍
+∞)1/2
+(𝐸𝑍∞)3/2(6.0 + 𝑇𝑒/𝐸𝑍∞) exp (−𝐸𝑍
+∞
+𝑇𝑒
+) cm3/sec,(12)
+where 𝐸𝑍
+∞ is the ionization energy.
+Electron-ion radiative recombination rate (𝑒 + 𝑁(𝑍) → 𝑁(𝑍 − 1) + ℎ𝜈)
+is in error ≤ 0.5% for 𝑇𝑒/𝑍2 ≲ 8.6 eV, by ∼ 3% for 𝑇𝑒/𝑍2 ≲ 86 eV, and by
+∼ 31% for 𝑇𝑒/𝑍2 ≲ 431eV (Ref. 37):
+(13) 𝛼𝑟(𝑍) = 5.2 × 10−14𝑍 ( 𝐸𝑍
+∞
+𝑇𝑒
+)
+1/2
+[0.43 +1
+2 ln(𝐸𝑍
+∞/𝑇𝑒)
++ 0.469(𝐸𝑍
+∞/𝑇𝑒)−1/3]cm3/sec.
+For 1 eV < 𝑇𝑒/𝑍2 < 15 eV, this becomes approximately 35
+𝛼𝑟(𝑍) = 2.7 × 10−13𝑍2𝑇𝑒
+−1/2 cm3/sec.(14)
+Collisional (three-body) recombination rate for singly ionized plasma: 38
+𝛼3 = 8.75 × 10−27𝑇𝑒
+−4.5 cm6/sec.(15)
+Photoionization cross section for ions in level 𝑛, 𝑙(short-wavelength limit):
+𝜎ph(𝑛, 𝑙) = 1.64 × 10−16𝑍5/𝑛3𝐾7+2𝑙 cm2,(16)
+where 𝐾 is the wavenumber in Rydbergs (1 Rydberg = 1.0974 × 105 cm−1).
+55
+===== PAGE 57 =====
+Ionization Equilibrium Models
+Saha equilibrium:39
+𝑁𝑒𝑁1*(𝑍)
+𝑁𝑛*(𝑍 − 1) = 6.0 × 1021 𝑔𝑍
+1 𝑇𝑒
+3/2
+𝑔𝑍−1𝑛
+exp (−𝐸𝑍
+∞(𝑛, 𝑙)
+𝑇𝑒
+) cm−3,(17)
+where 𝑔𝑍
+𝑛 is the statistical weight for level 𝑛of charge state 𝑍 and 𝐸𝑍
+∞(𝑛, 𝑙)
+is the ionization energy of the neutral atom initially in level (𝑛, 𝑙), given by
+Eq. (2).
+In a steady state at high electron density,
+𝑁𝑒𝑁*(𝑍)
+𝑁*(𝑍 − 1) = 𝑆(𝑍 − 1)
+𝛼3
+,(18)
+is a function only of 𝑇.
+Conditions for LTE:39
+(a) Collisional and radiative excitation rates for a level 𝑛must satisfy
+𝑌𝑛𝑚 ≳ 10𝐴𝑛𝑚.(19)
+(b) Electron density must satisfy
+𝑁𝑒 ≳ 7 × 1018𝑍7𝑛−17/2(𝑇/𝐸𝑍
+∞)1/2 cm−3.(20)
+Steady state condition in corona model:
+𝑁(𝑍 − 1)
+𝑁(𝑍) = 𝛼𝑟
+𝑆(𝑍 − 1).(21)
+Corona model is applicable if 40
+1012𝑡𝐼
+−1 < 𝑁𝑒 < 1016𝑇𝑒
+7/2 cm−3,(22)
+where 𝑡𝐼 is the ionization time.
+56
+===== PAGE 58 =====
+Radiation
+Note: Energies and temperatures are in eV; all other quantities are in cgs
+units except where noted. 𝑍 is the charge state ( 𝑍 = 0 refers to a neutral
+atom); the subscript 𝑒 labels electrons. 𝑁 is number density.
+Average radiative decay rate of a state with principal quantum number 𝑛is
+𝐴𝑛 = ∑
+𝑚<𝑛
+𝐴𝑛𝑚 = 1.6 × 1010𝑍4𝑛−9/2 sec.(23)
+Natural linewidth (Δ𝐸in eV):
+Δ𝐸 Δ𝑡 = ℎ = 4.14 × 10−15 eV sec,(24)
+where Δ𝑡 is the lifetime of the line.
+Doppler width:
+Δ𝜆/𝜆 = 7.7 × 10−5(𝑇/𝜇)1/2,(25)
+where 𝜇 is the mass of the emitting atom or ion scaled by the proton mass.
+Optical depth for a Doppler-broadened line: 39
+𝜏 = 3.52 × 10−13𝑓𝑛𝑚𝜆(𝑀𝑐2/𝑘𝑇)1/2𝑁𝐿 = 5.4 × 10−9𝑓𝑚𝑛𝜆(𝜇/𝑇)1/2𝑁𝐿,(26)
+where 𝑓𝑛𝑚 is the absorption oscillator strength, 𝜆 is the wavelength, and 𝐿 is
+the physical depth of the plasma; 𝑀, 𝑁, and 𝑇 are the mass, number density,
+and temperature of the absorber; 𝜇 is 𝑀 divided by the proton mass. Opti-
+cally thin means 𝜏 < 1.
+Resonance absorption cross section at center of line:
+𝜎𝜆=𝜆𝑐 = 5.6 × 10−13𝜆2/Δ𝜆 cm2.(27)
+Wien displacement law (wavelength of maximum black-body emission):
+𝜆max = 2.50 × 10−5𝑇−1 cm.(28)
+Radiation from the surface of a black body at temperature 𝑇:
+𝑊 = 1.03 × 105𝑇4 watt/cm2.(29)
+57
+===== PAGE 59 =====
+Bremsstrahlung from hydrogen-like plasma:26
+𝑃 Br = 1.69 × 10−32𝑁𝑒𝑇𝑒
+1/2 ∑ [𝑍2𝑁(𝑍)] watt/cm3,(30)
+where the sum is over all ionization states 𝑍.
+Bremsstrahlung optical depth:41
+𝜏 = 5.0 × 10−38𝑁𝑒𝑁 𝑖𝑍2𝑔𝐿𝑇−7/2,(31)
+where 𝑔 ≈ 1.2 is an average Gaunt factor and 𝐿 is the physical path length.
+Inverse bremsstrahlung absorption coefficient42 for radiation of angular fre-
+quency 𝜔:
+𝜅 = 3.1 × 10−7𝑍𝑛𝑒
+2 ln Λ 𝑇−3/2𝜔−2(1 − 𝜔2
+𝑝/𝜔2)−1/2 cm−1;(32)
+here Λ is the electron thermal velocity divided by 𝑉, where 𝑉 is the larger of
+𝜔 and 𝜔𝑝 multiplied by the larger of 𝑍𝑒2/𝑘𝑇 and ℏ/(𝑚𝑘𝑇)1/2.
+Recombination (free-bound) radiation:
+𝑃𝑟 = 1.69 × 10−32𝑁𝑒𝑇𝑒
+1/2 ∑ [𝑍2𝑁(𝑍)( 𝐸𝑍−1
+∞
+𝑇𝑒
+)] watt/cm3.(33)
+Cyclotron radiation26 in magnetic field 𝐁:
+𝑃𝑐 = 6.21 × 10−28𝐵2𝑁𝑒𝑇𝑒 watt/cm3.(34)
+For 𝑁𝑒𝑘𝑇𝑒 = 𝑁 𝑖𝑘𝑇𝑖 = 𝐵2/16𝜋(𝛽 = 1, isothermal plasma), 26
+𝑃𝑐 = 5.00 × 10−38𝑁2
+𝑒 𝑇2
+𝑒 watt/cm3.(35)
+Cyclotron radiation energy loss 𝑒-folding time for a single electron: 41
+𝑡𝑐 ≈ 9.0 × 108𝐵−2
+2.5 + 𝛾 sec,(36)
+where 𝛾 = (1 − (𝑣/𝑐)2)−1/2 is the relativistic scaling factor.
+Number of cyclotron harmonics 41 trapped in a medium of finite depth 𝐿:
+𝑚tr = (57𝛽𝐵𝐿)1/6,(37)
+where 𝛽 = 8𝜋𝑁𝑘𝑇/𝐵2.
+Line radiation is given by summing Eq. (9) over all species in the plasma.
+58
+===== PAGE 60 =====
+ATOMIC SPECTROSCOPY
+Spectroscopic notation combines observational and theoretical elements. Ob-
+servationally, spectral lines are grouped in series with line spacings which
+decrease toward the series limit. Every line can be related theoretically to a
+transition between two atomic states, each identified by its quantum num-
+bers.
+Ionization levels are indicated by roman numerals. Thus C I is neutral car-
+bon, C II is singly ionized, etc. The state of a one-electron atom (hydrogen) or
+ion (He II, Li III, etc.) is specified by identifying the principal quantum num-
+ber 𝑛 = 1, 2, … , the orbital angular momentum 𝑙 = 0, 1, … , 𝑛 − 1, and the
+spin angular momentum 𝑠 = ± 1
+2 . The total angular momentum 𝑗 is the mag-
+nitude of the vector sum of 𝐥 and 𝐬, 𝑗 = 𝑙 ± 1
+2 (𝑗 ≥ 1
+2 ). The letters s, p, d, f, g, h,
+i, k, l, …, respectively, are associated with angular momenta 𝑙 = 0, 1, 2, 3, 4, 5,
+6, 7, 8, …. The atomic states of hydrogen and hydrogenic ions are degenerate:
+neglecting fine structure, their energies depend only on 𝑛according to
+𝐸𝑛 = −𝑅∞ℎ𝑐𝑍2𝑛−2
+1 + 𝑚/𝑀 = −Ry𝑍2
+𝑛2 ,
+where ℎ is Planck’s constant, 𝑐 is the speed of light, 𝑚 is the electron mass, 𝑀
+and 𝑍 are the mass and charge state of the nucleus, and
+𝑅∞ = 109,737 cm−1
+is the Rydberg constant. If 𝐸𝑛 is divided by ℎ𝑐, the result is in wavenumber
+units. The energy associated with a transition 𝑚 → 𝑛 is given by
+Δ𝐸𝑚𝑛 = Ry(1/𝑚2 − 1/𝑛2),
+with 𝑚 < 𝑛(𝑚 > 𝑛) for absorption (emission) lines.
+For hydrogen and hydrogenic ions the series of lines belonging to the transi-
+tions 𝑚 → 𝑛 have conventional names:
+Transition: 1 → 𝑛 2 → 𝑛 3 → 𝑛 4 → 𝑛 5 → 𝑛 6 → 𝑛
+Name: Lyman Balmer Paschen Brackett Pfund Humphreys
+Successive lines in any series are denoted 𝛼, 𝛽, 𝛾, etc. Thus the transition 1 →
+3 gives rise to the Lyman- 𝛽 line. Relativistic effects, quantum electrodynamic
+effects (e.g., the Lamb shift), and interactions between the nuclear magnetic
+moment and the magnetic field due to the electron produce small shifts and
+splittings, ≲ 10−2 cm−1; these last are called “hyperfine structure.”
+In many-electron atoms the electrons are grouped in closed and open shells,
+with spectroscopic properties determined mainly by the outer shell. Shell 59
+===== PAGE 61 =====
+energies depend primarily on 𝑛; the shells corresponding to 𝑛 = 1 , 2, 3, …
+are called 𝐾, 𝐿, 𝑀, etc. A shell is made up of subshells of different angular
+momenta, each labeled according to the values of 𝑛, 𝑙, and the number of
+electrons it contains out of the maximum possible number, 2(2𝑙 + 1). For ex-
+ample, 2𝑝5 indicates that there are 5 electrons in the subshell corresponding
+to 𝑙 = 1 (denoted by p) and 𝑛 = 2.
+In the lighter elements the electrons fill up subshells within each shell in the
+order s, p, d, etc., and no shell acquires electrons until the lower shells are
+full. In the heavier elements this rule does not always hold. But if a partic-
+ular subshell is filled in a noble gas, then the same subshell is filled in the
+atoms of all elements that come later in the periodic table. The ground state
+configurations of the noble gases are as follows:
+He 1s2
+Ne 1s22s22p6
+Ar 1s22s22p63s23p6
+Kr 1s22s22p63s23p63d104s24p6
+Xe 1s22s22p63s23p63d104s24p64d105s25p6
+Rn 1s22s22p63s23p63d104s24p64d104f145s25p65d106s26p6
+Alkali metals (Li, Na, K, etc.) resemble hydrogen; their transitions are de-
+scribed by giving 𝑛and 𝑙 in the initial and final states for the single outer (va-
+lence) electron.
+For general transitions in most atoms the atomic states are specified in terms
+of the parity (−1)Σ𝑙𝑖 and the magnitudes of the orbital angular momentum
+𝐋 = Σ𝐥 𝑖, the spin 𝐒 = Σ𝐬 𝑖, and the total angular momentum 𝐉 = 𝐋 + 𝐒 ,
+where all sums are carried out over the unfilled subshells (the filled ones
+sum to zero). If a magnetic field is present the projections 𝑀𝐿, 𝑀𝑆, and 𝑀
+of 𝐋, 𝐒, and 𝐉 along the field are also needed. The quantum numbers satisfy
+|𝑀𝐿| ≤ 𝐿 ≤ 𝜈𝑙 , |𝑀𝑆| ≤ 𝑆 ≤ 𝜈/2 , and |𝑀| ≤ 𝐽 ≤ 𝐿 + 𝑆 , where 𝜈 is the number
+of electrons in the unfilled subshell. Upper-case letters S, P, D, etc., stand for
+𝐿 = 0, 1, 2, etc., in analogy with the notation for a single electron. For exam-
+ple, the ground state of Cl is described by 3p5 2 Po
+3/2. The first part indicates
+that there are 5 electrons in the subshell corresponding to 𝑛 = 3 and 𝑙 = 1 .
+(The closed inner subshells 1s22s22p63s2, identical with the configuration of
+Mg, are usually omitted.) The symbol ‘P’ indicates that the angular momenta
+of the outer electrons combine to give 𝐿 = 1 . The prefix ‘2’ represents the
+value of the multiplicity 2𝑆 + 1 (the number of states with nearly the same
+energy), which is equivalent to specifying 𝑆 = 1
+2 . The subscript 3/2is the
+60
+===== PAGE 62 =====
+value of 𝐽. The superscript ‘o’ indicates that the state has odd parity; it would
+be omitted if the state were even.
+The notation for excited states is similar. For example, helium has a state
+1s2s 3S1 which lies 19.72 eV (159,856 cm −1) above the ground state 1s 2 1S0.
+But the two “terms” do not “combine” (transitions between them do not oc-
+cur) because this would violate, e.g., the quantum-mechanical selection rule
+that the parity must change from odd to even or from even to odd. For elec-
+tric dipole transitions (the only ones possible in the long-wavelength limit),
+other selection rules are that the value of 𝑙 of only one electron can change,
+and only by Δ𝑙 = ±1 ; Δ𝑆 = 0 ; Δ𝐿 = ±1 or 0; and Δ𝐽 = ±1 or 0 (but 𝐿 = 0
+does not combine with 𝐿 = 0 and 𝐽 = 0 does not combine with 𝐽 = 0). Transi-
+tions are possible between the helium ground state (which has 𝑆 = 0 , 𝐿 = 0,
+𝐽 = 0 , and even parity) and, e.g., the state 1s2p 1Po
+1 (with 𝑆 = 0, 𝐿 = 1, 𝐽 = 1 ,
+odd parity, excitation energy 21.22 eV). These rules hold accurately only for
+light atoms in the absence of strong electric or magnetic fields. Transitions
+that obey the selection rules are called “allowed”; those that do not are called
+“forbidden.”
+The amount of information needed to adequately characterize a state in-
+creases with the number of electrons; this is reflected in the notation. Thus 43
+O II has an allowed transition between the states 2p 23p′ 2 Fo
+7/2 and 2p2(1D)3d′
+2F7/2 (and between the states obtained by changing 𝐽 from 7/2to 5/2 in ei-
+ther or both terms). Here both states have two electrons with 𝑛 = 2 and 𝑙 = 1;
+the closed subshells 1s22s2 are not shown. The outer ( 𝑛 = 3 ) electron has
+𝑙 = 1 in the first state and 𝑙 = 2 in the second. The prime indicates that if
+the outermost electron were removed by ionization, the resulting ion would
+not be in its lowest energy state. The expression (1D) gives the multiplicity
+and total angular momentum of the “parent” term, i.e., the subshell imme-
+diately below the valence subshell; this is understood to be the same in both
+states. (Grandparents, etc., sometimes have to be specified in heavier atoms
+and ions.) Another example 43 is the allowed transition from 2p2(3P)3p 2Po
+1/2
+(or 2Po
+3/2) to 2p2(1D)3d′ 2 S1/2, in which there is a “spin flip” (from antiparallel
+to parallel) in the 𝑛 = 2, 𝑙 = 1 subshell, as well as changes from one state to
+the other in the value of 𝑙 for the valence electron and in 𝐿.
+The description of fine structure, Stark and Zeeman effects, spectra of highly
+ionized or heavy atoms, etc., is more complicated. The most important dif-
+ference between optical and X-ray spectra is that the latter involve energy
+changes of the inner electrons rather than the outer ones; often several elec-
+trons participate.
+61
+===== PAGE 63 =====
+COMPLEX (DUSTY) PLASMAS
+Complex (dusty) plasmas (CDPs) contain charged microparticles (dust grains)
+in addition to electrons, ions, and neutral gas. Electrostatic coupling between
+the grains can vary over a wide range, so that the states of CDPs can change
+from weakly coupled (gaseous) to crystalline.
+Typical experimental dust properties
+grain size (radius) 𝑎 ≃ 0.3 − 30μm, mass 𝑚𝑑 ∼ 3 × 10−7 − 3 × 10−13 g, number
+density (in terms of the interparticle distance) 𝑛𝑑 ∼ Δ −3 ∼ 103 − 107 cm−3,
+temperature 𝑇𝑑 ∼ 3 × 10−2 − 102 eV .
+Typical discharge (bulk) plasmas
+gas pressure 𝑝 ∼ 10 −2 − 1 Torr,𝑇𝑖 ≃ 𝑇𝑛 ≃ 3 × 10−2 eV ,𝑣𝑇𝑖 ≃ 7 × 104 cm/s
+(Ar), 𝑇𝑒 ∼ 0.3 − 3eV ,𝑛𝑖 ≃ 𝑛𝑒 ∼ 108 − 1010 cm−3, screening length 𝜆𝐷 ≃ 𝜆𝐷𝑖 ∼
+20 − 200μm, 𝜔𝑝𝑖 ≃ 2 × 106 − 2 × 107 s−1 (Ar). B fields up to 𝐵 ∼ 3 T.
+Dimensionless
+Havnes parameter 𝑃 = |𝑍|𝑛𝑑/𝑛𝑒
+normalized charge 𝑧 = |𝑍|𝑒2/𝑘𝑇𝑒𝑎
+dust-dust scattering parameter 𝛽𝑑 = 𝑍2𝑒2/𝑘𝑇𝑑𝜆𝐷
+dust-plasma scattering parameter 𝛽𝑒,𝑖 = |𝑍|𝑒2/𝑘𝑇𝑒,𝑖𝜆𝐷
+coupling parameter Γ = (𝑍2𝑒2/𝑘𝑇𝑑Δ) exp(−Δ/𝜆𝐷)
+lattice parameter 𝜅 = Δ/𝜆𝐷
+particle parameter 𝛼 = 𝑎/Δ
+lattice magnetization parameter 𝜇 = Δ/𝑟𝑑
+Typical experimental values: 𝑃 ∼ 10−4 −102, 𝑧 ≃ 2−4 (𝑍 ∼ 103 −105 electron
+charges), Γ < 103, 𝜅 ∼ 0.3 − 10, 𝛼 ∼ 10−4 − 3 × 10−2, 𝜇 < 1
+Frequencies
+dust plasma frequency 𝜔𝑝𝑑 = (4𝜋𝑍2𝑒2𝑛𝑑/𝑚𝑑)1/2
+≃ (|𝑍|
+𝑃
+1+𝑃
+𝑚𝑖/𝑚𝑑)1/2𝜔𝑝𝑖
+charge fluctuation frequency 𝜔ch ≃
+1+𝑧
+√2𝜋
+(𝑎/𝜆𝐷)𝜔𝑝𝑖
+dust-gas friction rate 𝜈𝑛𝑑 ∼ 10𝑎2𝑝/𝑚𝑑𝑣𝑇𝑛
+dust gyrofrequency 𝜔𝑐𝑑 = 𝑍𝑒𝐵/𝑚𝑑𝑐
+Velocities
+dust thermal velocity 𝑣𝑇𝑑 = (𝑘𝑇𝑑/𝑚𝑑)1/2 ≡ [
+𝑇𝑑
+𝑇𝑖
+𝑚𝑖
+𝑚𝑑
+]
+1/2
+𝑣𝑇𝑖
+62
+===== PAGE 64 =====
+dust acoustic wave velocity 𝐶DA = 𝜔𝑝𝑑𝜆𝐷
+≃ (|𝑍|
+𝑃
+1+𝑃
+𝑚𝑖/𝑚𝑑)
+1/2
+𝑣𝑇𝑖
+dust Alfvén wave velocity 𝑣𝐴𝑑 = 𝐵/(4𝜋𝑛𝑑𝑚𝑑)1/2
+dust-acoustic Mach number 𝑉 /𝐶DA
+dust magnetic Mach number 𝑉 /𝑣𝐴𝑑
+dust lattice (acoustic) wave velocity 𝐶𝑙,𝑡
+DL = 𝜔𝑝𝑑𝜆𝐷𝐹 𝑙,𝑡(𝜅)
+The range of the dust-lattice wavenumbers is K Δ < 𝜋 . The functions 𝐹 𝑙,𝑡(𝜅)
+for longitudinal and transverse waves can be approximated 44,45 with accu-
+racy < 1% in the range 𝜅 ≤ 5 :
+𝐹 𝑙 ≃ 2.70𝜅1/2(1 − 0.096𝜅 − 0.004𝜅2), 𝐹𝑡 ≃ 0.51𝜅(1 − 0.039𝜅2),
+Lengths
+frictional dissipation length 𝐿𝜈 = 𝑣𝑇𝑑 /𝜈𝑛𝑑
+dust Coulomb radius 𝑅𝐶𝑒,𝑖 = |𝑍|𝑒2/𝑘𝑇𝑒,𝑖
+dust gyroradius 𝑟𝑑 = 𝑣𝑇𝑑 /𝜔𝑐𝑑
+Grain Charging
+The charge evolution equation is 𝑑|𝑍|/𝑑𝑡 = 𝐼 𝑖 − 𝐼𝑒. From orbital motion
+limited (OML) theory46 in the collisionless limit 𝑙𝑒𝑛(𝑖𝑛) ≫ 𝜆𝐷 ≫ 𝑎:
+𝐼𝑒 = √8𝜋𝑎2𝑛𝑒𝑣𝑇𝑒 exp(−𝑧), 𝐼 𝑖 = √8𝜋𝑎2𝑛𝑖𝑣𝑇𝑖 (1 + 𝑇𝑒
+𝑇𝑖
+𝑧) .
+Grains are charged negatively. The grain charge can vary in response to spa-
+tial and temporal variations of the plasma. Charge fluctuations are always
+present, with frequency 𝜔ch. Other charging mechanisms are photoemission,
+secondary emission, thermionic emission, field emission, etc. Charged dust
+grains change the plasma composition, keeping quasineutrality. A measure
+of this is the Havnes parameter 𝑃 = |𝑍|𝑛𝑑/𝑛𝑒. The balance of 𝐼𝑒 and 𝐼𝑖 yields
+exp(−𝑧) =( 𝑚𝑖
+𝑚𝑒
+𝑇𝑖
+𝑇𝑒
+)
+1/2
+(1 + 𝑇𝑒
+𝑇𝑖
+𝑧) [1 + 𝑃(𝑧)]
+When the relative charge density of dust is large, 𝑃 ≫ 1 , the grain charge Z
+monotonically decreases.
+Forces and momentum transfer
+In addition to the usual electromagnetic forces, grains in complex plasmas
+63
+===== PAGE 65 =====
+are also subject to: gravity force 𝐅g = 𝑚𝑑𝐠; thermophoretic force
+𝐅th = −4√2𝜋
+15 (𝑎2/𝑣𝑇𝑛 )𝜅𝑛∇𝑇𝑛
+(where 𝜅𝑛 is the coefficient of gas thermal conductivity); forces associated
+with the momentum transfer from other species, 𝐅𝛼 = −𝑚 𝑑𝜈𝛼𝑑𝐕𝛼𝑑, i.e.,
+neutral, ion, and electron drag. For collisions between charged particles, two
+limiting cases are distinguished by the magnitude of the scattering parame-
+ter 𝛽𝛼. When 𝛽𝛼 ≪ 1 the result is independent of the sign of the potential.
+When 𝛽𝛼 ≫ 1 , the results for repulsive and attractive interaction potentials
+are different. For typical complex plasmas the hierarchy of scattering param-
+eters is 𝛽𝑒(∼ 0.01 − 0.3) ≪ 𝛽𝑖(∼ 1 − 30) ≪ 𝛽𝑑(∼ 103 − 3 × 104). The generic
+expressions for different types of collisions are 47
+𝜈𝛼𝑑 = (4√2𝜋/3)(𝑚𝛼/𝑚𝑑)𝑎2𝑛𝛼𝑣𝑇𝛼 Φ𝛼𝑑
+Electron-dust collisions
+Φ𝑒𝑑 ≃ 1
+2𝑧2Λ𝑒𝑑, 𝛽 𝑒 ≪ 1
+Ion-dust collisions
+Φ𝑖𝑑 = {
+1
+2
+𝑧2(𝑇𝑒/𝑇𝑖)2Λ𝑖𝑑, 𝛽𝑖 < 5
+2(𝜆𝐷/𝑎)2(ln2 𝛽𝑖 + 2ln 𝛽𝑖 + 2), 𝛽 𝑖 > 13
+Dust-dust collisons
+Φ𝑑𝑑 = {𝑧2
+𝑑Λ𝑑𝑑, 𝛽𝑑 ≪ 1
+(𝜆𝐷/𝑎)2[ln 4𝛽𝑑 − ln ln 4𝛽𝑑], 𝛽 𝑑 ≫ 1
+where 𝑧𝑑 ≡ 𝑍2𝑒2/𝑎𝑘𝑇𝑑.
+For 𝜈𝑑𝑑 ∼ 𝜈𝑛𝑑 the complex plasma is in a two-phase state, and for 𝜈𝑛𝑑 ≫ 𝜈 𝑑𝑑
+we have merely tracer particles (dust-neutral gas interaction dominates). The
+momentum transfer cross section is proportional to the Coulomb logarithm
+Λ𝛼𝑑 when the Coulomb scattering theory is applicable. It is determined by
+integration over the impact parameters, from 𝜌min to 𝜌max. 𝜌min is due to fi-
+nite grain size and is given by OML theory. 𝜌max = 𝜆 𝐷 for repulsive inter-
+action (applicable for 𝛽𝛼 ≪ 1 ), and 𝜌max = 𝜆 𝐷(1 + 2𝛽𝛼)1/2 for attractive
+interaction (applicable up to 𝛽𝛼 < 5).
+64
+===== PAGE 66 =====
+For repulsive interaction (electron-dust and dust-dust)
+Λ𝛼𝑑 = 𝑧𝛼 ∫
+∞
+0
+e−𝑧𝛼𝑥 ln[1 + 4(𝜆𝐷/𝑎𝛼)2𝑥2]𝑑𝑥
+− 2𝑧𝛼 ∫
+∞
+1
+e−𝑧𝛼𝑥 ln(2𝑥 − 1)𝑑𝑥,
+where 𝑧𝑒 = 𝑧, 𝑎𝑒 = 𝑎, and 𝑎𝑑 = 2𝑎.
+For ion-dust (attraction)
+Λ𝑖𝑑 ≃ 𝑧 ∫
+∞
+0
+e−𝑧𝑥 ln [1 + 2(𝑇𝑖/𝑇𝑒)(𝜆𝐷/𝑎)𝑥
+1 + 2(𝑇𝑖/𝑇𝑒)𝑥 ]𝑑𝑥.
+For 𝜈𝑑𝑑 ≫ 𝜈 𝑛𝑑 the complex plasma behaves like a one phase system (dust-
+dust interaction dominates).
+Phase Diagram of Complex Plasmas
+The figure below represents different “phase states” of CDPs as functions of
+the electrostatic coupling parameter Γ and 𝜅 or 𝛼, respectively. The vertical
+dashed line at 𝜅 = 1 conditionally divides the system into Coulomb and
+Yukawa parts. With respect to the usual plasma phase, in the diagram be-
+low the complex plasmas are “located” mostly in the strong coupling regime
+(equivalent to the top left corner).
+κ
+=
+Δ
+/
+λ
+ α -1 = Δ /a 10 100 1000
+log 10 ( Γ )
+−4
+−2
+0
+2
+4
+0.1
+1
+10
+VIII
+VII
+VI
+V
+IV
+III
+II
+I
+Regions I (V) represent Coulomb
+(Yukawa) crystals, the crystallization
+condition is48 Γ > 106(1 + 𝜅 + 𝜅2/2)−1.
+Regions II (VI) are for Coulomb
+(Yukawa) non-ideal plasmas – the char-
+acteristic range of dust-dust interaction
+(in terms of the momentum transfer)
+is larger than the intergrain distance
+(in terms of the Wigner-Seitz radius),
+(𝜎/𝜋)1/2 > (4𝜋/3)−1/3Δ, which implies
+that the interaction is essentially multi-
+particle.
+Regions III (VII and VIII) correspond to Coulomb (Yukawa) ideal gases. The
+range of dust-dust interaction is smaller than the intergrain distance and
+only pair collisions are important. In addition, in the region VIII the pair
+Yukawa interaction asymptotically reduces to the hard sphere limit, forming
+a “Yukawa granular medium” . In region IV the electrostatic interaction is
+unimportant and the system is like a usual granular medium.
+65
+===== PAGE 67 =====
+REFERENCES
+When any of the formulas and data in this collection are referenced in re-
+search publications, it is suggested that the original source be cited rather
+than the Formulary. Most of this material is well known and, for all practical
+purposes, is in the “public domain.” Numerous colleagues and readers, too
+numerous to list by name, have helped in collecting and shaping the Formu-
+lary into its present form; they are sincerely thanked for their efforts.
+Several book-length compilations of data relevant to plasma physics are avail-
+able. The following are particularly useful:
+• C. W . Allen, Astrophysical Quantities, 3rd edition (Athlone Press, London,
+1976).
+• A. Anders, A Formulary for Plasma Physics (Akademie-Verlag, Berlin,
+1990).
+• H. L. Anderson (Ed.), A Physicist’s Desk Reference, 2nd edition (American
+Institute of Physics, New York, 1989).
+• K. R. Lang, Astrophysical Formulae, 2nd edition (Springer, New York, 1980).
+The books and articles cited below are intended primarily not for the pur-
+pose of giving credit to the original workers, but (1) to guide the reader to
+sources containing related material and (2) to indicate where to find deriva-
+tions, explanations, examples, etc., which have been omitted from this compi-
+lation. Additional material can also be found in D. L. Book, NRL Memoran-
+dum Report No. 3332 (1977).
+1. See M. Abramowitz and I. A. Stegun, Eds., Handbook of Mathematical
+Functions (Dover, New York, 1968), pp. 1–3, for a tabulation of some
+mathematical constants not available on pocket calculators.
+2. H. W . Gould, “Note on Some Binomial Coefficient Identities of Rosen-
+baum,” J. Math. Phys. 10, 49 (1969); H. W . Gould and J. Kaucky, “Evalu-
+ation of a Class of Binomial Coefficient Summations,” J. Comb. Theory
+1, 233 (1966).
+3. B. S. Newberger, “New Sum Rule for Products of Bessel Functions with
+Application to Plasma Physics,” J. Math. Phys. 23, 1278 (1982); 24, 2250
+(1983).
+4. P. M. Morse and H. Feshbach, Methods of Theoretical Physics (McGraw-Hill
+66
+===== PAGE 68 =====
+Book Co., New York, 1953), Vol. I, pp. 47–52 and pp. 656–666.
+5. W . D. Hayes, “A Collection of Vector Formulas,” Princeton University,
+Princeton, NJ, 1956 (unpublished), and personal communication (1977).
+6. See Quantities, Units and Symbols, report of the Symbols Committee of the
+Royal Society, 2nd edition (Royal Society, London, 1975) for a discussion
+of nomenclature in SI units.
+7. Particle Data Group, “Particle physics booklet” ,https://pdg.lbl.gov/; E. R.
+Cohen and B. N. Taylor, “The 1986 Adjustment of the Fundamental
+Physical Constants,” CODATA Bulletin No. 63 (Pergamon Press, New
+York, 1986); J. Res. Natl. Bur. Stand. 92, 85 (1987); J. Phys. Chem. Ref.
+Data 17, 1795 (1988).
+8. E. S. Weibel, “Dimensionally Correct Transformations between Different
+Systems of Units,” Amer. J. Phys. 36, 1130 (1968).
+9. J. Stratton, Electromagnetic Theory (McGraw-Hill Book Co., New York,
+1941), p. 508.
+10. Reference Data for Engineers: Radio, Electronics, Computer, and Commu-
+nication, 7th edition, E. C. Jordan, Ed. (Sams and Co., Indianapolis, IN,
+1985), Chapt. 1. These definitions are International Telecommunica-
+tions Union (ITU) Standards.
+11. H. E. Thomas, Handbook of Microwave Techniques and Equipment (Pren-
+tice-Hall, Englewood Cliffs, NJ, 1972), p. 9. Further subdivisions are
+defined in Ref. 10, p. I–3.
+12. J. P. Catchpole and G. Fulford, Ind. and Eng. Chem. 58, 47 (1966); reprinted
+in recent editions of the Handbook of Chemistry and Physics (Chemical
+Rubber Co., Cleveland, OH) on pp. F306–323.
+13. W . D. Hayes, “The Basic Theory of Gasdynamic Discontinuities,” in Fun-
+damentals of Gas Dynamics, Vol. III, High Speed Aerodynamics and Jet
+Propulsion, H. W . Emmons, Ed. (Princeton University Press, Princeton,
+NJ, 1958).
+14. W . B. Thompson,An Introduction to Plasma Physics (Addison-Wesley
+Publishing Co., Reading, MA, 1962), pp. 86–95.
+15. L. D. Landau and E. M. Lifshitz, Fluid Mechanics, 2nd edition (Addison-
+Wesley Publishing Co., Reading, MA, 1987), pp. 320–336.
+67
+===== PAGE 69 =====
+16. The 𝑍 function is tabulated in B. D. Fried and S. D. Conte, The Plasma
+Dispersion Function (Academic Press, New York, 1961).
+17. R. W . Landau and S. Cuperman, “Stability of Anisotropic Plasmas to
+Almost-Perpendicular Magnetosonic Waves,” J. Plasma Phys. 6, 495
+(1971).
+18. B. D. Fried, C. L. Hedrick, J. McCune, “Two-Pole Approximation for the
+Plasma Dispersion Function,” Phys. Fluids 11, 249 (1968).
+19. B. A. Trubnikov, “Particle Interactions in a Fully Ionized Plasma,” Reviews
+of Plasma Physics, Vol. 1 (Consultants Bureau, New York, 1965), p. 105.
+20. J. M. Greene, “Improved Bhatnagar–Gross–Krook Model of Electron-Ion
+Collisions,” Phys. Fluids 16, 2022 (1973).
+21. (a) S. I. Braginskii, “Transport Processes in a Plasma,” Reviews of Plasma
+Physics, Vol. 1 (Consultants Bureau, New York, 1965), p. 205. (b) R. Balescu,
+“Transport Processes in Plasma,” (North Holland Publishing, Amster-
+dam, 1988), p. 211.
+22. J. Sheffield, Plasma Scattering of Electromagnetic Radiation (Academic
+Press, New York, 1975), p. 6 (after J. W . M. Paul).
+23. K. H. Lloyd and G. Härendel, “Numerical Modeling of the Drift and De-
+formation of Ionospheric Plasma Clouds and of their Interaction with
+Other Layers of the Ionosphere,” J. Geophys. Res. 78, 7389 (1973).
+24. C. W . Allen,Astrophysical Quantities, 3rd edition (Athlone Press, London,
+1976), Chapt. 9.
+25. G. L. Withbroe and R. W . Noyes, “Mass and Energy Flow in the Solar
+Chromosphere and Corona,” Ann. Rev. Astrophys. 15, 363 (1977).
+26. S. Glasstone and R. H. Lovberg, Controlled Thermonuclear Reactions (Van
+Nostrand, New York, 1960), Chapt. 2.
+27. References to experimental measurements of branching ratios and cross
+sections are listed in F. K. McGowan, et al., Nucl. Data Tables A6, 353
+(1969); A8, 199 (1970). The yields listed in the table are calculated di-
+rectly from the mass defect.
+28. (a) G. H. Miley, H. Towner and N. Ivich, Fusion Cross Section and Reac-
+tivities, Rept. COO-2218-17 (University of Illinois, Urbana, IL, 1974);
+B. H. Duane, Fusion Cross Section Theory, in Rept. BNWL-1685 (Battelle
+68
+===== PAGE 70 =====
+Pacific Northwest Laboratory, 1972); (b) X.Z. Li, Q.M. Wei, and B. Liu,
+“A new simple formula for fusion cross-sections of light nuclei,” Nucl.
+Fusion 48, 125003 (2008).
+29. J. M. Creedon, “Relativistic Brillouin Flow in the High 𝜈/𝛾Limit,” J. Appl.
+Phys. 46, 2946 (1975).
+30. See, for example, A. B. Mikhailovskii, Theory of Plasma Instabilities Vol. I
+(Consultants Bureau, New York, 1974). The table on pp. 48–49 was com-
+piled by K. Papadopoulos.
+31. Table prepared from data compiled by J. M. McMahon (personal com-
+munication, D. Book, 1990) and A. Ting (personal communication, J.D.
+Huba, 2004).
+32. M. J. Seaton, “The Theory of Excitation and Ionization by Electron Im-
+pact,” in Atomic and Molecular Processes, D. R. Bates, Ed. (New York,
+Academic Press, 1962), Chapt. 11.
+33. H. Van Regemorter, “Rate of Collisional Excitation in Stellar Atmospheres,”
+Astrophys. J. 136, 906 (1962).
+34. A. C. Kolb and R. W . P. McWhirter, “Ionization Rates and Power Loss
+from 𝜃-Pinches by Impurity Radiation,” Phys. Fluids 7, 519 (1964).
+35. R. W . P. McWhirter, “Spectral Intensities,” inPlasma Diagnostic Tech-
+niques, R. H. Huddlestone and S. L. Leonard, Eds. (Academic Press,
+New York, 1965).
+36. M. Gryzinski, “Classical Theory of Atomic Collisions I. Theory of Inelas-
+tic Collision,” Phys. Rev. 138A, 336 (1965).
+37. M. J. Seaton, “Radiative Recombination of Hydrogenic Ions,” Mon. Not.
+Roy. Astron. Soc. 119, 81 (1959).
+38. Ya. B. Zel’dovich and Yu. P. Raizer, Physics of Shock Waves and High-
+Temperature Hydrodynamic Phenomena (Academic Press, New York,
+1966), Vol. I, p. 407.
+39. H. R. Griem, Plasma Spectroscopy (Academic Press, New York, 1966).
+40. T. F. Stratton, “X-Ray Spectroscopy,” inPlasma Diagnostic Techniques,
+R. H. Huddlestone and S. L. Leonard, Eds. (Academic Press, New York,
+1965).
+41. G. Bekefi, Radiation Processes in Plasmas (Wiley, New York, 1966).
+69
+===== PAGE 71 =====
+42. T. W . Johnston and J. M. Dawson, “Correct Values for High-Frequency
+Power Absorption by Inverse Bremsstrahlung in Plasmas,” Phys. Fluids
+16, 722 (1973).
+43. W . L. Wiese, M. W . Smith, and B. M. Glennon,Atomic Transition Proba-
+bilities, NSRDS-NBS 4, Vol. 1 (U.S. Govt. Printing Office, Washington,
+1966).
+44. F. M. Peeters and X. Wu, “Wigner crystal of a screened-Coulomb-interaction
+colloidal system in two dimensions” , Phys. Rev. A 35, 3109 (1987)
+45. S. Zhdanov, R. A. Quinn, D. Samsonov, and G. E. Morfill, “Large-scale
+steady-state structure of a 2D plasma crystal” , New J. Phys. 5, 74 (2003).
+46. J. E. Allen, “Probe theory – the orbital motion approach” , Phys. Scripta
+45, 497 (1992).
+47. S. A. Khrapak, A. V . Ivlev, and G. E. Morfill, “Momentum transfer in
+complex plasmas” , Phys. Rev. E (2004).
+48. V . E. Fortov et al., “Dusty plasmas” , Phys. Usp. 47, 447 (2004).
+70
+===== PAGE 72 =====
+NOTES
+71
+===== PAGE 73 =====
+For information about careers in plasma physics at the US Naval Research
+Laboratory, contact us at: PlasmaPhysicsCareers@nrl.navy.mil
+The NRL Plasma Formulary is available in PDF format online at
+https://www.nrl.navy.mil/ppd/content/nrl-plasma-formulary
+Any questions, suggestions, comments, etc. can be directed to:
+Plasma.Formulary@nrl.navy.mil
+This document was typeset using X ELATEX. The text and mathematics are set
+using the STIX Two fonts, which were created by the Scientific and Technical
+Information Exchange (STIX) font creation project. The headings are set in
+Frutiger Neue LT Pro, and the monospace text in Inconsolata. The character
+for the partial derivative, ∂, is from Charis SIL.
+Reviewed and Approved
+IR-6723-23-10-U
+October 2023
+Joe Pe ̃nano
+Superintendent
+Plasma Physics Division72
+===== PAGE 74 =====

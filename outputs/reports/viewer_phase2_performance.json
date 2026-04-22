@@ -1,0 +1,25 @@
+{
+  "moving_mesh_hover_large_file": {
+    "baseline_before_phase2": {
+      "source": "pre-phase2 raw hover benchmark on 10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mean_ms": 5.667052499775309,
+      "max_ms": 9.175699960906059,
+      "min_ms": 4.268800024874508
+    },
+    "after_phase2_raw_hover_interval_0": {
+      "mean_ms": 5.042986999324057,
+      "max_ms": 7.738000014796853,
+      "min_ms": 3.213500021956861,
+      "field_map_render_delta": 0,
+      "mesh_render_delta": 0,
+      "cache_miss_delta": 0,
+      "hover_profile_mean_ms": 4.033170500188135,
+      "hover_profile_max_ms": 6.520299997646362
+    },
+    "after_phase2_default_hover_interval_12ms": {
+      "processed_hover_updates": 70,
+      "hover_profile_mean_ms": 5.513384285482711,
+      "hover_profile_max_ms": 10.249399987515062
+    }
+  }
+}

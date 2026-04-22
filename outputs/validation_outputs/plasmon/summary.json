@@ -1,0 +1,42 @@
+{
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "weighting_mode": "electron_column",
+    "geometry_summary": "front side | LOS cos=1.000 | profile=moving_radius",
+    "regime": "non-collective",
+    "k_lambda_d": 413703.69828545756,
+    "collectivity_parameter": 2.417188930493909e-06,
+    "time_plots": 7,
+    "profile_plots": 5,
+    "warnings": [
+      {
+        "severity": "warning",
+        "message": "k*lambda_D >= 1, so the selected state is in a non-collective scattering regime."
+      }
+    ]
+  },
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "weighting_mode": "electron_column",
+    "geometry_summary": "front side | LOS cos=1.000 | profile=moving_radius",
+    "regime": "non-collective",
+    "k_lambda_d": 23096482.09709723,
+    "collectivity_parameter": 4.3296636942198234e-08,
+    "time_plots": 7,
+    "profile_plots": 5,
+    "warnings": [
+      {
+        "severity": "warning",
+        "message": "k*lambda_D >= 1, so the selected state is in a non-collective scattering regime."
+      }
+    ]
+  },
+  "Cu_0166_stabilized.h5": {
+    "weighting_mode": "electron_column",
+    "geometry_summary": "front side | LOS cos=1.000 | profile=moving_radius",
+    "regime": "collective",
+    "k_lambda_d": 0.05979902986949466,
+    "collectivity_parameter": 16.72267931741366,
+    "time_plots": 7,
+    "profile_plots": 5,
+    "warnings": []
+  }
+}

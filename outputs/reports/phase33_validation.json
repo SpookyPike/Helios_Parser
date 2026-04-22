@@ -1,0 +1,50 @@
+{
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "open_s": 0.113,
+    "first_render_visible": true,
+    "render_mode": "mesh",
+    "map_coordinate": "moving_radius",
+    "line_coordinate": "radius",
+    "snapshot_controls_hidden_in_mouse_mode": true,
+    "mouse_splitter_sizes": [
+      660,
+      660
+    ],
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase33_small_mouse_light.png",
+    "png_export_size": [
+      1600,
+      900
+    ]
+  },
+  "Cu_0166_stabilized.h5": {
+    "open_s": 0.321,
+    "field": "radiation_sink",
+    "first_render_visible": true,
+    "render_mode": "image",
+    "orientation": "coord_x_time_y",
+    "map_coordinate": "static_x",
+    "line_plot_visible": true,
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase33_cu_slice_light.png"
+  },
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "open_s": 0.389,
+    "first_render_visible": true,
+    "render_mode": "mesh",
+    "map_coordinate": "moving_radius",
+    "line_coordinate": "radius",
+    "mouse_splitter_sizes": [
+      660,
+      660
+    ],
+    "probe_adjustment_steps": 9,
+    "field_map_render_delta": 0,
+    "mesh_render_delta": 0,
+    "probe_adjustment_avoided_2d_rerender": true,
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase33_large_mouse_dark.png",
+    "png_export_size": [
+      1920,
+      1080
+    ],
+    "png_export_transparent": true
+  }
+}

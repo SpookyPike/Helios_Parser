@@ -1,0 +1,17 @@
+case,model,model_label,benchmark_policy_mae_min_ev,benchmark_policy_mae_max_ev,benchmark_policy_mae_spread_ev,raw_minus_article_mae_ev,article_mae_ev,article_driven_increment_mae_ev,benchmark_valence_aware_mae_ev,valence_locked_mae_ev,raw_mae_ev,raw_input_policy_status
+ambient_al_t0,finite_t_stls,Finite-T STLS (experimental),2.3068800300515653,2.3068800300515653,0.0,nan,2.3068800300515653,2.3068800300515653,2.3068800300515653,2.3068800300515653,nan,invalid_input_policy
+ambient_al_t0,quantum_hydrodynamic,Quantum hydrodynamic (experimental),3.9496115282791466,3.9496115282791466,0.0,nan,3.9496115282791466,3.9496115282791466,3.9496115282791466,3.9496115282791466,nan,invalid_input_policy
+ambient_al_t0,rpa,RPA,6.480396122585867,6.480396122585867,0.0,nan,6.480396122585867,6.480396122585867,6.480396122585867,6.480396122585867,nan,invalid_input_policy
+ambient_al_t0,rpa_static_lfc,RPA + static LFC,4.501893033336921,4.501893033336921,0.0,nan,4.501893033336921,4.501893033336921,4.501893033336921,4.501893033336921,nan,invalid_input_policy
+driven_al_article_state,rpa_static_lfc,RPA + static LFC,2.277422055010553,2.8193959312593657,0.5419738762488127,nan,2.8193959312593657,2.277422055010553,2.8193959312593657,2.8193959312593657,nan,
+driven_al_article_state,rpa,RPA,3.682898836419654,4.431431233474589,0.7485323970549347,nan,4.431431233474589,3.682898836419654,4.431431233474589,4.431431233474589,nan,
+driven_al_article_state,quantum_hydrodynamic,Quantum hydrodynamic (experimental),5.800204955527533,6.708710043009476,0.9085050874819434,nan,5.800204955527533,6.708710043009476,5.800204955527533,5.800204955527533,nan,
+driven_al_article_state,finite_t_stls,Finite-T STLS (experimental),2.643185334094989,3.639778983898548,0.9965936498035592,nan,2.643185334094989,3.639778983898548,2.643185334094989,2.643185334094989,nan,
+driven_al_best_hydro_slab,finite_t_stls,Finite-T STLS (experimental),2.8221118005789156,2.8221118005789156,0.0,nan,2.8221118005789156,nan,nan,nan,nan,
+driven_al_best_hydro_slab,quantum_hydrodynamic,Quantum hydrodynamic (experimental),5.834379419939312,5.834379419939312,0.0,nan,5.834379419939312,nan,nan,nan,nan,
+driven_al_best_hydro_slab,rpa,RPA,4.522271382982724,4.522271382982724,0.0,nan,4.522271382982724,nan,nan,nan,nan,
+driven_al_best_hydro_slab,rpa_static_lfc,RPA + static LFC,2.9107642619247196,2.9107642619247196,0.0,nan,2.9107642619247196,nan,nan,nan,nan,
+driven_al_dense_slab,finite_t_stls,Finite-T STLS (experimental),2.926224365499337,2.926224365499337,0.0,nan,2.926224365499337,nan,nan,nan,nan,
+driven_al_dense_slab,quantum_hydrodynamic,Quantum hydrodynamic (experimental),5.930135280251454,5.930135280251454,0.0,nan,5.930135280251454,nan,nan,nan,nan,
+driven_al_dense_slab,rpa,RPA,4.41351352477882,4.41351352477882,0.0,nan,4.41351352477882,nan,nan,nan,nan,
+driven_al_dense_slab,rpa_static_lfc,RPA + static LFC,2.858650013461385,2.858650013461385,0.0,nan,2.858650013461385,nan,nan,nan,nan,

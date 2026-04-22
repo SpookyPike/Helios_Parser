@@ -1,0 +1,56 @@
+{
+  "source": "Bespalov et al., driven Al dispersion comparison (experiment/TDDFT/LFC/RPA)",
+  "provenance": {
+    "quality": "manual_digitization_v2",
+    "figure": "Main-text / supplement driven Al dispersion comparison",
+    "pages": [3, 10, 14],
+    "notes": [
+      "The benchmark state targets the approximately 6.3 ns probe-time compressed Al slab with density 3.75-4.5 g/cm^3 and Te about 0.6 eV.",
+      "Points remain manually digitized, but the provenance, geometry, and state assumptions are now explicit and script-consumable."
+    ]
+  },
+  "photon_energy_kev": 8.307,
+  "material": "Al",
+  "regime": "shock_compressed",
+  "rho_g_cm3_range": [3.75, 4.5],
+  "te_ev": 0.6,
+  "probe_time_ns": 6.3,
+  "geometry": {
+    "probe_angle_deg": 22.5,
+    "drive_angle_deg": 22.5,
+    "xray_energy_kev": 8.307,
+    "instrument_fwhm_ev": 3.5
+  },
+  "series": {
+    "experiment": {
+      "label": "Experiment",
+      "q_ang_inv": [0.99, 1.28, 1.57, 2.57],
+      "peak_ev": [20.35, 23.1, 25.45, 31.45],
+      "peak_err_ev": [1.55, 1.35, 1.65, 1.8]
+    },
+    "tddft": {
+      "label": "TDDFT",
+      "q_ang_inv": [0.99, 1.28, 1.57, 2.57],
+      "peak_ev": [21.05, 23.35, 25.2, 31.3],
+      "peak_err_ev": [0.55, 0.45, 0.45, 0.6]
+    },
+    "lfc": {
+      "label": "LFC",
+      "q_ang_inv": [0.99, 1.28, 1.57, 2.57],
+      "peak_ev": [22.85, 26.25, 29.2, 34.2],
+      "peak_err_ev": [0.55, 0.55, 0.6, 0.7]
+    },
+    "rpa": {
+      "label": "RPA",
+      "q_ang_inv": [0.99, 1.28, 1.57, 2.57],
+      "peak_ev": [23.45, 26.85, 31.45, 38.35],
+      "peak_err_ev": [0.6, 0.6, 0.75, 0.85]
+    },
+    "preston": {
+      "label": "Preston et al.",
+      "q_ang_inv": [2.27],
+      "peak_ev": [33.2],
+      "peak_err_ev": [4.0]
+    }
+  }
+}

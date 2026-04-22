@@ -1,0 +1,48 @@
+{
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "open_s": 0.35,
+    "theme": "light",
+    "zones": 500,
+    "snapshots": 8,
+    "fields": 26,
+    "colorbar_label": "Density [g/cm3]",
+    "snapshot_controls_hidden_initially": false,
+    "slice_mode": "time_trace",
+    "line_coordinate_mode": "static_x",
+    "trace_reference_label": "Reference: static x = 5.2824e-08 cm (trace uses zone 5)",
+    "line_title": "Density time trace | full history at static x = 5.2824e-08 cm (zone 5) | current-time cursor = 1.0000e-15 s | all zones (500/500) | linear",
+    "snapshot_controls_hidden_on_mouse_tab": true,
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\5Fe+4.9TW+light_stabilized_phase2c_light.png"
+  },
+  "Cu_0166_stabilized.h5": {
+    "open_s": 0.4,
+    "theme": "dark",
+    "zones": 300,
+    "snapshots": 461,
+    "fields": 27,
+    "colorbar_label": "Density [g/cm3]",
+    "snapshot_controls_hidden_initially": false,
+    "field": "radiation_sink",
+    "trace_reference_label": "Reference: static x = 1.7500e-04 cm (trace uses zone 21)",
+    "line_title": "Radiation sink time trace | full history at static x = 1.7500e-04 cm (zone 21) | current-time cursor = 1.0000e-15 s | all zones (300/300) | linear",
+    "pdf_export": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\pdf\\Cu_0166_field_map_phase2c.pdf",
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\Cu_0166_stabilized_phase2c_dark.png"
+  },
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "open_s": 0.574,
+    "theme": "dark",
+    "zones": 1300,
+    "snapshots": 701,
+    "fields": 26,
+    "colorbar_label": "Density [g/cm3]",
+    "snapshot_controls_hidden_initially": false,
+    "map_coordinate_mode": "moving_radius",
+    "mouse_state": "Frozen slice inspection",
+    "mouse_adjustment_label": "Resolved probe: snapshot 120, moving radius = 8.4880e-03 cm, zone 1181. Typed values map to the nearest cell.",
+    "mouse_time_label": "Time [s]",
+    "mouse_coordinate_label": "Moving radius [cm]",
+    "map_render_mode": "mesh",
+    "pdf_export": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\pdf\\10ns+10Si+60Al+15Si+4.27TW_field_map_phase2c.pdf",
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\10ns+10Si+60Al+15Si+4.27TW_stabilized_phase2c_dark.png"
+  }
+}

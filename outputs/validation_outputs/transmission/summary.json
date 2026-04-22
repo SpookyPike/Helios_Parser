@@ -1,0 +1,44 @@
+{
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "geometry_summary": "front side (high-index boundary) | LOS cos=1.000",
+    "areal_density_g_cm2": 0.023372770551080002,
+    "electron_column_cm2": 50466413.47298769,
+    "tau": 3.3572579697251165e-17,
+    "transmission": 1.0,
+    "region_budgets": 3,
+    "warnings": [
+      {
+        "severity": "info",
+        "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+      }
+    ]
+  },
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "geometry_summary": "front side (high-index boundary) | LOS cos=1.000",
+    "areal_density_g_cm2": 0.00393695527568,
+    "electron_column_cm2": 1245.48585112,
+    "tau": 8.285544805141755e-22,
+    "transmission": 1.0,
+    "region_budgets": 1,
+    "warnings": [
+      {
+        "severity": "info",
+        "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+      }
+    ]
+  },
+  "Cu_0166_stabilized.h5": {
+    "geometry_summary": "front side (high-index boundary) | LOS cos=1.000",
+    "areal_density_g_cm2": 0.02225862331,
+    "electron_column_cm2": 9.262378972e+20,
+    "tau": 0.0006161760561607112,
+    "transmission": 0.9993840137413205,
+    "region_budgets": 1,
+    "warnings": [
+      {
+        "severity": "info",
+        "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+      }
+    ]
+  }
+}

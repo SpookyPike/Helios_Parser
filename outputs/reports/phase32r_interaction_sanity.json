@@ -1,0 +1,178 @@
+{
+  "initial": {
+    "field": "density",
+    "render_mode": "image",
+    "view": [
+      [
+        -1.3999898e-10,
+        7.13999998e-09
+      ],
+      [
+        -0.0001799,
+        0.0091801
+      ]
+    ],
+    "bounds": [
+      1e-15,
+      7e-09,
+      1e-07,
+      0.0090001
+    ],
+    "visible": true,
+    "title": "Density map | time on x, static x on y | all zones (1300/1300) | linear scale"
+  },
+  "after_field_velocity": {
+    "field": "velocity",
+    "render_mode": "image",
+    "view": [
+      [
+        -1.3999898e-10,
+        7.13999998e-09
+      ],
+      [
+        -0.0001799,
+        0.0091801
+      ]
+    ],
+    "bounds": [
+      1e-15,
+      7e-09,
+      1e-07,
+      0.0090001
+    ],
+    "visible": true,
+    "title": "Velocity map | time on x, static x on y | all zones (1300/1300) | linear scale"
+  },
+  "after_orientation_swap": {
+    "field": "velocity",
+    "render_mode": "image",
+    "view": [
+      [
+        -0.0001799,
+        0.0091801
+      ],
+      [
+        -1.3999898e-10,
+        7.13999998e-09
+      ]
+    ],
+    "bounds": [
+      1e-07,
+      0.0090001,
+      1e-15,
+      7e-09
+    ],
+    "visible": true,
+    "title": "Velocity map | static x on x, time on y | all zones (1300/1300) | linear scale"
+  },
+  "after_zone_coordinate": {
+    "field": "velocity",
+    "render_mode": "image",
+    "view": [
+      [
+        -24.98,
+        1325.98
+      ],
+      [
+        -1.3999898e-10,
+        7.13999998e-09
+      ]
+    ],
+    "bounds": [
+      1.0,
+      1300.0,
+      1e-15,
+      7e-09
+    ],
+    "visible": true,
+    "title": "Velocity map | zone index on x, time on y | all zones (1300/1300) | linear scale"
+  },
+  "after_moving_mesh": {
+    "field": "velocity",
+    "render_mode": "mesh",
+    "view": [
+      [
+        -0.021034454201999998,
+        1.0727594991019997
+      ],
+      [
+        -1.4520051000000002e-10,
+        7.1452000099999995e-09
+      ]
+    ],
+    "bounds": [
+      4.4899999999999985e-08,
+      1.0517249999999998,
+      -5.000500000000001e-12,
+      7.005e-09
+    ],
+    "visible": true,
+    "title": "Velocity map | moving-mesh radius on x, time on y | all zones (1300/1300) | linear scale"
+  },
+  "diagnostics_tab": {
+    "field": "velocity",
+    "render_mode": "mesh",
+    "view": [
+      [
+        -0.021034454201999998,
+        1.0727594991019997
+      ],
+      [
+        -1.4520051000000002e-10,
+        7.1452000099999995e-09
+      ]
+    ],
+    "bounds": [
+      4.4899999999999985e-08,
+      1.0517249999999998,
+      -5.000500000000001e-12,
+      7.005e-09
+    ],
+    "visible": true,
+    "title": "Velocity map | moving-mesh radius on x, time on y | all zones (1300/1300) | linear scale"
+  },
+  "mouse_mode_tab": {
+    "field": "velocity",
+    "render_mode": "mesh",
+    "view": [
+      [
+        -0.021034454201999998,
+        1.0727594991019997
+      ],
+      [
+        -1.4520051000000002e-10,
+        7.1452000099999995e-09
+      ]
+    ],
+    "bounds": [
+      4.4899999999999985e-08,
+      1.0517249999999998,
+      -5.000500000000001e-12,
+      7.005e-09
+    ],
+    "visible": true,
+    "title": "Velocity map | moving-mesh radius on x, time on y | all zones (1300/1300) | linear scale"
+  },
+  "back_to_slice_tab": {
+    "field": "velocity",
+    "render_mode": "mesh",
+    "view": [
+      [
+        -0.021034454201999998,
+        1.0727594991019997
+      ],
+      [
+        -1.4520051000000002e-10,
+        7.1452000099999995e-09
+      ]
+    ],
+    "bounds": [
+      4.4899999999999985e-08,
+      1.0517249999999998,
+      -5.000500000000001e-12,
+      7.005e-09
+    ],
+    "visible": true,
+    "title": "Velocity map | moving-mesh radius on x, time on y | all zones (1300/1300) | linear scale"
+  }
+}

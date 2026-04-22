@@ -1,0 +1,3131 @@
+{
+  "metadata": {
+    "source": "NIST XCOM Version 3.1 computed locally from uploaded Fortran source/data",
+    "energy_range_eV": [
+      1000,
+      12000
+    ],
+    "energy_step_eV": 500,
+    "quantity_units": "cm^2/g",
+    "default_quantity": "mu_rho_total_cm2_g",
+    "notes": [
+      "Store mass attenuation coefficients \u03bc/\u03c1 rather than fixed-thickness transmission.",
+      "Compute transmission as exp(-(\u03bc/\u03c1) * areal_density_g_cm2).",
+      "epoxy is approximated as C2H4O.",
+      "glass is approximated as SiO2.",
+      "CH is idealized stoichiometric CH.",
+      "Kapton/polyimide is approximated as C22H10N2O5."
+    ],
+    "materials_included": [
+      "al",
+      "cu",
+      "fe",
+      "si",
+      "ti",
+      "au",
+      "be",
+      "c",
+      "ch",
+      "epoxy_c2h4o",
+      "kapton_c22h10n2o5",
+      "sio2",
+      "glass_sio2"
+    ]
+  },
+  "materials": {
+    "al": {
+      "display_name": "Al",
+      "mode": "element",
+      "identifier": "Al",
+      "note": "aluminium",
+      "rows": [
+        {
+          "energy_eV": 1000,
+          "coherent_cm2_g": 2.256,
+          "incoherent_cm2_g": 0.01427,
+          "photoelectric_cm2_g": 1183.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1185.0,
+          "mu_rho_no_coherent_cm2_g": 1183.0
+        },
+        {
+          "energy_eV": 1500,
+          "coherent_cm2_g": 2.04,
+          "incoherent_cm2_g": 0.02477,
+          "photoelectric_cm2_g": 400.2,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 402.3,
+          "mu_rho_no_coherent_cm2_g": 400.2
+        },
+        {
+          "energy_eV": 2000,
+          "coherent_cm2_g": 1.838,
+          "incoherent_cm2_g": 0.03375,
+          "photoelectric_cm2_g": 2261.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2263.0,
+          "mu_rho_no_coherent_cm2_g": 2261.0
+        },
+        {
+          "energy_eV": 2500,
+          "coherent_cm2_g": 1.666,
+          "incoherent_cm2_g": 0.04109,
+          "photoelectric_cm2_g": 1285.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1286.0,
+          "mu_rho_no_coherent_cm2_g": 1285.0
+        },
+        {
+          "energy_eV": 3000,
+          "coherent_cm2_g": 1.523,
+          "incoherent_cm2_g": 0.04732,
+          "photoelectric_cm2_g": 786.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 788.1,
+          "mu_rho_no_coherent_cm2_g": 786.6
+        },
+        {
+          "energy_eV": 3500,
+          "coherent_cm2_g": 1.401,
+          "incoherent_cm2_g": 0.0529,
+          "photoelectric_cm2_g": 517.8,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 519.2,
+          "mu_rho_no_coherent_cm2_g": 517.8
+        },
+        {
+          "energy_eV": 4000,
+          "coherent_cm2_g": 1.295,
+          "incoherent_cm2_g": 0.0581,
+          "photoelectric_cm2_g": 359.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 360.5,
+          "mu_rho_no_coherent_cm2_g": 359.2
+        },
+        {
+          "energy_eV": 4500,
+          "coherent_cm2_g": 1.201,
+          "incoherent_cm2_g": 0.06308,
+          "photoelectric_cm2_g": 258.7,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 260.0,
+          "mu_rho_no_coherent_cm2_g": 258.8
+        },
+        {
+          "energy_eV": 5000,
+          "coherent_cm2_g": 1.116,
+          "incoherent_cm2_g": 0.06787,
+          "photoelectric_cm2_g": 192.2,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 193.4,
+          "mu_rho_no_coherent_cm2_g": 192.3
+        },
+        {
+          "energy_eV": 5500,
+          "coherent_cm2_g": 1.037,
+          "incoherent_cm2_g": 0.0725,
+          "photoelectric_cm2_g": 146.6,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 147.7,
+          "mu_rho_no_coherent_cm2_g": 146.7
+        },
+        {
+          "energy_eV": 6000,
+          "coherent_cm2_g": 0.9638,
+          "incoherent_cm2_g": 0.07696,
+          "photoelectric_cm2_g": 114.3,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 115.3,
+          "mu_rho_no_coherent_cm2_g": 114.3
+        },
+        {
+          "energy_eV": 6500,
+          "coherent_cm2_g": 0.8961,
+          "incoherent_cm2_g": 0.08123,
+          "photoelectric_cm2_g": 90.71,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 91.68,
+          "mu_rho_no_coherent_cm2_g": 90.79
+        },
+        {
+          "energy_eV": 7000,
+          "coherent_cm2_g": 0.8336,
+          "incoherent_cm2_g": 0.08532,
+          "photoelectric_cm2_g": 73.16,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 74.08,
+          "mu_rho_no_coherent_cm2_g": 73.24
+        },
+        {
+          "energy_eV": 7500,
+          "coherent_cm2_g": 0.776,
+          "incoherent_cm2_g": 0.08921,
+          "photoelectric_cm2_g": 59.82,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 60.69,
+          "mu_rho_no_coherent_cm2_g": 59.91
+        },
+        {
+          "energy_eV": 8000,
+          "coherent_cm2_g": 0.7229,
+          "incoherent_cm2_g": 0.09292,
+          "photoelectric_cm2_g": 49.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 50.32,
+          "mu_rho_no_coherent_cm2_g": 49.6
+        },
+        {
+          "energy_eV": 8500,
+          "coherent_cm2_g": 0.6742,
+          "incoherent_cm2_g": 0.09642,
+          "photoelectric_cm2_g": 41.41,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 42.18,
+          "mu_rho_no_coherent_cm2_g": 41.5
+        },
+        {
+          "energy_eV": 9000,
+          "coherent_cm2_g": 0.6295,
+          "incoherent_cm2_g": 0.09974,
+          "photoelectric_cm2_g": 34.96,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 35.69,
+          "mu_rho_no_coherent_cm2_g": 35.06
+        },
+        {
+          "energy_eV": 9500,
+          "coherent_cm2_g": 0.5886,
+          "incoherent_cm2_g": 0.1029,
+          "photoelectric_cm2_g": 29.78,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 30.47,
+          "mu_rho_no_coherent_cm2_g": 29.88
+        },
+        {
+          "energy_eV": 10000,
+          "coherent_cm2_g": 0.5513,
+          "incoherent_cm2_g": 0.1058,
+          "photoelectric_cm2_g": 25.56,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 26.21,
+          "mu_rho_no_coherent_cm2_g": 25.66
+        },
+        {
+          "energy_eV": 10500,
+          "coherent_cm2_g": 0.5172,
+          "incoherent_cm2_g": 0.1085,
+          "photoelectric_cm2_g": 22.09,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 22.71,
+          "mu_rho_no_coherent_cm2_g": 22.2
+        },
+        {
+          "energy_eV": 11000,
+          "coherent_cm2_g": 0.486,
+          "incoherent_cm2_g": 0.1111,
+          "photoelectric_cm2_g": 19.22,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 19.81,
+          "mu_rho_no_coherent_cm2_g": 19.33
+        },
+        {
+          "energy_eV": 11500,
+          "coherent_cm2_g": 0.4575,
+          "incoherent_cm2_g": 0.1135,
+          "photoelectric_cm2_g": 16.81,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 17.38,
+          "mu_rho_no_coherent_cm2_g": 16.93
+        },
+        {
+          "energy_eV": 12000,
+          "coherent_cm2_g": 0.4314,
+          "incoherent_cm2_g": 0.1158,
+          "photoelectric_cm2_g": 14.79,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 15.34,
+          "mu_rho_no_coherent_cm2_g": 14.91
+        }
+      ]
+    },
+    "cu": {
+      "display_name": "Cu",
+      "mode": "element",
+      "identifier": "Cu",
+      "note": "copper",
+      "rows": [
+        {
+          "energy_eV": 1000,
+          "coherent_cm2_g": 5.054,
+          "incoherent_cm2_g": 0.005914,
+          "photoelectric_cm2_g": 10570.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 10570.0,
+          "mu_rho_no_coherent_cm2_g": 10570.0
+        },
+        {
+          "energy_eV": 1500,
+          "coherent_cm2_g": 4.806,
+          "incoherent_cm2_g": 0.01086,
+          "photoelectric_cm2_g": 4413.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 4418.0,
+          "mu_rho_no_coherent_cm2_g": 4413.0
+        },
+        {
+          "energy_eV": 2000,
+          "coherent_cm2_g": 4.525,
+          "incoherent_cm2_g": 0.01591,
+          "photoelectric_cm2_g": 2149.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2154.0,
+          "mu_rho_no_coherent_cm2_g": 2149.0
+        },
+        {
+          "energy_eV": 2500,
+          "coherent_cm2_g": 4.235,
+          "incoherent_cm2_g": 0.02094,
+          "photoelectric_cm2_g": 1200.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1204.0,
+          "mu_rho_no_coherent_cm2_g": 1200.0
+        },
+        {
+          "energy_eV": 3000,
+          "coherent_cm2_g": 3.946,
+          "incoherent_cm2_g": 0.02587,
+          "photoelectric_cm2_g": 744.9,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 748.8,
+          "mu_rho_no_coherent_cm2_g": 744.9
+        },
+        {
+          "energy_eV": 3500,
+          "coherent_cm2_g": 3.666,
+          "incoherent_cm2_g": 0.03066,
+          "photoelectric_cm2_g": 492.3,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 496.0,
+          "mu_rho_no_coherent_cm2_g": 492.3
+        },
+        {
+          "energy_eV": 4000,
+          "coherent_cm2_g": 3.399,
+          "incoherent_cm2_g": 0.03527,
+          "photoelectric_cm2_g": 343.9,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 347.3,
+          "mu_rho_no_coherent_cm2_g": 343.9
+        },
+        {
+          "energy_eV": 4500,
+          "coherent_cm2_g": 3.148,
+          "incoherent_cm2_g": 0.03969,
+          "photoelectric_cm2_g": 249.3,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 252.5,
+          "mu_rho_no_coherent_cm2_g": 249.4
+        },
+        {
+          "energy_eV": 5000,
+          "coherent_cm2_g": 2.914,
+          "incoherent_cm2_g": 0.04391,
+          "photoelectric_cm2_g": 187.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 189.9,
+          "mu_rho_no_coherent_cm2_g": 187.0
+        },
+        {
+          "energy_eV": 5500,
+          "coherent_cm2_g": 2.698,
+          "incoherent_cm2_g": 0.04794,
+          "photoelectric_cm2_g": 143.7,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 146.5,
+          "mu_rho_no_coherent_cm2_g": 143.8
+        },
+        {
+          "energy_eV": 6000,
+          "coherent_cm2_g": 2.5,
+          "incoherent_cm2_g": 0.05181,
+          "photoelectric_cm2_g": 113.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 115.6,
+          "mu_rho_no_coherent_cm2_g": 113.1
+        },
+        {
+          "energy_eV": 6500,
+          "coherent_cm2_g": 2.319,
+          "incoherent_cm2_g": 0.05552,
+          "photoelectric_cm2_g": 90.41,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 92.78,
+          "mu_rho_no_coherent_cm2_g": 90.46
+        },
+        {
+          "energy_eV": 7000,
+          "coherent_cm2_g": 2.154,
+          "incoherent_cm2_g": 0.05906,
+          "photoelectric_cm2_g": 73.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 75.71,
+          "mu_rho_no_coherent_cm2_g": 73.56
+        },
+        {
+          "energy_eV": 7500,
+          "coherent_cm2_g": 2.005,
+          "incoherent_cm2_g": 0.06245,
+          "photoelectric_cm2_g": 60.62,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 62.68,
+          "mu_rho_no_coherent_cm2_g": 60.68
+        },
+        {
+          "energy_eV": 8000,
+          "coherent_cm2_g": 1.872,
+          "incoherent_cm2_g": 0.06569,
+          "photoelectric_cm2_g": 50.62,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 52.55,
+          "mu_rho_no_coherent_cm2_g": 50.68
+        },
+        {
+          "energy_eV": 8500,
+          "coherent_cm2_g": 1.751,
+          "incoherent_cm2_g": 0.06878,
+          "photoelectric_cm2_g": 42.67,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 44.49,
+          "mu_rho_no_coherent_cm2_g": 42.74
+        },
+        {
+          "energy_eV": 9000,
+          "coherent_cm2_g": 1.642,
+          "incoherent_cm2_g": 0.07174,
+          "photoelectric_cm2_g": 275.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 276.8,
+          "mu_rho_no_coherent_cm2_g": 275.2
+        },
+        {
+          "energy_eV": 9500,
+          "coherent_cm2_g": 1.541,
+          "incoherent_cm2_g": 0.07456,
+          "photoelectric_cm2_g": 242.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 244.0,
+          "mu_rho_no_coherent_cm2_g": 242.5
+        },
+        {
+          "energy_eV": 10000,
+          "coherent_cm2_g": 1.45,
+          "incoherent_cm2_g": 0.07725,
+          "photoelectric_cm2_g": 214.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 216.0,
+          "mu_rho_no_coherent_cm2_g": 214.5
+        },
+        {
+          "energy_eV": 10500,
+          "coherent_cm2_g": 1.367,
+          "incoherent_cm2_g": 0.07981,
+          "photoelectric_cm2_g": 190.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 191.6,
+          "mu_rho_no_coherent_cm2_g": 190.2
+        },
+        {
+          "energy_eV": 11000,
+          "coherent_cm2_g": 1.292,
+          "incoherent_cm2_g": 0.08223,
+          "photoelectric_cm2_g": 168.9,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 170.3,
+          "mu_rho_no_coherent_cm2_g": 169.0
+        },
+        {
+          "energy_eV": 11500,
+          "coherent_cm2_g": 1.224,
+          "incoherent_cm2_g": 0.08453,
+          "photoelectric_cm2_g": 150.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 151.8,
+          "mu_rho_no_coherent_cm2_g": 150.6
+        },
+        {
+          "energy_eV": 12000,
+          "coherent_cm2_g": 1.162,
+          "incoherent_cm2_g": 0.08671,
+          "photoelectric_cm2_g": 134.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 135.7,
+          "mu_rho_no_coherent_cm2_g": 134.5
+        }
+      ]
+    },
+    "fe": {
+      "display_name": "Fe",
+      "mode": "element",
+      "identifier": "Fe",
+      "note": "iron",
+      "rows": [
+        {
+          "energy_eV": 1000,
+          "coherent_cm2_g": 4.537,
+          "incoherent_cm2_g": 0.008777,
+          "photoelectric_cm2_g": 9081.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 9085.0,
+          "mu_rho_no_coherent_cm2_g": 9081.0
+        },
+        {
+          "energy_eV": 1500,
+          "coherent_cm2_g": 4.241,
+          "incoherent_cm2_g": 0.0153,
+          "photoelectric_cm2_g": 3396.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 3400.0,
+          "mu_rho_no_coherent_cm2_g": 3396.0
+        },
+        {
+          "energy_eV": 2000,
+          "coherent_cm2_g": 3.933,
+          "incoherent_cm2_g": 0.02124,
+          "photoelectric_cm2_g": 1623.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1627.0,
+          "mu_rho_no_coherent_cm2_g": 1623.0
+        },
+        {
+          "energy_eV": 2500,
+          "coherent_cm2_g": 3.634,
+          "incoherent_cm2_g": 0.02676,
+          "photoelectric_cm2_g": 898.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 902.2,
+          "mu_rho_no_coherent_cm2_g": 898.5
+        },
+        {
+          "energy_eV": 3000,
+          "coherent_cm2_g": 3.354,
+          "incoherent_cm2_g": 0.03206,
+          "photoelectric_cm2_g": 554.3,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 557.6,
+          "mu_rho_no_coherent_cm2_g": 554.3
+        },
+        {
+          "energy_eV": 3500,
+          "coherent_cm2_g": 3.092,
+          "incoherent_cm2_g": 0.03719,
+          "photoelectric_cm2_g": 364.7,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 367.9,
+          "mu_rho_no_coherent_cm2_g": 364.8
+        },
+        {
+          "energy_eV": 4000,
+          "coherent_cm2_g": 2.849,
+          "incoherent_cm2_g": 0.04212,
+          "photoelectric_cm2_g": 253.8,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 256.7,
+          "mu_rho_no_coherent_cm2_g": 253.9
+        },
+        {
+          "energy_eV": 4500,
+          "coherent_cm2_g": 2.625,
+          "incoherent_cm2_g": 0.04684,
+          "photoelectric_cm2_g": 183.6,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 186.2,
+          "mu_rho_no_coherent_cm2_g": 183.6
+        },
+        {
+          "energy_eV": 5000,
+          "coherent_cm2_g": 2.421,
+          "incoherent_cm2_g": 0.05133,
+          "photoelectric_cm2_g": 137.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 139.9,
+          "mu_rho_no_coherent_cm2_g": 137.4
+        },
+        {
+          "energy_eV": 5500,
+          "coherent_cm2_g": 2.235,
+          "incoherent_cm2_g": 0.0556,
+          "photoelectric_cm2_g": 105.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 107.7,
+          "mu_rho_no_coherent_cm2_g": 105.4
+        },
+        {
+          "energy_eV": 6000,
+          "coherent_cm2_g": 2.065,
+          "incoherent_cm2_g": 0.05966,
+          "photoelectric_cm2_g": 82.72,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 84.84,
+          "mu_rho_no_coherent_cm2_g": 82.78
+        },
+        {
+          "energy_eV": 6500,
+          "coherent_cm2_g": 1.911,
+          "incoherent_cm2_g": 0.06353,
+          "photoelectric_cm2_g": 66.11,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 68.08,
+          "mu_rho_no_coherent_cm2_g": 66.17
+        },
+        {
+          "energy_eV": 7000,
+          "coherent_cm2_g": 1.773,
+          "incoherent_cm2_g": 0.06721,
+          "photoelectric_cm2_g": 53.72,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 55.56,
+          "mu_rho_no_coherent_cm2_g": 53.79
+        },
+        {
+          "energy_eV": 7500,
+          "coherent_cm2_g": 1.651,
+          "incoherent_cm2_g": 0.07067,
+          "photoelectric_cm2_g": 356.6,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 358.4,
+          "mu_rho_no_coherent_cm2_g": 356.7
+        },
+        {
+          "energy_eV": 8000,
+          "coherent_cm2_g": 1.542,
+          "incoherent_cm2_g": 0.07395,
+          "photoelectric_cm2_g": 304.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 305.6,
+          "mu_rho_no_coherent_cm2_g": 304.1
+        },
+        {
+          "energy_eV": 8500,
+          "coherent_cm2_g": 1.443,
+          "incoherent_cm2_g": 0.07706,
+          "photoelectric_cm2_g": 260.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 262.0,
+          "mu_rho_no_coherent_cm2_g": 260.5
+        },
+        {
+          "energy_eV": 9000,
+          "coherent_cm2_g": 1.354,
+          "incoherent_cm2_g": 0.08001,
+          "photoelectric_cm2_g": 224.3,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 225.7,
+          "mu_rho_no_coherent_cm2_g": 224.4
+        },
+        {
+          "energy_eV": 9500,
+          "coherent_cm2_g": 1.274,
+          "incoherent_cm2_g": 0.08279,
+          "photoelectric_cm2_g": 194.3,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 195.7,
+          "mu_rho_no_coherent_cm2_g": 194.4
+        },
+        {
+          "energy_eV": 10000,
+          "coherent_cm2_g": 1.201,
+          "incoherent_cm2_g": 0.08541,
+          "photoelectric_cm2_g": 169.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 170.7,
+          "mu_rho_no_coherent_cm2_g": 169.5
+        },
+        {
+          "energy_eV": 10500,
+          "coherent_cm2_g": 1.136,
+          "incoherent_cm2_g": 0.08788,
+          "photoelectric_cm2_g": 148.6,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 149.8,
+          "mu_rho_no_coherent_cm2_g": 148.7
+        },
+        {
+          "energy_eV": 11000,
+          "coherent_cm2_g": 1.076,
+          "incoherent_cm2_g": 0.0902,
+          "photoelectric_cm2_g": 131.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 132.3,
+          "mu_rho_no_coherent_cm2_g": 131.2
+        },
+        {
+          "energy_eV": 11500,
+          "coherent_cm2_g": 1.022,
+          "incoherent_cm2_g": 0.09238,
+          "photoelectric_cm2_g": 116.3,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 117.4,
+          "mu_rho_no_coherent_cm2_g": 116.4
+        },
+        {
+          "energy_eV": 12000,
+          "coherent_cm2_g": 0.9729,
+          "incoherent_cm2_g": 0.09445,
+          "photoelectric_cm2_g": 103.6,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 104.7,
+          "mu_rho_no_coherent_cm2_g": 103.7
+        }
+      ]
+    },
+    "si": {
+      "display_name": "Si",
+      "mode": "element",
+      "identifier": "Si",
+      "note": "silicon",
+      "rows": [
+        {
+          "energy_eV": 1000,
+          "coherent_cm2_g": 2.528,
+          "incoherent_cm2_g": 0.01317,
+          "photoelectric_cm2_g": 1567.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1570.0,
+          "mu_rho_no_coherent_cm2_g": 1567.0
+        },
+        {
+          "energy_eV": 1500,
+          "coherent_cm2_g": 2.286,
+          "incoherent_cm2_g": 0.02393,
+          "photoelectric_cm2_g": 533.3,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 535.6,
+          "mu_rho_no_coherent_cm2_g": 533.3
+        },
+        {
+          "energy_eV": 2000,
+          "coherent_cm2_g": 2.048,
+          "incoherent_cm2_g": 0.03388,
+          "photoelectric_cm2_g": 2775.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2777.0,
+          "mu_rho_no_coherent_cm2_g": 2775.0
+        },
+        {
+          "energy_eV": 2500,
+          "coherent_cm2_g": 1.842,
+          "incoherent_cm2_g": 0.0424,
+          "photoelectric_cm2_g": 1634.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1636.0,
+          "mu_rho_no_coherent_cm2_g": 1634.0
+        },
+        {
+          "energy_eV": 3000,
+          "coherent_cm2_g": 1.669,
+          "incoherent_cm2_g": 0.04962,
+          "photoelectric_cm2_g": 976.7,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 978.4,
+          "mu_rho_no_coherent_cm2_g": 976.7
+        },
+        {
+          "energy_eV": 3500,
+          "coherent_cm2_g": 1.525,
+          "incoherent_cm2_g": 0.05583,
+          "photoelectric_cm2_g": 643.8,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 645.4,
+          "mu_rho_no_coherent_cm2_g": 643.8
+        },
+        {
+          "energy_eV": 4000,
+          "coherent_cm2_g": 1.404,
+          "incoherent_cm2_g": 0.06135,
+          "photoelectric_cm2_g": 451.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 452.8,
+          "mu_rho_no_coherent_cm2_g": 451.4
+        },
+        {
+          "energy_eV": 4500,
+          "coherent_cm2_g": 1.3,
+          "incoherent_cm2_g": 0.06639,
+          "photoelectric_cm2_g": 327.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 328.4,
+          "mu_rho_no_coherent_cm2_g": 327.1
+        },
+        {
+          "energy_eV": 5000,
+          "coherent_cm2_g": 1.208,
+          "incoherent_cm2_g": 0.0711,
+          "photoelectric_cm2_g": 243.8,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 245.1,
+          "mu_rho_no_coherent_cm2_g": 243.9
+        },
+        {
+          "energy_eV": 5500,
+          "coherent_cm2_g": 1.126,
+          "incoherent_cm2_g": 0.07557,
+          "photoelectric_cm2_g": 186.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 187.7,
+          "mu_rho_no_coherent_cm2_g": 186.6
+        },
+        {
+          "energy_eV": 6000,
+          "coherent_cm2_g": 1.051,
+          "incoherent_cm2_g": 0.07983,
+          "photoelectric_cm2_g": 145.8,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 147.0,
+          "mu_rho_no_coherent_cm2_g": 145.9
+        },
+        {
+          "energy_eV": 6500,
+          "coherent_cm2_g": 0.982,
+          "incoherent_cm2_g": 0.0839,
+          "photoelectric_cm2_g": 116.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 117.2,
+          "mu_rho_no_coherent_cm2_g": 116.2
+        },
+        {
+          "energy_eV": 7000,
+          "coherent_cm2_g": 0.918,
+          "incoherent_cm2_g": 0.0878,
+          "photoelectric_cm2_g": 93.88,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 94.88,
+          "mu_rho_no_coherent_cm2_g": 93.97
+        },
+        {
+          "energy_eV": 7500,
+          "coherent_cm2_g": 0.8588,
+          "incoherent_cm2_g": 0.09152,
+          "photoelectric_cm2_g": 76.93,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 77.88,
+          "mu_rho_no_coherent_cm2_g": 77.02
+        },
+        {
+          "energy_eV": 8000,
+          "coherent_cm2_g": 0.8039,
+          "incoherent_cm2_g": 0.09507,
+          "photoelectric_cm2_g": 63.79,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 64.69,
+          "mu_rho_no_coherent_cm2_g": 63.89
+        },
+        {
+          "energy_eV": 8500,
+          "coherent_cm2_g": 0.753,
+          "incoherent_cm2_g": 0.09846,
+          "photoelectric_cm2_g": 53.45,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 54.3,
+          "mu_rho_no_coherent_cm2_g": 53.55
+        },
+        {
+          "energy_eV": 9000,
+          "coherent_cm2_g": 0.7059,
+          "incoherent_cm2_g": 0.1017,
+          "photoelectric_cm2_g": 45.21,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 46.02,
+          "mu_rho_no_coherent_cm2_g": 45.31
+        },
+        {
+          "energy_eV": 9500,
+          "coherent_cm2_g": 0.6624,
+          "incoherent_cm2_g": 0.1047,
+          "photoelectric_cm2_g": 38.57,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 39.33,
+          "mu_rho_no_coherent_cm2_g": 38.67
+        },
+        {
+          "energy_eV": 10000,
+          "coherent_cm2_g": 0.6223,
+          "incoherent_cm2_g": 0.1076,
+          "photoelectric_cm2_g": 33.15,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 33.88,
+          "mu_rho_no_coherent_cm2_g": 33.26
+        },
+        {
+          "energy_eV": 10500,
+          "coherent_cm2_g": 0.5853,
+          "incoherent_cm2_g": 0.1104,
+          "photoelectric_cm2_g": 28.69,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 29.39,
+          "mu_rho_no_coherent_cm2_g": 28.8
+        },
+        {
+          "energy_eV": 11000,
+          "coherent_cm2_g": 0.5512,
+          "incoherent_cm2_g": 0.113,
+          "photoelectric_cm2_g": 24.99,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 25.65,
+          "mu_rho_no_coherent_cm2_g": 25.1
+        },
+        {
+          "energy_eV": 11500,
+          "coherent_cm2_g": 0.5198,
+          "incoherent_cm2_g": 0.1154,
+          "photoelectric_cm2_g": 21.89,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 22.53,
+          "mu_rho_no_coherent_cm2_g": 22.01
+        },
+        {
+          "energy_eV": 12000,
+          "coherent_cm2_g": 0.4908,
+          "incoherent_cm2_g": 0.1177,
+          "photoelectric_cm2_g": 19.28,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 19.89,
+          "mu_rho_no_coherent_cm2_g": 19.4
+        }
+      ]
+    },
+    "ti": {
+      "display_name": "Ti",
+      "mode": "element",
+      "identifier": "Ti",
+      "note": "titanium",
+      "rows": [
+        {
+          "energy_eV": 1000,
+          "coherent_cm2_g": 3.692,
+          "incoherent_cm2_g": 0.01182,
+          "photoelectric_cm2_g": 5865.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 5869.0,
+          "mu_rho_no_coherent_cm2_g": 5865.0
+        },
+        {
+          "energy_eV": 1500,
+          "coherent_cm2_g": 3.387,
+          "incoherent_cm2_g": 0.0195,
+          "photoelectric_cm2_g": 2093.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2096.0,
+          "mu_rho_no_coherent_cm2_g": 2093.0
+        },
+        {
+          "energy_eV": 2000,
+          "coherent_cm2_g": 3.093,
+          "incoherent_cm2_g": 0.02619,
+          "photoelectric_cm2_g": 982.9,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 986.1,
+          "mu_rho_no_coherent_cm2_g": 983.0
+        },
+        {
+          "energy_eV": 2500,
+          "coherent_cm2_g": 2.824,
+          "incoherent_cm2_g": 0.03242,
+          "photoelectric_cm2_g": 538.8,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 541.6,
+          "mu_rho_no_coherent_cm2_g": 538.8
+        },
+        {
+          "energy_eV": 3000,
+          "coherent_cm2_g": 2.581,
+          "incoherent_cm2_g": 0.03837,
+          "photoelectric_cm2_g": 329.7,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 332.3,
+          "mu_rho_no_coherent_cm2_g": 329.7
+        },
+        {
+          "energy_eV": 3500,
+          "coherent_cm2_g": 2.359,
+          "incoherent_cm2_g": 0.04404,
+          "photoelectric_cm2_g": 215.8,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 218.2,
+          "mu_rho_no_coherent_cm2_g": 215.9
+        },
+        {
+          "energy_eV": 4000,
+          "coherent_cm2_g": 2.157,
+          "incoherent_cm2_g": 0.0494,
+          "photoelectric_cm2_g": 149.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 151.8,
+          "mu_rho_no_coherent_cm2_g": 149.6
+        },
+        {
+          "energy_eV": 4500,
+          "coherent_cm2_g": 1.974,
+          "incoherent_cm2_g": 0.05446,
+          "photoelectric_cm2_g": 107.8,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 109.8,
+          "mu_rho_no_coherent_cm2_g": 107.8
+        },
+        {
+          "energy_eV": 5000,
+          "coherent_cm2_g": 1.814,
+          "incoherent_cm2_g": 0.05914,
+          "photoelectric_cm2_g": 682.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 683.8,
+          "mu_rho_no_coherent_cm2_g": 682.0
+        },
+        {
+          "energy_eV": 5500,
+          "coherent_cm2_g": 1.67,
+          "incoherent_cm2_g": 0.06353,
+          "photoelectric_cm2_g": 562.8,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 564.6,
+          "mu_rho_no_coherent_cm2_g": 562.9
+        },
+        {
+          "energy_eV": 6000,
+          "coherent_cm2_g": 1.541,
+          "incoherent_cm2_g": 0.06769,
+          "photoelectric_cm2_g": 430.8,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 432.4,
+          "mu_rho_no_coherent_cm2_g": 430.8
+        },
+        {
+          "energy_eV": 6500,
+          "coherent_cm2_g": 1.427,
+          "incoherent_cm2_g": 0.07156,
+          "photoelectric_cm2_g": 341.9,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 343.4,
+          "mu_rho_no_coherent_cm2_g": 342.0
+        },
+        {
+          "energy_eV": 7000,
+          "coherent_cm2_g": 1.327,
+          "incoherent_cm2_g": 0.07515,
+          "photoelectric_cm2_g": 281.6,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 283.0,
+          "mu_rho_no_coherent_cm2_g": 281.7
+        },
+        {
+          "energy_eV": 7500,
+          "coherent_cm2_g": 1.238,
+          "incoherent_cm2_g": 0.07849,
+          "photoelectric_cm2_g": 236.8,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 238.1,
+          "mu_rho_no_coherent_cm2_g": 236.9
+        },
+        {
+          "energy_eV": 8000,
+          "coherent_cm2_g": 1.16,
+          "incoherent_cm2_g": 0.08158,
+          "photoelectric_cm2_g": 201.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 202.4,
+          "mu_rho_no_coherent_cm2_g": 201.2
+        },
+        {
+          "energy_eV": 8500,
+          "coherent_cm2_g": 1.09,
+          "incoherent_cm2_g": 0.08445,
+          "photoelectric_cm2_g": 171.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 172.7,
+          "mu_rho_no_coherent_cm2_g": 171.6
+        },
+        {
+          "energy_eV": 9000,
+          "coherent_cm2_g": 1.028,
+          "incoherent_cm2_g": 0.08712,
+          "photoelectric_cm2_g": 146.9,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 148.0,
+          "mu_rho_no_coherent_cm2_g": 147.0
+        },
+        {
+          "energy_eV": 9500,
+          "coherent_cm2_g": 0.9712,
+          "incoherent_cm2_g": 0.08961,
+          "photoelectric_cm2_g": 126.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 127.6,
+          "mu_rho_no_coherent_cm2_g": 126.6
+        },
+        {
+          "energy_eV": 10000,
+          "coherent_cm2_g": 0.9203,
+          "incoherent_cm2_g": 0.09193,
+          "photoelectric_cm2_g": 109.7,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 110.7,
+          "mu_rho_no_coherent_cm2_g": 109.8
+        },
+        {
+          "energy_eV": 10500,
+          "coherent_cm2_g": 0.8741,
+          "incoherent_cm2_g": 0.09411,
+          "photoelectric_cm2_g": 95.72,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 96.69,
+          "mu_rho_no_coherent_cm2_g": 95.82
+        },
+        {
+          "energy_eV": 11000,
+          "coherent_cm2_g": 0.8318,
+          "incoherent_cm2_g": 0.09615,
+          "photoelectric_cm2_g": 84.08,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 85.01,
+          "mu_rho_no_coherent_cm2_g": 84.18
+        },
+        {
+          "energy_eV": 11500,
+          "coherent_cm2_g": 0.793,
+          "incoherent_cm2_g": 0.09807,
+          "photoelectric_cm2_g": 74.28,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 75.17,
+          "mu_rho_no_coherent_cm2_g": 74.38
+        },
+        {
+          "energy_eV": 12000,
+          "coherent_cm2_g": 0.757,
+          "incoherent_cm2_g": 0.09988,
+          "photoelectric_cm2_g": 65.96,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 66.81,
+          "mu_rho_no_coherent_cm2_g": 66.06
+        }
+      ]
+    },
+    "au": {
+      "display_name": "Au",
+      "mode": "element",
+      "identifier": "Au",
+      "note": "gold",
+      "rows": [
+        {
+          "energy_eV": 1000,
+          "coherent_cm2_g": 12.27,
+          "incoherent_cm2_g": 0.003268,
+          "photoelectric_cm2_g": 4641.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 4653.0,
+          "mu_rho_no_coherent_cm2_g": 4641.0
+        },
+        {
+          "energy_eV": 1500,
+          "coherent_cm2_g": 11.81,
+          "incoherent_cm2_g": 0.006066,
+          "photoelectric_cm2_g": 2077.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2089.0,
+          "mu_rho_no_coherent_cm2_g": 2077.0
+        },
+        {
+          "energy_eV": 2000,
+          "coherent_cm2_g": 11.27,
+          "incoherent_cm2_g": 0.008955,
+          "photoelectric_cm2_g": 1125.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1137.0,
+          "mu_rho_no_coherent_cm2_g": 1125.0
+        },
+        {
+          "energy_eV": 2500,
+          "coherent_cm2_g": 10.69,
+          "incoherent_cm2_g": 0.01181,
+          "photoelectric_cm2_g": 2270.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2281.0,
+          "mu_rho_no_coherent_cm2_g": 2270.0
+        },
+        {
+          "energy_eV": 3000,
+          "coherent_cm2_g": 10.11,
+          "incoherent_cm2_g": 0.01459,
+          "photoelectric_cm2_g": 2039.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2049.0,
+          "mu_rho_no_coherent_cm2_g": 2039.0
+        },
+        {
+          "energy_eV": 3500,
+          "coherent_cm2_g": 9.548,
+          "incoherent_cm2_g": 0.01727,
+          "photoelectric_cm2_g": 1560.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1569.0,
+          "mu_rho_no_coherent_cm2_g": 1560.0
+        },
+        {
+          "energy_eV": 4000,
+          "coherent_cm2_g": 9.007,
+          "incoherent_cm2_g": 0.01991,
+          "photoelectric_cm2_g": 1135.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1144.0,
+          "mu_rho_no_coherent_cm2_g": 1135.0
+        },
+        {
+          "energy_eV": 4500,
+          "coherent_cm2_g": 8.502,
+          "incoherent_cm2_g": 0.02248,
+          "photoelectric_cm2_g": 851.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 859.5,
+          "mu_rho_no_coherent_cm2_g": 851.0
+        },
+        {
+          "energy_eV": 5000,
+          "coherent_cm2_g": 8.032,
+          "incoherent_cm2_g": 0.02499,
+          "photoelectric_cm2_g": 658.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 666.0,
+          "mu_rho_no_coherent_cm2_g": 658.0
+        },
+        {
+          "energy_eV": 5500,
+          "coherent_cm2_g": 7.594,
+          "incoherent_cm2_g": 0.02746,
+          "photoelectric_cm2_g": 519.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 526.6,
+          "mu_rho_no_coherent_cm2_g": 519.0
+        },
+        {
+          "energy_eV": 6000,
+          "coherent_cm2_g": 7.188,
+          "incoherent_cm2_g": 0.02987,
+          "photoelectric_cm2_g": 418.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 425.2,
+          "mu_rho_no_coherent_cm2_g": 418.0
+        },
+        {
+          "energy_eV": 6500,
+          "coherent_cm2_g": 6.813,
+          "incoherent_cm2_g": 0.03222,
+          "photoelectric_cm2_g": 341.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 347.9,
+          "mu_rho_no_coherent_cm2_g": 341.1
+        },
+        {
+          "energy_eV": 7000,
+          "coherent_cm2_g": 6.466,
+          "incoherent_cm2_g": 0.03449,
+          "photoelectric_cm2_g": 282.6,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 289.1,
+          "mu_rho_no_coherent_cm2_g": 282.6
+        },
+        {
+          "energy_eV": 7500,
+          "coherent_cm2_g": 6.145,
+          "incoherent_cm2_g": 0.03667,
+          "photoelectric_cm2_g": 237.2,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 243.3,
+          "mu_rho_no_coherent_cm2_g": 237.2
+        },
+        {
+          "energy_eV": 8000,
+          "coherent_cm2_g": 5.846,
+          "incoherent_cm2_g": 0.03877,
+          "photoelectric_cm2_g": 201.3,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 207.2,
+          "mu_rho_no_coherent_cm2_g": 201.3
+        },
+        {
+          "energy_eV": 8500,
+          "coherent_cm2_g": 5.568,
+          "incoherent_cm2_g": 0.04077,
+          "photoelectric_cm2_g": 172.2,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 177.8,
+          "mu_rho_no_coherent_cm2_g": 172.2
+        },
+        {
+          "energy_eV": 9000,
+          "coherent_cm2_g": 5.308,
+          "incoherent_cm2_g": 0.04269,
+          "photoelectric_cm2_g": 148.6,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 153.9,
+          "mu_rho_no_coherent_cm2_g": 148.6
+        },
+        {
+          "energy_eV": 9500,
+          "coherent_cm2_g": 5.065,
+          "incoherent_cm2_g": 0.04452,
+          "photoelectric_cm2_g": 129.3,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 134.4,
+          "mu_rho_no_coherent_cm2_g": 129.3
+        },
+        {
+          "energy_eV": 10000,
+          "coherent_cm2_g": 4.837,
+          "incoherent_cm2_g": 0.04629,
+          "photoelectric_cm2_g": 113.2,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 118.1,
+          "mu_rho_no_coherent_cm2_g": 113.3
+        },
+        {
+          "energy_eV": 10500,
+          "coherent_cm2_g": 4.623,
+          "incoherent_cm2_g": 0.04799,
+          "photoelectric_cm2_g": 99.74,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 104.4,
+          "mu_rho_no_coherent_cm2_g": 99.78
+        },
+        {
+          "energy_eV": 11000,
+          "coherent_cm2_g": 4.421,
+          "incoherent_cm2_g": 0.04962,
+          "photoelectric_cm2_g": 88.36,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 92.83,
+          "mu_rho_no_coherent_cm2_g": 88.41
+        },
+        {
+          "energy_eV": 11500,
+          "coherent_cm2_g": 4.232,
+          "incoherent_cm2_g": 0.05117,
+          "photoelectric_cm2_g": 78.7,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 82.98,
+          "mu_rho_no_coherent_cm2_g": 78.75
+        },
+        {
+          "energy_eV": 12000,
+          "coherent_cm2_g": 4.053,
+          "incoherent_cm2_g": 0.05264,
+          "photoelectric_cm2_g": 179.6,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 183.7,
+          "mu_rho_no_coherent_cm2_g": 179.6
+        }
+      ]
+    },
+    "be": {
+      "display_name": "Be",
+      "mode": "element",
+      "identifier": "Be",
+      "note": "beryllium",
+      "rows": [
+        {
+          "energy_eV": 1000,
+          "coherent_cm2_g": 0.5918,
+          "incoherent_cm2_g": 0.02091,
+          "photoelectric_cm2_g": 603.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 604.2,
+          "mu_rho_no_coherent_cm2_g": 603.6
+        },
+        {
+          "energy_eV": 1500,
+          "coherent_cm2_g": 0.4948,
+          "incoherent_cm2_g": 0.03792,
+          "photoelectric_cm2_g": 179.2,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 179.7,
+          "mu_rho_no_coherent_cm2_g": 179.2
+        },
+        {
+          "energy_eV": 2000,
+          "coherent_cm2_g": 0.4103,
+          "incoherent_cm2_g": 0.05284,
+          "photoelectric_cm2_g": 74.24,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 74.7,
+          "mu_rho_no_coherent_cm2_g": 74.29
+        },
+        {
+          "energy_eV": 2500,
+          "coherent_cm2_g": 0.3447,
+          "incoherent_cm2_g": 0.0645,
+          "photoelectric_cm2_g": 37.09,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 37.5,
+          "mu_rho_no_coherent_cm2_g": 37.15
+        },
+        {
+          "energy_eV": 3000,
+          "coherent_cm2_g": 0.2962,
+          "incoherent_cm2_g": 0.0735,
+          "photoelectric_cm2_g": 20.9,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 21.27,
+          "mu_rho_no_coherent_cm2_g": 20.98
+        },
+        {
+          "energy_eV": 3500,
+          "coherent_cm2_g": 0.2599,
+          "incoherent_cm2_g": 0.08053,
+          "photoelectric_cm2_g": 12.82,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 13.16,
+          "mu_rho_no_coherent_cm2_g": 12.9
+        },
+        {
+          "energy_eV": 4000,
+          "coherent_cm2_g": 0.2321,
+          "incoherent_cm2_g": 0.08627,
+          "photoelectric_cm2_g": 8.366,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 8.685,
+          "mu_rho_no_coherent_cm2_g": 8.452
+        },
+        {
+          "energy_eV": 4500,
+          "coherent_cm2_g": 0.2103,
+          "incoherent_cm2_g": 0.09121,
+          "photoelectric_cm2_g": 5.732,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 6.033,
+          "mu_rho_no_coherent_cm2_g": 5.823
+        },
+        {
+          "energy_eV": 5000,
+          "coherent_cm2_g": 0.1926,
+          "incoherent_cm2_g": 0.09562,
+          "photoelectric_cm2_g": 4.081,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 4.369,
+          "mu_rho_no_coherent_cm2_g": 4.176
+        },
+        {
+          "energy_eV": 5500,
+          "coherent_cm2_g": 0.1777,
+          "incoherent_cm2_g": 0.09968,
+          "photoelectric_cm2_g": 2.997,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 3.275,
+          "mu_rho_no_coherent_cm2_g": 3.097
+        },
+        {
+          "energy_eV": 6000,
+          "coherent_cm2_g": 0.1649,
+          "incoherent_cm2_g": 0.1034,
+          "photoelectric_cm2_g": 2.259,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2.528,
+          "mu_rho_no_coherent_cm2_g": 2.363
+        },
+        {
+          "energy_eV": 6500,
+          "coherent_cm2_g": 0.1535,
+          "incoherent_cm2_g": 0.107,
+          "photoelectric_cm2_g": 1.741,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2.001,
+          "mu_rho_no_coherent_cm2_g": 1.848
+        },
+        {
+          "energy_eV": 7000,
+          "coherent_cm2_g": 0.1432,
+          "incoherent_cm2_g": 0.1103,
+          "photoelectric_cm2_g": 1.366,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1.62,
+          "mu_rho_no_coherent_cm2_g": 1.477
+        },
+        {
+          "energy_eV": 7500,
+          "coherent_cm2_g": 0.1339,
+          "incoherent_cm2_g": 0.1134,
+          "photoelectric_cm2_g": 1.09,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1.337,
+          "mu_rho_no_coherent_cm2_g": 1.203
+        },
+        {
+          "energy_eV": 8000,
+          "coherent_cm2_g": 0.1254,
+          "incoherent_cm2_g": 0.1163,
+          "photoelectric_cm2_g": 0.8821,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1.124,
+          "mu_rho_no_coherent_cm2_g": 0.9983
+        },
+        {
+          "energy_eV": 8500,
+          "coherent_cm2_g": 0.1176,
+          "incoherent_cm2_g": 0.119,
+          "photoelectric_cm2_g": 0.7227,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 0.9593,
+          "mu_rho_no_coherent_cm2_g": 0.8417
+        },
+        {
+          "energy_eV": 9000,
+          "coherent_cm2_g": 0.1104,
+          "incoherent_cm2_g": 0.1216,
+          "photoelectric_cm2_g": 0.5987,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 0.8307,
+          "mu_rho_no_coherent_cm2_g": 0.7203
+        },
+        {
+          "energy_eV": 9500,
+          "coherent_cm2_g": 0.1037,
+          "incoherent_cm2_g": 0.1239,
+          "photoelectric_cm2_g": 0.501,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 0.7286,
+          "mu_rho_no_coherent_cm2_g": 0.6249
+        },
+        {
+          "energy_eV": 10000,
+          "coherent_cm2_g": 0.09749,
+          "incoherent_cm2_g": 0.1262,
+          "photoelectric_cm2_g": 0.4229,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 0.6466,
+          "mu_rho_no_coherent_cm2_g": 0.5491
+        },
+        {
+          "energy_eV": 10500,
+          "coherent_cm2_g": 0.09176,
+          "incoherent_cm2_g": 0.1282,
+          "photoelectric_cm2_g": 0.3599,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 0.5799,
+          "mu_rho_no_coherent_cm2_g": 0.4881
+        },
+        {
+          "energy_eV": 11000,
+          "coherent_cm2_g": 0.08645,
+          "incoherent_cm2_g": 0.1301,
+          "photoelectric_cm2_g": 0.3085,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 0.5251,
+          "mu_rho_no_coherent_cm2_g": 0.4387
+        },
+        {
+          "energy_eV": 11500,
+          "coherent_cm2_g": 0.08153,
+          "incoherent_cm2_g": 0.1319,
+          "photoelectric_cm2_g": 0.2663,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 0.4797,
+          "mu_rho_no_coherent_cm2_g": 0.3982
+        },
+        {
+          "energy_eV": 12000,
+          "coherent_cm2_g": 0.07698,
+          "incoherent_cm2_g": 0.1336,
+          "photoelectric_cm2_g": 0.2312,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 0.4417,
+          "mu_rho_no_coherent_cm2_g": 0.3648
+        }
+      ]
+    },
+    "c": {
+      "display_name": "C",
+      "mode": "element",
+      "identifier": "C",
+      "note": "carbon",
+      "rows": [
+        {
+          "energy_eV": 1000,
+          "coherent_cm2_g": 1.079,
+          "incoherent_cm2_g": 0.01263,
+          "photoelectric_cm2_g": 2210.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2211.0,
+          "mu_rho_no_coherent_cm2_g": 2210.0
+        },
+        {
+          "energy_eV": 1500,
+          "coherent_cm2_g": 0.9586,
+          "incoherent_cm2_g": 0.02507,
+          "photoelectric_cm2_g": 699.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 700.4,
+          "mu_rho_no_coherent_cm2_g": 699.5
+        },
+        {
+          "energy_eV": 2000,
+          "coherent_cm2_g": 0.8318,
+          "incoherent_cm2_g": 0.03862,
+          "photoelectric_cm2_g": 301.7,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 302.6,
+          "mu_rho_no_coherent_cm2_g": 301.7
+        },
+        {
+          "energy_eV": 2500,
+          "coherent_cm2_g": 0.7138,
+          "incoherent_cm2_g": 0.05184,
+          "photoelectric_cm2_g": 155.3,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 156.0,
+          "mu_rho_no_coherent_cm2_g": 155.3
+        },
+        {
+          "energy_eV": 3000,
+          "coherent_cm2_g": 0.6127,
+          "incoherent_cm2_g": 0.06408,
+          "photoelectric_cm2_g": 89.65,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 90.32,
+          "mu_rho_no_coherent_cm2_g": 89.71
+        },
+        {
+          "energy_eV": 3500,
+          "coherent_cm2_g": 0.5287,
+          "incoherent_cm2_g": 0.07499,
+          "photoelectric_cm2_g": 56.09,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 56.69,
+          "mu_rho_no_coherent_cm2_g": 56.16
+        },
+        {
+          "energy_eV": 4000,
+          "coherent_cm2_g": 0.4602,
+          "incoherent_cm2_g": 0.08448,
+          "photoelectric_cm2_g": 37.24,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 37.78,
+          "mu_rho_no_coherent_cm2_g": 37.32
+        },
+        {
+          "energy_eV": 4500,
+          "coherent_cm2_g": 0.4047,
+          "incoherent_cm2_g": 0.09258,
+          "photoelectric_cm2_g": 25.88,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 26.38,
+          "mu_rho_no_coherent_cm2_g": 25.97
+        },
+        {
+          "energy_eV": 5000,
+          "coherent_cm2_g": 0.3595,
+          "incoherent_cm2_g": 0.09947,
+          "photoelectric_cm2_g": 18.66,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 19.12,
+          "mu_rho_no_coherent_cm2_g": 18.76
+        },
+        {
+          "energy_eV": 5500,
+          "coherent_cm2_g": 0.3224,
+          "incoherent_cm2_g": 0.1054,
+          "photoelectric_cm2_g": 13.85,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 14.28,
+          "mu_rho_no_coherent_cm2_g": 13.96
+        },
+        {
+          "energy_eV": 6000,
+          "coherent_cm2_g": 0.2918,
+          "incoherent_cm2_g": 0.1104,
+          "photoelectric_cm2_g": 10.54,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 10.95,
+          "mu_rho_no_coherent_cm2_g": 10.65
+        },
+        {
+          "energy_eV": 6500,
+          "coherent_cm2_g": 0.2661,
+          "incoherent_cm2_g": 0.1148,
+          "photoelectric_cm2_g": 8.194,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 8.575,
+          "mu_rho_no_coherent_cm2_g": 8.309
+        },
+        {
+          "energy_eV": 7000,
+          "coherent_cm2_g": 0.2444,
+          "incoherent_cm2_g": 0.1187,
+          "photoelectric_cm2_g": 6.483,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 6.846,
+          "mu_rho_no_coherent_cm2_g": 6.601
+        },
+        {
+          "energy_eV": 7500,
+          "coherent_cm2_g": 0.2257,
+          "incoherent_cm2_g": 0.1221,
+          "photoelectric_cm2_g": 5.208,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 5.556,
+          "mu_rho_no_coherent_cm2_g": 5.33
+        },
+        {
+          "energy_eV": 8000,
+          "coherent_cm2_g": 0.2096,
+          "incoherent_cm2_g": 0.1252,
+          "photoelectric_cm2_g": 4.241,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 4.576,
+          "mu_rho_no_coherent_cm2_g": 4.366
+        },
+        {
+          "energy_eV": 8500,
+          "coherent_cm2_g": 0.1955,
+          "incoherent_cm2_g": 0.128,
+          "photoelectric_cm2_g": 3.495,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 3.819,
+          "mu_rho_no_coherent_cm2_g": 3.623
+        },
+        {
+          "energy_eV": 9000,
+          "coherent_cm2_g": 0.1831,
+          "incoherent_cm2_g": 0.1306,
+          "photoelectric_cm2_g": 2.911,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 3.225,
+          "mu_rho_no_coherent_cm2_g": 3.042
+        },
+        {
+          "energy_eV": 9500,
+          "coherent_cm2_g": 0.172,
+          "incoherent_cm2_g": 0.133,
+          "photoelectric_cm2_g": 2.448,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2.753,
+          "mu_rho_no_coherent_cm2_g": 2.581
+        },
+        {
+          "energy_eV": 10000,
+          "coherent_cm2_g": 0.162,
+          "incoherent_cm2_g": 0.1352,
+          "photoelectric_cm2_g": 2.076,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2.373,
+          "mu_rho_no_coherent_cm2_g": 2.211
+        },
+        {
+          "energy_eV": 10500,
+          "coherent_cm2_g": 0.153,
+          "incoherent_cm2_g": 0.1373,
+          "photoelectric_cm2_g": 1.774,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2.064,
+          "mu_rho_no_coherent_cm2_g": 1.911
+        },
+        {
+          "energy_eV": 11000,
+          "coherent_cm2_g": 0.1448,
+          "incoherent_cm2_g": 0.1392,
+          "photoelectric_cm2_g": 1.527,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1.811,
+          "mu_rho_no_coherent_cm2_g": 1.666
+        },
+        {
+          "energy_eV": 11500,
+          "coherent_cm2_g": 0.1372,
+          "incoherent_cm2_g": 0.141,
+          "photoelectric_cm2_g": 1.323,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1.601,
+          "mu_rho_no_coherent_cm2_g": 1.464
+        },
+        {
+          "energy_eV": 12000,
+          "coherent_cm2_g": 0.1303,
+          "incoherent_cm2_g": 0.1428,
+          "photoelectric_cm2_g": 1.153,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1.426,
+          "mu_rho_no_coherent_cm2_g": 1.296
+        }
+      ]
+    },
+    "ch": {
+      "display_name": "CH",
+      "mode": "compound",
+      "identifier": "CH",
+      "note": "idealized CH plastic",
+      "rows": [
+        {
+          "energy_eV": 1000,
+          "coherent_cm2_g": 1.022,
+          "incoherent_cm2_g": 0.01555,
+          "photoelectric_cm2_g": 2039.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2040.0,
+          "mu_rho_no_coherent_cm2_g": 2039.0
+        },
+        {
+          "energy_eV": 1500,
+          "coherent_cm2_g": 0.9075,
+          "incoherent_cm2_g": 0.03077,
+          "photoelectric_cm2_g": 645.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 646.4,
+          "mu_rho_no_coherent_cm2_g": 645.4
+        },
+        {
+          "energy_eV": 2000,
+          "coherent_cm2_g": 0.7866,
+          "incoherent_cm2_g": 0.04709,
+          "photoelectric_cm2_g": 278.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 279.2,
+          "mu_rho_no_coherent_cm2_g": 278.4
+        },
+        {
+          "energy_eV": 2500,
+          "coherent_cm2_g": 0.6742,
+          "incoherent_cm2_g": 0.06269,
+          "photoelectric_cm2_g": 143.3,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 144.0,
+          "mu_rho_no_coherent_cm2_g": 143.3
+        },
+        {
+          "energy_eV": 3000,
+          "coherent_cm2_g": 0.578,
+          "incoherent_cm2_g": 0.0768,
+          "photoelectric_cm2_g": 82.72,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 83.37,
+          "mu_rho_no_coherent_cm2_g": 82.8
+        },
+        {
+          "energy_eV": 3500,
+          "coherent_cm2_g": 0.4982,
+          "incoherent_cm2_g": 0.08909,
+          "photoelectric_cm2_g": 51.75,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 52.34,
+          "mu_rho_no_coherent_cm2_g": 51.84
+        },
+        {
+          "energy_eV": 4000,
+          "coherent_cm2_g": 0.4333,
+          "incoherent_cm2_g": 0.09957,
+          "photoelectric_cm2_g": 34.36,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 34.89,
+          "mu_rho_no_coherent_cm2_g": 34.46
+        },
+        {
+          "energy_eV": 4500,
+          "coherent_cm2_g": 0.3807,
+          "incoherent_cm2_g": 0.1084,
+          "photoelectric_cm2_g": 23.88,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 24.37,
+          "mu_rho_no_coherent_cm2_g": 23.99
+        },
+        {
+          "energy_eV": 5000,
+          "coherent_cm2_g": 0.3379,
+          "incoherent_cm2_g": 0.1158,
+          "photoelectric_cm2_g": 17.21,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 17.67,
+          "mu_rho_no_coherent_cm2_g": 17.33
+        },
+        {
+          "energy_eV": 5500,
+          "coherent_cm2_g": 0.3028,
+          "incoherent_cm2_g": 0.122,
+          "photoelectric_cm2_g": 12.78,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 13.21,
+          "mu_rho_no_coherent_cm2_g": 12.9
+        },
+        {
+          "energy_eV": 6000,
+          "coherent_cm2_g": 0.2738,
+          "incoherent_cm2_g": 0.1273,
+          "photoelectric_cm2_g": 9.729,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 10.13,
+          "mu_rho_no_coherent_cm2_g": 9.856
+        },
+        {
+          "energy_eV": 6500,
+          "coherent_cm2_g": 0.2495,
+          "incoherent_cm2_g": 0.1319,
+          "photoelectric_cm2_g": 7.561,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 7.942,
+          "mu_rho_no_coherent_cm2_g": 7.693
+        },
+        {
+          "energy_eV": 7000,
+          "coherent_cm2_g": 0.229,
+          "incoherent_cm2_g": 0.1359,
+          "photoelectric_cm2_g": 5.981,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 6.346,
+          "mu_rho_no_coherent_cm2_g": 6.117
+        },
+        {
+          "energy_eV": 7500,
+          "coherent_cm2_g": 0.2114,
+          "incoherent_cm2_g": 0.1394,
+          "photoelectric_cm2_g": 4.806,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 5.156,
+          "mu_rho_no_coherent_cm2_g": 4.945
+        },
+        {
+          "energy_eV": 8000,
+          "coherent_cm2_g": 0.1962,
+          "incoherent_cm2_g": 0.1425,
+          "photoelectric_cm2_g": 3.913,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 4.252,
+          "mu_rho_no_coherent_cm2_g": 4.056
+        },
+        {
+          "energy_eV": 8500,
+          "coherent_cm2_g": 0.183,
+          "incoherent_cm2_g": 0.1454,
+          "photoelectric_cm2_g": 3.225,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 3.553,
+          "mu_rho_no_coherent_cm2_g": 3.37
+        },
+        {
+          "energy_eV": 9000,
+          "coherent_cm2_g": 0.1712,
+          "incoherent_cm2_g": 0.1479,
+          "photoelectric_cm2_g": 2.686,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 3.005,
+          "mu_rho_no_coherent_cm2_g": 2.834
+        },
+        {
+          "energy_eV": 9500,
+          "coherent_cm2_g": 0.1608,
+          "incoherent_cm2_g": 0.1503,
+          "photoelectric_cm2_g": 2.258,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2.569,
+          "mu_rho_no_coherent_cm2_g": 2.409
+        },
+        {
+          "energy_eV": 10000,
+          "coherent_cm2_g": 0.1514,
+          "incoherent_cm2_g": 0.1525,
+          "photoelectric_cm2_g": 1.915,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2.219,
+          "mu_rho_no_coherent_cm2_g": 2.068
+        },
+        {
+          "energy_eV": 10500,
+          "coherent_cm2_g": 0.1429,
+          "incoherent_cm2_g": 0.1545,
+          "photoelectric_cm2_g": 1.637,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1.934,
+          "mu_rho_no_coherent_cm2_g": 1.791
+        },
+        {
+          "energy_eV": 11000,
+          "coherent_cm2_g": 0.1352,
+          "incoherent_cm2_g": 0.1564,
+          "photoelectric_cm2_g": 1.409,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1.701,
+          "mu_rho_no_coherent_cm2_g": 1.565
+        },
+        {
+          "energy_eV": 11500,
+          "coherent_cm2_g": 0.1281,
+          "incoherent_cm2_g": 0.1581,
+          "photoelectric_cm2_g": 1.221,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1.507,
+          "mu_rho_no_coherent_cm2_g": 1.379
+        },
+        {
+          "energy_eV": 12000,
+          "coherent_cm2_g": 0.1216,
+          "incoherent_cm2_g": 0.1597,
+          "photoelectric_cm2_g": 1.064,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1.345,
+          "mu_rho_no_coherent_cm2_g": 1.224
+        }
+      ]
+    },
+    "epoxy_c2h4o": {
+      "display_name": "C2H4O",
+      "mode": "compound",
+      "identifier": "C2H4O",
+      "note": "epoxy surrogate assumed as C2H4O",
+      "rows": [
+        {
+          "energy_eV": 1000,
+          "coherent_cm2_g": 1.165,
+          "incoherent_cm2_g": 0.01459,
+          "photoelectric_cm2_g": 2872.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2873.0,
+          "mu_rho_no_coherent_cm2_g": 2872.0
+        },
+        {
+          "energy_eV": 1500,
+          "coherent_cm2_g": 1.056,
+          "incoherent_cm2_g": 0.02912,
+          "photoelectric_cm2_g": 943.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 944.6,
+          "mu_rho_no_coherent_cm2_g": 943.6
+        },
+        {
+          "energy_eV": 2000,
+          "coherent_cm2_g": 0.935,
+          "incoherent_cm2_g": 0.04494,
+          "photoelectric_cm2_g": 416.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 417.5,
+          "mu_rho_no_coherent_cm2_g": 416.6
+        },
+        {
+          "energy_eV": 2500,
+          "coherent_cm2_g": 0.818,
+          "incoherent_cm2_g": 0.06028,
+          "photoelectric_cm2_g": 217.9,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 218.8,
+          "mu_rho_no_coherent_cm2_g": 218.0
+        },
+        {
+          "energy_eV": 3000,
+          "coherent_cm2_g": 0.7132,
+          "incoherent_cm2_g": 0.07432,
+          "photoelectric_cm2_g": 127.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 128.1,
+          "mu_rho_no_coherent_cm2_g": 127.4
+        },
+        {
+          "energy_eV": 3500,
+          "coherent_cm2_g": 0.6225,
+          "incoherent_cm2_g": 0.08671,
+          "photoelectric_cm2_g": 80.44,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 81.15,
+          "mu_rho_no_coherent_cm2_g": 80.53
+        },
+        {
+          "energy_eV": 4000,
+          "coherent_cm2_g": 0.5457,
+          "incoherent_cm2_g": 0.09741,
+          "photoelectric_cm2_g": 53.83,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 54.47,
+          "mu_rho_no_coherent_cm2_g": 53.93
+        },
+        {
+          "energy_eV": 4500,
+          "coherent_cm2_g": 0.4814,
+          "incoherent_cm2_g": 0.1066,
+          "photoelectric_cm2_g": 37.67,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 38.26,
+          "mu_rho_no_coherent_cm2_g": 37.78
+        },
+        {
+          "energy_eV": 5000,
+          "coherent_cm2_g": 0.4278,
+          "incoherent_cm2_g": 0.1144,
+          "photoelectric_cm2_g": 27.32,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 27.86,
+          "mu_rho_no_coherent_cm2_g": 27.43
+        },
+        {
+          "energy_eV": 5500,
+          "coherent_cm2_g": 0.383,
+          "incoherent_cm2_g": 0.121,
+          "photoelectric_cm2_g": 20.39,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 20.9,
+          "mu_rho_no_coherent_cm2_g": 20.51
+        },
+        {
+          "energy_eV": 6000,
+          "coherent_cm2_g": 0.3454,
+          "incoherent_cm2_g": 0.1267,
+          "photoelectric_cm2_g": 15.59,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 16.06,
+          "mu_rho_no_coherent_cm2_g": 15.72
+        },
+        {
+          "energy_eV": 6500,
+          "coherent_cm2_g": 0.3136,
+          "incoherent_cm2_g": 0.1317,
+          "photoelectric_cm2_g": 12.17,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 12.61,
+          "mu_rho_no_coherent_cm2_g": 12.3
+        },
+        {
+          "energy_eV": 7000,
+          "coherent_cm2_g": 0.2864,
+          "incoherent_cm2_g": 0.136,
+          "photoelectric_cm2_g": 9.666,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 10.09,
+          "mu_rho_no_coherent_cm2_g": 9.802
+        },
+        {
+          "energy_eV": 7500,
+          "coherent_cm2_g": 0.2631,
+          "incoherent_cm2_g": 0.1398,
+          "photoelectric_cm2_g": 7.794,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 8.197,
+          "mu_rho_no_coherent_cm2_g": 7.934
+        },
+        {
+          "energy_eV": 8000,
+          "coherent_cm2_g": 0.2428,
+          "incoherent_cm2_g": 0.1431,
+          "photoelectric_cm2_g": 6.369,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 6.755,
+          "mu_rho_no_coherent_cm2_g": 6.512
+        },
+        {
+          "energy_eV": 8500,
+          "coherent_cm2_g": 0.2252,
+          "incoherent_cm2_g": 0.1461,
+          "photoelectric_cm2_g": 5.266,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 5.637,
+          "mu_rho_no_coherent_cm2_g": 5.412
+        },
+        {
+          "energy_eV": 9000,
+          "coherent_cm2_g": 0.2097,
+          "incoherent_cm2_g": 0.1488,
+          "photoelectric_cm2_g": 4.399,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 4.758,
+          "mu_rho_no_coherent_cm2_g": 4.548
+        },
+        {
+          "energy_eV": 9500,
+          "coherent_cm2_g": 0.196,
+          "incoherent_cm2_g": 0.1513,
+          "photoelectric_cm2_g": 3.709,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 4.057,
+          "mu_rho_no_coherent_cm2_g": 3.861
+        },
+        {
+          "energy_eV": 10000,
+          "coherent_cm2_g": 0.1838,
+          "incoherent_cm2_g": 0.1535,
+          "photoelectric_cm2_g": 3.154,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 3.491,
+          "mu_rho_no_coherent_cm2_g": 3.307
+        },
+        {
+          "energy_eV": 10500,
+          "coherent_cm2_g": 0.1728,
+          "incoherent_cm2_g": 0.1556,
+          "photoelectric_cm2_g": 2.702,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 3.031,
+          "mu_rho_no_coherent_cm2_g": 2.858
+        },
+        {
+          "energy_eV": 11000,
+          "coherent_cm2_g": 0.1629,
+          "incoherent_cm2_g": 0.1575,
+          "photoelectric_cm2_g": 2.331,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2.651,
+          "mu_rho_no_coherent_cm2_g": 2.489
+        },
+        {
+          "energy_eV": 11500,
+          "coherent_cm2_g": 0.1539,
+          "incoherent_cm2_g": 0.1592,
+          "photoelectric_cm2_g": 2.024,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2.337,
+          "mu_rho_no_coherent_cm2_g": 2.183
+        },
+        {
+          "energy_eV": 12000,
+          "coherent_cm2_g": 0.1457,
+          "incoherent_cm2_g": 0.1608,
+          "photoelectric_cm2_g": 1.767,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2.074,
+          "mu_rho_no_coherent_cm2_g": 1.928
+        }
+      ]
+    },
+    "kapton_c22h10n2o5": {
+      "display_name": "C22H10N2O5",
+      "mode": "compound",
+      "identifier": "C22H10N2O5",
+      "note": "Kapton/polyimide surrogate",
+      "rows": [
+        {
+          "energy_eV": 1000,
+          "coherent_cm2_g": 1.164,
+          "incoherent_cm2_g": 0.01264,
+          "photoelectric_cm2_g": 2730.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2731.0,
+          "mu_rho_no_coherent_cm2_g": 2730.0
+        },
+        {
+          "energy_eV": 1500,
+          "coherent_cm2_g": 1.048,
+          "incoherent_cm2_g": 0.02527,
+          "photoelectric_cm2_g": 886.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 887.5,
+          "mu_rho_no_coherent_cm2_g": 886.5
+        },
+        {
+          "energy_eV": 2000,
+          "coherent_cm2_g": 0.9223,
+          "incoherent_cm2_g": 0.03912,
+          "photoelectric_cm2_g": 388.5,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 389.5,
+          "mu_rho_no_coherent_cm2_g": 388.6
+        },
+        {
+          "energy_eV": 2500,
+          "coherent_cm2_g": 0.8022,
+          "incoherent_cm2_g": 0.05272,
+          "photoelectric_cm2_g": 202.3,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 203.1,
+          "mu_rho_no_coherent_cm2_g": 202.3
+        },
+        {
+          "energy_eV": 3000,
+          "coherent_cm2_g": 0.6962,
+          "incoherent_cm2_g": 0.06534,
+          "photoelectric_cm2_g": 117.8,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 118.5,
+          "mu_rho_no_coherent_cm2_g": 117.8
+        },
+        {
+          "energy_eV": 3500,
+          "coherent_cm2_g": 0.6055,
+          "incoherent_cm2_g": 0.07663,
+          "photoelectric_cm2_g": 74.17,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 74.85,
+          "mu_rho_no_coherent_cm2_g": 74.25
+        },
+        {
+          "energy_eV": 4000,
+          "coherent_cm2_g": 0.5297,
+          "incoherent_cm2_g": 0.08648,
+          "photoelectric_cm2_g": 49.52,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 50.13,
+          "mu_rho_no_coherent_cm2_g": 49.6
+        },
+        {
+          "energy_eV": 4500,
+          "coherent_cm2_g": 0.4669,
+          "incoherent_cm2_g": 0.09496,
+          "photoelectric_cm2_g": 34.58,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 35.14,
+          "mu_rho_no_coherent_cm2_g": 34.68
+        },
+        {
+          "energy_eV": 5000,
+          "coherent_cm2_g": 0.4149,
+          "incoherent_cm2_g": 0.1022,
+          "photoelectric_cm2_g": 25.03,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 25.55,
+          "mu_rho_no_coherent_cm2_g": 25.13
+        },
+        {
+          "energy_eV": 5500,
+          "coherent_cm2_g": 0.3717,
+          "incoherent_cm2_g": 0.1084,
+          "photoelectric_cm2_g": 18.66,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 19.14,
+          "mu_rho_no_coherent_cm2_g": 18.77
+        },
+        {
+          "energy_eV": 6000,
+          "coherent_cm2_g": 0.3355,
+          "incoherent_cm2_g": 0.1138,
+          "photoelectric_cm2_g": 14.25,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 14.7,
+          "mu_rho_no_coherent_cm2_g": 14.36
+        },
+        {
+          "energy_eV": 6500,
+          "coherent_cm2_g": 0.3051,
+          "incoherent_cm2_g": 0.1185,
+          "photoelectric_cm2_g": 11.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 11.53,
+          "mu_rho_no_coherent_cm2_g": 11.22
+        },
+        {
+          "energy_eV": 7000,
+          "coherent_cm2_g": 0.2792,
+          "incoherent_cm2_g": 0.1226,
+          "photoelectric_cm2_g": 8.81,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 9.212,
+          "mu_rho_no_coherent_cm2_g": 8.933
+        },
+        {
+          "energy_eV": 7500,
+          "coherent_cm2_g": 0.2569,
+          "incoherent_cm2_g": 0.1262,
+          "photoelectric_cm2_g": 7.097,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 7.48,
+          "mu_rho_no_coherent_cm2_g": 7.223
+        },
+        {
+          "energy_eV": 8000,
+          "coherent_cm2_g": 0.2376,
+          "incoherent_cm2_g": 0.1295,
+          "photoelectric_cm2_g": 5.793,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 6.16,
+          "mu_rho_no_coherent_cm2_g": 5.923
+        },
+        {
+          "energy_eV": 8500,
+          "coherent_cm2_g": 0.2208,
+          "incoherent_cm2_g": 0.1324,
+          "photoelectric_cm2_g": 4.785,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 5.138,
+          "mu_rho_no_coherent_cm2_g": 4.918
+        },
+        {
+          "energy_eV": 9000,
+          "coherent_cm2_g": 0.206,
+          "incoherent_cm2_g": 0.135,
+          "photoelectric_cm2_g": 3.994,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 4.335,
+          "mu_rho_no_coherent_cm2_g": 4.129
+        },
+        {
+          "energy_eV": 9500,
+          "coherent_cm2_g": 0.1929,
+          "incoherent_cm2_g": 0.1375,
+          "photoelectric_cm2_g": 3.365,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 3.695,
+          "mu_rho_no_coherent_cm2_g": 3.502
+        },
+        {
+          "energy_eV": 10000,
+          "coherent_cm2_g": 0.1812,
+          "incoherent_cm2_g": 0.1397,
+          "photoelectric_cm2_g": 2.859,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 3.18,
+          "mu_rho_no_coherent_cm2_g": 2.999
+        },
+        {
+          "energy_eV": 10500,
+          "coherent_cm2_g": 0.1706,
+          "incoherent_cm2_g": 0.1418,
+          "photoelectric_cm2_g": 2.448,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2.76,
+          "mu_rho_no_coherent_cm2_g": 2.59
+        },
+        {
+          "energy_eV": 11000,
+          "coherent_cm2_g": 0.1611,
+          "incoherent_cm2_g": 0.1437,
+          "photoelectric_cm2_g": 2.11,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2.415,
+          "mu_rho_no_coherent_cm2_g": 2.254
+        },
+        {
+          "energy_eV": 11500,
+          "coherent_cm2_g": 0.1524,
+          "incoherent_cm2_g": 0.1455,
+          "photoelectric_cm2_g": 1.831,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 2.129,
+          "mu_rho_no_coherent_cm2_g": 1.976
+        },
+        {
+          "energy_eV": 12000,
+          "coherent_cm2_g": 0.1444,
+          "incoherent_cm2_g": 0.1472,
+          "photoelectric_cm2_g": 1.598,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1.889,
+          "mu_rho_no_coherent_cm2_g": 1.745
+        }
+      ]
+    },
+    "sio2": {
+      "display_name": "SiO2",
+      "mode": "compound",
+      "identifier": "SiO2",
+      "note": "silicon dioxide",
+      "rows": [
+        {
+          "energy_eV": 1000,
+          "coherent_cm2_g": 1.981,
+          "incoherent_cm2_g": 0.01069,
+          "photoelectric_cm2_g": 3176.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 3178.0,
+          "mu_rho_no_coherent_cm2_g": 3176.0
+        },
+        {
+          "energy_eV": 1500,
+          "coherent_cm2_g": 1.81,
+          "incoherent_cm2_g": 0.0206,
+          "photoelectric_cm2_g": 1073.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1075.0,
+          "mu_rho_no_coherent_cm2_g": 1073.0
+        },
+        {
+          "energy_eV": 2000,
+          "coherent_cm2_g": 1.63,
+          "incoherent_cm2_g": 0.03099,
+          "photoelectric_cm2_g": 1666.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1668.0,
+          "mu_rho_no_coherent_cm2_g": 1666.0
+        },
+        {
+          "energy_eV": 2500,
+          "coherent_cm2_g": 1.463,
+          "incoherent_cm2_g": 0.041,
+          "photoelectric_cm2_g": 959.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 960.6,
+          "mu_rho_no_coherent_cm2_g": 959.1
+        },
+        {
+          "energy_eV": 3000,
+          "coherent_cm2_g": 1.314,
+          "incoherent_cm2_g": 0.05029,
+          "photoelectric_cm2_g": 571.6,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 572.9,
+          "mu_rho_no_coherent_cm2_g": 571.6
+        },
+        {
+          "energy_eV": 3500,
+          "coherent_cm2_g": 1.185,
+          "incoherent_cm2_g": 0.05878,
+          "photoelectric_cm2_g": 374.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 375.3,
+          "mu_rho_no_coherent_cm2_g": 374.1
+        },
+        {
+          "energy_eV": 4000,
+          "coherent_cm2_g": 1.073,
+          "incoherent_cm2_g": 0.06648,
+          "photoelectric_cm2_g": 260.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 261.3,
+          "mu_rho_no_coherent_cm2_g": 260.2
+        },
+        {
+          "energy_eV": 4500,
+          "coherent_cm2_g": 0.9773,
+          "incoherent_cm2_g": 0.07347,
+          "photoelectric_cm2_g": 187.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 188.5,
+          "mu_rho_no_coherent_cm2_g": 187.5
+        },
+        {
+          "energy_eV": 5000,
+          "coherent_cm2_g": 0.8939,
+          "incoherent_cm2_g": 0.0798,
+          "photoelectric_cm2_g": 139.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 140.1,
+          "mu_rho_no_coherent_cm2_g": 139.2
+        },
+        {
+          "energy_eV": 5500,
+          "coherent_cm2_g": 0.821,
+          "incoherent_cm2_g": 0.08553,
+          "photoelectric_cm2_g": 106.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 106.9,
+          "mu_rho_no_coherent_cm2_g": 106.1
+        },
+        {
+          "energy_eV": 6000,
+          "coherent_cm2_g": 0.7565,
+          "incoherent_cm2_g": 0.09074,
+          "photoelectric_cm2_g": 82.61,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 83.45,
+          "mu_rho_no_coherent_cm2_g": 82.7
+        },
+        {
+          "energy_eV": 6500,
+          "coherent_cm2_g": 0.699,
+          "incoherent_cm2_g": 0.09547,
+          "photoelectric_cm2_g": 65.57,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 66.36,
+          "mu_rho_no_coherent_cm2_g": 65.66
+        },
+        {
+          "energy_eV": 7000,
+          "coherent_cm2_g": 0.6475,
+          "incoherent_cm2_g": 0.09979,
+          "photoelectric_cm2_g": 52.87,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 53.62,
+          "mu_rho_no_coherent_cm2_g": 52.97
+        },
+        {
+          "energy_eV": 7500,
+          "coherent_cm2_g": 0.6012,
+          "incoherent_cm2_g": 0.1037,
+          "photoelectric_cm2_g": 43.22,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 43.93,
+          "mu_rho_no_coherent_cm2_g": 43.33
+        },
+        {
+          "energy_eV": 8000,
+          "coherent_cm2_g": 0.5593,
+          "incoherent_cm2_g": 0.1074,
+          "photoelectric_cm2_g": 35.77,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 36.43,
+          "mu_rho_no_coherent_cm2_g": 35.87
+        },
+        {
+          "energy_eV": 8500,
+          "coherent_cm2_g": 0.5214,
+          "incoherent_cm2_g": 0.1107,
+          "photoelectric_cm2_g": 29.91,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 30.54,
+          "mu_rho_no_coherent_cm2_g": 30.02
+        },
+        {
+          "energy_eV": 9000,
+          "coherent_cm2_g": 0.4871,
+          "incoherent_cm2_g": 0.1138,
+          "photoelectric_cm2_g": 25.26,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 25.86,
+          "mu_rho_no_coherent_cm2_g": 25.37
+        },
+        {
+          "energy_eV": 9500,
+          "coherent_cm2_g": 0.4558,
+          "incoherent_cm2_g": 0.1166,
+          "photoelectric_cm2_g": 21.51,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 22.08,
+          "mu_rho_no_coherent_cm2_g": 21.63
+        },
+        {
+          "energy_eV": 10000,
+          "coherent_cm2_g": 0.4275,
+          "incoherent_cm2_g": 0.1193,
+          "photoelectric_cm2_g": 18.46,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 19.01,
+          "mu_rho_no_coherent_cm2_g": 18.58
+        },
+        {
+          "energy_eV": 10500,
+          "coherent_cm2_g": 0.4016,
+          "incoherent_cm2_g": 0.1217,
+          "photoelectric_cm2_g": 15.95,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 16.48,
+          "mu_rho_no_coherent_cm2_g": 16.08
+        },
+        {
+          "energy_eV": 11000,
+          "coherent_cm2_g": 0.3779,
+          "incoherent_cm2_g": 0.124,
+          "photoelectric_cm2_g": 13.88,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 14.38,
+          "mu_rho_no_coherent_cm2_g": 14.0
+        },
+        {
+          "energy_eV": 11500,
+          "coherent_cm2_g": 0.3563,
+          "incoherent_cm2_g": 0.1261,
+          "photoelectric_cm2_g": 12.14,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 12.62,
+          "mu_rho_no_coherent_cm2_g": 12.27
+        },
+        {
+          "energy_eV": 12000,
+          "coherent_cm2_g": 0.3365,
+          "incoherent_cm2_g": 0.1281,
+          "photoelectric_cm2_g": 10.68,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 11.15,
+          "mu_rho_no_coherent_cm2_g": 10.81
+        }
+      ]
+    },
+    "glass_sio2": {
+      "display_name": "glass ~ SiO2",
+      "mode": "compound_alias",
+      "identifier": "SiO2",
+      "note": "glass surrogate assumed as SiO2; identical numbers to sio2",
+      "rows": [
+        {
+          "energy_eV": 1000,
+          "coherent_cm2_g": 1.981,
+          "incoherent_cm2_g": 0.01069,
+          "photoelectric_cm2_g": 3176.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 3178.0,
+          "mu_rho_no_coherent_cm2_g": 3176.0
+        },
+        {
+          "energy_eV": 1500,
+          "coherent_cm2_g": 1.81,
+          "incoherent_cm2_g": 0.0206,
+          "photoelectric_cm2_g": 1073.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1075.0,
+          "mu_rho_no_coherent_cm2_g": 1073.0
+        },
+        {
+          "energy_eV": 2000,
+          "coherent_cm2_g": 1.63,
+          "incoherent_cm2_g": 0.03099,
+          "photoelectric_cm2_g": 1666.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 1668.0,
+          "mu_rho_no_coherent_cm2_g": 1666.0
+        },
+        {
+          "energy_eV": 2500,
+          "coherent_cm2_g": 1.463,
+          "incoherent_cm2_g": 0.041,
+          "photoelectric_cm2_g": 959.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 960.6,
+          "mu_rho_no_coherent_cm2_g": 959.1
+        },
+        {
+          "energy_eV": 3000,
+          "coherent_cm2_g": 1.314,
+          "incoherent_cm2_g": 0.05029,
+          "photoelectric_cm2_g": 571.6,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 572.9,
+          "mu_rho_no_coherent_cm2_g": 571.6
+        },
+        {
+          "energy_eV": 3500,
+          "coherent_cm2_g": 1.185,
+          "incoherent_cm2_g": 0.05878,
+          "photoelectric_cm2_g": 374.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 375.3,
+          "mu_rho_no_coherent_cm2_g": 374.1
+        },
+        {
+          "energy_eV": 4000,
+          "coherent_cm2_g": 1.073,
+          "incoherent_cm2_g": 0.06648,
+          "photoelectric_cm2_g": 260.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 261.3,
+          "mu_rho_no_coherent_cm2_g": 260.2
+        },
+        {
+          "energy_eV": 4500,
+          "coherent_cm2_g": 0.9773,
+          "incoherent_cm2_g": 0.07347,
+          "photoelectric_cm2_g": 187.4,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 188.5,
+          "mu_rho_no_coherent_cm2_g": 187.5
+        },
+        {
+          "energy_eV": 5000,
+          "coherent_cm2_g": 0.8939,
+          "incoherent_cm2_g": 0.0798,
+          "photoelectric_cm2_g": 139.1,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 140.1,
+          "mu_rho_no_coherent_cm2_g": 139.2
+        },
+        {
+          "energy_eV": 5500,
+          "coherent_cm2_g": 0.821,
+          "incoherent_cm2_g": 0.08553,
+          "photoelectric_cm2_g": 106.0,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 106.9,
+          "mu_rho_no_coherent_cm2_g": 106.1
+        },
+        {
+          "energy_eV": 6000,
+          "coherent_cm2_g": 0.7565,
+          "incoherent_cm2_g": 0.09074,
+          "photoelectric_cm2_g": 82.61,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 83.45,
+          "mu_rho_no_coherent_cm2_g": 82.7
+        },
+        {
+          "energy_eV": 6500,
+          "coherent_cm2_g": 0.699,
+          "incoherent_cm2_g": 0.09547,
+          "photoelectric_cm2_g": 65.57,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 66.36,
+          "mu_rho_no_coherent_cm2_g": 65.66
+        },
+        {
+          "energy_eV": 7000,
+          "coherent_cm2_g": 0.6475,
+          "incoherent_cm2_g": 0.09979,
+          "photoelectric_cm2_g": 52.87,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 53.62,
+          "mu_rho_no_coherent_cm2_g": 52.97
+        },
+        {
+          "energy_eV": 7500,
+          "coherent_cm2_g": 0.6012,
+          "incoherent_cm2_g": 0.1037,
+          "photoelectric_cm2_g": 43.22,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 43.93,
+          "mu_rho_no_coherent_cm2_g": 43.33
+        },
+        {
+          "energy_eV": 8000,
+          "coherent_cm2_g": 0.5593,
+          "incoherent_cm2_g": 0.1074,
+          "photoelectric_cm2_g": 35.77,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 36.43,
+          "mu_rho_no_coherent_cm2_g": 35.87
+        },
+        {
+          "energy_eV": 8500,
+          "coherent_cm2_g": 0.5214,
+          "incoherent_cm2_g": 0.1107,
+          "photoelectric_cm2_g": 29.91,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 30.54,
+          "mu_rho_no_coherent_cm2_g": 30.02
+        },
+        {
+          "energy_eV": 9000,
+          "coherent_cm2_g": 0.4871,
+          "incoherent_cm2_g": 0.1138,
+          "photoelectric_cm2_g": 25.26,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 25.86,
+          "mu_rho_no_coherent_cm2_g": 25.37
+        },
+        {
+          "energy_eV": 9500,
+          "coherent_cm2_g": 0.4558,
+          "incoherent_cm2_g": 0.1166,
+          "photoelectric_cm2_g": 21.51,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 22.08,
+          "mu_rho_no_coherent_cm2_g": 21.63
+        },
+        {
+          "energy_eV": 10000,
+          "coherent_cm2_g": 0.4275,
+          "incoherent_cm2_g": 0.1193,
+          "photoelectric_cm2_g": 18.46,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 19.01,
+          "mu_rho_no_coherent_cm2_g": 18.58
+        },
+        {
+          "energy_eV": 10500,
+          "coherent_cm2_g": 0.4016,
+          "incoherent_cm2_g": 0.1217,
+          "photoelectric_cm2_g": 15.95,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 16.48,
+          "mu_rho_no_coherent_cm2_g": 16.08
+        },
+        {
+          "energy_eV": 11000,
+          "coherent_cm2_g": 0.3779,
+          "incoherent_cm2_g": 0.124,
+          "photoelectric_cm2_g": 13.88,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 14.38,
+          "mu_rho_no_coherent_cm2_g": 14.0
+        },
+        {
+          "energy_eV": 11500,
+          "coherent_cm2_g": 0.3563,
+          "incoherent_cm2_g": 0.1261,
+          "photoelectric_cm2_g": 12.14,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 12.62,
+          "mu_rho_no_coherent_cm2_g": 12.27
+        },
+        {
+          "energy_eV": 12000,
+          "coherent_cm2_g": 0.3365,
+          "incoherent_cm2_g": 0.1281,
+          "photoelectric_cm2_g": 10.68,
+          "pair_nuclear_cm2_g": 0.0,
+          "pair_electron_cm2_g": 0.0,
+          "mu_rho_total_cm2_g": 11.15,
+          "mu_rho_no_coherent_cm2_g": 10.81
+        }
+      ]
+    }
+  }
+}

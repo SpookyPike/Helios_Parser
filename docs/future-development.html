@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HELIOS Parse / View Future Development</title>
+  <link rel="stylesheet" href="assets/manual.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img class="brand-icon" src="assets/app_icon.png" alt="HELIOS Parse / View icon">
+      <div class="brand-copy">
+        <h1>Future Development</h1>
+        <p>
+          Current roadmap and technical debt guide for the real shipping tree after parser/runtime hardening,
+          lazy advanced analysis, WaveFront, interface-aware diagnostics, Preheat, and the recent UI stability work.
+        </p>
+      </div>
+    </div>
+    <div class="page-links">
+      <a href="index.html">Documentation Index</a>
+      <a href="developer-guide.html">Developer Guide</a>
+      <a href="developer-testing.html">Developer Testing</a>
+      <a href="release-notes.html">Release Notes</a>
+    </div>
+  </header>
+
+  <nav>
+    <a href="#built">Already Built</a>
+    <a href="#next">Likely Next Priorities</a>
+    <a href="#physics">Remaining Physics Work</a>
+    <a href="#technical">Technical Debt</a>
+    <a href="#performance">Performance Opportunities</a>
+    <a href="#ui">UI and Workflow Opportunities</a>
+    <a href="#limits">Current Boundaries</a>
+  </nav>
+
+  <main>
+    <section id="built">
+      <h2>What is already built</h2>
+      <ul>
+        <li>explicit edge/center coordinate semantics across parser, HDF5, runtime, viewer, and derived layers</li>
+        <li>run-status metadata and damaged-final-block handling</li>
+        <li>viewer/shared raw-data cache publication into derived mode</li>
+        <li>bounded caches with lightweight observability</li>
+        <li>persistent background task execution with cooperative cancellation and latest-wins apply</li>
+        <li>fast legacy Shock path</li>
+        <li>lazy and cached WaveFront branch tracking</li>
+        <li>interface-aware event diagnostics</li>
+        <li>separate Preheat diagnostics tab with ROI override and target-entry logic</li>
+        <li>module-local XRD / Plasmon / Transmission / Spectroscopy controls</li>
+      </ul>
+    </section>
+
+    <section id="next">
+      <h2>Likely next priorities</h2>
+      <div class="card-grid">
+        <div class="card">
+          <h3>Wave physics refinement</h3>
+          <p>Improve branch evidence formulas, fitting, and association quality on more layered and reflected/release-heavy cases without breaking the current stable quick-look UX.</p>
+        </div>
+        <div class="card">
+          <h3>WaveFront interpretation depth</h3>
+          <p>Add stronger summaries and comparison tools around branch history, ambiguity, and advanced event interpretation while keeping the tab readable.</p>
+        </div>
+        <div class="card">
+          <h3>Preheat follow-up</h3>
+          <p>Refine target heuristics, add more design-oriented summaries, and improve how multiple candidate target regions are compared.</p>
+        </div>
+        <div class="card">
+          <h3>Distribution polish</h3>
+          <p>Move from source-first bundle distribution toward a more polished packaged desktop release once dependencies and examples stabilize further.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="physics">
+      <h2>Major physics and diagnostics still remaining</h2>
+      <ul>
+        <li>deeper wave/interface interpretation beyond current quick-look event summaries</li>
+        <li>stronger validation-style summaries such as RH residuals, Mach-like proxies, and impedance interpretation where scientifically justified</li>
+        <li>more advanced preheat source/budget interpretation and confidence framing</li>
+        <li>fuller treatment of cylindrical downstream transport physics in modules that are currently only geometry-corrected at the weighting/path level</li>
+        <li>richer VISAR-aware diagnostics if future workflows require it</li>
+      </ul>
+      <div class="callout">
+        The current 1D-based interpretation remains useful, but it is still a quick-look interpretation layer. Documentation and UI must continue to state that honestly.
+      </div>
+    </section>
+
+    <section id="technical">
+      <h2>Technical debt and known limitations</h2>
+      <ul>
+        <li>some large advanced datasets still take noticeable time on first WaveFront/Preheat load</li>
+        <li>the release bundle is source-based rather than a frozen binary package</li>
+        <li>bundle and docs validation are practical rather than fully automated site/build validation</li>
+        <li>the test tree contains many phase-named suites that are useful historically but not yet reorganized into a cleaner long-term taxonomy</li>
+      </ul>
+    </section>
+
+    <section id="performance">
+      <h2>Performance improvement opportunities</h2>
+      <ul>
+        <li>trim remaining heavy advanced first-load costs on large layered runs</li>
+        <li>continue reducing redundant UI-side rerender work after selector changes</li>
+        <li>improve bundle-generation and screenshot-refresh automation</li>
+        <li>expand instrumentation summaries that help maintainers spot cache/invalidation regressions faster</li>
+      </ul>
+    </section>
+
+    <section id="ui">
+      <h2>UI and workflow opportunities</h2>
+      <ul>
+        <li>continue polishing advanced-tab readability without turning the UI into a developer-only dashboard</li>
+        <li>make more derived interpretation examples directly discoverable from the UI and docs</li>
+        <li>improve release-bundle onboarding with a future binary or installer path</li>
+        <li>keep combo/scroll/splitter interaction stable across dense scientific panels</li>
+      </ul>
+    </section>
+
+    <section id="limits">
+      <h2>Current interpretation boundaries</h2>
+      <p>
+        The application is strongest today as a fast, trustworthy, scientifically honest quick-look environment with an increasingly rich advanced branch-analysis layer.
+        It is not yet a final all-physics publication platform, and the roadmap should preserve that honesty instead of masking it.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

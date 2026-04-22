@@ -1,0 +1,17 @@
+case,model,model_label,backend,observable_mode,observable_elastic_fraction,observable_elastic_form_factor_total,observable_elastic_form_factor_core,observable_elastic_screening_form_factor,observable_ion_structure_factor
+ambient_al_t0,finite_t_stls,Finite-T STLS (experimental),finite_t_stls,xrts_article_native_al,6.749565207151412e-08,11.183011226901272,9.727886890606266,1.4551243362950057,1.0
+ambient_al_t0,finite_t_stls,Finite-T STLS (experimental),finite_t_stls,xrts_observable,0.34789211659800395,nan,nan,nan,nan
+ambient_al_t0,quantum_hydrodynamic,Quantum hydrodynamic (experimental),quantum_hydrodynamic,xrts_article_native_al,5.96142851077943e-08,11.183011226901272,9.727886890606266,1.4551243362950057,1.0
+ambient_al_t0,quantum_hydrodynamic,Quantum hydrodynamic (experimental),quantum_hydrodynamic,xrts_observable,0.32027995259711184,nan,nan,nan,nan
+ambient_al_t0,rpa,RPA,classical_maxwellian,xrts_article_native_al,4.163248570460283e-08,11.183011226901272,9.727886890606266,1.4551243362950057,1.0
+ambient_al_t0,rpa,RPA,classical_maxwellian,xrts_observable,0.24759134225192936,nan,nan,nan,nan
+ambient_al_t0,rpa_static_lfc,RPA + static LFC,classical_maxwellian,xrts_article_native_al,4.557571282312712e-08,11.183011226901272,9.727886890606266,1.4551243362950057,1.0
+ambient_al_t0,rpa_static_lfc,RPA + static LFC,classical_maxwellian,xrts_observable,0.2648315224754715,nan,nan,nan,nan
+driven_al_article_state,finite_t_stls,Finite-T STLS (experimental),finite_t_stls,xrts_article_native_al,0.6182341194551786,11.183011226901272,9.727886890606266,1.4551243362950057,1.0
+driven_al_article_state,finite_t_stls,Finite-T STLS (experimental),finite_t_stls,xrts_observable,0.30085626498703927,nan,nan,nan,nan
+driven_al_article_state,quantum_hydrodynamic,Quantum hydrodynamic (experimental),quantum_hydrodynamic,xrts_article_native_al,0.6062629131249189,11.183011226901272,9.727886890606266,1.4551243362950057,1.0
+driven_al_article_state,quantum_hydrodynamic,Quantum hydrodynamic (experimental),quantum_hydrodynamic,xrts_observable,0.29012680411689784,nan,nan,nan,nan
+driven_al_article_state,rpa,RPA,classical_maxwellian,xrts_article_native_al,0.5381243307346526,11.183011226901272,9.727886890606266,1.4551243362950057,1.0
+driven_al_article_state,rpa,RPA,classical_maxwellian,xrts_observable,0.2364863635616097,nan,nan,nan,nan
+driven_al_article_state,rpa_static_lfc,RPA + static LFC,classical_maxwellian,xrts_article_native_al,0.5696089870649645,11.183011226901272,9.727886890606266,1.4551243362950057,1.0
+driven_al_article_state,rpa_static_lfc,RPA + static LFC,classical_maxwellian,xrts_observable,0.25991555481488016,nan,nan,nan,nan

@@ -1,0 +1,30 @@
+# Python caches and local envs
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Local temporary work
+*.tmp
+*.temp
+tmp_*/
+_tmp_*/
+
+# Large local raw datasets and derived HDF5 work products
+*.log
+*.h5
+outputs/hdf5/
+
+# Keep release ZIP archives, but do not track expanded release trees
+outputs/release/helios-parse-view-0.9.0/
+outputs/release/helios-parse-view-0.9.1/
+
+# Large local scratch/validation folders
+plasmon_step10_valence/
+plasmon_step11_lindhard/
+plasmon_step7_overlay/
+_tmp_plasmon_fourth_pass/

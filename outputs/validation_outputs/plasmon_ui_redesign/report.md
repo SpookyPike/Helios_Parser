@@ -1,0 +1,8 @@
+# Plasmon UI redesign live check
+
+- 10ns+100Al+60CH+6.1TW_stabilized.h5 snapshot 0 | study=dispersion | compare_all=True | runtime=97.45s | top=Electron temperature vs time | bottom=Plasmon dispersion model comparison | snapshot 0 @ 1.000 fs | sidebar=320px
+  summary: Snapshot 0 @ 1.000 fs | Dispersion scan | Regime: collective | weighting=electron_column | model=rpa_static_lfc | exec=benchmark | benchmark=valid | pending recompute | front side | LOS cos=1.000 | profile=zone | planar LOS: exact (unchanged)
+- 10ns+100Al+60CH+6.1TW_stabilized.h5 snapshot 0 | study=spectrum | compare_all=True | runtime=109.01s | top=Electron temperature vs time | bottom=Plasmon dispersion model comparison | snapshot 0 @ 1.000 fs | sidebar=320px
+  summary: Snapshot 0 @ 1.000 fs | Fixed-angle / k spectrum | Regime: collective | weighting=electron_column | model=rpa_static_lfc | exec=benchmark | benchmark=valid | pending recompute | front side | LOS cos=1.000 | profile=zone | planar LOS: exact (unchanged)
+- 50Al+10E+25CH+3.5TW_stabilized.h5 snapshot 630 | study=dispersion | compare_all=True | runtime=1321.53s | top=Electron temperature vs time | bottom=Plasmon dispersion model comparison | snapshot 630 @ 6.300 ns | sidebar=320px
+  summary: Snapshot 630 @ 6.300 ns | Dispersion scan | Regime: collective | weighting=electron_column | model=rpa_static_lfc | exec=benchmark | benchmark=valid | pending recompute | front side | LOS cos=1.000 | profile=zone | planar LOS: exact (unchanged)

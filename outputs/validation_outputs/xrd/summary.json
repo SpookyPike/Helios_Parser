@@ -1,0 +1,38 @@
+{
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "weighting_mode": "width",
+    "layer_count": 3,
+    "time_plots": 6,
+    "profile_plots": 2,
+    "warnings": [
+      {
+        "severity": "info",
+        "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+      }
+    ]
+  },
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "weighting_mode": "width",
+    "layer_count": 1,
+    "time_plots": 6,
+    "profile_plots": 2,
+    "warnings": [
+      {
+        "severity": "info",
+        "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+      }
+    ]
+  },
+  "Cu_0166_stabilized.h5": {
+    "weighting_mode": "width",
+    "layer_count": 1,
+    "time_plots": 6,
+    "profile_plots": 2,
+    "warnings": [
+      {
+        "severity": "info",
+        "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+      }
+    ]
+  }
+}

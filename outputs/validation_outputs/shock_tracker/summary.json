@@ -1,0 +1,44 @@
+{
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "propagation_direction": "high_to_low",
+    "activation_snapshot_index": 1,
+    "breakout_time_s": null,
+    "interface_crossings": [
+      {
+        "interface_label": "Region 1 -> 2",
+        "boundary_zone": 100,
+        "crossing_snapshot": 622,
+        "crossing_time_s": 6.210718750000001e-09,
+        "crossing_position_cm": 0.0009959
+      },
+      {
+        "interface_label": "Region 2 -> 3",
+        "boundary_zone": 1100,
+        "crossing_snapshot": 113,
+        "crossing_time_s": 1.1250000000000001e-09,
+        "crossing_position_cm": 0.007494000000000001
+      }
+    ],
+    "jump_count_gt_50_zones": 0,
+    "signed_velocity_sign_flips": 0,
+    "max_speed_cm_s": 1701132.4971343875
+  },
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "propagation_direction": "high_to_low",
+    "activation_snapshot_index": 1,
+    "breakout_time_s": null,
+    "interface_crossings": [],
+    "jump_count_gt_50_zones": 0,
+    "signed_velocity_sign_flips": 0,
+    "max_speed_cm_s": 855488.3687289509
+  },
+  "Cu_0166_stabilized.h5": {
+    "propagation_direction": "high_to_low",
+    "activation_snapshot_index": 4,
+    "breakout_time_s": 4.079166666666667e-09,
+    "interface_crossings": [],
+    "jump_count_gt_50_zones": 0,
+    "signed_velocity_sign_flips": 0,
+    "max_speed_cm_s": 725000.0000000149
+  }
+}

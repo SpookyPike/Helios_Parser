@@ -1,0 +1,5 @@
+parent_model,child_model,published_branch,parent_mae_ev,child_mae_ev,collision_closure_delta_ev
+rpa,mermin,rpa,8.28320235495768,8.324629612687783,0.041427257730102696
+rpa_static_lfc,mermin_static_lfc,lfc,4.522870925352454,4.532221234921103,0.009350309568648463
+lindhard,lindhard_mermin,tddft,6.666307154135484,7.305006141064685,0.6386989869292012
+lindhard_static_lfc,lindhard_mermin_static_lfc,tddft,7.56915241300733,8.051823335878368,0.4826709228710371

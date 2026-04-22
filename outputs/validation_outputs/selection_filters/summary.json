@@ -1,0 +1,188 @@
+{
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "baseline": {
+      "selected_zones": 1300,
+      "geometry": {
+        "side": "front",
+        "los_cos": 1.0,
+        "profile_coordinate": "moving_radius"
+      },
+      "selection": {
+        "exclude_low_density": false,
+        "exclude_opposite_velocity": false,
+        "min_density_g_cm3": null,
+        "notes": []
+      }
+    },
+    "exclude_blowoff": {
+      "selected_zones": 1300,
+      "geometry": {
+        "side": "front",
+        "los_cos": 1.0,
+        "profile_coordinate": "moving_radius"
+      },
+      "selection": {
+        "exclude_low_density": true,
+        "exclude_opposite_velocity": false,
+        "min_density_g_cm3": 0.01,
+        "notes": [
+          "rho >= 0.01 g/cm3"
+        ]
+      }
+    },
+    "exclude_opposite_flow": {
+      "selected_zones": 1300,
+      "geometry": {
+        "side": "front",
+        "los_cos": 1.0,
+        "profile_coordinate": "moving_radius"
+      },
+      "selection": {
+        "exclude_low_density": false,
+        "exclude_opposite_velocity": true,
+        "min_density_g_cm3": null,
+        "notes": [
+          "Excluded opposite-velocity zones"
+        ]
+      }
+    },
+    "back_oblique": {
+      "selected_zones": 1300,
+      "geometry": {
+        "side": "back",
+        "los_cos": 0.8191520442889918,
+        "profile_coordinate": "moving_radius"
+      },
+      "selection": {
+        "exclude_low_density": false,
+        "exclude_opposite_velocity": false,
+        "min_density_g_cm3": null,
+        "notes": []
+      }
+    }
+  },
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "baseline": {
+      "selected_zones": 500,
+      "geometry": {
+        "side": "front",
+        "los_cos": 1.0,
+        "profile_coordinate": "moving_radius"
+      },
+      "selection": {
+        "exclude_low_density": false,
+        "exclude_opposite_velocity": false,
+        "min_density_g_cm3": null,
+        "notes": []
+      }
+    },
+    "exclude_blowoff": {
+      "selected_zones": 500,
+      "geometry": {
+        "side": "front",
+        "los_cos": 1.0,
+        "profile_coordinate": "moving_radius"
+      },
+      "selection": {
+        "exclude_low_density": true,
+        "exclude_opposite_velocity": false,
+        "min_density_g_cm3": 0.01,
+        "notes": [
+          "rho >= 0.01 g/cm3"
+        ]
+      }
+    },
+    "exclude_opposite_flow": {
+      "selected_zones": 500,
+      "geometry": {
+        "side": "front",
+        "los_cos": 1.0,
+        "profile_coordinate": "moving_radius"
+      },
+      "selection": {
+        "exclude_low_density": false,
+        "exclude_opposite_velocity": true,
+        "min_density_g_cm3": null,
+        "notes": [
+          "Excluded opposite-velocity zones"
+        ]
+      }
+    },
+    "back_oblique": {
+      "selected_zones": 500,
+      "geometry": {
+        "side": "back",
+        "los_cos": 0.8191520442889918,
+        "profile_coordinate": "moving_radius"
+      },
+      "selection": {
+        "exclude_low_density": false,
+        "exclude_opposite_velocity": false,
+        "min_density_g_cm3": null,
+        "notes": []
+      }
+    }
+  },
+  "Cu_0166_stabilized.h5": {
+    "baseline": {
+      "selected_zones": 300,
+      "geometry": {
+        "side": "front",
+        "los_cos": 1.0,
+        "profile_coordinate": "moving_radius"
+      },
+      "selection": {
+        "exclude_low_density": false,
+        "exclude_opposite_velocity": false,
+        "min_density_g_cm3": null,
+        "notes": []
+      }
+    },
+    "exclude_blowoff": {
+      "selected_zones": 300,
+      "geometry": {
+        "side": "front",
+        "los_cos": 1.0,
+        "profile_coordinate": "moving_radius"
+      },
+      "selection": {
+        "exclude_low_density": true,
+        "exclude_opposite_velocity": false,
+        "min_density_g_cm3": 0.01,
+        "notes": [
+          "rho >= 0.01 g/cm3"
+        ]
+      }
+    },
+    "exclude_opposite_flow": {
+      "selected_zones": 299,
+      "geometry": {
+        "side": "front",
+        "los_cos": 1.0,
+        "profile_coordinate": "moving_radius"
+      },
+      "selection": {
+        "exclude_low_density": false,
+        "exclude_opposite_velocity": true,
+        "min_density_g_cm3": null,
+        "notes": [
+          "Excluded opposite-velocity zones"
+        ]
+      }
+    },
+    "back_oblique": {
+      "selected_zones": 300,
+      "geometry": {
+        "side": "back",
+        "los_cos": 0.8191520442889918,
+        "profile_coordinate": "moving_radius"
+      },
+      "selection": {
+        "exclude_low_density": false,
+        "exclude_opposite_velocity": false,
+        "min_density_g_cm3": null,
+        "notes": []
+      }
+    }
+  }
+}

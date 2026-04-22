@@ -1,0 +1,33 @@
+         317988 function calls (317864 primitive calls) in 2.250 seconds
+
+   Ordered by: cumulative time
+   List reduced from 402 to 25 due to restriction <25>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    2.250    2.250 <stdin>:31(run_model)
+        1    0.000    0.000    2.250    2.250 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_validation.py:131(compute_plasmon)
+        1    0.001    0.001    2.250    2.250 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1880(evaluate_plasmon_regime)
+        4    0.000    0.000    2.165    0.541 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1415(_resolve_spectrum_payload)
+        4    0.003    0.001    2.165    0.541 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1113(_build_los_integrated_spectrum_payload)
+    128/8    0.000    0.000    2.086    0.261 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\selection.py:186(cached_time_series_payload)
+        4    0.005    0.001    2.080    0.520 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1245(_build)
+      120    0.001    0.000    2.066    0.017 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:969(_build_spectrum_payload_generic)
+      120    0.002    0.000    2.056    0.017 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1000(_build)
+      120    0.015    0.000    2.005    0.017 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:295(epsilon_mermin)
+      240    0.001    0.000    1.988    0.008 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:247(epsilon_rpa)
+      240    0.001    0.000    1.987    0.008 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:212(finite_t_susceptibility)
+       60    0.004    0.000    1.973    0.033 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:146(_finite_t_susceptibility_cached)
+       60    0.098    0.002    1.967    0.033 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:123(plasma_dispersion_function)
+       60    1.669    0.028    1.869    0.031 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:106(_plasma_dispersion_function_quadrature)
+     2324    0.003    0.000    0.210    0.000 C:\Users\dimab\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\core\fromnumeric.py:71(_wrapreduction)
+     2480    0.207    0.000    0.207    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+      828    0.001    0.000    0.206    0.000 C:\Users\dimab\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\core\fromnumeric.py:2177(sum)
+        1    0.002    0.002    0.193    0.193 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1580(_build_spectrum_policy_compare_bundle)
+        4    0.044    0.011    0.079    0.020 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_electron_policy.py:212(resolve_effective_electron_fields)
+     1896    0.007    0.000    0.043    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:268(_benchmark_domain_flags)
+     2145    0.012    0.000    0.038    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:781(_resolved_plasmon_collision_metadata)
+     1896    0.012    0.000    0.037    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:353(_plasmon_state_summary)
+      124    0.000    0.000    0.026    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:133(_spectrum_metric_tuple)
+      124    0.004    0.000    0.025    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:843(estimate_peak_metrics)
+
+

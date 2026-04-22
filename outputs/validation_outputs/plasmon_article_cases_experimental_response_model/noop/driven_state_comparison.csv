@@ -1,0 +1,4 @@
+selection_label,selection_kind,snapshot_index,time_ns,rho_weighted_g_cm3,te_weighted_ev,ti_weighted_ev,ion_density_weighted_cm3,effective_ne_weighted_cm3,effective_zeff_from_ne,path_length_um
+previous_selected_state,hydro_dense_floor_3p75,630,6.3001,4.196219732229971,0.48267949756079936,0.48930624055939,9.359342921251258e+22,2.807802876375377e+23,2.9999999999999996,27.673000000000002
+new_selected_state,hydro_plateau_best_match,647,6.470000000000001,4.154773762071426,0.4846565999021919,0.4906845752094592,9.266900896721804e+22,2.7800702690165417e+23,3.0000000000000004,29.99749
+target_article_state,article_density_average_fixed_temperature,-1,6.3,4.125,0.6,0.6,9.206801191557177e+22,2.7620403574671537e+23,3.0000000000000004,30.0

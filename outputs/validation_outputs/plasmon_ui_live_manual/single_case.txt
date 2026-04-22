@@ -1,0 +1,41 @@
+Snapshot 630 @ 6.300 ns | Regime: collective | weighting=electron_column | model=rpa_static_lfc | exec=benchmark | benchmark=valid | pending recompute | front side | LOS cos=1.000 | profile=zone | planar LOS: exact (unchanged)
+
+Te            0.4893 eV
+Ti            0.4895 eV
+ne            2.825e+23 1/cm3
+Zbar          3
+lambda_D      0.000 um
+hbar*omega_pe 19.73 eV
+nu_e          0 1/s
+k lambda_D    0.1003
+Collectivity  9.966
+Ef            15.7 eV
+Theta=Te/Ef   0.03117
+r_s           1.787
+q/qF          0.5058
+Static LFC    0.1095
+LFC model     esa_static
+Model         rpa_static_lfc
+Requested     rpa_static_lfc
+Backend       classical_maxwellian
+Auto summary  rpa_static_lfc:30
+Exec mode     benchmark
+Benchmark     valid
+Full exec     yes
+Fallback frac 0.0%
+Domain fail   0.0%
+Peak fit      local_quadratic
+Integration   los_integrated
+Zones used    413
+Clusters used 30
+Degenerate z/c 413/30
+Noncollect z/c 0/0
+Weak-cpl z/c  0/0
+LFC OOD z/c   0/0
+Invalid nu z/c 0/0
+Spectrum dE   ±45 eV
+Points        4001
+Peak dE       21.47 eV
+Peak FWHM     0.5472 eV
+Imag shift    0.01125 eV
+IF FWHM       0.2 eV

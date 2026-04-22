@@ -1,0 +1,48 @@
+         85220 function calls (85189 primitive calls) in 1.950 seconds
+
+   Ordered by: cumulative time
+   List reduced from 379 to 40 due to restriction <40>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.001    0.001    1.950    1.950 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_validation.py:131(compute_plasmon)
+        1    0.000    0.000    1.950    1.950 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1692(evaluate_plasmon_regime)
+        1    0.000    0.000    1.926    1.926 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1375(_resolve_spectrum_payload)
+        1    0.001    0.001    1.926    1.926 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1073(_build_los_integrated_spectrum_payload)
+     32/2    0.000    0.000    1.905    0.953 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\selection.py:186(cached_time_series_payload)
+        1    0.002    0.002    1.904    1.904 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1205(_build)
+       30    0.000    0.000    1.898    0.063 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:929(_build_spectrum_payload_generic)
+       30    0.001    0.000    1.894    0.063 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:960(_build)
+       30    0.000    0.000    1.864    0.062 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:165(epsilon_rpa)
+       30    0.004    0.000    1.864    0.062 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:127(finite_t_susceptibility)
+       30    0.098    0.003    1.860    0.062 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:81(plasma_dispersion_function)
+       30    1.564    0.052    1.762    0.059 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:64(_plasma_dispersion_function_quadrature)
+      444    0.001    0.000    0.201    0.000 C:\Users\dimab\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\core\fromnumeric.py:71(_wrapreduction)
+      478    0.200    0.000    0.200    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+      218    0.000    0.000    0.199    0.001 C:\Users\dimab\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\core\fromnumeric.py:2177(sum)
+        1    0.001    0.001    0.022    0.022 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:441(_effective_electron_fields)
+        1    0.011    0.011    0.021    0.021 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_electron_policy.py:188(resolve_effective_electron_fields)
+       31    0.000    0.000    0.018    0.001 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:132(_spectrum_metric_tuple)
+       31    0.008    0.000    0.018    0.001 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:761(estimate_peak_metrics)
+      474    0.002    0.000    0.011    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:263(_benchmark_domain_flags)
+      474    0.003    0.000    0.010    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:348(_plasmon_state_summary)
+      507    0.003    0.000    0.010    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:741(_resolved_plasmon_collision_metadata)
+       30    0.004    0.000    0.006    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:632(dsf_from_loss)
+       31    0.001    0.000    0.006    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:709(_quadratic_peak_fit)
+        2    0.000    0.000    0.005    0.002 C:\Users\dimab\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\lib\nanfunctions.py:952(nanmean)
+      507    0.003    0.000    0.004    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:712(_benchmark_dense_collision_rate_s)
+       28    0.001    0.000    0.004    0.000 C:\Users\dimab\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\lib\polynomial.py:453(polyfit)
+       33    0.002    0.000    0.003    0.000 C:\Users\dimab\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\lib\nanfunctions.py:68(_replace_nan)
+       62    0.003    0.000    0.003    0.000 {method 'copy' of 'numpy.ndarray' objects}
+    27746    0.003    0.000    0.003    0.000 {built-in method math.isfinite}
+       30    0.002    0.000    0.003    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:623(loss_function_from_epsilon)
+       28    0.002    0.000    0.002    0.000 C:\Users\dimab\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\linalg\linalg.py:2191(lstsq)
+       30    0.000    0.000    0.002    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:336(_augment_effective_state_domain_metadata)
+      948    0.001    0.000    0.002    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_units.py:105(scattering_wavevector_cm_inv)
+        1    0.000    0.000    0.002    0.002 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:587(_cluster_zone_plasmon_states)
+        1    0.001    0.001    0.002    0.002 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:620(_build)
+       31    0.000    0.000    0.002    0.000 C:\Users\dimab\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\lib\nanfunctions.py:561(nanargmax)
+       30    0.000    0.000    0.002    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:39(energy_axis_ev)
+       37    0.002    0.000    0.002    0.000 {built-in method numpy.array}
+       32    0.001    0.000    0.002    0.000 C:\Users\dimab\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\core\function_base.py:24(linspace)
+
+

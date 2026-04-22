@@ -1,0 +1,275 @@
+{
+  "rows": [
+    {
+      "file": "5Fe+4.9TW+light_stabilized.h5",
+      "mode": "2D time-x + static-x",
+      "expected": "density.T",
+      "actual": "(500, 8)",
+      "passed": true
+    },
+    {
+      "file": "5Fe+4.9TW+light_stabilized.h5",
+      "mode": "2D coord-x + static-x",
+      "expected": "density",
+      "actual": "(8, 500)",
+      "passed": true
+    },
+    {
+      "file": "5Fe+4.9TW+light_stabilized.h5",
+      "mode": "2D zone coordinate",
+      "expected": "zone numbers 1..N",
+      "actual": "[1.0, 2.0, 3.0]",
+      "passed": true
+    },
+    {
+      "file": "5Fe+4.9TW+light_stabilized.h5",
+      "mode": "Snapshot lineout + static-x",
+      "expected": "density[1, :]",
+      "actual": "500",
+      "passed": true
+    },
+    {
+      "file": "5Fe+4.9TW+light_stabilized.h5",
+      "mode": "Snapshot lineout + zone index",
+      "expected": "density[1, :]",
+      "actual": "500",
+      "passed": true
+    },
+    {
+      "file": "5Fe+4.9TW+light_stabilized.h5",
+      "mode": "Snapshot lineout + dynamic radius",
+      "expected": "radius[1, :], density[1, :]",
+      "actual": "500",
+      "passed": true
+    },
+    {
+      "file": "5Fe+4.9TW+light_stabilized.h5",
+      "mode": "Time trace + zone reference",
+      "expected": "density[:, 4]",
+      "actual": "8",
+      "passed": true
+    },
+    {
+      "file": "5Fe+4.9TW+light_stabilized.h5",
+      "mode": "Time trace + static-x nearest-zone reference",
+      "expected": "density[:, 4]",
+      "actual": "8",
+      "passed": true
+    },
+    {
+      "file": "5Fe+4.9TW+light_stabilized.h5",
+      "mode": "Diagnostic 1D series",
+      "expected": "energy_summary/current/ions",
+      "actual": "8",
+      "passed": true
+    },
+    {
+      "file": "Cu_0166_stabilized.h5",
+      "mode": "2D time-x + static-x",
+      "expected": "density.T",
+      "actual": "(300, 461)",
+      "passed": true
+    },
+    {
+      "file": "Cu_0166_stabilized.h5",
+      "mode": "2D coord-x + static-x",
+      "expected": "density",
+      "actual": "(461, 300)",
+      "passed": true
+    },
+    {
+      "file": "Cu_0166_stabilized.h5",
+      "mode": "2D zone coordinate",
+      "expected": "zone numbers 1..N",
+      "actual": "[1.0, 2.0, 3.0]",
+      "passed": true
+    },
+    {
+      "file": "Cu_0166_stabilized.h5",
+      "mode": "Snapshot lineout + static-x",
+      "expected": "density[1, :]",
+      "actual": "300",
+      "passed": true
+    },
+    {
+      "file": "Cu_0166_stabilized.h5",
+      "mode": "Snapshot lineout + zone index",
+      "expected": "density[1, :]",
+      "actual": "300",
+      "passed": true
+    },
+    {
+      "file": "Cu_0166_stabilized.h5",
+      "mode": "Snapshot lineout + dynamic radius",
+      "expected": "radius[1, :], density[1, :]",
+      "actual": "300",
+      "passed": true
+    },
+    {
+      "file": "Cu_0166_stabilized.h5",
+      "mode": "Time trace + zone reference",
+      "expected": "density[:, 4]",
+      "actual": "461",
+      "passed": true
+    },
+    {
+      "file": "Cu_0166_stabilized.h5",
+      "mode": "Time trace + static-x nearest-zone reference",
+      "expected": "density[:, 4]",
+      "actual": "461",
+      "passed": true
+    },
+    {
+      "file": "Cu_0166_stabilized.h5",
+      "mode": "Diagnostic 1D series",
+      "expected": "energy_summary/current/ions",
+      "actual": "461",
+      "passed": true
+    },
+    {
+      "file": "Cu_0166_stabilized.h5",
+      "mode": "New-format field radiation_sink",
+      "expected": "radiation_sink.T",
+      "actual": "(300, 461)",
+      "passed": true
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mode": "2D time-x + static-x",
+      "expected": "density.T",
+      "actual": "(1300, 701)",
+      "passed": true
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mode": "2D coord-x + static-x",
+      "expected": "density",
+      "actual": "(701, 1300)",
+      "passed": true
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mode": "2D zone coordinate",
+      "expected": "zone numbers 1..N",
+      "actual": "[1.0, 2.0, 3.0]",
+      "passed": true
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mode": "Snapshot lineout + static-x",
+      "expected": "density[1, :]",
+      "actual": "1300",
+      "passed": true
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mode": "Snapshot lineout + zone index",
+      "expected": "density[1, :]",
+      "actual": "1300",
+      "passed": true
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mode": "Snapshot lineout + dynamic radius",
+      "expected": "radius[1, :], density[1, :]",
+      "actual": "1300",
+      "passed": true
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mode": "Time trace + zone reference",
+      "expected": "density[:, 4]",
+      "actual": "701",
+      "passed": true
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mode": "Time trace + static-x nearest-zone reference",
+      "expected": "density[:, 4]",
+      "actual": "701",
+      "passed": true
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mode": "Diagnostic 1D series",
+      "expected": "energy_summary/current/ions",
+      "actual": "701",
+      "passed": true
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mode": "Region subset mask",
+      "expected": "NaN mask on coordinate dimension only",
+      "actual": "(1300, 701)",
+      "passed": true
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mode": "Combined region + material subset",
+      "expected": "AND mask on coordinate dimension only",
+      "actual": "(1300, 701)",
+      "passed": true
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mode": "Subset-aware boundary overlays",
+      "expected": "only active-adjacent interfaces",
+      "actual": "[0.00100325]",
+      "passed": true
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "mode": "Signed log10 velocity lineout",
+      "expected": "signed_log10_transform(masked velocity)",
+      "actual": "1300",
+      "passed": true
+    }
+  ],
+  "manual": {
+    "5Fe+4.9TW+light_stabilized.h5": {
+      "zones": 500,
+      "snapshots": 8,
+      "regions": 1,
+      "materials": 1,
+      "orientation_switch": "passed",
+      "zone_vs_static_coordinate": "passed",
+      "snapshot_lineout": "passed",
+      "time_trace": "passed",
+      "diagnostics": "passed",
+      "zone_boundaries": [],
+      "static_x_boundaries": []
+    },
+    "Cu_0166_stabilized.h5": {
+      "zones": 300,
+      "snapshots": 461,
+      "regions": 1,
+      "materials": 1,
+      "orientation_switch": "passed",
+      "zone_vs_static_coordinate": "passed",
+      "snapshot_lineout": "passed",
+      "time_trace": "passed",
+      "diagnostics": "passed",
+      "zone_boundaries": [],
+      "static_x_boundaries": []
+    },
+    "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+      "zones": 1300,
+      "snapshots": 701,
+      "regions": 3,
+      "materials": 2,
+      "orientation_switch": "passed",
+      "zone_vs_static_coordinate": "passed",
+      "snapshot_lineout": "passed",
+      "time_trace": "passed",
+      "diagnostics": "passed",
+      "zone_boundaries": [
+        100.5,
+        1100.5
+      ],
+      "static_x_boundaries": [
+        0.00100325,
+        0.007503849999999999
+      ]
+    }
+  }
+}

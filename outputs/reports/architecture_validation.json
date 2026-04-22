@@ -1,0 +1,407 @@
+{
+  "results": [
+    {
+      "file": "5Fe+4.9TW+light.log",
+      "size_bytes": 1287703,
+      "inspect_time_s": 0.04450710001401603,
+      "inspect": {
+        "geometry": "PLANAR",
+        "zones": 500,
+        "regions": 1,
+        "materials": 1,
+        "region_indices": [
+          1
+        ],
+        "material_indices": [
+          1
+        ],
+        "header_sections": [
+          "INPUT PARAMETERS FOR HELIOS CALCULATION",
+          "GEOMETRY PARAMETERS:",
+          "SPATIAL REGIONS PARAMETERS:",
+          "HYDRO PARAMETERS:",
+          "RADIATIVE TRANSFER PARAMETERS:",
+          "RADIATION SOURCE PARAMETERS:",
+          "LASER SOURCE PARAMETERS:",
+          "TIME CONTROL PARAMETERS:"
+        ],
+        "input_sections": [
+          "hydro",
+          "laser_source",
+          "radiation_source",
+          "radiative_transfer",
+          "time_control"
+        ],
+        "photon_energy_grid_size": 200
+      },
+      "preview_time_s": 0.13013359997421503,
+      "preview": {
+        "snapshot_cycle": 1,
+        "snapshot_time": 1e-15,
+        "field_names": [
+          "artificial_viscosity",
+          "compression",
+          "density",
+          "electron_density",
+          "electron_energy",
+          "electron_heat_capacity",
+          "ion_energy",
+          "ion_heat_capacity",
+          "kinetic_energy",
+          "laser_deposition",
+          "laser_source",
+          "mean_charge",
+          "pressure",
+          "pressure_e",
+          "pressure_i",
+          "pressure_radiation",
+          "radiation_cooling",
+          "radiation_energy",
+          "radiation_heating",
+          "radiation_net_heating",
+          "radius",
+          "temperature_e",
+          "temperature_i",
+          "temperature_radiation",
+          "velocity",
+          "zone_width"
+        ],
+        "diagnostic_sections": [
+          "energy_balance",
+          "energy_exchange",
+          "energy_summary",
+          "radiation_boundary_fluxes",
+          "units"
+        ],
+        "density_shape": [
+          500
+        ]
+      },
+      "full_parse_time_s": 0.5954257000121288,
+      "full": {
+        "snapshots": 8,
+        "field_count": 26,
+        "diagnostic_sections": [
+          "energy_balance",
+          "energy_exchange",
+          "energy_summary",
+          "radiation_boundary_fluxes"
+        ],
+        "density_shape": [
+          8,
+          500
+        ],
+        "radiation_flux_shape": [
+          8,
+          1
+        ],
+        "energy_summary_ions_shape": [
+          8
+        ]
+      },
+      "write_time_s": 1.1597609999589622,
+      "hdf5": {
+        "path": "outputs\\hdf5\\5Fe+4.9TW+light_architecture.h5",
+        "groups": [
+          "diagnostics",
+          "fields",
+          "grid",
+          "materials",
+          "metadata",
+          "regions",
+          "time"
+        ],
+        "regions_shape": [
+          1
+        ],
+        "materials_shape": [
+          1
+        ],
+        "radiation_flux_shape": [
+          8,
+          1
+        ],
+        "energy_summary_shape": [
+          8
+        ],
+        "input_sections": [
+          "hydro",
+          "laser_source",
+          "radiation_source",
+          "radiative_transfer",
+          "time_control"
+        ]
+      }
+    },
+    {
+      "file": "Cu_0166.log",
+      "size_bytes": 43392983,
+      "inspect_time_s": 0.582118799968157,
+      "inspect": {
+        "geometry": "PLANAR",
+        "zones": 300,
+        "regions": 1,
+        "materials": 1,
+        "region_indices": [
+          1
+        ],
+        "material_indices": [
+          1
+        ],
+        "header_sections": [
+          "INPUT PARAMETERS FOR HELIOS CALCULATION",
+          "GEOMETRY PARAMETERS:",
+          "SPATIAL REGIONS PARAMETERS:",
+          "HYDRO PARAMETERS:",
+          "RADIATIVE TRANSFER PARAMETERS:",
+          "RADIATION SOURCE PARAMETERS:",
+          "LASER SOURCE PARAMETERS:",
+          "TIME CONTROL PARAMETERS:"
+        ],
+        "input_sections": [
+          "hydro",
+          "laser_source",
+          "radiation_source",
+          "radiative_transfer",
+          "time_control"
+        ],
+        "photon_energy_grid_size": 250
+      },
+      "preview_time_s": 0.8357029000180773,
+      "preview": {
+        "snapshot_cycle": 1,
+        "snapshot_time": 1e-15,
+        "field_names": [
+          "artificial_viscosity",
+          "compression",
+          "density",
+          "electron_density",
+          "electron_energy",
+          "electron_heat_capacity",
+          "ion_energy",
+          "ion_heat_capacity",
+          "kinetic_energy",
+          "laser_deposition",
+          "laser_source",
+          "mean_charge",
+          "pressure",
+          "pressure_e",
+          "pressure_i",
+          "pressure_radiation",
+          "radiation_cooling",
+          "radiation_energy",
+          "radiation_heating",
+          "radiation_net_heating",
+          "radiation_sink",
+          "radius",
+          "temperature_e",
+          "temperature_i",
+          "temperature_radiation",
+          "velocity",
+          "zone_width"
+        ],
+        "diagnostic_sections": [
+          "energy_balance",
+          "energy_exchange",
+          "energy_summary",
+          "radiation_boundary_fluxes",
+          "units"
+        ],
+        "density_shape": [
+          300
+        ]
+      },
+      "full_parse_time_s": 27.107525100000203,
+      "full": {
+        "snapshots": 461,
+        "field_count": 27,
+        "diagnostic_sections": [
+          "energy_balance",
+          "energy_exchange",
+          "energy_summary",
+          "radiation_boundary_fluxes"
+        ],
+        "density_shape": [
+          461,
+          300
+        ],
+        "radiation_flux_shape": [
+          461,
+          1
+        ],
+        "energy_summary_ions_shape": [
+          461
+        ]
+      },
+      "write_time_s": 38.750905200024135,
+      "hdf5": {
+        "path": "outputs\\hdf5\\Cu_0166_architecture.h5",
+        "groups": [
+          "diagnostics",
+          "fields",
+          "grid",
+          "materials",
+          "metadata",
+          "regions",
+          "time"
+        ],
+        "regions_shape": [
+          1
+        ],
+        "materials_shape": [
+          1
+        ],
+        "radiation_flux_shape": [
+          461,
+          1
+        ],
+        "energy_summary_shape": [
+          461
+        ],
+        "input_sections": [
+          "hydro",
+          "laser_source",
+          "radiation_source",
+          "radiative_transfer",
+          "time_control"
+        ]
+      }
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW.log",
+      "size_bytes": 268467946,
+      "inspect_time_s": 4.578588599979412,
+      "inspect": {
+        "geometry": "PLANAR",
+        "zones": 1300,
+        "regions": 3,
+        "materials": 2,
+        "region_indices": [
+          1,
+          2,
+          3
+        ],
+        "material_indices": [
+          1,
+          2
+        ],
+        "header_sections": [
+          "INPUT PARAMETERS FOR HELIOS CALCULATION",
+          "GEOMETRY PARAMETERS:",
+          "SPATIAL REGIONS PARAMETERS:",
+          "HYDRO PARAMETERS:",
+          "RADIATIVE TRANSFER PARAMETERS:",
+          "RADIATION SOURCE PARAMETERS:",
+          "LASER SOURCE PARAMETERS:",
+          "TIME CONTROL PARAMETERS:"
+        ],
+        "input_sections": [
+          "hydro",
+          "laser_source",
+          "radiation_source",
+          "radiative_transfer",
+          "time_control"
+        ],
+        "photon_energy_grid_size": 50
+      },
+      "preview_time_s": 3.9018486000131816,
+      "preview": {
+        "snapshot_cycle": 1,
+        "snapshot_time": 1e-15,
+        "field_names": [
+          "artificial_viscosity",
+          "compression",
+          "density",
+          "electron_density",
+          "electron_energy",
+          "electron_heat_capacity",
+          "ion_energy",
+          "ion_heat_capacity",
+          "kinetic_energy",
+          "laser_deposition",
+          "laser_source",
+          "mean_charge",
+          "pressure",
+          "pressure_e",
+          "pressure_i",
+          "pressure_radiation",
+          "radiation_cooling",
+          "radiation_energy",
+          "radiation_heating",
+          "radiation_net_heating",
+          "radius",
+          "temperature_e",
+          "temperature_i",
+          "temperature_radiation",
+          "velocity",
+          "zone_width"
+        ],
+        "diagnostic_sections": [
+          "energy_balance",
+          "energy_exchange",
+          "energy_summary",
+          "radiation_boundary_fluxes",
+          "units"
+        ],
+        "density_shape": [
+          1300
+        ]
+      },
+      "full_parse_time_s": 154.60137760004727,
+      "full": {
+        "snapshots": 701,
+        "field_count": 26,
+        "diagnostic_sections": [
+          "energy_balance",
+          "energy_exchange",
+          "energy_summary",
+          "radiation_boundary_fluxes"
+        ],
+        "density_shape": [
+          701,
+          1300
+        ],
+        "radiation_flux_shape": [
+          701,
+          3
+        ],
+        "energy_summary_ions_shape": [
+          701
+        ]
+      },
+      "write_time_s": 153.2239116000128,
+      "hdf5": {
+        "path": "outputs\\hdf5\\10ns+10Si+60Al+15Si+4.27TW_architecture.h5",
+        "groups": [
+          "diagnostics",
+          "fields",
+          "grid",
+          "materials",
+          "metadata",
+          "regions",
+          "time"
+        ],
+        "regions_shape": [
+          3
+        ],
+        "materials_shape": [
+          2
+        ],
+        "radiation_flux_shape": [
+          701,
+          3
+        ],
+        "energy_summary_shape": [
+          701
+        ],
+        "input_sections": [
+          "hydro",
+          "laser_source",
+          "radiation_source",
+          "radiative_transfer",
+          "time_control"
+        ]
+      }
+    }
+  ]
+}

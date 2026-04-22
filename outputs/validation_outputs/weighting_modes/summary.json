@@ -1,0 +1,448 @@
+{
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "simple_mean": {
+      "selected_zones": 1300,
+      "plasmon_ne_cm3": 5972311458.461538,
+      "transmission_tau": 3.3572579697251165e-17,
+      "spectroscopy_bulk_velocity_cm_s": 0.0,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 1 with detector score 0.0469."
+        },
+        {
+          "severity": "info",
+          "message": "No breakout time was inferred from the tracked primary front within the active time window."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "warning",
+          "message": "k*lambda_D >= 1, so the selected state is in a non-collective scattering regime."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    },
+    "width": {
+      "selected_zones": 1300,
+      "plasmon_ne_cm3": 5607311663.058445,
+      "transmission_tau": 3.3572579697251165e-17,
+      "spectroscopy_bulk_velocity_cm_s": 0.0,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 1 with detector score 0.0469."
+        },
+        {
+          "severity": "info",
+          "message": "No breakout time was inferred from the tracked primary front within the active time window."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "warning",
+          "message": "k*lambda_D >= 1, so the selected state is in a non-collective scattering regime."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    },
+    "mass": {
+      "selected_zones": 1300,
+      "plasmon_ne_cm3": 5829830954.020302,
+      "transmission_tau": 3.3572579697251165e-17,
+      "spectroscopy_bulk_velocity_cm_s": 0.0,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 1 with detector score 0.0469."
+        },
+        {
+          "severity": "info",
+          "message": "No breakout time was inferred from the tracked primary front within the active time window."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "warning",
+          "message": "k*lambda_D >= 1, so the selected state is in a non-collective scattering regime."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    },
+    "electron_density": {
+      "selected_zones": 1300,
+      "plasmon_ne_cm3": 7763995104.013379,
+      "transmission_tau": 3.3572579697251165e-17,
+      "spectroscopy_bulk_velocity_cm_s": 0.0,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 1 with detector score 0.0469."
+        },
+        {
+          "severity": "info",
+          "message": "No breakout time was inferred from the tracked primary front within the active time window."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "warning",
+          "message": "k*lambda_D >= 1, so the selected state is in a non-collective scattering regime."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    },
+    "electron_column": {
+      "selected_zones": 1300,
+      "plasmon_ne_cm3": 7763993722.9895935,
+      "transmission_tau": 3.3572579697251165e-17,
+      "spectroscopy_bulk_velocity_cm_s": 0.0,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 1 with detector score 0.0469."
+        },
+        {
+          "severity": "info",
+          "message": "No breakout time was inferred from the tracked primary front within the active time window."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "warning",
+          "message": "k*lambda_D >= 1, so the selected state is in a non-collective scattering regime."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    }
+  },
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "simple_mean": {
+      "selected_zones": 500,
+      "plasmon_ne_cm3": 2491000.0,
+      "transmission_tau": 8.285544805141755e-22,
+      "spectroscopy_bulk_velocity_cm_s": 0.0,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 1 with detector score 0.0791."
+        },
+        {
+          "severity": "info",
+          "message": "No breakout time was inferred from the tracked primary front within the active time window."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "warning",
+          "message": "k*lambda_D >= 1, so the selected state is in a non-collective scattering regime."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    },
+    "width": {
+      "selected_zones": 500,
+      "plasmon_ne_cm3": 2491000.0,
+      "transmission_tau": 8.285544805141755e-22,
+      "spectroscopy_bulk_velocity_cm_s": 0.0,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 1 with detector score 0.0791."
+        },
+        {
+          "severity": "info",
+          "message": "No breakout time was inferred from the tracked primary front within the active time window."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "warning",
+          "message": "k*lambda_D >= 1, so the selected state is in a non-collective scattering regime."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    },
+    "mass": {
+      "selected_zones": 500,
+      "plasmon_ne_cm3": 2490999.999999999,
+      "transmission_tau": 8.285544805141755e-22,
+      "spectroscopy_bulk_velocity_cm_s": 0.0,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 1 with detector score 0.0791."
+        },
+        {
+          "severity": "info",
+          "message": "No breakout time was inferred from the tracked primary front within the active time window."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "warning",
+          "message": "k*lambda_D >= 1, so the selected state is in a non-collective scattering regime."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    },
+    "electron_density": {
+      "selected_zones": 500,
+      "plasmon_ne_cm3": 2491000.0,
+      "transmission_tau": 8.285544805141755e-22,
+      "spectroscopy_bulk_velocity_cm_s": 0.0,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 1 with detector score 0.0791."
+        },
+        {
+          "severity": "info",
+          "message": "No breakout time was inferred from the tracked primary front within the active time window."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "warning",
+          "message": "k*lambda_D >= 1, so the selected state is in a non-collective scattering regime."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    },
+    "electron_column": {
+      "selected_zones": 500,
+      "plasmon_ne_cm3": 2491000.0,
+      "transmission_tau": 8.285544805141755e-22,
+      "spectroscopy_bulk_velocity_cm_s": 0.0,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 1 with detector score 0.0791."
+        },
+        {
+          "severity": "info",
+          "message": "No breakout time was inferred from the tracked primary front within the active time window."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "warning",
+          "message": "k*lambda_D >= 1, so the selected state is in a non-collective scattering regime."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    }
+  },
+  "Cu_0166_stabilized.h5": {
+    "simple_mean": {
+      "selected_zones": 300,
+      "plasmon_ne_cm3": 3.716e+23,
+      "transmission_tau": 0.0006161760561607112,
+      "spectroscopy_bulk_velocity_cm_s": 0.00047466666666666664,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 4 with detector score 0.0453."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    },
+    "width": {
+      "selected_zones": 300,
+      "plasmon_ne_cm3": 3.715999999999999e+23,
+      "transmission_tau": 0.0006161760561607112,
+      "spectroscopy_bulk_velocity_cm_s": 5.712985849527815e-05,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 4 with detector score 0.0453."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    },
+    "mass": {
+      "selected_zones": 300,
+      "plasmon_ne_cm3": 3.716e+23,
+      "transmission_tau": 0.0006161760561607112,
+      "spectroscopy_bulk_velocity_cm_s": 5.712985849527816e-05,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 4 with detector score 0.0453."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    },
+    "electron_density": {
+      "selected_zones": 300,
+      "plasmon_ne_cm3": 3.715999999999999e+23,
+      "transmission_tau": 0.0006161760561607112,
+      "spectroscopy_bulk_velocity_cm_s": 0.0004746666666666666,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 4 with detector score 0.0453."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    },
+    "electron_column": {
+      "selected_zones": 300,
+      "plasmon_ne_cm3": 3.716000000000001e+23,
+      "transmission_tau": 0.0006161760561607112,
+      "spectroscopy_bulk_velocity_cm_s": 5.712985849527816e-05,
+      "warnings": [
+        {
+          "severity": "info",
+          "message": "Primary front activated at snapshot 4 with detector score 0.0453."
+        },
+        {
+          "severity": "info",
+          "message": "XRD uses isotropic compression only; crystallographic texture, preferred orientation, and phase changes are not modeled."
+        },
+        {
+          "severity": "info",
+          "message": "Transmission is a Thomson-only quick-look estimate; detailed photoabsorption and warm-dense-matter opacity physics are not included."
+        },
+        {
+          "severity": "info",
+          "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+        }
+      ]
+    }
+  }
+}

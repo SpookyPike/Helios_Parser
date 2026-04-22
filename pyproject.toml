@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "helios-parser"
+version = "0.9.1"
+description = "Cross-platform HELIOS Parse / View desktop workflow for parser, viewer, and derived analysis."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  {name = "Dmitrii Bespalov"},
+]
+dependencies = [
+  "numpy",
+  "h5py",
+]
+
+[project.optional-dependencies]
+plot = [
+  "matplotlib",
+]
+viewer = [
+  "PySide6",
+  "pyqtgraph",
+]
+desktop = [
+  "PySide6",
+  "pyqtgraph",
+  "matplotlib",
+]
+
+[project.scripts]
+helios_to_hdf5 = "helios_parser.cli:main"
+helios_hdf5_viewer = "helios_viewer.__main__:main"
+helios_parse_view = "helios_app.__main__:main"
+
+[project.urls]
+Documentation = "docs/index.html"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+helios_viewer = ["assets/fonts/*.ttf", "assets/*.png", "assets/*.ico"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

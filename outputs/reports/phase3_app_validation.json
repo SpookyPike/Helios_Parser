@@ -1,0 +1,32 @@
+{
+  "5Fe+4.9TW+light.log": {
+    "preview_open_s": 0.13,
+    "parse_to_hdf5_s": 0.289,
+    "preview_snapshots": 8,
+    "preview_zones": 500,
+    "parsed_output": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\5Fe+4.9TW+light_phase3_shell.h5",
+    "auto_open_viewer": true,
+    "viewer_loaded_output": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\5Fe+4.9TW+light_phase3_shell.h5",
+    "viewer_zones": 500,
+    "viewer_fields": 26,
+    "parser_mode_screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase3_parser_mode_5Fe.png"
+  },
+  "Cu_0166_stabilized.h5": {
+    "open_s": 0.201,
+    "viewer_mode": true,
+    "zones": 300,
+    "snapshots": 461,
+    "fields": 27,
+    "has_radiation_sink": true
+  },
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "open_s": 0.255,
+    "viewer_mode": true,
+    "zones": 1300,
+    "snapshots": 701,
+    "fields": 26,
+    "plot_tabs": 3,
+    "mode_switch_back_to_viewer_ok": true,
+    "viewer_mode_screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase3_viewer_mode_10ns_dark.png"
+  }
+}

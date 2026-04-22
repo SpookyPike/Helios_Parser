@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HELIOS Parse / View Developer Guide</title>
+  <link rel="stylesheet" href="assets/manual.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img class="brand-icon" src="assets/app_icon.png" alt="HELIOS Parse / View icon">
+      <div class="brand-copy">
+        <h1>Developer Guide</h1>
+        <p>
+          Architecture and implementation guide for engineers working on parser, runtime, viewer,
+          derived analysis, WaveFront, Preheat, and Transmission/XCOM integration in HELIOS Parse / View 0.9.1.
+        </p>
+      </div>
+    </div>
+    <div class="page-links">
+      <a href="index.html">Documentation Index</a>
+      <a href="developer-testing.html">Developer Testing</a>
+      <a href="maintenance.html">Maintenance</a>
+      <a href="architecture_extension.md">Architecture Reference</a>
+    </div>
+  </header>
+
+  <nav>
+    <a href="#layers">Layers</a>
+    <a href="#flow">Data Flow</a>
+    <a href="#caches">Caches</a>
+    <a href="#derived">Derived Architecture</a>
+    <a href="#wavefront">WaveFront and Preheat</a>
+    <a href="#ui-state">UI State and Settings</a>
+    <a href="#transmission-seam">Transmission / XCOM</a>
+    <a href="#performance">Performance Paths</a>
+    <a href="#extension">Adding Modules</a>
+  </nav>
+
+  <main>
+    <section id="layers">
+      <h2>High-level layers</h2>
+      <pre><code>src/
+  helios_parser/   log parsing, schema normalization, HDF5 writing, lazy reader
+  helios/          shared cache, tasks, runtime context, services, units
+  helios_viewer/   production viewer window, settings, plotting, controller
+  helios_analysis/ derived workspace and derived controller
+  helios_app/      top-level Parse / View shell and About / release surface
+</code></pre>
+      <p>
+        The important rule is still the same: <strong>do not bypass layer boundaries without a specific reason</strong>.
+        Parser remains the canonical raw log ingestion path, the reader remains the canonical HDF5 access layer,
+        and derived modules should consume normalized runtime/derived data rather than re-reading ad hoc files or inventing parallel coordinate semantics.
+      </p>
+    </section>
+
+    <section id="flow">
+      <h2>End-to-end data flow</h2>
+      <ol class="steps">
+        <li>Parser converts HELIOS logs into stabilized HDF5 with explicit center/edge coordinates, run status, and preserved diagnostics.</li>
+        <li>The reader exposes stable accessors such as static/dynamic center/edge coordinates, fields, run status, and VISAR-readiness metadata.</li>
+        <li>Viewer builds a <code>RunContext</code> and publishes shared raw-data cache entries for reuse.</li>
+        <li>Derived uses <code>load_run_data()</code> and the shared cache instead of reopening HDF5 unnecessarily.</li>
+        <li>The derived controller computes result models off the GUI thread and applies only the latest valid result.</li>
+      </ol>
+      <div class="callout">
+        Keep explicit coordinate semantics intact all the way through the stack. Geometry helpers already exist; do not add a second parallel interpretation of HELIOS coordinates.
+      </div>
+    </section>
+
+    <section id="caches">
+      <h2>Caching and invalidation model</h2>
+      <p>There are several intentionally different caches in the project:</p>
+      <table>
+        <thead>
+          <tr><th>Cache</th><th>Scope</th><th>Purpose</th><th>Invalidation key idea</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>shared raw-data cache</td><td>process-local session</td><td>reuse run metadata and arrays without reopening HDF5</td><td>run identity: path + mtime + size</td></tr>
+          <tr><td>viewer display caches</td><td>viewer session</td><td>converted display arrays, field bundles, moving-mesh helpers</td><td>input array identity + display units + mode</td></tr>
+          <tr><td>analysis state cache</td><td>derived request scope</td><td>selection masks, weights, shared weighted moments, time-series payloads</td><td>run + geometry + selection + compute parameters</td></tr>
+          <tr><td>derived result cache</td><td>controller/workspace</td><td>reuse base result, WaveFront, and Preheat across tab switches and lightweight updates</td><td>request key with active advanced need and snapshot scope</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Caches are bounded and intentionally observable. Hits, misses, evictions, and clear counts are lightweight engineering signals,
+        not a production telemetry system.
+      </p>
+    </section>
+
+    <section id="derived">
+      <h2>Derived analysis architecture</h2>
+      <p>
+        <code>helios.services.derived.analysis</code> is the orchestrator for derived result construction. It uses result models,
+        shared selection/weighting helpers, and modular contracts rather than one-off per-tab logic.
+      </p>
+      <ul>
+        <li><strong>Legacy Shock</strong> remains a fast compatibility path and user-facing quick-look entry point.</li>
+        <li><strong>WaveFront</strong> is the advanced tracker path built on typed branch and interface-event results.</li>
+        <li><strong>Preheat</strong> is a separate advanced module that consumes wave-tracking results rather than living inside Shock or the tracker itself.</li>
+        <li><strong>XRD / Plasmon / Transmission / Spectroscopy</strong> use shared reusable time-series paths and lazy tab-triggered loading.</li>
+      </ul>
+      <p>
+        Heavy work stays off the GUI thread. The workspace is a presentation layer; scientific computation belongs in the services layer.
+      </p>
+      <p>
+        Transmission is no longer just a Thomson-only quick look. The current module supports explicit selected-mode computation,
+        a cold-opacity XCOM seam, and a deterministic precomputed fallback-table path for environments where the native XCOM backend
+        cannot execute.
+      </p>
+      <p>
+        Plasmon has also grown into a staged spectral stack. Quicklook remains available, but the module now carries explicit RPA,
+        Mermin, static-LFC, and manual finite-temperature Lindhard-family paths, a spectral-mode split between lightweight exploratory
+        runs and stricter benchmark runs, clustered LOS integration, CSV export, and grouped warning/reporting fields so the UI can show
+        when a result is degenerate, non-collective, out of domain, or only partially executed.
+      </p>
+    </section>
+
+    <section id="wavefront">
+      <h2>WaveFront, interface events, and Preheat</h2>
+      <div class="two-col">
+        <div class="card">
+          <h3>WaveFront</h3>
+          <ul>
+            <li>multi-branch tracking</li>
+            <li>branch support classes and significance</li>
+            <li>primary compressive branch selection</li>
+            <li>direction-aware filtering</li>
+            <li>interface-event summaries</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Preheat</h3>
+          <ul>
+            <li>separate advanced tab</li>
+            <li>region-of-interest override</li>
+            <li>shock-relative and manual local time modes</li>
+            <li>target-entry timing, onset markers, depth, and budgets</li>
+            <li>reuse of cached WaveFront/interface context when only ROI changes</li>
+          </ul>
+        </div>
+      </div>
+      <p>
+        The design rule is that advanced modules consume typed results and existing helpers. They should not re-implement independent parser or geometry logic.
+      </p>
+    </section>
+
+    <section id="ui-state">
+      <h2>UI state, settings, and configuration flow</h2>
+      <ul>
+        <li>Viewer settings live in <code>helios_viewer/settings.py</code> and are persisted through <code>QSettings</code>.</li>
+        <li>Those settings flow into the derived workspace through the shell/controller path rather than a second settings store.</li>
+        <li>Global snapshot state is owned by the shell and synchronized into viewer and derived, with care around lazy advanced tabs.</li>
+        <li>Module-specific controls now belong to their module tabs rather than a misleading global control column.</li>
+      </ul>
+      <p>
+        If you change a setting that affects both viewer and derived behavior, audit the shell propagation path rather than patching one side only.
+      </p>
+    </section>
+
+    <section id="transmission-seam">
+      <h2>Transmission and XCOM seam</h2>
+      <p>
+        The cold-material path is intentionally isolated behind <code>helios.services.derived.xcom_hook</code>.
+        That seam now handles:
+      </p>
+      <ul>
+        <li>material identity resolution from parsed EOS / opacity metadata</li>
+        <li>canonical machine keys for cold-material lookup</li>
+        <li>live backend health probing and loading</li>
+        <li>persistent cache lookup keyed by backend fingerprint and transport inputs</li>
+        <li>precomputed fallback-table lookup when the native backend cannot run</li>
+      </ul>
+      <p>
+        The important contract is that parsed EOS / opacity metadata is the practical material-identity source in this codebase.
+        The machine path uses canonical keys such as <code>cu</code>, <code>ch</code>, <code>c2h4o</code>, and <code>sio2</code>,
+        while the UI keeps the human-readable material display label.
+      </p>
+      <p>
+        The fallback table stores <code>mu/rho</code> in <code>cm^2/g</code>. HELIOS converts that to per-zone optical depth using
+        <code>tau = (mu/rho) * density_g_cm3 * path_length_cm</code>, so the table path fills the same XCOM tau arrays and region
+        budgets as the live backend path instead of bypassing downstream accounting.
+      </p>
+    </section>
+
+    <section id="performance">
+      <h2>Reasoning about performance-sensitive paths</h2>
+      <ul>
+        <li>Do not trigger advanced WaveFront or Preheat work during a normal legacy Shock refresh.</li>
+        <li>Do not put derived computation onto the GUI thread.</li>
+        <li>Do not recompute full advanced results just because the user moved the snapshot slider.</li>
+        <li>Prefer cached arrays and typed result reuse over rebuilding HDF5-backed objects.</li>
+        <li>Keep plot updates local to already-computed results whenever possible.</li>
+        <li>Do not re-probe XCOM backend health or re-open the fallback table on every trivial UI repaint; both are session-cached.</li>
+      </ul>
+      <p>
+        Instrumentation already exists. Use it. Any feature that changes derived orchestration should be checked against timing counters,
+        cache reuse, and busy/progress behavior.
+      </p>
+    </section>
+
+    <section id="extension">
+      <h2>Adding new derived modules safely</h2>
+      <ol class="steps">
+        <li>Add typed result models first.</li>
+        <li>Use the existing orchestration and <code>DerivedModuleContract</code> path instead of introducing a second controller stack.</li>
+        <li>Use the shared selection, weighting, geometry, and cache helpers before writing a new per-module reduction path.</li>
+        <li>Keep heavy traces lazy and tab-triggered if the module is expensive.</li>
+        <li>Add regression coverage for caching, tab activation, and UI surfacing, not only backend math.</li>
+      </ol>
+      <p>
+        For code-facing invariants and file references, keep the companion
+        <a href="architecture_extension.md">Architecture Reference</a> in sync.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "generated_at": "2026-03-13T09:53:21",
+  "files": [
+    {
+      "file": "5Fe+4.9TW+light_stabilized.h5",
+      "open_seconds": 0.247,
+      "viewer_field": "density",
+      "derived_snapshot_index": 0,
+      "selected_zone_count": 500,
+      "warning_count": 4,
+      "shock_breakout_time_ns": 1.0000000000000002e-06,
+      "plasmon_regime": "non-collective",
+      "thomson_tau": 8.285544805141755e-22,
+      "doppler_shift_nm": 0.0,
+      "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase4_small_derived_light.png"
+    },
+    {
+      "file": "Cu_0166_stabilized.h5",
+      "open_seconds": 0.754,
+      "viewer_field": "density",
+      "derived_snapshot_index": 0,
+      "selected_zone_count": 300,
+      "warning_count": 3,
+      "shock_breakout_time_ns": 1.0000000000000002e-06,
+      "plasmon_regime": "collective",
+      "thomson_tau": 0.0006161760561607112,
+      "doppler_shift_nm": 9.528249335418915e-13,
+      "new_format_field": "radiation_sink",
+      "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase4_cu_derived_light.png"
+    },
+    {
+      "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "open_seconds": 4.708,
+      "viewer_field": "density",
+      "derived_snapshot_index": 0,
+      "selected_zone_count": 1300,
+      "warning_count": 4,
+      "shock_breakout_time_ns": 1.0000000000000002e-06,
+      "plasmon_regime": "non-collective",
+      "thomson_tau": 3.3572579697251165e-17,
+      "doppler_shift_nm": 0.0,
+      "hover_render_delta": 0,
+      "hover_mesh_delta": 0,
+      "mouse_vertical_curves": 1,
+      "mouse_horizontal_curves": 1,
+      "mouse_screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase4_large_mouse_dark.png",
+      "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase4_large_derived_dark.png"
+    }
+  ]
+}

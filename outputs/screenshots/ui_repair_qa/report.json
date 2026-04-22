@@ -1,0 +1,49 @@
+{
+  "screenshots": [
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\ui_repair_qa\\simple_shock.png",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\ui_repair_qa\\simple_preheat_shock_relative.png",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\ui_repair_qa\\simple_preheat_manual.png",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\ui_repair_qa\\simple_xrd_controls.png",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\ui_repair_qa\\complex_shock.png",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\ui_repair_qa\\complex_preheat_auto.png",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\ui_repair_qa\\complex_preheat_override.png",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\ui_repair_qa\\complex_wavefront.png"
+  ],
+  "timings_s": {
+    "simple_open_viewer": 0.301,
+    "simple_derived_ready": 0.3,
+    "simple_preheat_first": 7.313,
+    "complex_open_viewer": 0.467,
+    "complex_derived_ready": 0.734,
+    "complex_preheat_first": 27.349,
+    "complex_preheat_roi_override": 0.284,
+    "complex_wavefront_ready": 0.321,
+    "complex_wavefront_reopen": 0.299
+  },
+  "observations": {
+    "simple_breakout_enabled": true,
+    "simple_breakout_tooltip": "Jump to breakout at snapshot 408.",
+    "simple_preheat_profile_fields": 10,
+    "simple_preheat_time_mode": "shock_relative",
+    "simple_preheat_snapshot_label": "Snapshot 0 @ 1.000 fs | pre-entry | mode=shock-relative",
+    "simple_preheat_manual_snapshot": 10,
+    "simple_preheat_manual_status": "Manual snapshot/time selection is active. The selected snapshot is at or after target shock entry, so the profile shows the actual target state rather than pre-entry-only conditions.",
+    "simple_preheat_notes_scroll_max": 201,
+    "simple_preheat_notes_scroll_value_after": 0,
+    "xrd_control_visible": true,
+    "xrd_control_in_tab": true,
+    "plasmon_control_visible": true,
+    "plasmon_control_in_tab": true,
+    "spectroscopy_control_visible": true,
+    "spectroscopy_control_in_tab": true,
+    "complex_breakout_after_run_change": false,
+    "complex_preheat_auto_roi": "Auto guess (Region 1 (Al))",
+    "complex_preheat_summary": "Method: branch-anchored-target-preheat | ROI=Region 1 (Al) | mode=auto guess | entry=2.435 ns | severity=mild | dominant source=net radiation heating",
+    "complex_preheat_snapshot_label": "Snapshot 243 @ 2.430 ns | pre-entry | mode=shock-relative",
+    "complex_preheat_notes_scroll_max": 201,
+    "complex_preheat_override_roi": "Region 2 (C2H4O) [selected]",
+    "complex_preheat_override_summary": "Method: branch-anchored-target-preheat | ROI=Region 2 (C2H4O) | mode=manual override | entry=1.705 ns | severity=severe | dominant source=net radiation heating",
+    "complex_wavefront_summary": "Method: multi-cue multi-branch wave tracker | kept=12 | tracked=15 | short/weak=4 | provisional=51 | suppressed=58 | types=compressive_shock, contact_transition, reflected_shock, release_rarefaction | primary=compressive_shock | primary compressive=branch-11/compressive_shock | interface events=2 (tracked=2, weak=0, suppressed=0) | ambiguous=5",
+    "complex_wavefront_events_rows": 2
+  }
+}

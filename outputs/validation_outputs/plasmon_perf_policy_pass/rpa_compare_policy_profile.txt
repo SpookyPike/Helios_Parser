@@ -1,0 +1,33 @@
+         297333 function calls (297209 primitive calls) in 1.985 seconds
+
+   Ordered by: cumulative time
+   List reduced from 400 to 25 due to restriction <25>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    1.985    1.985 <stdin>:31(run_model)
+        1    0.001    0.001    1.985    1.985 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_validation.py:131(compute_plasmon)
+        1    0.001    0.001    1.985    1.985 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1880(evaluate_plasmon_regime)
+        4    0.000    0.000    1.883    0.471 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1415(_resolve_spectrum_payload)
+        4    0.004    0.001    1.883    0.471 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1113(_build_los_integrated_spectrum_payload)
+    128/8    0.000    0.000    1.800    0.225 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\selection.py:186(cached_time_series_payload)
+        4    0.004    0.001    1.791    0.448 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1245(_build)
+      120    0.001    0.000    1.781    0.015 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:969(_build_spectrum_payload_generic)
+      120    0.002    0.000    1.770    0.015 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1000(_build)
+      120    0.001    0.000    1.716    0.014 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:247(epsilon_rpa)
+      120    0.001    0.000    1.715    0.014 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:212(finite_t_susceptibility)
+       30    0.004    0.000    1.703    0.057 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:146(_finite_t_susceptibility_cached)
+       30    0.093    0.003    1.698    0.057 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:123(plasma_dispersion_function)
+       30    1.449    0.048    1.606    0.054 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:106(_plasma_dispersion_function_quadrature)
+        1    0.003    0.003    0.215    0.215 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:1580(_build_spectrum_policy_compare_bundle)
+     2054    0.003    0.000    0.168    0.000 C:\Users\dimab\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\core\fromnumeric.py:71(_wrapreduction)
+     2210    0.165    0.000    0.165    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+      798    0.001    0.000    0.165    0.000 C:\Users\dimab\AppData\Local\Programs\Python\Python312\Lib\site-packages\numpy\core\fromnumeric.py:2177(sum)
+        4    0.054    0.014    0.095    0.024 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_electron_policy.py:212(resolve_effective_electron_fields)
+     1896    0.006    0.000    0.045    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:268(_benchmark_domain_flags)
+     1896    0.012    0.000    0.039    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:353(_plasmon_state_summary)
+     2025    0.013    0.000    0.039    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:781(_resolved_plasmon_collision_metadata)
+      124    0.000    0.000    0.025    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:133(_spectrum_metric_tuple)
+      124    0.003    0.000    0.024    0.000 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon_spectrum.py:843(estimate_peak_metrics)
+        1    0.001    0.001    0.017    0.017 C:\Users\dimab\Documents\Helios_parser\src\helios\services\derived\plasmon.py:481(_effective_electron_fields)
+
+

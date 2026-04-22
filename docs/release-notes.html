@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HELIOS Parse / View Release Notes 0.9.1</title>
+  <link rel="stylesheet" href="assets/manual.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img class="brand-icon" src="assets/app_icon.png" alt="HELIOS Parse / View icon">
+      <div class="brand-copy">
+        <h1>Release Notes</h1>
+        <p>
+          HELIOS Parse / View 0.9.1, released 2026-03-20.
+          Code developed by Dmitrii Bespalov at European XFEL.
+        </p>
+      </div>
+    </div>
+    <div class="page-links">
+      <a href="index.html">Documentation Index</a>
+      <a href="user-guide.html">User Guide</a>
+      <a href="developer-guide.html">Developer Guide</a>
+      <a href="../README.md">README</a>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>Why 0.9.1</h2>
+      <p>
+        This is a patch release on top of the broader 0.9.0 documentation and bundle pass.
+        The project is still pre-1.0 because several advanced scientific diagnostics remain intentionally quick-look rather than
+        final forward models, but the shipping code and docs now better match each other.
+      </p>
+    </section>
+
+    <section>
+      <h2>Highlights in this release</h2>
+      <ul>
+        <li>user and developer docs refreshed again to match the current shipping Transmission/XCOM behavior</li>
+        <li>release metadata bumped to 0.9.1 with updated bundle readme and package version</li>
+        <li>release notes now include a concrete changelog section rather than only a high-level summary</li>
+        <li>shareable Windows/Linux source bundle rebuilt from the current code state</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Changelog</h2>
+      <h3>0.9.1</h3>
+      <ul>
+        <li>documented model-aware Transmission with explicit mode selection and selected-result traces</li>
+        <li>documented the XCOM seam, canonical material resolution from parsed EOS/opacity metadata, and precomputed cold-XCOM fallback-table behavior</li>
+        <li>documented expanded plasmon/XRTS quick-look modes and warning semantics for degenerate, non-collective, or out-of-domain states</li>
+        <li>updated bundle-facing quick-start text and release metadata</li>
+        <li>rebuilt the release archive from the current repository state</li>
+      </ul>
+      <h3>0.9.0</h3>
+      <ul>
+        <li>major documentation expansion for users, developers, maintainers, and collaborators</li>
+        <li>release metadata and attribution added to About text, README, docs, and package metadata</li>
+        <li>shareable Windows/Linux source bundle with launch/bootstrap scripts and included demo HDF5 runs</li>
+        <li>current WaveFront, interface-event, and Preheat behavior documented with screenshots and interpretation notes</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Bundle contents</h2>
+      <ul>
+        <li>source tree under <code>src/</code></li>
+        <li>updated documentation under <code>docs/</code></li>
+        <li>tests and supporting scripts</li>
+        <li>Windows launcher: <code>Run_HELIOS_Analyzer.ps1</code></li>
+        <li>Linux launcher: <code>run_helios_analyzer.sh</code></li>
+        <li>top-level quick start: <code>README_FIRST.md</code></li>
+        <li>selected demo HDF5 examples under <code>examples/</code></li>
+      </ul>
+      <p>
+        The 0.9.1 bundle also carries the current Transmission/XCOM code and tests, including the precomputed cold-material fallback-table path.
+      </p>
+    </section>
+
+    <section>
+      <h2>Attribution</h2>
+      <p>
+        Release-facing attribution is intentionally concentrated here, in the README, About dialog, and package metadata.
+        It is not stamped mechanically into every source file.
+      </p>
+      <ul>
+        <li>Author: Dmitrii Bespalov</li>
+        <li>Organization: European XFEL</li>
+        <li>Release: 0.9.1</li>
+        <li>Date: 2026-03-20</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

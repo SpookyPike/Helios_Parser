@@ -1,0 +1,60 @@
+{
+  "parser_preview": {
+    "file": "5Fe+4.9TW+light.log",
+    "elapsed_s": 0.118,
+    "zones": 500,
+    "snapshots": 8,
+    "fields": 26,
+    "mode": "parser"
+  },
+  "viewer_derived": {
+    "5Fe+4.9TW+light_stabilized.h5": {
+      "open_ok": true,
+      "derived_ok": true,
+      "elapsed_s": 0.68,
+      "mode_after_open": "viewer",
+      "field": "density",
+      "n_fields": 26,
+      "n_snapshots": 8,
+      "selected_zones": 500,
+      "warning_count": 6,
+      "shock_crossings": 0,
+      "xrd_time_plots": 5,
+      "plasmon_profile_plots": 5,
+      "transmission_regions": 1,
+      "spectroscopy_time_plots": 3
+    },
+    "Cu_0166_stabilized.h5": {
+      "open_ok": true,
+      "derived_ok": true,
+      "elapsed_s": 2.033,
+      "mode_after_open": "viewer",
+      "field": "density",
+      "n_fields": 27,
+      "n_snapshots": 461,
+      "selected_zones": 300,
+      "warning_count": 4,
+      "shock_crossings": 0,
+      "xrd_time_plots": 5,
+      "plasmon_profile_plots": 5,
+      "transmission_regions": 1,
+      "spectroscopy_time_plots": 3
+    },
+    "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+      "open_ok": true,
+      "derived_ok": true,
+      "elapsed_s": 14.389,
+      "mode_after_open": "viewer",
+      "field": "density",
+      "n_fields": 26,
+      "n_snapshots": 701,
+      "selected_zones": 1300,
+      "warning_count": 6,
+      "shock_crossings": 2,
+      "xrd_time_plots": 5,
+      "plasmon_profile_plots": 5,
+      "transmission_regions": 3,
+      "spectroscopy_time_plots": 3
+    }
+  }
+}

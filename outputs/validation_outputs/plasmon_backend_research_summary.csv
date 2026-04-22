@@ -1,0 +1,5 @@
+backend_name,physics_added,expected_leverage,implementation_difficulty,requires_external_data,risk_of_being_surrogate,selected
+finite_t_vs_stls_self_consistent_lfc,"Self-consistent exchange-correlation local-field correction, compressibility-sum-rule control, correlation-aware dielectric response",high,medium,no,low,yes
+lr_tddft_liouville_lanczos,"Material-specific interacting density response with finite-temperature XC kernels and electronic-structure sensitivity",high,high,no,low,no
+pimc_dynamic_lfc_reconstruction,"Dynamic local-field correction and DSF reconstruction from ab initio imaginary-time correlation data",high,high,yes,low,no
+average_atom_phase_shift_mermin,"State-dependent phase-shift transport collisions and average-atom electronic structure in the free-electron dielectric",medium,high,no,medium,no

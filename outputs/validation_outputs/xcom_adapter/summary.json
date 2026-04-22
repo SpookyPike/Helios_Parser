@@ -1,0 +1,190 @@
+{
+  "archives": {
+    "helios_xcom_integration.zip": {
+      "archive_type": "zip",
+      "member_count": 273,
+      "top_level_entries": [
+        "helios_xcom_integration"
+      ],
+      "sample_members": [
+        {
+          "path": "helios_xcom_integration",
+          "size": 0,
+          "is_dir": true
+        },
+        {
+          "path": "helios_xcom_integration/helios_xcom",
+          "size": 0,
+          "is_dir": true
+        },
+        {
+          "path": "helios_xcom_integration/helios_xcom/resources",
+          "size": 0,
+          "is_dir": true
+        },
+        {
+          "path": "helios_xcom_integration/helios_xcom/resources/vendor",
+          "size": 0,
+          "is_dir": true
+        },
+        {
+          "path": "helios_xcom_integration/helios_xcom/resources/vendor/XCOM",
+          "size": 0,
+          "is_dir": true
+        },
+        {
+          "path": "helios_xcom_integration/helios_xcom/resources/vendor/XCOM/.rsrc",
+          "size": 0,
+          "is_dir": true
+        },
+        {
+          "path": "helios_xcom_integration/helios_xcom/resources/vendor/XCOM/.rsrc/ATWTS.DAT",
+          "size": 64,
+          "is_dir": false
+        },
+        {
+          "path": "helios_xcom_integration/helios_xcom/resources/vendor/XCOM/.rsrc/ENB.DAT",
+          "size": 64,
+          "is_dir": false
+        },
+        {
+          "path": "helios_xcom_integration/helios_xcom/resources/vendor/XCOM/.rsrc/HASH1.DAT",
+          "size": 64,
+          "is_dir": false
+        },
+        {
+          "path": "helios_xcom_integration/helios_xcom/resources/vendor/XCOM/.rsrc/HASH2.DAT",
+          "size": 64,
+          "is_dir": false
+        }
+      ]
+    },
+    "XCOM.tar.gz": {
+      "archive_type": "tar.gz",
+      "member_count": 216,
+      "top_level_entries": [
+        "XCOM"
+      ],
+      "sample_members": [
+        {
+          "path": "XCOM",
+          "size": 0,
+          "is_dir": true
+        },
+        {
+          "path": "XCOM/.rsrc",
+          "size": 0,
+          "is_dir": true
+        },
+        {
+          "path": "XCOM/.rsrc/ATWTS.DAT",
+          "size": 64,
+          "is_dir": false
+        },
+        {
+          "path": "XCOM/.rsrc/ENB.DAT",
+          "size": 64,
+          "is_dir": false
+        },
+        {
+          "path": "XCOM/.rsrc/HASH1.DAT",
+          "size": 64,
+          "is_dir": false
+        },
+        {
+          "path": "XCOM/.rsrc/HASH2.DAT",
+          "size": 64,
+          "is_dir": false
+        },
+        {
+          "path": "XCOM/.rsrc/INDEX.DAT",
+          "size": 64,
+          "is_dir": false
+        },
+        {
+          "path": "XCOM/.rsrc/XCOM.f",
+          "size": 64,
+          "is_dir": false
+        },
+        {
+          "path": "XCOM/.rsrc/MDATX3.001",
+          "size": 64,
+          "is_dir": false
+        },
+        {
+          "path": "XCOM/.rsrc/MDATX3.002",
+          "size": 64,
+          "is_dir": false
+        }
+      ]
+    }
+  },
+  "extraction": {
+    "zip_root": "C:\\Users\\dimab\\AppData\\Local\\Temp\\helios_xcom_validate_o3mvet71\\zip",
+    "tar_root": "C:\\Users\\dimab\\AppData\\Local\\Temp\\helios_xcom_validate_o3mvet71\\tar"
+  },
+  "wrapper_status": {
+    "import_ok": true,
+    "query_ok": false,
+    "module_path": "C:\\Users\\dimab\\AppData\\Local\\Temp\\helios_xcom_validate_o3mvet71\\zip\\helios_xcom_integration\\helios_xcom\\__init__.py",
+    "exports": [
+      "default_client",
+      "ElementSpec",
+      "compute_multizone_transmission"
+    ],
+    "query_error": "gfortran is required to build the vendor XCOM backend but was not found"
+  },
+  "derived_request_preview": {
+    "dataset": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+    "zones": 1300,
+    "observation_side": "front",
+    "los_cosine": 1.0,
+    "energies_kev": [
+      8.0,
+      10.0,
+      12.0
+    ],
+    "zone_preview": [
+      {
+        "zone_index": 1,
+        "region_id": 1,
+        "material_id": 1,
+        "material_label": null,
+        "density_g_cm3": 2.329,
+        "path_length_cm": 1e-07
+      },
+      {
+        "zone_index": 2,
+        "region_id": 1,
+        "material_id": 1,
+        "material_label": null,
+        "density_g_cm3": 2.329,
+        "path_length_cm": 1.102e-07
+      },
+      {
+        "zone_index": 3,
+        "region_id": 1,
+        "material_id": 1,
+        "material_label": null,
+        "density_g_cm3": 2.329,
+        "path_length_cm": 1.214e-07
+      },
+      {
+        "zone_index": 4,
+        "region_id": 1,
+        "material_id": 1,
+        "material_label": null,
+        "density_g_cm3": 2.329,
+        "path_length_cm": 1.338e-07
+      },
+      {
+        "zone_index": 5,
+        "region_id": 1,
+        "material_id": 1,
+        "material_label": null,
+        "density_g_cm3": 2.329,
+        "path_length_cm": 1.474e-07
+      }
+    ]
+  }
+}

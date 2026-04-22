@@ -1,0 +1,44 @@
+{
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "weighting_mode": "mass",
+    "geometry_summary": "front side (high-index boundary) | LOS cos=-1.000",
+    "bulk_velocity_cm_s": 0.0,
+    "los_velocity_cm_s": -0.0,
+    "doppler_shift_nm": -0.0,
+    "thermal_width_nm": 0.0011657026718760704,
+    "warnings": [
+      {
+        "severity": "info",
+        "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+      }
+    ]
+  },
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "weighting_mode": "mass",
+    "geometry_summary": "front side (high-index boundary) | LOS cos=-1.000",
+    "bulk_velocity_cm_s": 0.0,
+    "los_velocity_cm_s": -0.0,
+    "doppler_shift_nm": -0.0,
+    "thermal_width_nm": 0.0008145890844398143,
+    "warnings": [
+      {
+        "severity": "info",
+        "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+      }
+    ]
+  },
+  "Cu_0166_stabilized.h5": {
+    "weighting_mode": "mass",
+    "geometry_summary": "front side (high-index boundary) | LOS cos=-1.000",
+    "bulk_velocity_cm_s": 5.712985849527816e-05,
+    "los_velocity_cm_s": -5.712985849527816e-05,
+    "doppler_shift_nm": -9.528249335418917e-13,
+    "thermal_width_nm": 0.0007639129480025746,
+    "warnings": [
+      {
+        "severity": "info",
+        "message": "Spectroscopy is a line-of-sight quick look: no line formation, emissivity, or opacity model is included."
+      }
+    ]
+  }
+}

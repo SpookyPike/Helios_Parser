@@ -1,0 +1,26 @@
+{
+  "Cu_0166.log": {
+    "parse_before_s": 6.1435139999957755,
+    "parse_after_s": 2.044287299970165,
+    "parse_speedup_x": 3.0052106668595147,
+    "write_before_s": 11.089456800022162,
+    "write_after_s": 3.986154499987606,
+    "write_speedup_x": 2.7819937235389753,
+    "parse_peak_before_mb": 129.60546875,
+    "parse_peak_after_mb": 118.40625,
+    "write_peak_before_mb": 155.7421875,
+    "write_peak_after_mb": 157.796875
+  },
+  "10ns+10Si+60Al+15Si+4.27TW.log": {
+    "parse_before_s": 33.40960490005091,
+    "parse_after_s": 15.92658119997941,
+    "parse_speedup_x": 2.0977260895197083,
+    "write_before_s": 41.50105939997593,
+    "write_after_s": 12.88520239997888,
+    "write_speedup_x": 3.220831005343304,
+    "parse_peak_before_mb": 566.0625,
+    "parse_peak_after_mb": 566.3046875,
+    "write_peak_before_mb": 567.1328125,
+    "write_peak_after_mb": 568.25
+  }
+}

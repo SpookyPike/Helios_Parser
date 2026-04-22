@@ -1,0 +1,17 @@
+=== test_app_phase3.py rc=3221225477 ===
+
+[stderr]
+test_log_open_shows_fast_preview (test_app_phase3.AppPhase3Tests.test_log_open_shows_fast_preview) ... Coordinate validation issue first observed at snapshot cycle 1: Parsed coordinate edges were non-monotonic but matched the boundary+width cumulative grid within file-precision tolerance, so cumulative-width reconstruction was used.
+ok
+test_open_existing_hdf5_loads_viewer_and_mode_switching_preserves_viewer_state (test_app_phase3.AppPhase3Tests.test_open_existing_hdf5_loads_viewer_and_mode_switching_preserves_viewer_state) ... ok
+test_preview_parse_writes_hdf5_and_auto_opens_viewer (test_app_phase3.AppPhase3Tests.test_preview_parse_writes_hdf5_and_auto_opens_viewer) ... Coordinate validation issue first observed at snapshot cycle 1: Parsed coordinate edges were non-monotonic but matched the boundary+width cumulative grid within file-precision tolerance, so cumulative-width reconstruction was used.
+ok
+test_recent_files_and_heavy_hdf5_open_work (test_app_phase3.AppPhase3Tests.test_recent_files_and_heavy_hdf5_open_work) ... Coordinate validation issue first observed at snapshot cycle 1: Parsed coordinate edges were non-monotonic but matched the boundary+width cumulative grid within file-precision tolerance, so cumulative-width reconstruction was used.
+ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 5.276s
+
+OK
+
+

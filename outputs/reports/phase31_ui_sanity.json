@@ -1,0 +1,62 @@
+{
+  "5Fe+4.9TW+light.log": {
+    "exists": true,
+    "preview_time_s": 0.055,
+    "zones": 500,
+    "snapshots": 8,
+    "fields": 26,
+    "first_time_s": 1e-15,
+    "last_time_s": 6.6497e-10
+  },
+  "Cu_0166.log": {
+    "exists": true,
+    "preview_time_s": 0.296,
+    "zones": 300,
+    "snapshots": 461,
+    "fields": 27,
+    "first_time_s": 1e-15,
+    "last_time_s": 4.6e-09
+  },
+  "10ns+10Si+60Al+15Si+4.27TW.log": {
+    "exists": true,
+    "preview_time_s": 1.627,
+    "zones": 1300,
+    "snapshots": 701,
+    "fields": 26,
+    "first_time_s": 1e-15,
+    "last_time_s": 7e-09
+  },
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "open_time_s": 0.185,
+    "zones": 500,
+    "snapshots": 8,
+    "fields": 26,
+    "tabs": 3
+  },
+  "Cu_0166_stabilized.h5": {
+    "open_time_s": 0.159,
+    "zones": 300,
+    "snapshots": 461,
+    "fields": 27,
+    "tabs": 3
+  },
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "open_time_s": 0.186,
+    "zones": 1300,
+    "snapshots": 701,
+    "fields": 26,
+    "tabs": 3
+  },
+  "recent_files": [
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\Cu_0166_stabilized.h5",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\5Fe+4.9TW+light_stabilized.h5",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\10ns+10Si+60Al+15Si+4.27TW.log",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\Cu_0166.log",
+    "C:\\Users\\dimab\\Documents\\Helios_parser\\5Fe+4.9TW+light.log"
+  ],
+  "mode_switch_sanity": {
+    "viewer": 0.0538,
+    "parser": 0.0186
+  }
+}

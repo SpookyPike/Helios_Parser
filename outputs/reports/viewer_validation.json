@@ -1,0 +1,147 @@
+{
+  "app_font_family": "Sans Serif",
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "open_s": 0.25918509997427464,
+    "summary_text": [
+      "File: 5Fe+4.9TW+light_stabilized.h5",
+      "Simulation: 5Fe+4.9TW+light",
+      "Geometry: PLANAR",
+      "HELIOS version: 6.2.0",
+      "Calculated: 08/12/11   18:07:33.0",
+      "",
+      "Zones: 500",
+      "Snapshots: 8"
+    ],
+    "field_count": 26,
+    "current_field": "density",
+    "field_map_shape": [
+      8,
+      500
+    ],
+    "default_labels": {
+      "map_x": "Time [s]",
+      "map_y": "Static x [cm]",
+      "line_x": "Dynamic radius [cm]",
+      "line_y": "Density [g/cm3]"
+    },
+    "orientation_labels": {
+      "map_x": "Static x [cm]",
+      "map_y": "Time [s]"
+    },
+    "zone_map_label": "Zone index",
+    "radius_line_label": "Dynamic radius [cm]",
+    "signed_log_title": "Density lineout | snapshot 0 | t=1.0000e-15 s | dynamic radius | all zones (500/500) | signed log10",
+    "time_trace": {
+      "title": "Density time trace | static x = 1.0000e-08 cm (zone 1) | all zones (500/500) | signed log10",
+      "x_label": "Time [s]",
+      "length": 8,
+      "reference_visible": true
+    },
+    "default_boundary_count": 0,
+    "region_summary": "Showing all zones (500/500).",
+    "material_summary": "Showing regions 1; material 1 (500/500 zones).",
+    "boundaries_off": {
+      "map": 0,
+      "line": 0
+    },
+    "diagnostic_title": "Energy summary / Current / Ions [J/cm**2]",
+    "diagnostic_y_label": "J/cm**2",
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\5Fe+4.9TW+light_stabilized_viewer.png"
+  },
+  "Cu_0166_stabilized.h5": {
+    "open_s": 0.2838159999810159,
+    "summary_text": [
+      "File: Cu_0166_stabilized.h5",
+      "Simulation: Cu_0166",
+      "Geometry: PLANAR",
+      "HELIOS version: 11.0.0",
+      "Calculated: 02/23/26   14:12:02.1",
+      "",
+      "Zones: 300",
+      "Snapshots: 461"
+    ],
+    "field_count": 27,
+    "current_field": "density",
+    "field_map_shape": [
+      461,
+      300
+    ],
+    "default_labels": {
+      "map_x": "Time [s]",
+      "map_y": "Static x [cm]",
+      "line_x": "Dynamic radius [cm]",
+      "line_y": "Density [g/cm3]"
+    },
+    "orientation_labels": {
+      "map_x": "Static x [cm]",
+      "map_y": "Time [s]"
+    },
+    "zone_map_label": "Zone index",
+    "radius_line_label": "Dynamic radius [cm]",
+    "signed_log_title": "Density lineout | snapshot 0 | t=1.0000e-15 s | dynamic radius | all zones (300/300) | signed log10",
+    "time_trace": {
+      "title": "Density time trace | static x = 8.3333e-06 cm (zone 1) | all zones (300/300) | signed log10",
+      "x_label": "Time [s]",
+      "length": 461,
+      "reference_visible": true
+    },
+    "default_boundary_count": 0,
+    "region_summary": "Showing all zones (300/300).",
+    "material_summary": "Showing regions 1; material 1 (300/300 zones).",
+    "boundaries_off": {
+      "map": 0,
+      "line": 0
+    },
+    "diagnostic_title": "Energy summary / Current / Ions [J/cm**2]",
+    "diagnostic_y_label": "J/cm**2",
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\Cu_0166_stabilized_viewer.png"
+  },
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "open_s": 0.26355090003926307,
+    "summary_text": [
+      "File: 10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "Simulation: 10ns+10Si+60Al+15Si+4.27TW",
+      "Geometry: PLANAR",
+      "HELIOS version: 6.2.0",
+      "Calculated: 08/16/23   15:38:42.5",
+      "",
+      "Zones: 1300",
+      "Snapshots: 701"
+    ],
+    "field_count": 26,
+    "current_field": "density",
+    "field_map_shape": [
+      701,
+      1300
+    ],
+    "default_labels": {
+      "map_x": "Time [s]",
+      "map_y": "Static x [cm]",
+      "line_x": "Dynamic radius [cm]",
+      "line_y": "Density [g/cm3]"
+    },
+    "orientation_labels": {
+      "map_x": "Static x [cm]",
+      "map_y": "Time [s]"
+    },
+    "zone_map_label": "Zone index",
+    "radius_line_label": "Dynamic radius [cm]",
+    "signed_log_title": "Density lineout | snapshot 0 | t=1.0000e-15 s | dynamic radius | all zones (1300/1300) | signed log10",
+    "time_trace": {
+      "title": "Density time trace | static x = 1.0000e-07 cm (zone 1) | all zones (1300/1300) | signed log10",
+      "x_label": "Time [s]",
+      "length": 701,
+      "reference_visible": true
+    },
+    "default_boundary_count": 2,
+    "region_summary": "Showing regions 1, 3 (300/1300 zones).",
+    "material_summary": "Showing regions 1, 3; material 1 (300/1300 zones).",
+    "boundaries_off": {
+      "map": 0,
+      "line": 0
+    },
+    "diagnostic_title": "Energy summary / Current / Ions [J/cm**2]",
+    "diagnostic_y_label": "J/cm**2",
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\10ns+10Si+60Al+15Si+4.27TW_stabilized_viewer.png"
+  }
+}

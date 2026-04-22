@@ -1,0 +1,21 @@
+case,model,model_label,benchmark_policy_mae_min_ev,benchmark_policy_mae_max_ev,benchmark_policy_mae_spread_ev,raw_minus_article_mae_ev,article_mae_ev,raw_mae_ev,raw_input_policy_status
+ambient_al_t0,auto_best,Auto best per state,4.502873079427154,4.502873079427154,0.0,nan,4.502873079427154,nan,invalid_input_policy
+ambient_al_t0,lindhard,Finite-T Lindhard,3.485417419038936,3.485417419038936,0.0,7.695742720336308,3.485417419038936,11.181160139375244,invalid_input_policy
+ambient_al_t0,lindhard_mermin,Finite-T Lindhard + Mermin,4.646976862897811,4.646976862897811,0.0,6.534259088249969,4.646976862897811,11.18123595114778,invalid_input_policy
+ambient_al_t0,lindhard_mermin_static_lfc,Finite-T Lindhard + Mermin + static LFC,7.214863399499241,7.214863399499241,0.0,nan,7.214863399499241,nan,invalid_input_policy
+ambient_al_t0,lindhard_static_lfc,Finite-T Lindhard + static LFC,5.481794909097744,5.481794909097744,0.0,nan,5.481794909097744,nan,invalid_input_policy
+ambient_al_t0,mermin,Mermin,6.481936133184554,6.481936133184554,0.0,nan,6.481936133184554,nan,invalid_input_policy
+ambient_al_t0,mermin_static_lfc,Mermin + static LFC,4.502873079427154,4.502873079427154,0.0,nan,4.502873079427154,nan,invalid_input_policy
+ambient_al_t0,quicklook,Quick look,6.528350621293546,6.528350621293546,0.0,15.097770802715003,6.528350621293546,21.62612142400855,invalid_input_policy
+ambient_al_t0,rpa,RPA,6.480396122585867,6.480396122585867,0.0,nan,6.480396122585867,nan,invalid_input_policy
+ambient_al_t0,rpa_static_lfc,RPA + static LFC,4.501893033336921,4.501893033336921,0.0,nan,4.501893033336921,nan,invalid_input_policy
+driven_al_dense_slab,auto_best,Auto best per state,2.7295490773157614,2.7295490773157614,0.0,nan,2.7295490773157614,nan,invalid_input_policy
+driven_al_dense_slab,lindhard,Finite-T Lindhard,6.954957273101369,6.954957273101369,0.0,4.0476218151175125,6.954957273101369,11.002579088218882,invalid_input_policy
+driven_al_dense_slab,lindhard_mermin,Finite-T Lindhard + Mermin,5.822211969701387,5.822211969701387,0.0,4.693595763402373,5.822211969701387,10.51580773310376,invalid_input_policy
+driven_al_dense_slab,lindhard_mermin_static_lfc,Finite-T Lindhard + Mermin + static LFC,7.851591438879474,7.851591438879474,0.0,nan,7.851591438879474,nan,invalid_input_policy
+driven_al_dense_slab,lindhard_static_lfc,Finite-T Lindhard + static LFC,7.524657757185956,7.524657757185956,0.0,nan,7.524657757185956,nan,invalid_input_policy
+driven_al_dense_slab,mermin,Mermin,4.153488945402712,4.153488945402712,0.0,nan,4.153488945402712,nan,invalid_input_policy
+driven_al_dense_slab,mermin_static_lfc,Mermin + static LFC,2.7295490773157614,2.7295490773157614,0.0,nan,2.7295490773157614,nan,invalid_input_policy
+driven_al_dense_slab,quicklook,Quick look,5.0846841060597985,5.0846841060597985,0.0,13.922678662471606,5.0846841060597985,19.007362768531404,invalid_input_policy
+driven_al_dense_slab,rpa,RPA,4.108609721156234,4.108609721156234,0.0,nan,4.108609721156234,nan,invalid_input_policy
+driven_al_dense_slab,rpa_static_lfc,RPA + static LFC,2.6797030401911384,2.6797030401911384,0.0,nan,2.6797030401911384,nan,invalid_input_policy

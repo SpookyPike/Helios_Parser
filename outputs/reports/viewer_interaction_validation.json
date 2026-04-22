@@ -1,0 +1,41 @@
+{
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "zones": 500,
+    "snapshots": 8,
+    "regions": 1,
+    "materials": 1,
+    "text_contrast_ok": true,
+    "popup_contrast_ok": true,
+    "slider_ok": true,
+    "mouse_probe_ok": true,
+    "moving_mesh_ok": true,
+    "black_gap_behavior": "single-region target; no masked inactive bands expected",
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\5Fe+4.9TW+light_stabilized_mouse_mode.png"
+  },
+  "Cu_0166_stabilized.h5": {
+    "zones": 300,
+    "snapshots": 461,
+    "regions": 1,
+    "materials": 1,
+    "text_contrast_ok": true,
+    "popup_contrast_ok": true,
+    "slider_ok": true,
+    "mouse_probe_ok": true,
+    "moving_mesh_ok": true,
+    "black_gap_behavior": "no masked inactive bands in single-region target",
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\Cu_0166_stabilized_viewer_interaction.png"
+  },
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "zones": 1300,
+    "snapshots": 701,
+    "regions": 3,
+    "materials": 2,
+    "text_contrast_ok": true,
+    "popup_contrast_ok": true,
+    "slider_ok": true,
+    "mouse_probe_ok": true,
+    "moving_mesh_ok": true,
+    "black_gap_behavior": "intentional inactive bands: ()",
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\10ns+10Si+60Al+15Si+4.27TW_stabilized_viewer_interaction.png"
+  }
+}

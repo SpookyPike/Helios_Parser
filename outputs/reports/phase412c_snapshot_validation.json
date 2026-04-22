@@ -1,0 +1,174 @@
+{
+  "generated_at": "2026-03-16T09:47:04",
+  "paths": {
+    "cu": "C:\\Users\\dimab\\Documents\\Helios_parser\\Cu_0166_stabilized.h5",
+    "heavy": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+    "stress": "C:\\Users\\dimab\\Documents\\Helios_parser\\50Al+10E+25CH+3.5TW_stabilized.h5"
+  },
+  "cu_snapshot_sync": {
+    "file": "Cu_0166_stabilized.h5",
+    "before_snapshot": 0,
+    "after_snapshot": 180,
+    "viewer_snapshot": 180,
+    "elapsed_s": 0.317,
+    "update_kind": "snapshot",
+    "max_inflight_threads": 0,
+    "titles_changed": {
+      "xrd": true,
+      "plasmon": true,
+      "transmission": true,
+      "spectroscopy": true
+    },
+    "scalars_changed": {
+      "xrd": true,
+      "plasmon": true,
+      "transmission": true,
+      "spectroscopy": true
+    },
+    "status_label": "Derived mode ready.",
+    "global_snapshot_label": "Snapshot 180 | t = 1.8 ns",
+    "snapshot_cursor_visible": {
+      "xrd": true,
+      "plasmon": true,
+      "transmission": true,
+      "spectroscopy": true,
+      "shock_position": true,
+      "shock_velocity": true
+    },
+    "preview_messages": [
+      "Snapshot 20 | t = 2e-10 ns | updating...",
+      "Snapshot 60 | t = 6e-10 ns | updating...",
+      "Snapshot 120 | t = 1.2e-09 ns | updating...",
+      "Snapshot 180 | t = 1.8e-09 ns | updating...",
+      "Updating snapshot 180 @ 1.800 ns"
+    ],
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase412c_cu_snapshot_sync.png"
+  },
+  "heavy_snapshot_sync": {
+    "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+    "before_snapshot": 0,
+    "after_snapshot": 360,
+    "viewer_snapshot": 360,
+    "elapsed_s": 0.386,
+    "update_kind": "snapshot",
+    "max_inflight_threads": 0,
+    "titles_changed": {
+      "xrd": true,
+      "plasmon": true,
+      "transmission": true,
+      "spectroscopy": true
+    },
+    "scalars_changed": {
+      "xrd": true,
+      "plasmon": true,
+      "transmission": true,
+      "spectroscopy": true
+    },
+    "status_label": "Derived mode ready.",
+    "global_snapshot_label": "Snapshot 360 | t = 3.6 ns",
+    "snapshot_cursor_visible": {
+      "xrd": true,
+      "plasmon": true,
+      "transmission": true,
+      "spectroscopy": true,
+      "shock_position": true,
+      "shock_velocity": true
+    },
+    "preview_messages": [
+      "Snapshot 30 | t = 3.0042e-10 ns | updating...",
+      "Snapshot 120 | t = 1.2001e-09 ns | updating...",
+      "Snapshot 240 | t = 2.4e-09 ns | updating...",
+      "Snapshot 360 | t = 3.6e-09 ns | updating...",
+      "Updating snapshot 360 @ 3.600 ns"
+    ],
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase412c_heavy_snapshot_sync.png"
+  },
+  "stress_snapshot_sync": {
+    "file": "50Al+10E+25CH+3.5TW_stabilized.h5",
+    "before_snapshot": 0,
+    "after_snapshot": 175,
+    "viewer_snapshot": 175,
+    "elapsed_s": 0.336,
+    "update_kind": "snapshot",
+    "max_inflight_threads": 0,
+    "titles_changed": {
+      "xrd": true,
+      "plasmon": true,
+      "transmission": true,
+      "spectroscopy": true
+    },
+    "scalars_changed": {
+      "xrd": true,
+      "plasmon": true,
+      "transmission": true,
+      "spectroscopy": true
+    },
+    "status_label": "Derived mode ready.",
+    "global_snapshot_label": "Snapshot 175 | t = 1.75 ns",
+    "snapshot_cursor_visible": {
+      "xrd": true,
+      "plasmon": true,
+      "transmission": true,
+      "spectroscopy": true,
+      "shock_position": true,
+      "shock_velocity": true
+    },
+    "preview_messages": [
+      "Snapshot 10 | t = 1.0004e-10 ns | updating...",
+      "Snapshot 50 | t = 5.0007e-10 ns | updating...",
+      "Snapshot 100 | t = 1.0004e-09 ns | updating...",
+      "Snapshot 175 | t = 1.75e-09 ns | updating...",
+      "Updating snapshot 175 @ 1.750 ns"
+    ],
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase412c_stress_snapshot_sync.png"
+  },
+  "cu_viewer_colorbar": {
+    "file": "Cu_0166_stabilized.h5",
+    "initial": {
+      "label": "Density [g/cm3]",
+      "levels": [
+        0.0001171,
+        12.05
+      ],
+      "render_mode": "mesh",
+      "has_span": true
+    },
+    "mouse": {
+      "label": "Density [g/cm3]",
+      "levels": [
+        0.0001171,
+        12.05
+      ],
+      "render_mode": "mesh",
+      "has_span": true
+    },
+    "roundtrip": {
+      "label": "Density [g/cm3]",
+      "levels": [
+        0.0001171,
+        12.05
+      ],
+      "render_mode": "mesh",
+      "has_span": true
+    },
+    "dark": {
+      "label": "Density [g/cm3]",
+      "levels": [
+        0.0001171,
+        12.05
+      ],
+      "render_mode": "mesh",
+      "has_span": true
+    },
+    "light": {
+      "label": "Density [g/cm3]",
+      "levels": [
+        0.0001171,
+        12.05
+      ],
+      "render_mode": "mesh",
+      "has_span": true
+    },
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase412c_cu_viewer_colorbar.png"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "5Fe+4.9TW+light_stabilized.h5": {
+    "open_s": 0.219,
+    "theme": "light",
+    "time_trace_cursor_visible": true,
+    "map_time_marker_visible": true,
+    "map_reference_visible": true,
+    "toolbar_enabled": true,
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\5Fe+4.9TW+light_stabilized_phase2b_light.png",
+    "line_title": "Density time trace | full history at static x = 5.2824e-08 cm (zone 5) | current-time cursor = 3.0005e-10 s | all zones (500/500) | linear"
+  },
+  "Cu_0166_stabilized.h5": {
+    "open_s": 0.254,
+    "theme": "dark",
+    "field": "radiation_sink",
+    "map_render_mode": "image",
+    "plot_background": "#0b1220",
+    "time_marker_visible": true,
+    "laser_boundary": "high-index boundary"
+  },
+  "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {
+    "open_s": 0.344,
+    "theme": "dark",
+    "map_render_mode": "mesh",
+    "line_cursor_visible": true,
+    "map_time_marker_visible": true,
+    "map_reference_visible": true,
+    "laser_region_visible_in_list": true,
+    "laser_incident_region": 3,
+    "toolbar_enabled": true,
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\10ns+10Si+60Al+15Si+4.27TW_stabilized_phase2b_dark.png",
+    "hover_interval_ms": 12
+  }
+}

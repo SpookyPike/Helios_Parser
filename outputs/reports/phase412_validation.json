@@ -1,0 +1,102 @@
+{
+  "generated_at": "2026-03-16T01:23:42",
+  "paths": {
+    "small": "C:\\Users\\dimab\\Documents\\Helios_parser\\5Fe+4.9TW+light_stabilized.h5",
+    "cu": "C:\\Users\\dimab\\Documents\\Helios_parser\\Cu_0166_stabilized.h5",
+    "heavy": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\hdf5\\10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+    "stress": "C:\\Users\\dimab\\Documents\\Helios_parser\\50Al+10E+25CH+3.5TW_stabilized.h5"
+  },
+  "small_snapshot_sync": {
+    "file": "5Fe+4.9TW+light_stabilized.h5",
+    "global_snapshot_label": "Snapshot 5 | t = 0.50004 ns",
+    "derived_snapshot_label": "5 @ 0.500 ns",
+    "xrd_profile_title": "Zone-resolved density profile | snapshot 5 @ 0.500 ns",
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase412_small_global_snapshot.png"
+  },
+  "cu_interaction": {
+    "file": "Cu_0166_stabilized.h5",
+    "derived_ready": true,
+    "derived_selected_zones": 300,
+    "xrd_headers_degrees": [
+      "Region",
+      "rho",
+      "rho/rho0",
+      "d/d0",
+      "theta0",
+      "theta",
+      "Shift",
+      "Thickness"
+    ],
+    "plasmon_multicurve_legend": true,
+    "spectroscopy_multicurve_legend": true,
+    "colorbar_states": {
+      "initial": {
+        "label": "Density [g/cm3]",
+        "levels": [
+          0.0001171,
+          12.05
+        ],
+        "render_mode": "mesh",
+        "has_span": true
+      },
+      "mouse": {
+        "label": "Density [g/cm3]",
+        "levels": [
+          0.0001171,
+          12.05
+        ],
+        "render_mode": "mesh",
+        "has_span": true
+      },
+      "zone_width": {
+        "label": "Zone width [cm]",
+        "levels": [
+          1e-06,
+          0.07624
+        ],
+        "render_mode": "mesh",
+        "has_span": true
+      },
+      "dark": {
+        "label": "Zone width [cm]",
+        "levels": [
+          1e-06,
+          0.07624
+        ],
+        "render_mode": "mesh",
+        "has_span": true
+      },
+      "light": {
+        "label": "Zone width [cm]",
+        "levels": [
+          1e-06,
+          0.07624
+        ],
+        "render_mode": "mesh",
+        "has_span": true
+      }
+    },
+    "derived_screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase412_cu_derived.png",
+    "viewer_screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase412_cu_viewer_colorbar.png"
+  },
+  "heavy_multilayer": {
+    "file": "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+    "selected_zones": 1166,
+    "snapshot_label": "175 @ 1.750 ns",
+    "global_snapshot_label": "Snapshot 175 | t = 1.75 ns",
+    "profile_coordinate": "zone",
+    "max_inflight_threads": 1,
+    "final_threads": 0,
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase412_heavy_multilayer.png"
+  },
+  "stress_al_epoxy_ch": {
+    "file": "50Al+10E+25CH+3.5TW_stabilized.h5",
+    "selected_zones": 1197,
+    "snapshot_label": "187 @ 1.870 ns",
+    "global_snapshot_label": "Snapshot 187 | t = 1.87 ns",
+    "profile_coordinate": "zone",
+    "max_inflight_threads": 1,
+    "final_threads": 0,
+    "screenshot": "C:\\Users\\dimab\\Documents\\Helios_parser\\outputs\\screenshots\\phase412_stress_al_epoxy_ch.png"
+  }
+}
