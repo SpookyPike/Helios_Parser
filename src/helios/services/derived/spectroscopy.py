@@ -40,6 +40,19 @@ def doppler_width_fraction(temperature_ev: float, ion_mass_mu: float) -> float:
     return 7.7e-5 * math.sqrt(float(temperature_ev) / float(ion_mass_mu))
 
 
+def doppler_width_fraction_array(temperature_ev: np.ndarray, ion_mass_mu: np.ndarray) -> np.ndarray:
+    """Vectorized fractional Doppler width with the scalar helper's domain rules."""
+
+    temperature = np.asarray(temperature_ev, dtype=np.float64)
+    mass = np.asarray(ion_mass_mu, dtype=np.float64)
+    result = np.full(np.broadcast_shapes(temperature.shape, mass.shape), np.nan, dtype=np.float64)
+    temperature_b = np.broadcast_to(temperature, result.shape)
+    mass_b = np.broadcast_to(mass, result.shape)
+    valid = (temperature_b > 0.0) & (mass_b > 0.0) & np.isfinite(temperature_b) & np.isfinite(mass_b)
+    result[valid] = 7.7e-5 * np.sqrt(temperature_b[valid] / mass_b[valid])
+    return result
+
+
 def evaluate_spectroscopy(
     dataset: DerivedRunData,
     context: RunContext,
@@ -191,12 +204,9 @@ def evaluate_spectroscopy(
             ion_mass_series = np.asarray(mean_series["ion_mass_mu"], dtype=np.float64)
             los_series = bulk_series * float(axis_cosine)
             shift_series = float(line_wavelength_nm) * los_series / C_LIGHT_CM_S
-            width_series = np.full(ti_series.shape, np.nan, dtype=np.float64)
-            for time_index in range(ti_series.size):
-                if progress_check is not None and (time_index % 16 == 0):
-                    progress_check()
-                width = doppler_width_fraction(float(ti_series[time_index]), float(ion_mass_series[time_index]))
-                width_series[time_index] = float(line_wavelength_nm) * width if math.isfinite(width) else np.nan
+            if progress_check is not None:
+                progress_check()
+            width_series = float(line_wavelength_nm) * doppler_width_fraction_array(ti_series, ion_mass_series)
             return {
                 "los_velocity_cm_s": los_series,
                 "doppler_shift_nm": shift_series,

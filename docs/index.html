@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>HELIOS Parse / View Documentation</h1>
         <p>
-          Release 0.9.1, dated 2026-03-20. Cross-platform scientific desktop workflow for parsing HELIOS logs,
+          Release 1.0.1, dated 2026-04-29. Cross-platform scientific desktop workflow for parsing HELIOS logs,
           viewing stabilized HDF5 runs, and running quick-look plus advanced derived analysis.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
@@ -56,18 +56,18 @@
           <p>
             The current tree is no longer a small parser demo. It now includes streaming HDF5 conversion, explicit run status,
             viewer/runtime shared caches, bounded display caches, cooperative background task execution, lazy advanced diagnostics,
-            WaveFront branch tracking, interface-aware summaries, Preheat, model-aware Transmission with optional XCOM cold-material paths,
-            and richer release-facing documentation.
+            WaveFront branch tracking, interface-aware summaries, Preheat, production-visible XRD and Spectroscopy,
+            and development-flagged experimental Plasmon/XRTS and Transmission paths.
           </p>
         </div>
         <div class="banner">
           <h3>Release snapshot</h3>
           <ul class="compact-list">
-            <li>Release: <strong>0.9.1</strong></li>
-            <li>Date: <strong>2026-03-20</strong></li>
+            <li>Release: <strong>1.0.1</strong></li>
+            <li>Date: <strong>2026-04-29</strong></li>
             <li>Platform target: <strong>Windows and Linux</strong></li>
             <li>Primary audience: <strong>scientists, diagnosticians, developers, maintainers</strong></li>
-            <li>Current strengths: <strong>fast quick-look Shock, lazy advanced WaveFront, robust parser/runtime/viewer integration, and a staged plasmon/XRTS spectral stack through manual Lindhard-family backends, Mermin, and static-LFC closures</strong></li>
+            <li>Current strengths: <strong>fast quick-look Shock, lazy advanced WaveFront, robust parser/runtime/viewer integration, XRD, Spectroscopy, and physically gated production workflows</strong></li>
             <li>Current limits: <strong>derived outputs are quick-look tools, not publication-grade forward models</strong></li>
           </ul>
         </div>
@@ -124,7 +124,7 @@
           <ol class="steps">
             <li>Switch to Derived / Analysis.</li>
             <li>The app lands on <strong>Shock</strong> first, so position, speed, breakout, and crossing-time information appear without waiting for advanced branch tracking.</li>
-            <li>Use XRD, Plasmon, Transmission, Spectroscopy, and Warnings as tab-local modules.</li>
+            <li>Use XRD, Spectroscopy, and Warnings as production tab-local modules. Plasmon/XRTS and Transmission are development-flagged experimental panels.</li>
           </ol>
         </div>
         <div class="card">
@@ -158,8 +158,8 @@
           <p>Use Preheat to inspect target-entry timing, region-of-interest override, onset markers, affected depth, and source/budget summaries before the main compressive branch arrives.</p>
         </div>
         <div class="card">
-          <h3>Transmission quick look</h3>
-          <p>Use Transmission when you need fast optical-depth style traces and selected-snapshot profiles while keeping snapshot browsing lightweight.</p>
+          <h3>Physics-gated production diagnostics</h3>
+          <p>Use the production-visible tabs for order-of-magnitude stable outputs. Experimental diagnostics stay behind development flags until their archived outputs pass the same physical checks.</p>
         </div>
         <div class="card">
           <h3>Collaborator handoff</h3>
@@ -180,7 +180,7 @@
           <tr><td><a href="developer-testing.html">Developer Testing</a></td><td>developers and maintainers</td><td>test categories, focused commands, instrumentation, manual QA expectations, and completion criteria</td></tr>
           <tr><td><a href="maintenance.html">Maintenance</a></td><td>maintainers</td><td>dependencies, packaging, screenshots, release checklist, sample files, documentation upkeep, and common regression risks</td></tr>
           <tr><td><a href="future-development.html">Future Development</a></td><td>collaborators</td><td>what already exists, what remains, technical debt, extension seams, and realistic next priorities</td></tr>
-          <tr><td><a href="release-notes.html">Release Notes</a></td><td>users, maintainers, recipients of bundles</td><td>release 0.9.1 scope, changelog, attribution, shareable bundle contents, and launch expectations</td></tr>
+          <tr><td><a href="release-notes.html">Release Notes</a></td><td>users, maintainers, recipients of bundles</td><td>release 1.0.1 scope, changelog, attribution, shareable bundle contents, and launch expectations</td></tr>
           <tr><td><a href="architecture_extension.md">Architecture Reference</a></td><td>developers</td><td>concise code-facing note for boundaries, invariants, and implementation-sensitive rules</td></tr>
         </tbody>
       </table>

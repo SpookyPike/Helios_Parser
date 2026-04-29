@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 import h5py
 import numpy as np
@@ -18,6 +19,20 @@ EXPECTED = {
     "Cu_0166_stabilized.h5": {"zones": 300, "snapshots": 461, "regions": 1, "materials": 1},
     "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5": {"zones": 1300, "snapshots": 701, "regions": 3, "materials": 2},
 }
+
+
+class _FakeDataset:
+    def __init__(self, values: np.ndarray, *, attrs: dict[str, object] | None = None) -> None:
+        self.values = np.asarray(values)
+        self.attrs = {} if attrs is None else dict(attrs)
+        self.shape = self.values.shape
+        self.calls: list[Any] = []
+
+    def __getitem__(self, index):
+        self.calls.append(index)
+        if index == ():
+            raise AssertionError("test dataset was read as a full array")
+        return self.values[index]
 
 
 class ReaderTests(unittest.TestCase):
@@ -50,6 +65,89 @@ class ReaderTests(unittest.TestCase):
                     self.assertEqual(energy_summary.shape, (expected["snapshots"],))
                     boundary_flux = run.get_diagnostic("radiation_boundary_fluxes/region_net_cooling_rate")
                     self.assertEqual(boundary_flux.shape, (expected["snapshots"], expected["regions"]))
+
+    def test_snapshot_dynamic_coordinate_read_does_not_materialize_full_grid(self) -> None:
+        run = HeliosRun.__new__(HeliosRun)
+        center = _FakeDataset(np.asarray([[1.0, 2.0, 3.0], [1.5, 2.5, 3.5]], dtype=np.float64))
+        edge = _FakeDataset(np.asarray([[0.5, 1.5, 2.5, 3.5], [1.0, 2.0, 3.0, 4.0]], dtype=np.float64))
+        run.path = Path("synthetic.h5")
+        run._grid_datasets = {
+            "zone_id": _FakeDataset(np.asarray([1, 2, 3], dtype=np.int32)),
+            "zone_width": _FakeDataset(np.asarray([1.0, 1.0, 1.0], dtype=np.float64)),
+            "dynamic_coordinate_center": center,
+            "dynamic_coordinate_edge": edge,
+        }
+        run._time_datasets = {"time": _FakeDataset(np.asarray([0.0, 1.0], dtype=np.float64))}
+        run._field_datasets = {}
+        run._metadata_cache = {"geometry": "PLANAR"}
+        run._coordinate_model_cache = {
+            "coordinate_name": "x",
+            "dynamic_center_dataset": "dynamic_coordinate_center",
+            "dynamic_edge_dataset": "dynamic_coordinate_edge",
+            "width_dataset": "zone_width",
+        }
+
+        np.testing.assert_allclose(run.get_dynamic_coordinate(snapshot_index=1, location="center"), np.asarray([1.5, 2.5, 3.5]))
+        np.testing.assert_allclose(run.get_dynamic_coordinate(snapshot_index=1, location="edge"), np.asarray([1.0, 2.0, 3.0, 4.0]))
+        self.assertEqual(center.calls, [(1, slice(None, None, None))])
+        self.assertEqual(edge.calls, [(1, slice(None, None, None))])
+        self.assertFalse(hasattr(run, "_dynamic_coordinate_center_cache") and run._dynamic_coordinate_center_cache is not None)
+
+    def test_radius_snapshot_field_read_uses_row_slice_without_full_dynamic_cache(self) -> None:
+        run = HeliosRun.__new__(HeliosRun)
+        radius = _FakeDataset(
+            np.asarray([[1.0, 2.0, 3.0], [1.5, 2.5, 3.5]], dtype=np.float64),
+            attrs={"coordinate_location": "center"},
+        )
+        run.path = Path("synthetic_radius.h5")
+        run._grid_datasets = {
+            "zone_id": _FakeDataset(np.asarray([1, 2, 3], dtype=np.int32)),
+            "zone_width": _FakeDataset(np.asarray([1.0, 1.0, 1.0], dtype=np.float64)),
+        }
+        run._time_datasets = {"time": _FakeDataset(np.asarray([0.0, 1.0], dtype=np.float64))}
+        run._field_datasets = {"radius": radius}
+        run._metadata_cache = {"geometry": "PLANAR"}
+        run._coordinate_model_cache = {
+            "coordinate_name": "x",
+            "legacy_dynamic_center_alias": "radius",
+            "width_dataset": "zone_width",
+        }
+
+        np.testing.assert_allclose(run.get_snapshot_field("radius", 1), np.asarray([1.5, 2.5, 3.5]))
+        self.assertEqual(radius.calls, [(1, slice(None, None, None))])
+        self.assertFalse(hasattr(run, "_dynamic_coordinate_center_cache") and run._dynamic_coordinate_center_cache is not None)
+
+    def test_time_trace_read_uses_column_slice(self) -> None:
+        run = HeliosRun.__new__(HeliosRun)
+        density = _FakeDataset(np.asarray([[1.0, 2.0, 3.0], [1.5, 2.5, 3.5]], dtype=np.float64))
+        run.path = Path("synthetic_trace.h5")
+        run._grid_datasets = {"zone_id": _FakeDataset(np.asarray([1, 2, 3], dtype=np.int32))}
+        run._time_datasets = {"time": _FakeDataset(np.asarray([0.0, 1.0], dtype=np.float64))}
+        run._field_datasets = {"density": density}
+        run._field_names = ("density",)
+
+        np.testing.assert_allclose(run.get_time_trace("density", 2), np.asarray([3.0, 3.5]))
+        self.assertEqual(density.calls, [(slice(None, None, None), 2)])
+
+    def test_radius_time_trace_read_uses_dynamic_coordinate_column_slice(self) -> None:
+        run = HeliosRun.__new__(HeliosRun)
+        center = _FakeDataset(np.asarray([[1.0, 2.0, 3.0], [1.5, 2.5, 3.5]], dtype=np.float64))
+        run.path = Path("synthetic_radius_trace.h5")
+        run._grid_datasets = {
+            "zone_id": _FakeDataset(np.asarray([1, 2, 3], dtype=np.int32)),
+            "dynamic_coordinate_center": center,
+        }
+        run._time_datasets = {"time": _FakeDataset(np.asarray([0.0, 1.0], dtype=np.float64))}
+        run._field_datasets = {}
+        run._metadata_cache = {"geometry": "PLANAR"}
+        run._coordinate_model_cache = {
+            "coordinate_name": "x",
+            "dynamic_center_dataset": "dynamic_coordinate_center",
+        }
+
+        np.testing.assert_allclose(run.get_time_trace("radius", 1), np.asarray([2.0, 2.5]))
+        self.assertEqual(center.calls, [(slice(None, None, None), 1)])
+        self.assertFalse(hasattr(run, "_dynamic_coordinate_center_cache") and run._dynamic_coordinate_center_cache is not None)
 
     def test_region_and_material_masks_match_hdf5_metadata(self) -> None:
         for name, expected in EXPECTED.items():

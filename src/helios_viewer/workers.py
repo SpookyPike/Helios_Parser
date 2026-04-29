@@ -11,7 +11,7 @@ from PySide6 import QtCore
 
 from helios_parser import HeliosRun
 
-from .models import DiagnosticPayload, FieldPayload, OpenRunPayload
+from .models import DiagnosticPayload, FieldPayload, FieldTracePayload, OpenRunPayload, SnapshotFieldPayload
 
 
 LOGGER = logging.getLogger(__name__)
@@ -20,6 +20,8 @@ LOGGER = logging.getLogger(__name__)
 class RunWorker(QtCore.QObject):
     run_opened = QtCore.Signal(object)
     field_loaded = QtCore.Signal(object)
+    snapshot_field_loaded = QtCore.Signal(object)
+    field_trace_loaded = QtCore.Signal(object)
     diagnostic_loaded = QtCore.Signal(object)
     status = QtCore.Signal(str)
     error = QtCore.Signal(str, str)
@@ -98,6 +100,69 @@ class RunWorker(QtCore.QObject):
             self.field_loaded.emit(payload)
             LOGGER.info("Loaded field %s in %.3f s", field_name, time.perf_counter() - started)
             self.status.emit(f"Loaded field: {field_name}")
+        except Exception as exc:
+            self.error.emit(str(exc), traceback.format_exc())
+
+    @QtCore.Slot(str, int, int)
+    def load_snapshot_field(self, field_name: str, snapshot_index: int, generation: int) -> None:
+        try:
+            if self._run is None:
+                LOGGER.debug(
+                    "Ignoring snapshot field load %s[%s] for generation %s because no run is open.",
+                    field_name,
+                    snapshot_index,
+                    generation,
+                )
+                self.status.emit(f"Ignored stale snapshot field request: {field_name}")
+                return
+            normalized_snapshot = self._run._normalize_snapshot_index(int(snapshot_index))
+            self.status.emit(f"Loading snapshot field: {field_name}[{normalized_snapshot}]")
+            started = time.perf_counter()
+            edge_data: np.ndarray | None = None
+            if field_name == "radius":
+                dynamic_center = self._run.get_dynamic_coordinate(normalized_snapshot, location="center")
+                if dynamic_center is not None:
+                    data = np.asarray(dynamic_center, dtype=np.float64)
+                    dynamic_edge = self._run.get_dynamic_coordinate(normalized_snapshot, location="edge")
+                    edge_data = None if dynamic_edge is None else np.asarray(dynamic_edge, dtype=np.float64)
+                else:
+                    data = np.asarray(self._run.get_snapshot_field(field_name, normalized_snapshot), dtype=np.float64)
+            else:
+                data = np.asarray(self._run.get_snapshot_field(field_name, normalized_snapshot), dtype=np.float64)
+            payload = SnapshotFieldPayload(
+                run_generation=int(generation),
+                field_name=field_name,
+                snapshot_index=normalized_snapshot,
+                unit=self._run.get_field_unit(field_name),
+                data=data,
+                edge_data=edge_data,
+            )
+            self.snapshot_field_loaded.emit(payload)
+            LOGGER.info("Loaded snapshot field %s[%s] in %.3f s", field_name, normalized_snapshot, time.perf_counter() - started)
+            self.status.emit(f"Loaded snapshot field: {field_name}[{normalized_snapshot}]")
+        except Exception as exc:
+            self.error.emit(str(exc), traceback.format_exc())
+
+    @QtCore.Slot(str, int, int)
+    def load_field_trace(self, field_name: str, zone_index: int, generation: int) -> None:
+        try:
+            if self._run is None:
+                LOGGER.debug("Ignoring field trace load %s[:,%s] for generation %s because no run is open.", field_name, zone_index, generation)
+                self.status.emit(f"Ignored stale field trace request: {field_name}")
+                return
+            self.status.emit(f"Loading field trace: {field_name} zone {int(zone_index) + 1}")
+            started = time.perf_counter()
+            data = np.asarray(self._run.get_time_trace(field_name, int(zone_index)), dtype=np.float64)
+            payload = FieldTracePayload(
+                run_generation=int(generation),
+                field_name=field_name,
+                zone_index=int(zone_index),
+                unit=self._run.get_field_unit(field_name),
+                data=data,
+            )
+            self.field_trace_loaded.emit(payload)
+            LOGGER.info("Loaded field trace %s[:,%s] in %.3f s", field_name, zone_index, time.perf_counter() - started)
+            self.status.emit(f"Loaded field trace: {field_name} zone {int(zone_index) + 1}")
         except Exception as exc:
             self.error.emit(str(exc), traceback.format_exc())
 

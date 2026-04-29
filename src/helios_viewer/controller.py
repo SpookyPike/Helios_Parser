@@ -8,7 +8,7 @@ from PySide6 import QtCore
 
 from helios.cache import AnalyzerCacheSet, CacheBucketStats
 from helios.services.derived.common import publish_field_payload, publish_open_run_payload
-from .models import DiagnosticPayload, FieldPayload, OpenRunPayload
+from .models import DiagnosticPayload, FieldPayload, FieldTracePayload, OpenRunPayload, SnapshotFieldPayload
 from .workers import RunWorker
 
 LOGGER = logging.getLogger(__name__)
@@ -17,6 +17,8 @@ LOGGER = logging.getLogger(__name__)
 class RunController(QtCore.QObject):
     run_opened = QtCore.Signal(object)
     field_loaded = QtCore.Signal(object)
+    snapshot_field_loaded = QtCore.Signal(object)
+    field_trace_loaded = QtCore.Signal(object)
     diagnostic_loaded = QtCore.Signal(object)
     status_changed = QtCore.Signal(str)
     error_occurred = QtCore.Signal(str, str)
@@ -24,6 +26,8 @@ class RunController(QtCore.QObject):
 
     _open_requested = QtCore.Signal(str, int)
     _field_requested = QtCore.Signal(str, int)
+    _snapshot_field_requested = QtCore.Signal(str, int, int)
+    _field_trace_requested = QtCore.Signal(str, int, int)
     _diagnostic_requested = QtCore.Signal(str, int)
     _close_requested = QtCore.Signal()
 
@@ -38,11 +42,15 @@ class RunController(QtCore.QObject):
 
         self._open_requested.connect(self._worker.open_run, QtCore.Qt.QueuedConnection)
         self._field_requested.connect(self._worker.load_field, QtCore.Qt.QueuedConnection)
+        self._snapshot_field_requested.connect(self._worker.load_snapshot_field, QtCore.Qt.QueuedConnection)
+        self._field_trace_requested.connect(self._worker.load_field_trace, QtCore.Qt.QueuedConnection)
         self._diagnostic_requested.connect(self._worker.load_diagnostic, QtCore.Qt.QueuedConnection)
         self._close_requested.connect(self._worker.close_run, QtCore.Qt.QueuedConnection)
 
         self._worker.run_opened.connect(self._handle_run_opened)
         self._worker.field_loaded.connect(self._handle_field_loaded)
+        self._worker.snapshot_field_loaded.connect(self._handle_snapshot_field_loaded)
+        self._worker.field_trace_loaded.connect(self._handle_field_trace_loaded)
         self._worker.diagnostic_loaded.connect(self._handle_diagnostic_loaded)
         self._worker.status.connect(self.status_changed)
         self._worker.error.connect(self._handle_error)
@@ -50,6 +58,8 @@ class RunController(QtCore.QObject):
         self.run_payload: OpenRunPayload | None = None
         self._cache_layers = AnalyzerCacheSet()
         self.field_cache = self._cache_layers.raw_data_cache.bucket("viewer_fields", max_items=12)
+        self.snapshot_field_cache = self._cache_layers.raw_data_cache.bucket("viewer_snapshot_fields", max_items=32)
+        self.field_trace_cache = self._cache_layers.raw_data_cache.bucket("viewer_field_traces", max_items=32)
         self.diagnostic_cache = self._cache_layers.raw_data_cache.bucket("viewer_diagnostics", max_items=12)
         self._pending_jobs = 0
         self._run_generation = 0
@@ -62,6 +72,8 @@ class RunController(QtCore.QObject):
     def cache_stats(self) -> dict[str, CacheBucketStats]:
         return {
             "field_cache": self.field_cache.stats(),
+            "snapshot_field_cache": self.snapshot_field_cache.stats(),
+            "field_trace_cache": self.field_trace_cache.stats(),
             "diagnostic_cache": self.diagnostic_cache.stats(),
         }
 
@@ -73,6 +85,8 @@ class RunController(QtCore.QObject):
         self._run_generation += 1
         self.run_payload = None
         self.field_cache.clear(reason=f"open_file:generation:{self._run_generation}")
+        self.snapshot_field_cache.clear(reason=f"open_file:generation:{self._run_generation}")
+        self.field_trace_cache.clear(reason=f"open_file:generation:{self._run_generation}")
         self.diagnostic_cache.clear(reason=f"open_file:generation:{self._run_generation}")
         self._begin_job()
         self._open_requested.emit(str(Path(path)), self._run_generation)
@@ -88,6 +102,32 @@ class RunController(QtCore.QObject):
             LOGGER.debug("Viewer field cache miss for %s: %s", field_name, self.field_cache.stats())
         self._begin_job()
         self._field_requested.emit(field_name, self._run_generation)
+
+    def load_snapshot_field(self, field_name: str, snapshot_index: int) -> None:
+        key = (str(field_name), int(snapshot_index))
+        cached = self.snapshot_field_cache.get(key)
+        if cached is not None:
+            if LOGGER.isEnabledFor(logging.DEBUG):
+                LOGGER.debug("Viewer snapshot field cache hit for %s: %s", key, self.snapshot_field_cache.stats())
+            self.snapshot_field_loaded.emit(cached)
+            return
+        if LOGGER.isEnabledFor(logging.DEBUG):
+            LOGGER.debug("Viewer snapshot field cache miss for %s: %s", key, self.snapshot_field_cache.stats())
+        self._begin_job()
+        self._snapshot_field_requested.emit(str(field_name), int(snapshot_index), self._run_generation)
+
+    def load_field_trace(self, field_name: str, zone_index: int) -> None:
+        key = (str(field_name), int(zone_index))
+        cached = self.field_trace_cache.get(key)
+        if cached is not None:
+            if LOGGER.isEnabledFor(logging.DEBUG):
+                LOGGER.debug("Viewer field trace cache hit for %s: %s", key, self.field_trace_cache.stats())
+            self.field_trace_loaded.emit(cached)
+            return
+        if LOGGER.isEnabledFor(logging.DEBUG):
+            LOGGER.debug("Viewer field trace cache miss for %s: %s", key, self.field_trace_cache.stats())
+        self._begin_job()
+        self._field_trace_requested.emit(str(field_name), int(zone_index), self._run_generation)
 
     def load_diagnostic(self, path: str) -> None:
         cached = self.diagnostic_cache.get(path)
@@ -125,6 +165,8 @@ class RunController(QtCore.QObject):
         for signal, slot in (
             (self._worker.run_opened, self._handle_run_opened),
             (self._worker.field_loaded, self._handle_field_loaded),
+            (self._worker.snapshot_field_loaded, self._handle_snapshot_field_loaded),
+            (self._worker.field_trace_loaded, self._handle_field_trace_loaded),
             (self._worker.diagnostic_loaded, self._handle_diagnostic_loaded),
             (self._worker.status, self.status_changed),
             (self._worker.error, self._handle_error),
@@ -163,6 +205,8 @@ class RunController(QtCore.QObject):
             return
         self.run_payload = payload
         self.field_cache.clear(reason=f"run_opened:generation:{self._run_generation}")
+        self.snapshot_field_cache.clear(reason=f"run_opened:generation:{self._run_generation}")
+        self.field_trace_cache.clear(reason=f"run_opened:generation:{self._run_generation}")
         self.diagnostic_cache.clear(reason=f"run_opened:generation:{self._run_generation}")
         publish_open_run_payload(
             payload.path,
@@ -208,6 +252,44 @@ class RunController(QtCore.QObject):
             )
         self._end_job()
         self.field_loaded.emit(payload)
+
+    @QtCore.Slot(object)
+    def _handle_snapshot_field_loaded(self, payload: SnapshotFieldPayload) -> None:
+        if int(payload.run_generation) != self._run_generation:
+            LOGGER.debug(
+                "Discarding stale snapshot field payload %s[%s] for generation %s; current generation is %s.",
+                payload.field_name,
+                payload.snapshot_index,
+                payload.run_generation,
+                self._run_generation,
+            )
+            self.status_changed.emit(
+                f"Discarded stale snapshot field payload for generation {payload.run_generation}; current generation is {self._run_generation}."
+            )
+            self._end_job()
+            return
+        self.snapshot_field_cache[(payload.field_name, int(payload.snapshot_index))] = payload
+        self._end_job()
+        self.snapshot_field_loaded.emit(payload)
+
+    @QtCore.Slot(object)
+    def _handle_field_trace_loaded(self, payload: FieldTracePayload) -> None:
+        if int(payload.run_generation) != self._run_generation:
+            LOGGER.debug(
+                "Discarding stale field trace payload %s[:,%s] for generation %s; current generation is %s.",
+                payload.field_name,
+                payload.zone_index,
+                payload.run_generation,
+                self._run_generation,
+            )
+            self.status_changed.emit(
+                f"Discarded stale field trace payload for generation {payload.run_generation}; current generation is {self._run_generation}."
+            )
+            self._end_job()
+            return
+        self.field_trace_cache[(payload.field_name, int(payload.zone_index))] = payload
+        self._end_job()
+        self.field_trace_loaded.emit(payload)
 
     @QtCore.Slot(object)
     def _handle_diagnostic_loaded(self, payload: DiagnosticPayload) -> None:

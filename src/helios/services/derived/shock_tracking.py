@@ -1327,7 +1327,10 @@ def _safe_integral(time_values_s: np.ndarray, signal: np.ndarray) -> float | Non
     finite = np.isfinite(time_values) & np.isfinite(values)
     if np.count_nonzero(finite) < 2:
         return None
-    return float(np.trapz(values[finite], time_values[finite]))
+    integrate = getattr(np, "trapezoid", None)
+    if integrate is None:
+        integrate = np.trapz
+    return float(integrate(values[finite], time_values[finite]))
 
 
 def _series_from_optional(field: np.ndarray | None, indices: np.ndarray, zone_index: int) -> np.ndarray | None:

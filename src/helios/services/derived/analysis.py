@@ -15,11 +15,24 @@ from typing import Callable
 
 import numpy as np
 
+from helios.feature_flags import production_feature_visible
 from helios.instrumentation import increment_counter, timed_block
 from helios.runtime import RunContext
 from helios.services.derived.common import aggregate_warnings
 from helios.services.derived.module_contract import DerivedModuleContract
-from helios.services.derived.models import DerivedAnalysisResult, DerivedRunData, DerivedWarning, PreheatSummary
+from helios.services.derived.models import (
+    DerivedAnalysisResult,
+    DerivedRunData,
+    DerivedWarning,
+    PlasmonResult,
+    PreheatSummary,
+    TransmissionResult,
+)
+from helios.services.derived.physical_sanity import (
+    validate_shock_result,
+    validate_spectroscopy_result,
+    validate_xrd_result,
+)
 from helios.services.derived.plasmon_config import (
     PLASMON_AXIS_ANGLE_DEG,
     PLASMON_BENCHMARK_PRESET_NONE,
@@ -175,11 +188,21 @@ class DerivedAnalysisParameters:
         return self.key()[:-1]
 
 
+def _validate_xrd_module_result(result: object) -> None:
+    _validate_module_result(result)
+    validate_xrd_result(result)
+
+
+def _validate_spectroscopy_module_result(result: object) -> None:
+    _validate_module_result(result)
+    validate_spectroscopy_result(result)
+
+
 _MODULE_CONTRACTS: tuple[DerivedModuleContract[object], ...] = (
-    DerivedModuleContract(name="xrd", compute=estimate_xrd, validate=_validate_module_result),
+    DerivedModuleContract(name="xrd", compute=estimate_xrd, validate=_validate_xrd_module_result),
     DerivedModuleContract(name="plasmon", compute=evaluate_plasmon_regime, validate=_validate_module_result),
     DerivedModuleContract(name="transmission", compute=evaluate_transmission, validate=_validate_module_result),
-    DerivedModuleContract(name="spectroscopy", compute=evaluate_spectroscopy, validate=_validate_module_result),
+    DerivedModuleContract(name="spectroscopy", compute=evaluate_spectroscopy, validate=_validate_spectroscopy_module_result),
 )
 _PREPARED_MODULE_CONTRACTS: tuple[DerivedModuleContract[object], ...] = (
     DerivedModuleContract(
@@ -216,8 +239,10 @@ def normalize_time_plot_modules(requested: frozenset[str] | set[str] | tuple[str
     """Normalize the requested lazy time-plot module set."""
 
     if requested is None:
-        return frozenset(TIME_PLOT_MODULES)
-    normalized = frozenset(str(value) for value in requested if str(value) in TIME_PLOT_MODULES)
+        requested_modules = TIME_PLOT_MODULES
+    else:
+        requested_modules = frozenset(str(value) for value in requested if str(value) in TIME_PLOT_MODULES)
+    normalized = frozenset(value for value in requested_modules if production_feature_visible(value))
     return normalized
 
 
@@ -226,10 +251,76 @@ def analysis_result_time_plot_modules(result: DerivedAnalysisResult) -> frozense
 
     loaded: set[str] = set()
     for contract in _MODULE_CONTRACTS:
+        if not production_feature_visible(contract.name):
+            continue
         module_result = getattr(result, contract.name)
         if contract.time_plots_loaded(module_result):
             loaded.add(contract.name)
     return frozenset(loaded)
+
+
+def _hidden_plasmon_result(*, snapshot_index: int, parameters: DerivedAnalysisParameters) -> PlasmonResult:
+    return PlasmonResult(
+        snapshot_index=int(snapshot_index),
+        weighting_mode=str(parameters.weighting_mode),
+        geometry_summary="Plasmon/XRTS is disabled in the production backend.",
+        photon_energy_kev=float(parameters.plasmon_photon_energy_kev),
+        scattering_angle_deg=float(parameters.plasmon_scattering_angle_deg),
+        adiabatic_index=float(parameters.plasmon_adiabatic_index),
+        electron_density_cm3=float("nan"),
+        electron_temperature_ev=float("nan"),
+        ion_temperature_ev=float("nan"),
+        mean_charge=float("nan"),
+        ion_mass_mu=float("nan"),
+        debye_length_cm=float("nan"),
+        plasma_frequency_rad_s=float("nan"),
+        plasma_frequency_ev=float("nan"),
+        electron_collision_rate_s=float("nan"),
+        coulomb_logarithm=float("nan"),
+        ion_sound_speed_cm_s=float("nan"),
+        probe_wavelength_angstrom=float("nan"),
+        scattering_wavevector_cm_inv=float("nan"),
+        regime_label="disabled",
+        model_name="disabled",
+        requested_model_name=str(parameters.plasmon_model),
+        execution_mode="disabled",
+        model_executed_fully=False,
+        advanced_model_available=False,
+        benchmark_status="disabled",
+    )
+
+
+def _hidden_transmission_result(*, snapshot_index: int, parameters: DerivedAnalysisParameters) -> TransmissionResult:
+    return TransmissionResult(
+        snapshot_index=int(snapshot_index),
+        weighting_mode=str(parameters.weighting_mode),
+        geometry_summary="Transmission is disabled in the production backend.",
+        areal_density_g_cm2=float("nan"),
+        electron_column_cm2=float("nan"),
+        thomson_tau=float("nan"),
+        thomson_transmission=float("nan"),
+        time_plots=(),
+        profile_plots=(),
+        region_budgets=(),
+        model_type="disabled",
+        selected_mode=str(parameters.transmission_mode),
+        photon_energy_kev=float(parameters.transmission_photon_energy_kev),
+        source="hidden",
+        status_message="Transmission is available only with HELIOS_DEV_MODE=1 or HELIOS_ENABLE_EXPERIMENTAL=1.",
+    )
+
+
+def _hidden_module_result(
+    name: str,
+    *,
+    snapshot_index: int,
+    parameters: DerivedAnalysisParameters,
+) -> object:
+    if name == "plasmon":
+        return _hidden_plasmon_result(snapshot_index=snapshot_index, parameters=parameters)
+    if name == "transmission":
+        return _hidden_transmission_result(snapshot_index=snapshot_index, parameters=parameters)
+    raise ValueError(f"No hidden production placeholder is defined for derived module {name!r}.")
 
 
 def compute_analysis_result(
@@ -268,6 +359,8 @@ def compute_analysis_result(
                     analysis_cache=analysis_cache,
                     progress_check=progress_check,
                 )
+            if np.count_nonzero(zone_mask) > 0:
+                validate_shock_result(shock)
         xrd, plasmon, transmission, spectroscopy = _compute_module_results(
             dataset,
             context,
@@ -437,6 +530,14 @@ def _compute_module_results(
 ) -> tuple[object, object, object, object]:
     computed: dict[str, object] = {}
     for contract in _MODULE_CONTRACTS:
+        if not production_feature_visible(contract.name):
+            computed[contract.name] = _hidden_module_result(
+                contract.name,
+                snapshot_index=snapshot_index,
+                parameters=parameters,
+            )
+            increment_counter(f"derived.compute.{contract.name}.hidden")
+            continue
         existing = getattr(base_result, contract.name) if base_result is not None else None
         include_time_plots = contract.name in requested_time_plot_modules and not (existing is not None and contract.time_plots_loaded(existing))
         if existing is not None and not include_time_plots and int(getattr(base_result, "snapshot_index", snapshot_index)) == int(snapshot_index):

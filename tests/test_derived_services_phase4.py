@@ -20,7 +20,7 @@ from helios.services.derived.selection import (
     weight_array,
 )
 from helios.services.derived.shock_tracking import _smooth_track, track_shock_front
-from helios.services.derived.spectroscopy import doppler_width_fraction
+from helios.services.derived.spectroscopy import doppler_width_fraction, doppler_width_fraction_array
 
 
 def _synthetic_dataset() -> tuple[DerivedRunData, RunContext]:
@@ -159,6 +159,13 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
         width_fraction = doppler_width_fraction(te_ev, ion_mass_mu)
         self.assertGreater(width_fraction, 0.0)
         self.assertLess(width_fraction, 1.0e-3)
+        vector_width = doppler_width_fraction_array(
+            np.asarray([te_ev, -1.0, te_ev], dtype=np.float64),
+            np.asarray([ion_mass_mu, ion_mass_mu, 0.0], dtype=np.float64),
+        )
+        self.assertAlmostEqual(float(vector_width[0]), width_fraction)
+        self.assertTrue(np.isnan(vector_width[1]))
+        self.assertTrue(np.isnan(vector_width[2]))
 
     def test_cylindrical_mass_weighting_uses_edge_based_shell_geometry(self) -> None:
         dataset, context = _synthetic_dataset()

@@ -11,7 +11,7 @@ from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_se
 from helios_parser import HeliosRun
 from helios_viewer.controller import RunController
 from helios_viewer.main_window import HeliosViewerMainWindow, _REFRESH_FIELD_MAP, _REFRESH_LINE
-from helios_viewer.models import DiagnosticPayload, FieldPayload, OpenRunPayload
+from helios_viewer.models import DiagnosticPayload, FieldPayload, FieldTracePayload, OpenRunPayload, SnapshotFieldPayload
 
 
 def _build_open_run_payload(path: Path, generation: int) -> OpenRunPayload:
@@ -102,6 +102,8 @@ class ViewerWave2Tests(unittest.TestCase):
 
             stats = controller.cache_stats()
             self.assertLessEqual(stats["field_cache"].size, stats["field_cache"].capacity)
+            self.assertLessEqual(stats["snapshot_field_cache"].size, stats["snapshot_field_cache"].capacity)
+            self.assertLessEqual(stats["field_trace_cache"].size, stats["field_trace_cache"].capacity)
             self.assertLessEqual(stats["diagnostic_cache"].size, stats["diagnostic_cache"].capacity)
             self.assertGreater(stats["field_cache"].evictions, 0)
             self.assertGreater(stats["diagnostic_cache"].evictions, 0)
@@ -109,6 +111,40 @@ class ViewerWave2Tests(unittest.TestCase):
             self.assertGreater(stats["field_cache"].misses, 0)
             self.assertGreater(stats["diagnostic_cache"].hits, 0)
             self.assertGreater(stats["diagnostic_cache"].misses, 0)
+        finally:
+            controller.shutdown()
+
+    def test_snapshot_and_trace_payloads_are_cached_without_full_field_payload(self) -> None:
+        controller = RunController()
+        try:
+            snapshot_payloads: list[SnapshotFieldPayload] = []
+            trace_payloads: list[FieldTracePayload] = []
+            controller.snapshot_field_loaded.connect(snapshot_payloads.append)
+            controller.field_trace_loaded.connect(trace_payloads.append)
+            controller._run_generation = 3
+
+            snapshot_payload = SnapshotFieldPayload(
+                run_generation=3,
+                field_name="density",
+                snapshot_index=4,
+                unit="g/cm3",
+                data=np.asarray([1.0, 2.0], dtype=np.float64),
+            )
+            trace_payload = FieldTracePayload(
+                run_generation=3,
+                field_name="density",
+                zone_index=1,
+                unit="g/cm3",
+                data=np.asarray([1.0, 1.5, 2.0], dtype=np.float64),
+            )
+            controller._handle_snapshot_field_loaded(snapshot_payload)
+            controller._handle_field_trace_loaded(trace_payload)
+
+            self.assertEqual(snapshot_payloads, [snapshot_payload])
+            self.assertEqual(trace_payloads, [trace_payload])
+            self.assertIs(controller.snapshot_field_cache[("density", 4)], snapshot_payload)
+            self.assertIs(controller.field_trace_cache[("density", 1)], trace_payload)
+            self.assertIsNone(controller.field_cache.get("density"))
         finally:
             controller.shutdown()
 

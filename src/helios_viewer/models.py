@@ -47,6 +47,25 @@ class FieldPayload:
 
 
 @dataclass(slots=True)
+class SnapshotFieldPayload:
+    run_generation: int
+    field_name: str
+    snapshot_index: int
+    unit: str
+    data: np.ndarray
+    edge_data: np.ndarray | None = None
+
+
+@dataclass(slots=True)
+class FieldTracePayload:
+    run_generation: int
+    field_name: str
+    zone_index: int
+    unit: str
+    data: np.ndarray
+
+
+@dataclass(slots=True)
 class DiagnosticPayload:
     run_generation: int
     path: str

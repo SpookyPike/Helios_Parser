@@ -13,7 +13,7 @@ viewing, and derived analysis.
 
 The current shareable bundle is:
 
-- [`helios-parse-view-0.9.1.zip`](C:/Users/dimab/Documents/Helios_parser/outputs/release/helios-parse-view-0.9.1.zip)
+- [`helios-parser-viewer-v1.0.1.zip`](C:/Users/dimab/Documents/Helios_parser/outputs/release/helios-parser-viewer-v1.0.1.zip)
 
 ## Quick start on Windows
 

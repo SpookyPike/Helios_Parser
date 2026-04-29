@@ -188,6 +188,13 @@ class HeliosRun:
         widths = self._static_widths()
         return np.broadcast_to(widths[None, :], (self.n_snapshots, self.n_zones))
 
+    def _dynamic_widths_snapshot(self, snapshot_index: int) -> np.ndarray:
+        if "zone_width" in self._field_datasets:
+            dataset = self._field_datasets["zone_width"]
+            if tuple(dataset.shape) == (self.n_snapshots, self.n_zones):
+                return np.asarray(dataset[self._normalize_snapshot_index(snapshot_index), :], dtype=np.float64)
+        return self._static_widths()
+
     @staticmethod
     def _slice_array(values: np.ndarray, selection: slice | int | None) -> np.ndarray:
         index = slice(None) if selection is None else selection
@@ -279,6 +286,50 @@ class HeliosRun:
         if not self.has_dynamic_coordinate():
             return None
         normalized = str(location).strip().lower()
+        if snapshot_index is not None:
+            normalized_snapshot = self._normalize_snapshot_index(snapshot_index)
+            model = self._coordinate_model()
+            if normalized == "center":
+                dataset_name = str(model.get("dynamic_center_dataset", "dynamic_coordinate_center"))
+                if dataset_name in self._grid_datasets:
+                    return np.asarray(self._grid_datasets[dataset_name][normalized_snapshot, :], dtype=np.float64)
+                if "radius" in self._field_datasets:
+                    radius_dataset = self._field_datasets["radius"]
+                    raw = np.asarray(radius_dataset[normalized_snapshot, :], dtype=np.float64)
+                    attr_location = str(radius_dataset.attrs.get("coordinate_location", "")).strip().lower()
+                    if attr_location == "center":
+                        return raw
+                    widths = self._dynamic_widths_snapshot(normalized_snapshot)
+                    if raw.ndim == 1 and raw.shape[0] == self.n_zones + 1:
+                        return centers_from_edges_and_widths(raw, widths)
+                    edge_values = build_coordinate_edge_array(raw, widths, geometry=self.get_metadata().get("geometry"))
+                    return centers_from_edges_and_widths(edge_values, widths)
+                return None
+            if normalized == "edge":
+                dataset_name = str(model.get("dynamic_edge_dataset", "dynamic_coordinate_edge"))
+                if dataset_name in self._grid_datasets:
+                    return np.asarray(self._grid_datasets[dataset_name][normalized_snapshot, :], dtype=np.float64)
+                if "radius" in self._field_datasets:
+                    radius_dataset = self._field_datasets["radius"]
+                    raw = np.asarray(radius_dataset[normalized_snapshot, :], dtype=np.float64)
+                    attr_location = str(radius_dataset.attrs.get("coordinate_location", "")).strip().lower()
+                    widths = self._dynamic_widths_snapshot(normalized_snapshot)
+                    if attr_location == "center":
+                        outer_edges = raw + 0.5 * widths
+                        return build_coordinate_edge_array(
+                            outer_edges,
+                            widths,
+                            geometry=self.get_metadata().get("geometry"),
+                        )
+                    if raw.ndim == 1 and raw.shape[0] == self.n_zones + 1:
+                        return raw
+                    return build_coordinate_edge_array(
+                        raw,
+                        widths,
+                        geometry=self.get_metadata().get("geometry"),
+                    )
+                return None
+            raise ValueError(f"Unknown coordinate location {location!r}; expected 'center' or 'edge'.")
         model = self._coordinate_model()
         if normalized == "center":
             if self._dynamic_coordinate_center_cache is None:
@@ -329,9 +380,7 @@ class HeliosRun:
             values = self._dynamic_coordinate_edge_cache
         else:
             raise ValueError(f"Unknown coordinate location {location!r}; expected 'center' or 'edge'.")
-        if snapshot_index is None:
-            return np.asarray(values, dtype=np.float64)
-        return np.asarray(values[self._normalize_snapshot_index(snapshot_index)], dtype=np.float64)
+        return np.asarray(values, dtype=np.float64)
 
     def get_coordinate(
         self,
@@ -592,11 +641,16 @@ class HeliosRun:
     ) -> np.ndarray:
         """Return a full field or a sliced ``field(time, zone)`` view."""
         if field_name == "radius":
+            time_index = slice(None) if time_slice is None else time_slice
+            zone_index = slice(None) if zone_slice is None else zone_slice
+            if isinstance(time_index, int):
+                values = self.get_dynamic_coordinate(time_index, location="center")
+                if values is None:
+                    raise KeyError("Dynamic coordinate field is unavailable.")
+                return np.asarray(values[zone_index], dtype=np.float64)
             values = self.get_dynamic_coordinate(location="center")
             if values is None:
                 raise KeyError("Dynamic coordinate field is unavailable.")
-            time_index = slice(None) if time_slice is None else time_slice
-            zone_index = slice(None) if zone_slice is None else zone_slice
             return np.asarray(values[time_index, zone_index], dtype=np.float64)
         dataset = self._get_field_dataset(field_name)
         time_index = slice(None) if time_slice is None else time_slice
@@ -608,6 +662,31 @@ class HeliosRun:
 
     def get_lineout(self, field_name: str, snapshot_index: int) -> np.ndarray:
         return self.get_snapshot_field(field_name, snapshot_index)
+
+    def get_time_trace(
+        self,
+        field_name: str,
+        zone_index: int,
+        *,
+        time_slice: slice | int | None = None,
+    ) -> np.ndarray:
+        normalized_zone = int(zone_index)
+        if normalized_zone < 0:
+            normalized_zone += self.n_zones
+        if normalized_zone < 0 or normalized_zone >= self.n_zones:
+            raise IndexError(f"zone_index {zone_index} is out of range for {self.n_zones} zones.")
+        if field_name == "radius":
+            time_index = slice(None) if time_slice is None else time_slice
+            model = self._coordinate_model()
+            dataset_name = str(model.get("dynamic_center_dataset", "dynamic_coordinate_center"))
+            if dataset_name in self._grid_datasets:
+                return np.asarray(self._grid_datasets[dataset_name][time_index, normalized_zone], dtype=np.float64)
+            if "radius" in self._field_datasets:
+                radius_dataset = self._field_datasets["radius"]
+                attr_location = str(radius_dataset.attrs.get("coordinate_location", "")).strip().lower()
+                if attr_location == "center":
+                    return np.asarray(radius_dataset[time_index, normalized_zone], dtype=np.float64)
+        return np.asarray(self.get_field(field_name, time_slice=time_slice, zone_slice=normalized_zone), dtype=np.float64)
 
     def get_time(self, name: str = "time", selection: slice | int | None = None) -> np.ndarray:
         dataset = self._time_datasets[name]

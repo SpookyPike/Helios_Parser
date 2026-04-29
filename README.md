@@ -3,15 +3,15 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `0.9.1`
-- Release date: `2026-03-20`
+- Release: `1.0.1`
+- Release date: `2026-04-29`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
 Top-level application modes:
 
 - `Parser`: preview HELIOS `.log` files and convert them to stabilized HDF5
 - `Viewer`: inspect stabilized HDF5 runs with explicit center/edge coordinate semantics
-- `Derived / Analysis`: fast legacy Shock plus lazy advanced WaveFront, interface-event, Preheat, Transmission, XRD, and Plasmon/XRTS diagnostics
+- `Derived / Analysis`: fast legacy Shock plus lazy WaveFront, interface-event, Preheat, XRD, and Spectroscopy diagnostics
 
 ## What the project does
 
@@ -24,12 +24,8 @@ This is no longer a minimal parser prototype. The current tree includes:
 - a fast legacy `Shock` quick-look path
 - lazy/cached `WaveFront` advanced branch tracking
 - interface-aware diagnostics and a separate `Preheat` advanced tab
-- module-local XRD, Plasmon, Transmission, Spectroscopy, and Warnings workflows
-- model-aware `Transmission` with explicit `Auto hybrid`, `Thomson`, `Free-free`, `Free-free + Thomson`, and `XCOM` selection
-- optional cold-material XCOM seam with canonical material resolution from parsed EOS/opacity metadata
-- deterministic precomputed XCOM fallback-table path for Windows or other environments where native XCOM cannot execute
-- expanded plasmon/XRTS quick-look modes including RPA, Mermin, static-LFC, and Lindhard-family paths with explicit warnings when a selected state is degenerate, non-collective, or outside the validated quick-look domain
-- article-facing plasmon backends including quantum hydrodynamic and finite-T self-consistent STLS controls plus explicit `dielectric`, minimal `XRTS observable`, and material-specific `XRTS article-native Al` comparison layers
+- module-local XRD, Spectroscopy, and Warnings workflows in the production GUI
+- experimental Plasmon/XRTS and Transmission workflows retained behind `HELIOS_DEV_MODE=1` or `HELIOS_ENABLE_EXPERIMENTAL=1`
 
 ## Repository contents
 
@@ -84,7 +80,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parse-view-0.9.1.zip`
+- `outputs/release/helios-parser-viewer-v1.0.1.zip`
 
 The bundle includes:
 
@@ -93,7 +89,6 @@ The bundle includes:
 - launch/bootstrap scripts for Windows and Linux
 - a top-level quick-start file
 - selected demo HDF5 examples
-- curated observable-benchmark artifacts for the article-facing Al XRTS passes
 
 Use:
 
@@ -101,20 +96,25 @@ Use:
 python scripts\create_release_bundle.py
 ```
 
-## Changelog 0.9.1
+## Changelog 1.0.1
 
-- updated user and developer documentation to match the current parser/viewer/derived feature set
-- documented the current `Transmission` workflow as a model-aware panel rather than a Thomson-only quick look
-- documented the XCOM seam, canonical material resolution, precomputed fallback table, and current limits of cold-opacity usage
-- refreshed release notes, bundle metadata, and shareable archive contents for the current code state
+- production backend now skips hidden Plasmon/XRTS and Transmission module computation unless `HELIOS_DEV_MODE=1` or `HELIOS_ENABLE_EXPERIMENTAL=1`
+- added snapshot-row and zone-trace reader/viewer payload paths to avoid full-field materialization for targeted reads
+- cleaned the release archive to exclude tests, legacy shadow modules, caches, old reports, and development audit outputs
+
+## Changelog 1.0.0
+
+- production GUI now hides physics pipelines whose archived outputs fail order-of-magnitude sanity: Plasmon/XRTS and Transmission
+- added centralized feature flags: `HELIOS_DEV_MODE=1` or `HELIOS_ENABLE_EXPERIMENTAL=1`
+- added lightweight physical sanity checks for kept Shock, XRD, and Spectroscopy paths
+- refreshed release metadata and bundle name for v1.0.0
 
 ## Important current behavior
 
 - `Shock` is the fast default derived path.
 - `WaveFront` is advanced, lazy, and cached.
 - `Preheat` is a separate advanced tab and does not live inside legacy Shock.
-- `Plasmon` now supports `dielectric`, minimal `XRTS observable`, and material-specific `XRTS article-native Al` modes.
-- The article-native Al mode keeps the backend dielectric response fixed and upgrades the observable assembly with explicit free / elastic / bound-core bookkeeping, Al form-factor diagnostics, and inelastic-branch peak extraction after elastic subtraction.
+- `Plasmon` and `Transmission` remain available only as experimental/development GUI panels.
 - snapshot browsing should stay lightweight even after advanced analysis has been loaded.
 - derived outputs remain quick-look tools, not publication-grade forward models.
 

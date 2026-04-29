@@ -15,6 +15,7 @@ import time
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from helios.feature_flags import production_feature_visible
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters
 from helios.services.derived.common import load_run_data
@@ -1828,7 +1829,8 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.plasmon_splitter.setSizes([280, 1240])
         plasmon_layout.addWidget(self.plasmon_splitter, 1)
         self._sync_plasmon_plot_capabilities()
-        self._module_tab_names[self.result_tabs.addTab(self.plasmon_tab, "Plasmon")] = "plasmon"
+        if production_feature_visible("plasmon"):
+            self._module_tab_names[self.result_tabs.addTab(self.plasmon_tab, "Plasmon")] = "plasmon"
 
         self.transmission_tab = QtWidgets.QWidget()
         transmission_layout = QtWidgets.QVBoxLayout(self.transmission_tab)
@@ -1910,7 +1912,8 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.transmission_table.horizontalHeader().setStretchLastSection(True)
         self.transmission_table.verticalHeader().setVisible(False)
         transmission_layout.addWidget(self.transmission_table)
-        self._module_tab_names[self.result_tabs.addTab(self.transmission_tab, "Transmission")] = "transmission"
+        if production_feature_visible("transmission"):
+            self._module_tab_names[self.result_tabs.addTab(self.transmission_tab, "Transmission")] = "transmission"
         self._configure_transmission_energy_spin(energy_kev=8.0)
         self._on_transmission_controls_changed()
 
@@ -5196,6 +5199,8 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             view_scope="xrd",
             preferred_time_key=("bragg_shift" if display_mode == "degrees" else "q_compressed"),
         )
+        self.xrd_plot_panel._set_combo_key(self.xrd_plot_panel.time_combo, "bragg_shift" if display_mode == "degrees" else "q_compressed")
+        self.xrd_plot_panel._render_time_bundle()
         self.xrd_table.setRowCount(len(xrd.layers))
         if display_mode == "q":
             self.xrd_table.setHorizontalHeaderLabels(["Region", f"rho [{self._density_unit()}]", "rho/rho0", "d/d0", "Q0", "Q", "Delta Q", f"Thickness [{self._length_unit()}]"])

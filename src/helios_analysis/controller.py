@@ -18,6 +18,7 @@ from PySide6 import QtCore
 
 from helios.cache import AnalyzerCacheSet
 from helios.cancellation import CancellationToken
+from helios.feature_flags import production_feature_visible
 from helios.instrumentation import increment_counter, snapshot_metrics
 from helios.runtime import RunContext
 from helios.services.derived import (
@@ -404,6 +405,9 @@ class DerivedController(QtCore.QObject):
         return self._displayed_result
 
     def _schedule_transmission_refine(self) -> None:
+        if not production_feature_visible("transmission"):
+            self._set_busy(False, "Transmission is hidden in production mode.")
+            return
         if not self._context.has_run or self._context.path is None or not self._workspace_alive or self._shutting_down or not self._active:
             return
         parameters = self._workspace.parameters()
