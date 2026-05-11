@@ -13,7 +13,7 @@ viewing, and derived analysis.
 
 The current shareable bundle is:
 
-- `outputs/release/helios-parser-viewer-v1.1.1.zip` after building the current patch release
+- `outputs/release/helios-parser-viewer-v1.1.2.zip` after building the current patch release
 
 ## Quick start on Windows
 
@@ -51,6 +51,23 @@ If you unpack the release archive instead of working from the repo:
 - Linux: run `run_helios_analyzer.sh`
 
 Those launcher scripts are also stored in [`release_assets/`](release_assets/).
+
+## Runtime artifacts
+
+The project also builds no-install or system-package runtime artifacts:
+
+- Windows portable ZIP: extract
+  `outputs/distributables/helios-parser-viewer-v1.1.2-windows-portable.zip`
+  and double-click `HeliosParseView.exe`.
+- Debian package:
+  `sudo apt install ./outputs/distributables/helios-parser-viewer_1.1.2_all.deb`,
+  then run `helios-parse-view` or `helios-to-hdf5`.
+- Linux portable fallback:
+  extract `outputs/distributables/helios-parser-viewer-v1.1.2-linux-portable.tar.gz`
+  and run `bin/helios-parse-view` on a system that already has the documented
+  Python/Qt runtime packages.
+
+Maintainer build details are in [`docs/packaging.md`](docs/packaging.md).
 
 ## Where to start reading
 

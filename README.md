@@ -3,7 +3,7 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `1.1.1`
+- Release: `1.1.2`
 - Release date: `2026-05-11`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
@@ -76,6 +76,7 @@ Start with the documentation index:
 - [Release notes](docs/release-notes.html)
 - [BPF H5D schema](docs/bpf_h5d_schema.md)
 - [BPF deep forensic analysis](docs/bpf_deep_forensic_analysis.md)
+- [Packaging and distributable artifacts](docs/packaging.md)
 - [Architecture reference](docs/architecture_extension.md)
 - [Plasmon XRTS observable note](docs/plasmon_xrts_observable.md)
 - [Startup manual](STARTUP_MANUAL.md)
@@ -84,7 +85,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parser-viewer-v1.1.1.zip`
+- `outputs/release/helios-parser-viewer-v1.1.2.zip`
 
 The bundle includes:
 
@@ -99,6 +100,32 @@ Use:
 ```powershell
 python scripts\create_release_bundle.py
 ```
+
+## Runtime artifacts
+
+Windows portable, Debian package, and Linux portable fallback builds are
+documented in [Packaging and Distributable Artifacts](docs/packaging.md).
+
+```powershell
+python scripts\build_windows_portable.py
+python scripts\validate_windows_portable.py
+python scripts\build_debian_package.py
+python scripts\build_linux_portable_tarball.py
+```
+
+Expected artifact names:
+
+- `outputs/distributables/helios-parser-viewer-v1.1.2-windows-portable.zip`
+- `outputs/distributables/helios-parser-viewer_1.1.2_all.deb`
+- `outputs/distributables/helios-parser-viewer-v1.1.2-linux-portable.tar.gz`
+
+## Changelog 1.1.2
+
+- added a real Windows portable PyInstaller runtime with GUI and parser CLI executables
+- added a Debian package builder with `/opt/helios-parser-viewer` layout and `/usr/bin` launchers
+- added a documented Linux portable tarball fallback for environments where AppImage is not built
+- documented distributable artifact build, usage, and validation steps
+- fixed packaged viewer resource inclusion for SVG toolbar/action icons
 
 ## Changelog 1.1.1
 

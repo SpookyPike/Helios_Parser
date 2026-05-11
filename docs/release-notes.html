@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HELIOS Parse / View Release Notes 1.1.1</title>
+  <title>HELIOS Parse / View Release Notes 1.1.2</title>
   <link rel="stylesheet" href="assets/manual.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>Release Notes</h1>
         <p>
-          HELIOS Parse / View 1.1.1, released 2026-05-11.
+          HELIOS Parse / View 1.1.2, released 2026-05-11.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
       </div>
@@ -28,26 +28,33 @@
 
   <main>
     <section>
-      <h2>Why 1.1.1</h2>
+      <h2>Why 1.1.2</h2>
       <p>
-        This patch hardens the 1.1 production parser/reader pipeline after clean-room acceptance validation, with emphasis
-        on rich BPF viewer usability, portable release packaging, and clean-clone tests.
+        This patch adds tested distributable runtime artifacts for the 1.1 production parser/viewer application, with emphasis
+        on no-install Windows use, Debian package layout, and clear Linux portable limitations.
       </p>
     </section>
 
     <section>
       <h2>Highlights in this release</h2>
       <ul>
-        <li>viewer routing now uses field axes, so frequency, node, boundary, and raw BPF vectors no longer render as zone fields</li>
-        <li>field browser filters by source, status, and axes, with compatibility aliases hidden by default</li>
-        <li>expected malformed-input CLI failures now produce concise parse errors instead of Python tracebacks</li>
-        <li>startup documentation and release packaging no longer rely on developer-machine paths or untracked root logs</li>
-        <li>release examples now include a schema-2.0 BPF-derived HDF5 file</li>
+        <li>Windows portable artifact bundles the desktop app, parser CLI, Python runtime, Qt/PySide, h5py, NumPy, pyqtgraph, icons, samples, and schema-2.0 example</li>
+        <li>Debian package installs application files under <code>/opt/helios-parser-viewer</code> and exposes <code>/usr/bin</code> launchers</li>
+        <li>Linux portable fallback tarball is documented honestly as source-runtime portable, not an AppImage</li>
+        <li>packaged Windows executable was smoke-tested from extraction without source-tree <code>PYTHONPATH</code></li>
       </ul>
     </section>
 
     <section>
       <h2>Changelog</h2>
+      <h3>1.1.2</h3>
+      <ul>
+        <li>added PyInstaller-based Windows portable runtime build and validation scripts</li>
+        <li>added Debian package builder with package metadata, system launchers, desktop entry, icon, sample data, and schema-2.0 example</li>
+        <li>added Linux portable tarball fallback and documented why AppImage is not produced by this Windows-based workflow</li>
+        <li>included SVG UI icons in package data so installed/packaged viewer resources are complete</li>
+        <li>documented build and usage instructions for runtime artifacts</li>
+      </ul>
       <h3>1.1.1</h3>
       <ul>
         <li>fixed viewer plotting for <code>time,frequency</code>, <code>time,node</code>, <code>time,boundary</code>, and <code>time,bpf_record_value</code> fields</li>
@@ -107,7 +114,7 @@
         <li>selected demo HDF5 examples under <code>examples/</code></li>
       </ul>
       <p>
-        The 1.1.1 bundle intentionally omits tests, reports, old release outputs, and legacy shadow source files. Experimental Transmission/XCOM support remains in source behind development flags.
+        The 1.1.2 bundle intentionally omits tests, reports, old release outputs, and legacy shadow source files. Experimental Transmission/XCOM support remains in source behind development flags.
       </p>
     </section>
 
@@ -120,7 +127,7 @@
       <ul>
         <li>Author: Dmitrii Bespalov</li>
         <li>Organization: European XFEL</li>
-        <li>Release: 1.1.1</li>
+        <li>Release: 1.1.2</li>
         <li>Date: 2026-05-11</li>
       </ul>
     </section>
