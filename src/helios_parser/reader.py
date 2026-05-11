@@ -62,6 +62,21 @@ class VisarReadinessStatus:
     support: VisarSupportMetadata
 
 
+@dataclass(frozen=True, slots=True)
+class FieldMetadata:
+    name: str
+    shape: tuple[int, ...]
+    dtype: str
+    source: str
+    dimensions: tuple[str, ...]
+    unit: str
+    label: str
+    status: str
+    description: str = ""
+    plotting_hints: dict[str, Any] | None = None
+    alias_of: str | None = None
+
+
 def _normalize_loaded_value(value: Any) -> Any:
     if isinstance(value, bytes):
         return value.decode("utf-8")
@@ -94,6 +109,26 @@ def _read_group(group: h5py.Group) -> dict[str, Any]:
     return values
 
 
+def _decode_attr(value: Any) -> Any:
+    if isinstance(value, bytes):
+        return value.decode("utf-8")
+    if isinstance(value, np.generic):
+        return value.item()
+    return value
+
+
+def _json_attr(value: Any, default: Any) -> Any:
+    value = _decode_attr(value)
+    if value is None or value == "":
+        return default
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return default
+    return value
+
+
 class HeliosRun:
     """Open a stabilized HELIOS HDF5 file with lazy dataset access."""
 
@@ -106,6 +141,7 @@ class HeliosRun:
             self._time_datasets = {name: dataset for name, dataset in self._groups["time"].items()}
             self._field_datasets = {name: dataset for name, dataset in self._groups["fields"].items()}
             self._diagnostic_datasets = self._index_diagnostics(self._groups["diagnostics"])
+            self._field_metadata_group = self._handle.get("field_metadata")
         self._metadata_cache: dict[str, Any] | None = None
         self._regions_cache: dict[str, Any] | None = None
         self._materials_cache: dict[str, Any] | None = None
@@ -117,6 +153,7 @@ class HeliosRun:
         self._zone_region_ids: np.ndarray | None = None
         self._zone_material_ids: np.ndarray | None = None
         self._field_names = self._load_field_names()
+        self._field_metadata_cache: dict[str, FieldMetadata] | None = None
 
     def _index_diagnostics(self, group: h5py.Group) -> dict[str, h5py.Dataset]:
         datasets: dict[str, h5py.Dataset] = {}
@@ -133,8 +170,50 @@ class HeliosRun:
         if "available_fields" in metadata_group:
             values = _read_dataset(metadata_group["available_fields"])
             if isinstance(values, np.ndarray):
-                return tuple(str(value) for value in values.tolist())
+                return tuple(str(value) for value in values.tolist() if str(value) in self._field_datasets)
         return tuple(self._field_datasets)
+
+    def _metadata_from_attrs(self, name: str, dataset: h5py.Dataset) -> FieldMetadata:
+        attr_source: dict[str, Any] = {}
+        attr_source.update({key: _decode_attr(value) for key, value in dataset.attrs.items()})
+        field_metadata_group = getattr(self, "_field_metadata_group", None)
+        if isinstance(field_metadata_group, h5py.Group) and name in field_metadata_group:
+            attr_source.update({key: _decode_attr(value) for key, value in field_metadata_group[name].attrs.items()})
+        dimensions = _json_attr(attr_source.get("dimensions"), None)
+        dataset_shape = tuple(int(value) for value in dataset.shape)
+        dataset_ndim = len(dataset_shape)
+        if dimensions is None:
+            if dataset_ndim == 2 and dataset_shape[0] == self.n_snapshots and dataset_shape[1] == self.n_zones:
+                dimensions = ("time", "zone")
+            elif dataset_ndim >= 1 and dataset_shape[0] == self.n_snapshots:
+                dimensions = ("time",) + tuple(f"axis_{index}" for index in range(1, dataset_ndim))
+            else:
+                dimensions = tuple(f"axis_{index}" for index in range(dataset_ndim))
+        plotting_hints = _json_attr(attr_source.get("plotting_hints"), None)
+        dtype = getattr(dataset, "dtype", None)
+        if dtype is None and hasattr(dataset, "values"):
+            dtype = np.asarray(dataset.values).dtype
+        return FieldMetadata(
+            name=str(attr_source.get("field_name", name) or name),
+            shape=dataset_shape,
+            dtype=str(dtype or ""),
+            source=str(attr_source.get("source", "unknown") or "unknown"),
+            dimensions=tuple(str(value) for value in dimensions),
+            unit=str(attr_source.get("units", attr_source.get("unit", "")) or ""),
+            label=str(attr_source.get("label", name) or name),
+            status=str(attr_source.get("status", "legacy") or "legacy"),
+            description=str(attr_source.get("description", "") or ""),
+            plotting_hints=plotting_hints if isinstance(plotting_hints, dict) else None,
+            alias_of=str(attr_source["alias_of"]) if attr_source.get("alias_of") else None,
+        )
+
+    def _load_field_metadata(self) -> dict[str, FieldMetadata]:
+        if getattr(self, "_field_metadata_cache", None) is None:
+            self._field_metadata_cache = {
+                name: self._metadata_from_attrs(name, dataset)
+                for name, dataset in self._field_datasets.items()
+            }
+        return self._field_metadata_cache
 
     def _coordinate_model(self) -> dict[str, Any]:
         if self._coordinate_model_cache is not None:
@@ -595,6 +674,49 @@ class HeliosRun:
     def list_fields(self) -> list[str]:
         return list(self._field_names)
 
+    def list_field_metadata(self) -> dict[str, FieldMetadata]:
+        return {name: self._load_field_metadata()[name] for name in self._field_names if name in self._load_field_metadata()}
+
+    def get_field_metadata(self, field_name: str) -> FieldMetadata:
+        self._get_field_dataset(field_name)
+        return self._load_field_metadata()[field_name]
+
+    def has_field(self, field_name: str) -> bool:
+        return field_name in self._field_datasets
+
+    def get_field_axes(self, field_name: str) -> tuple[str, ...]:
+        return self.get_field_metadata(field_name).dimensions
+
+    def get_field_label(self, field_name: str) -> str:
+        return self.get_field_metadata(field_name).label
+
+    def get_field_plotting_hints(self, field_name: str) -> dict[str, Any]:
+        return dict(self.get_field_metadata(field_name).plotting_hints or {})
+
+    def plotting_modes_for_field(self, field_name: str) -> tuple[str, ...]:
+        axes = self.get_field_axes(field_name)
+        if axes == ("time", "zone"):
+            return ("time_map", "snapshot_profile", "zone_trace")
+        if axes == ("time", "node"):
+            return ("node_time_map", "snapshot_node_profile", "node_trace")
+        if axes == ("time", "frequency"):
+            return ("spectral_evolution", "spectrum", "frequency_trace")
+        if axes == ("time", "frequency_edge"):
+            return ("axis_values",)
+        if axes == ("time", "boundary"):
+            return ("boundary_trace",)
+        if axes == ("time", "zone", "charge_state"):
+            return ("ionization_fraction", "charge_state_profile", "dominant_charge_summary")
+        if axes == ("time", "summary_value"):
+            return ("summary_vector", "time_series")
+        if axes == ("time", "header_value"):
+            return ("header_vector", "time_series")
+        if axes == ("time", "bpf_record_value"):
+            return ("raw_vector", "time_series")
+        if axes and axes[0] == "time":
+            return ("time_series",)
+        return ("array",)
+
     def list_diagnostics(self) -> list[str]:
         return sorted(self._diagnostic_datasets)
 
@@ -607,9 +729,9 @@ class HeliosRun:
     def get_field_unit(self, field_name: str) -> str:
         if field_name == "radius":
             if "radius" in self._field_datasets:
-                return str(self._field_datasets["radius"].attrs.get("units", ""))
+                return self.get_field_metadata("radius").unit
             return self.get_grid_unit("x")
-        return str(self._get_field_dataset(field_name).attrs.get("units", ""))
+        return self.get_field_metadata(field_name).unit
 
     def get_grid_unit(self, name: str = "x") -> str:
         if name in {"x", "coordinate_center"}:
@@ -638,8 +760,11 @@ class HeliosRun:
         *,
         time_slice: slice | int | None = None,
         zone_slice: slice | int | None = None,
+        selection: Any = None,
     ) -> np.ndarray:
-        """Return a full field or a sliced ``field(time, zone)`` view."""
+        """Return a field array with schema-aware legacy time/zone slicing."""
+        if selection is not None:
+            return self._get_field_dataset(field_name)[selection]
         if field_name == "radius":
             time_index = slice(None) if time_slice is None else time_slice
             zone_index = slice(None) if zone_slice is None else zone_slice
@@ -654,8 +779,24 @@ class HeliosRun:
             return np.asarray(values[time_index, zone_index], dtype=np.float64)
         dataset = self._get_field_dataset(field_name)
         time_index = slice(None) if time_slice is None else time_slice
-        zone_index = slice(None) if zone_slice is None else zone_slice
-        return dataset[time_index, zone_index]
+        dataset_ndim = len(tuple(dataset.shape))
+        if dataset_ndim == 0:
+            return dataset[()]
+        axes = self.get_field_axes(field_name)
+        index: list[Any] = [slice(None)] * dataset_ndim
+        if axes and axes[0] == "time":
+            index[0] = time_index
+        elif time_slice is not None:
+            index[0] = time_index
+        if zone_slice is not None:
+            try:
+                zone_axis = axes.index("zone")
+            except ValueError:
+                if dataset_ndim < 2:
+                    raise KeyError(f"Field {field_name!r} has no zone axis.")
+                zone_axis = 1
+            index[zone_axis] = zone_slice
+        return dataset[tuple(index)]
 
     def get_snapshot_field(self, field_name: str, snapshot_index: int) -> np.ndarray:
         return self.get_field(field_name, time_slice=self._normalize_snapshot_index(snapshot_index))
@@ -686,6 +827,9 @@ class HeliosRun:
                 attr_location = str(radius_dataset.attrs.get("coordinate_location", "")).strip().lower()
                 if attr_location == "center":
                     return np.asarray(radius_dataset[time_index, normalized_zone], dtype=np.float64)
+        axes = self.get_field_axes(field_name)
+        if "zone" not in axes:
+            raise KeyError(f"Field {field_name!r} has no zone axis. Axes: {axes}.")
         return np.asarray(self.get_field(field_name, time_slice=time_slice, zone_slice=normalized_zone), dtype=np.float64)
 
     def get_time(self, name: str = "time", selection: slice | int | None = None) -> np.ndarray:

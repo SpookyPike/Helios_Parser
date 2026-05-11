@@ -33,6 +33,7 @@ class OpenRunPayload:
     radius_unit: str
     run_status: dict[str, Any] | None = None
     visar_support_metadata: dict[str, Any] | None = None
+    field_metadata: dict[str, Any] | None = None
 
 
 @dataclass(slots=True)

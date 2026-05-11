@@ -22,7 +22,7 @@ from pathlib import Path
 import h5py
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from helios_viewer.icon import apply_application_icon
+from helios_viewer.icon import apply_application_icon, load_ui_icon, set_button_icon
 from helios_viewer.slider import apply_absolute_click_slider_behavior
 from helios_viewer.style import THEME_MODES, build_mono_font, configure_application, configure_combo_box_interaction
 
@@ -262,6 +262,39 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
 
         self.about_action = QtGui.QAction("About", self)
         self.about_action.triggered.connect(self._show_about_dialog)
+        self._assign_action_icons()
+
+    def _assign_action_icons(self) -> None:
+        action_icons = (
+            (self.open_log_action, "file-log"),
+            (self.open_hdf5_action, "hdf5"),
+            (self.export_action, "export"),
+            (self.parse_action, "parse"),
+            (self.open_viewer_action, "viewer"),
+            (self.parser_mode_action, "parser"),
+            (self.viewer_mode_action, "viewer"),
+            (self.derived_mode_action, "analysis"),
+            (self.units_action, "settings"),
+            (self.settings_action, "settings"),
+            (self.reset_settings_action, "reset"),
+            (self.about_action, "help"),
+        )
+        for action, icon_name in action_icons:
+            icon = load_ui_icon(icon_name, size=18)
+            if not icon.isNull():
+                action.setIcon(icon)
+
+    def _assign_button_icons(self) -> None:
+        button_icons = (
+            ("jump_breakout_button", "jump"),
+            ("refresh_preview_button", "refresh"),
+            ("parse_button", "parse"),
+            ("open_viewer_button", "viewer"),
+        )
+        for attribute, icon_name in button_icons:
+            button = getattr(self, attribute, None)
+            if isinstance(button, QtWidgets.QAbstractButton):
+                set_button_icon(button, icon_name)
 
     def _build_menus(self) -> None:
         file_menu = self.menuBar().addMenu("&File")
@@ -294,7 +327,8 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         toolbar = QtWidgets.QToolBar("Application", self)
         toolbar.setMovable(False)
         toolbar.setFloatable(False)
-        toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextOnly)
+        toolbar.setIconSize(QtCore.QSize(18, 18))
+        toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
         toolbar.addAction(self.open_log_action)
         toolbar.addAction(self.open_hdf5_action)
         toolbar.addSeparator()
@@ -341,6 +375,7 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.global_time_spin)
 
         self.jump_breakout_button = QtWidgets.QPushButton("Jump breakout")
+        set_button_icon(self.jump_breakout_button, "jump")
         self.jump_breakout_button.clicked.connect(self._jump_to_breakout_snapshot)
         self.jump_breakout_button.setEnabled(False)
         self.jump_breakout_button.setToolTip(self._breakout_reason)
@@ -403,6 +438,7 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         options_layout = QtWidgets.QFormLayout(options_group)
         self.output_path_edit = QtWidgets.QLineEdit()
         browse_output_button = QtWidgets.QPushButton("Browse...")
+        set_button_icon(browse_output_button, "folder")
         browse_output_button.clicked.connect(self._browse_output_path)
         output_widget = QtWidgets.QWidget()
         output_layout = QtWidgets.QHBoxLayout(output_widget)
@@ -429,10 +465,13 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
 
         button_row = QtWidgets.QHBoxLayout()
         self.refresh_preview_button = QtWidgets.QPushButton("Refresh Preview")
+        set_button_icon(self.refresh_preview_button, "refresh")
         self.refresh_preview_button.clicked.connect(self._refresh_current_preview)
         self.parse_button = QtWidgets.QPushButton("Parse to HDF5")
+        set_button_icon(self.parse_button, "parse")
         self.parse_button.clicked.connect(self._start_parse_from_controls)
         self.open_viewer_button = QtWidgets.QPushButton("Open in Viewer")
+        set_button_icon(self.open_viewer_button, "viewer")
         self.open_viewer_button.clicked.connect(self._open_last_result_in_viewer)
         button_row.addWidget(self.refresh_preview_button)
         button_row.addWidget(self.parse_button)
@@ -682,14 +721,20 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
     def _set_theme_mode(self, mode: str) -> None:
         self.viewer_controller.set_theme_mode(mode)
         self.derived_controller.set_theme_mode(mode)
+        self._assign_action_icons()
+        self._assign_button_icons()
         self._sync_theme_actions()
 
     def _open_viewer_settings(self) -> None:
         self.viewer_controller.open_settings_dialog()
+        self._assign_action_icons()
+        self._assign_button_icons()
         self._sync_theme_actions()
 
     def _reset_viewer_settings(self) -> None:
         self.viewer_controller.reset_settings_to_defaults()
+        self._assign_action_icons()
+        self._assign_button_icons()
         self._sync_theme_actions()
 
     def _on_viewer_settings_changed(self, settings: object) -> None:

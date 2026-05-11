@@ -22,6 +22,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from .controller import RunController
+from .icon import load_ui_icon, set_button_icon
 from .models import DiagnosticPayload, FieldPayload, OpenRunPayload
 from .plots import CurvePlotWidget, FieldMapWidget
 from .slider import apply_absolute_click_slider_behavior
@@ -423,20 +424,20 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self._update_slice_control_state()
 
     def _build_ui(self) -> None:
-        open_action = QtGui.QAction("&Open HDF5...", self)
-        open_action.triggered.connect(self.open_file_dialog)
-        export_action = QtGui.QAction("&Export Plot...", self)
-        export_action.triggered.connect(self.export_screenshot)
-        settings_action = QtGui.QAction("&Settings...", self)
-        settings_action.triggered.connect(self._open_settings_dialog)
-        reset_settings_action = QtGui.QAction("&Reset Viewer Settings", self)
-        reset_settings_action.triggered.connect(self._reset_preferences_to_defaults)
+        self.open_action = QtGui.QAction("&Open HDF5...", self)
+        self.open_action.triggered.connect(self.open_file_dialog)
+        self.export_action = QtGui.QAction("&Export Plot...", self)
+        self.export_action.triggered.connect(self.export_screenshot)
+        self.settings_action = QtGui.QAction("&Settings...", self)
+        self.settings_action.triggered.connect(self._open_settings_dialog)
+        self.reset_settings_action = QtGui.QAction("&Reset Viewer Settings", self)
+        self.reset_settings_action.triggered.connect(self._reset_preferences_to_defaults)
         quit_action = QtGui.QAction("&Quit", self)
         quit_action.triggered.connect(self.close)
 
         file_menu = self.menuBar().addMenu("&File")
-        file_menu.addAction(open_action)
-        file_menu.addAction(export_action)
+        file_menu.addAction(self.open_action)
+        file_menu.addAction(self.export_action)
         file_menu.addSeparator()
         file_menu.addAction(quit_action)
 
@@ -451,8 +452,8 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             self.theme_action_group.addAction(action)
             theme_menu.addAction(action)
             self.theme_actions[mode] = action
-        view_menu.addAction(settings_action)
-        view_menu.addAction(reset_settings_action)
+        view_menu.addAction(self.settings_action)
+        view_menu.addAction(self.reset_settings_action)
 
         self._workspace_widget = HeliosViewerWorkspace()
         self.setCentralWidget(self._workspace_widget)
@@ -502,6 +503,36 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self.statusBar().addWidget(self.status_message, 1)
         self.busy_indicator = QtWidgets.QLabel("")
         self.statusBar().addPermanentWidget(self.busy_indicator)
+        self._assign_command_icons()
+
+    def _assign_command_icons(self) -> None:
+        action_icons = (
+            ("open_action", "hdf5", 18),
+            ("export_action", "export", 18),
+            ("settings_action", "settings", 18),
+            ("reset_settings_action", "reset", 18),
+            ("plot_pan_action", "pan", 16),
+            ("plot_zoom_action", "zoom", 16),
+            ("plot_home_action", "home", 16),
+            ("plot_save_action", "export", 16),
+        )
+        for attribute, icon_name, size in action_icons:
+            action = getattr(self, attribute, None)
+            if isinstance(action, QtGui.QAction):
+                icon = load_ui_icon(icon_name, size=size)
+                if not icon.isNull():
+                    action.setIcon(icon)
+        button_icons = (
+            ("open_button", "hdf5"),
+            ("apply_levels_button", "refresh"),
+            ("auto_levels_button", "refresh"),
+            ("reset_view_button", "reset"),
+            ("resume_hover_button", "refresh"),
+        )
+        for attribute, icon_name in button_icons:
+            button = getattr(self, attribute, None)
+            if isinstance(button, QtWidgets.QAbstractButton):
+                set_button_icon(button, icon_name)
 
     def _install_wheel_guard(self) -> None:
         guarded_widgets = (
@@ -538,9 +569,10 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
-        open_button = QtWidgets.QPushButton("Open HDF5 File...")
-        open_button.clicked.connect(self.open_file_dialog)
-        layout.addWidget(open_button)
+        self.open_button = QtWidgets.QPushButton("Open HDF5 File...")
+        set_button_icon(self.open_button, "hdf5")
+        self.open_button.clicked.connect(self.open_file_dialog)
+        layout.addWidget(self.open_button)
 
         self.file_label = QtWidgets.QLabel("No file loaded")
         self.file_label.setWordWrap(True)
@@ -666,6 +698,7 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self.level_max_edit = QtWidgets.QLineEdit()
         self.level_max_edit.setPlaceholderText("max")
         self.apply_levels_button = QtWidgets.QPushButton("Apply")
+        set_button_icon(self.apply_levels_button, "refresh")
         self.apply_levels_button.clicked.connect(self._refresh_field_map_preserving_view)
         manual_layout.addWidget(self.level_min_edit)
         manual_layout.addWidget(self.level_max_edit)
@@ -676,8 +709,10 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         button_layout.setContentsMargins(0, 0, 0, 0)
         button_layout.setSpacing(4)
         self.auto_levels_button = QtWidgets.QPushButton("Auto color range")
+        set_button_icon(self.auto_levels_button, "refresh")
         self.auto_levels_button.clicked.connect(self._reset_color_levels)
         self.reset_view_button = QtWidgets.QPushButton("Reset plot views")
+        set_button_icon(self.reset_view_button, "reset")
         self.reset_view_button.clicked.connect(self._reset_plot_views)
         button_layout.addWidget(self.auto_levels_button)
         button_layout.addWidget(self.reset_view_button)
@@ -805,17 +840,19 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         toolbar.setIconSize(QtCore.QSize(16, 16))
         toolbar.setMovable(False)
         toolbar.setFloatable(False)
-        toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextOnly)
+        toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
 
         action_group = QtGui.QActionGroup(toolbar)
         action_group.setExclusive(True)
         self.plot_pan_action = QtGui.QAction("Pan", toolbar, checkable=True)
+        self.plot_pan_action.setIcon(load_ui_icon("pan", size=16))
         self.plot_pan_action.setToolTip("Drag to pan the visible plots.")
         self.plot_pan_action.triggered.connect(lambda checked=False: self._set_plot_navigation_mode("pan"))
         action_group.addAction(self.plot_pan_action)
         toolbar.addAction(self.plot_pan_action)
 
         self.plot_zoom_action = QtGui.QAction("Zoom", toolbar, checkable=True)
+        self.plot_zoom_action.setIcon(load_ui_icon("zoom", size=16))
         self.plot_zoom_action.setToolTip("Drag a rectangle to zoom the visible plots.")
         self.plot_zoom_action.triggered.connect(lambda checked=False: self._set_plot_navigation_mode("zoom"))
         action_group.addAction(self.plot_zoom_action)
@@ -824,11 +861,13 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         toolbar.addSeparator()
 
         self.plot_home_action = QtGui.QAction("Home", toolbar)
+        self.plot_home_action.setIcon(load_ui_icon("home", size=16))
         self.plot_home_action.setToolTip("Reset the visible plot views.")
         self.plot_home_action.triggered.connect(self._reset_plot_views)
         toolbar.addAction(self.plot_home_action)
 
         self.plot_save_action = QtGui.QAction("Save", toolbar)
+        self.plot_save_action.setIcon(load_ui_icon("export", size=16))
         self.plot_save_action.setToolTip("Export the current viewer or plot as a practical PNG.")
         self.plot_save_action.triggered.connect(self.export_screenshot)
         toolbar.addAction(self.plot_save_action)
@@ -853,6 +892,7 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self.mouse_mode_probe_label.setWordWrap(True)
         self.mouse_mode_probe_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
         self.resume_hover_button = QtWidgets.QPushButton("Resume Hover")
+        set_button_icon(self.resume_hover_button, "refresh")
         self.resume_hover_button.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         self.resume_hover_button.clicked.connect(self._resume_hover_probe)
         summary_layout.addWidget(self.mouse_mode_state_label, 0)
@@ -1142,6 +1182,7 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self._theme_mode = normalized
         self._theme = apply_theme(QtWidgets.QApplication.instance(), normalized)
         self._apply_theme_to_widgets()
+        self._assign_command_icons()
         if normalized in self.theme_actions and not self.theme_actions[normalized].isChecked():
             self.theme_actions[normalized].setChecked(True)
         if not self._suppress_preference_persist:
@@ -1713,7 +1754,10 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             unit = self._display_field_unit(field_name, payload.field_units.get(field_name, ""))
             item = QtWidgets.QListWidgetItem(_field_item_text(field_name, unit))
             item.setData(QtCore.Qt.UserRole, field_name)
-            item.setToolTip(field_name)
+            metadata = (payload.field_metadata or {}).get(field_name, {})
+            axes = metadata.get("dimensions", ()) if isinstance(metadata, dict) else ()
+            label = metadata.get("label", field_name) if isinstance(metadata, dict) else field_name
+            item.setToolTip(f"{label}\nAxes: {', '.join(axes) if axes else 'legacy'}")
             self.field_list.addItem(item)
 
         self.diagnostic_list.clear()
@@ -3774,6 +3818,16 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             self._update_mouse_mode_state()
             return
         if payload.field_name != self.current_field_name:
+            return
+        if payload.data.ndim != 2:
+            metadata = (self.run_payload.field_metadata or {}).get(payload.field_name, {}) if self.run_payload is not None else {}
+            axes = metadata.get("dimensions", ()) if isinstance(metadata, dict) else ()
+            self._set_status_message(
+                f"Loaded {payload.field_name}: axes {', '.join(axes) if axes else payload.data.shape}; "
+                "use schema-aware analysis APIs for non-zone/time fields."
+            )
+            self.current_field_payload = None
+            self.field_visualized.emit(payload.field_name)
             return
         initial_field_render = self.current_field_payload is None
         self.current_field_payload = payload

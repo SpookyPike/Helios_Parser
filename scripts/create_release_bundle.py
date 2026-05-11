@@ -31,13 +31,14 @@ OUTPUT_DIRECTORIES_TO_COPY: tuple[tuple[str, Path], ...] = ()
 
 SCRIPT_FILES_TO_COPY = (
     "scripts/create_release_bundle.py",
+    "scripts/inspect_bpf.py",
+    "scripts/plot_bpf_extra_fields.py",
 )
 
 FILES_TO_COPY = (
     "README.md",
     "pyproject.toml",
     "app_icon.png",
-    "helios_xcom_integration.zip",
     "XCOM.tar.gz",
     "5Fe+4.9TW+light.log",
     "25Cu+1.4TW.log",

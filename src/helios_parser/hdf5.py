@@ -11,11 +11,14 @@ import h5py
 import numpy as np
 
 from helios.instrumentation import record_duration
+from .bpf import LOG_COMPATIBLE_BPF_ALIASES, BpfFile, alias_metadata, field_metadata_for_bpf_key
 from .document import diagnostic_value_width, flatten_snapshot_diagnostics, normalize_diagnostic_value, reconcile_diagnostic_width
 from .parser import HeliosParser
 
 LOGGER = logging.getLogger(__name__)
 STRING_DTYPE = h5py.string_dtype(encoding="utf-8")
+H5D_SCHEMA_VERSION = "2.0"
+SUPPORTED_INPUT_SUFFIXES = {".log", ".bpf"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,9 +32,52 @@ class WriteProgress:
     message: str
 
 
+@dataclass(frozen=True, slots=True)
+class ParseSourceSelection:
+    requested_path: Path
+    primary_path: Path
+    bpf_path: Path | None
+    log_path: Path | None
+    mode: str
+    source_precedence: str
+
+
 def _set_unit_attrs(dataset: h5py.Dataset, unit: str) -> None:
     dataset.attrs["unit"] = unit
     dataset.attrs["units"] = unit
+
+
+def _json_attr(value: Any) -> str:
+    return json.dumps(value, separators=(",", ":"))
+
+
+def _set_field_metadata(dataset: h5py.Dataset, metadata: dict[str, Any]) -> None:
+    unit = str(metadata.get("unit", metadata.get("units", "")) or "")
+    _set_unit_attrs(dataset, unit)
+    for key in ("field_name", "source", "label", "status", "description", "alias_of"):
+        if key in metadata and metadata[key] is not None:
+            dataset.attrs[key] = str(metadata[key])
+    dimensions = metadata.get("dimensions")
+    if dimensions is not None:
+        dataset.attrs["dimensions"] = _json_attr(tuple(str(value) for value in dimensions))
+    plotting_hints = metadata.get("plotting_hints")
+    if plotting_hints is not None:
+        dataset.attrs["plotting_hints"] = _json_attr(plotting_hints)
+
+
+def _write_field_metadata_group(field_metadata_group: h5py.Group, name: str, metadata: dict[str, Any]) -> None:
+    if name in field_metadata_group:
+        del field_metadata_group[name]
+    group = field_metadata_group.create_group(name)
+    stored = dict(metadata)
+    stored.setdefault("field_name", name)
+    for key, value in stored.items():
+        if isinstance(value, (dict, list, tuple)):
+            group.attrs[key] = _json_attr(value)
+        elif value is None:
+            group.attrs[key] = ""
+        else:
+            group.attrs[key] = str(value)
 
 
 def _create_1d(group: h5py.Group, name: str, shape: int, dtype, unit: str, *, maxshape=None, chunks=None) -> h5py.Dataset:
@@ -61,6 +107,9 @@ def _create_field_dataset(
     n_zones: int,
     unit: str,
     compression: str | None,
+    *,
+    metadata: dict[str, Any] | None = None,
+    field_metadata_group: h5py.Group | None = None,
 ) -> h5py.Dataset:
     dataset = group.create_dataset(
         name,
@@ -71,7 +120,16 @@ def _create_field_dataset(
         compression=compression,
         chunks=_field_chunk_shape(capacity, n_zones),
     )
-    _set_unit_attrs(dataset, unit)
+    if metadata is None:
+        _set_unit_attrs(dataset, unit)
+    else:
+        metadata = dict(metadata)
+        metadata.setdefault("field_name", name)
+        metadata.setdefault("unit", unit)
+        metadata.setdefault("dimensions", ("time", "zone"))
+        _set_field_metadata(dataset, metadata)
+        if field_metadata_group is not None:
+            _write_field_metadata_group(field_metadata_group, name, metadata)
     return dataset
 
 
@@ -212,6 +270,491 @@ def _input_parameter_unit(path: tuple[str, ...]) -> str:
     return units.get(path, "")
 
 
+def _find_bpf_companion(source: Path) -> Path | None:
+    if source.suffix.lower() == ".bpf":
+        return source if source.exists() else None
+    candidate = source.with_suffix(".bpf")
+    return candidate if candidate.exists() else None
+
+
+def _find_log_companion(source: Path) -> Path | None:
+    if source.suffix.lower() == ".log":
+        return source if source.exists() else None
+    candidate = source.with_suffix(".log")
+    return candidate if candidate.exists() else None
+
+
+def resolve_parse_sources(input_path: str | Path) -> ParseSourceSelection:
+    requested = Path(input_path)
+    suffix = requested.suffix.lower()
+    if suffix not in SUPPORTED_INPUT_SUFFIXES:
+        raise ValueError(f"Unsupported HELIOS input type '{requested.suffix}'. Expected one of: .log, .bpf.")
+    if not requested.exists():
+        raise FileNotFoundError(requested)
+
+    if suffix == ".bpf":
+        log_path = _find_log_companion(requested)
+        mode = "bpf_with_log_metadata" if log_path is not None else "bpf_only"
+        return ParseSourceSelection(
+            requested_path=requested,
+            primary_path=requested,
+            bpf_path=requested,
+            log_path=log_path,
+            mode=mode,
+            source_precedence="bpf_primary_log_metadata_exo_optional" if log_path is not None else "bpf_primary",
+        )
+
+    bpf_path = _find_bpf_companion(requested)
+    if bpf_path is not None:
+        return ParseSourceSelection(
+            requested_path=requested,
+            primary_path=bpf_path,
+            bpf_path=bpf_path,
+            log_path=requested,
+            mode="log_input_bpf_primary",
+            source_precedence="bpf_primary_log_metadata_exo_optional",
+        )
+    return ParseSourceSelection(
+        requested_path=requested,
+        primary_path=requested,
+        bpf_path=None,
+        log_path=requested,
+        mode="log_only",
+        source_precedence="log_only",
+    )
+
+
+def _bpf_chunk_shape(shape: tuple[int, ...]) -> tuple[int, ...]:
+    if not shape:
+        return ()
+    time_chunk = min(max(1, shape[0]), 16)
+    if len(shape) == 1:
+        return (time_chunk,)
+    return (time_chunk,) + tuple(max(1, width) for width in shape[1:])
+
+
+def _create_bpf_field_dataset(
+    fields_group: h5py.Group,
+    field_metadata_group: h5py.Group,
+    name: str,
+    sample: np.ndarray,
+    n_snapshots: int,
+    compression: str | None,
+    metadata: dict[str, Any],
+) -> h5py.Dataset:
+    array = np.asarray(sample)
+    shape = (int(n_snapshots),) + tuple(int(value) for value in array.shape)
+    dataset = fields_group.create_dataset(
+        name,
+        shape=shape,
+        dtype=array.dtype,
+        compression=compression if array.dtype.kind == "f" else None,
+        chunks=_bpf_chunk_shape(shape),
+    )
+    _set_field_metadata(dataset, metadata)
+    _write_field_metadata_group(field_metadata_group, name, metadata)
+    return dataset
+
+
+def _bpf_minimal_regions(region_index_by_zone: np.ndarray, n_zones: int) -> dict[str, np.ndarray]:
+    region_values = np.asarray(region_index_by_zone, dtype=np.int32)
+    if region_values.size != n_zones:
+        region_values = np.ones(n_zones, dtype=np.int32)
+    ids: list[int] = []
+    starts: list[int] = []
+    stops: list[int] = []
+    start = 0
+    for index in range(1, n_zones + 1):
+        if index == n_zones or region_values[index] != region_values[start]:
+            ids.append(int(region_values[start]))
+            starts.append(start + 1)
+            stops.append(index)
+            start = index
+    return {
+        "region_index": np.asarray(ids, dtype=np.int32),
+        "min_zone_index": np.asarray(starts, dtype=np.int32),
+        "max_zone_index": np.asarray(stops, dtype=np.int32),
+        "material_index": np.asarray(ids, dtype=np.int32),
+        "material_table_index": np.asarray([abs(value) for value in ids], dtype=np.int32),
+    }
+
+
+def _write_minimal_bpf_header_groups(
+    handle: h5py.File,
+    first_fields: dict[str, np.ndarray],
+    layout,
+    compression: str | None,
+) -> None:
+    node_position = np.asarray(first_fields["node_position_cm"], dtype=np.float64)
+    zone_width = np.diff(node_position)
+    zone_center = 0.5 * (node_position[:-1] + node_position[1:])
+    region_index_by_zone = np.asarray(first_fields.get("region_index_by_zone", np.ones(layout.n_zones)), dtype=np.int32)
+
+    grid_group = handle.create_group("grid")
+    for name, values, unit in (
+        ("coordinate_center", zone_center, "cm"),
+        ("coordinate_edge", node_position, "cm"),
+        ("x", zone_center, "cm"),
+        ("zone_id", np.arange(1, layout.n_zones + 1, dtype=np.int32), ""),
+        ("zone_width", zone_width, "cm"),
+        ("zone_mass", np.asarray(first_fields["zone_mass"], dtype=np.float64), "g/cm**X"),
+        ("zone_region_id", region_index_by_zone, ""),
+        ("zone_material_index", region_index_by_zone, ""),
+    ):
+        _write_array_dataset(grid_group, name, np.asarray(values), unit, compression=compression)
+    for dataset_name, location, dynamic, legacy_alias, role in (
+        ("coordinate_center", "center", False, False, "coordinate"),
+        ("coordinate_edge", "edge", False, False, "coordinate"),
+        ("x", "center", False, True, "coordinate"),
+        ("zone_width", "cell", False, False, "width"),
+    ):
+        _annotate_coordinate_dataset(
+            grid_group[dataset_name],
+            coordinate_name="x",
+            location=location,
+            dynamic=dynamic,
+            legacy_alias=legacy_alias,
+            role=role,
+        )
+
+    regions = _bpf_minimal_regions(region_index_by_zone, layout.n_zones)
+    regions_group = handle.create_group("regions")
+    for name, values in regions.items():
+        _write_array_dataset(regions_group, name, values, "", compression=compression)
+
+    materials_group = handle.create_group("materials")
+    material_ids = np.unique(np.abs(region_index_by_zone)).astype(np.int32)
+    if material_ids.size == 0:
+        material_ids = np.asarray([1], dtype=np.int32)
+    _write_array_dataset(materials_group, "index", material_ids, "", compression=None)
+    _write_array_dataset(materials_group, "eos_model", np.asarray([""] * material_ids.size, dtype=object), "", compression=None)
+    _write_array_dataset(materials_group, "opacity_model", np.asarray([""] * material_ids.size, dtype=object), "", compression=None)
+
+
+def _write_log_header_groups(
+    handle: h5py.File,
+    header,
+    source: Path,
+    compression: str | None,
+) -> None:
+    coordinate_model = dict(header.metadata.get("coordinate_model", {})) if isinstance(header.metadata.get("coordinate_model", {}), dict) else {}
+    coordinate_name = str(coordinate_model.get("coordinate_name", "x"))
+    grid_group = handle.create_group("grid")
+    for name, values in header.grid.items():
+        _write_array_dataset(grid_group, name, np.asarray(values), header.grid_units.get(name, ""), compression=compression)
+    for dataset_name, location, dynamic, legacy_alias, role in (
+        ("coordinate_center", "center", False, False, "coordinate"),
+        ("coordinate_edge", "edge", False, False, "coordinate"),
+        ("x", "center", False, True, "coordinate"),
+        ("zone_width", "cell", False, False, "width"),
+    ):
+        if dataset_name in grid_group:
+            _annotate_coordinate_dataset(
+                grid_group[dataset_name],
+                coordinate_name=coordinate_name,
+                location=location,
+                dynamic=dynamic,
+                legacy_alias=legacy_alias,
+                role=role,
+            )
+    regions_group = handle.create_group("regions")
+    for name, values in header.regions.items():
+        _write_array_dataset(regions_group, name, np.asarray(values), header.region_units.get(name, ""), compression=compression)
+    if header.metadata.get("total_mass") is not None:
+        _write_scalar_dataset(regions_group, "total_mass", header.metadata["total_mass"], "g/cm**X")
+    materials_group = handle.create_group("materials")
+    for name, values in header.materials.items():
+        _write_array_dataset(materials_group, name, np.asarray(values), header.material_units.get(name, ""), compression=compression)
+
+    metadata_group = handle.create_group("metadata")
+    metadata = dict(header.metadata)
+    metadata["simulation_name"] = header.simulation_name
+    metadata["source_file"] = str(source)
+    eos_model = ",".join(dict.fromkeys(str(value) for value in header.materials.get("eos_model", []) if str(value)))
+    for key, value in {
+        "schema_version": H5D_SCHEMA_VERSION,
+        "geometry": metadata.get("geometry"),
+        "simulation_name": header.simulation_name,
+        "n_zones": header.n_zones,
+        "n_regions": header.n_regions,
+        "n_materials": header.n_materials,
+        "eos_model": eos_model,
+        "helios_version": header.code_version,
+        "calculation_datetime": header.calculation_datetime,
+        "openmp_note": metadata.get("openmp_note"),
+        "block_delimiter": header.block_delimiter,
+        "source_file": str(source),
+    }.items():
+        _write_scalar_dataset(metadata_group, key, value, "")
+    metadata_group.create_dataset("header_sections", data=np.asarray(header.header_sections, dtype=STRING_DTYPE))
+    _set_unit_attrs(metadata_group["header_sections"], "")
+    if coordinate_model:
+        coordinate_group = metadata_group.create_group("coordinate_model")
+        _write_nested_mapping(coordinate_group, coordinate_model, unit_resolver=lambda path: "", compression=None)
+    input_group = metadata_group.create_group("input_parameters")
+    _write_nested_mapping(input_group, header.input_parameters, unit_resolver=_input_parameter_unit, compression=compression)
+
+
+def _write_minimal_bpf_metadata(handle: h5py.File, source: Path, bpf: BpfFile) -> h5py.Group:
+    metadata_group = handle.create_group("metadata")
+    layout = bpf.layout
+    for key, value in {
+        "schema_version": H5D_SCHEMA_VERSION,
+        "geometry": None,
+        "simulation_name": source.stem,
+        "n_zones": layout.n_zones,
+        "n_regions": 0,
+        "n_materials": 0,
+        "helios_version": None,
+        "calculation_datetime": f"{layout.run_date} {layout.run_clock}".strip(),
+        "source_file": str(source),
+    }.items():
+        _write_scalar_dataset(metadata_group, key, value, "")
+    metadata_group.create_dataset("header_sections", data=np.asarray([], dtype=STRING_DTYPE))
+    _set_unit_attrs(metadata_group["header_sections"], "")
+    coordinate_group = metadata_group.create_group("coordinate_model")
+    _write_nested_mapping(
+        coordinate_group,
+        {
+            "coordinate_name": "x",
+            "static_center_dataset": "coordinate_center",
+            "static_edge_dataset": "coordinate_edge",
+            "dynamic_center_dataset": "dynamic_coordinate_center",
+            "dynamic_edge_dataset": "dynamic_coordinate_edge",
+            "width_dataset": "zone_width",
+            "legacy_static_center_alias": "x",
+            "legacy_dynamic_center_alias": "radius",
+        },
+        unit_resolver=lambda path: "",
+    )
+    metadata_group.create_group("input_parameters")
+    return metadata_group
+
+
+def _write_hdf5_from_bpf(
+    source: Path,
+    bpf_path: Path,
+    target: Path,
+    *,
+    log_path: Path | None,
+    source_precedence: str,
+    compression: str | None,
+    parser: HeliosParser,
+    logger: logging.Logger,
+    progress_callback: Callable[[WriteProgress], None] | None,
+) -> Path:
+    def emit_progress(stage: str, current: int, total: int, fraction: float, message: str) -> None:
+        if progress_callback is None:
+            return
+        progress_callback(WriteProgress(stage, int(current), max(1, int(total)), max(0.0, min(1.0, float(fraction))), message))
+
+    log_header = None
+    log_simulation = None
+    if log_path is not None and log_path.exists():
+        with parser.open_document(log_path) as document:
+            log_header = document.inspect()
+        try:
+            log_simulation = parser.parse(log_path)
+        except Exception:
+            if source.suffix.lower() == ".log":
+                raise
+            logger.warning("Could not parse optional LOG companion fields from %s", log_path, exc_info=True)
+
+    started_write = time.perf_counter()
+    emit_progress("prepare", 0, 1, 0.02, f"Opening {bpf_path.name}")
+    with BpfFile(bpf_path) as bpf:
+        layout = bpf.layout
+        first_snapshot = bpf.extract_snapshot(0)
+        if log_header is not None and int(log_header.n_zones) != int(layout.n_zones):
+            raise ValueError(f"LOG/BPF zone-count mismatch: log={log_header.n_zones}, bpf={layout.n_zones}.")
+        log_laser_source = None
+        if log_simulation is not None and "laser_source" in log_simulation.fields:
+            candidate = np.asarray(log_simulation.fields["laser_source"], dtype=np.float64)
+            log_time = np.asarray(log_simulation.time.get("time", []), dtype=np.float64)
+            expected_shape = (layout.n_snapshots, layout.n_zones)
+            time_aligned = (
+                log_time.shape == (layout.n_snapshots,)
+                and np.isclose(float(log_time[0]), layout.first_time_s, rtol=1.0e-6, atol=1.0e-14)
+                and np.isclose(float(log_time[-1]), layout.last_time_s, rtol=1.0e-6, atol=1.0e-14)
+            )
+            if candidate.shape == expected_shape and time_aligned:
+                log_laser_source = candidate
+            else:
+                logger.warning(
+                    "Ignoring LOG laser_source override for %s: field shape=%s expected=%s time_aligned=%s",
+                    log_path,
+                    candidate.shape,
+                    expected_shape,
+                    time_aligned,
+                )
+
+        emit_progress("prepare", 0, layout.n_snapshots, 0.08, f"Preparing BPF layout for {layout.n_snapshots} snapshots")
+        with h5py.File(target, "w") as handle:
+            handle.attrs["source_file"] = str(source)
+            handle.attrs["bpf_source_file"] = str(bpf_path)
+            handle.attrs["format"] = "HELIOS H5D/HDF5"
+            handle.attrs["schema_version"] = H5D_SCHEMA_VERSION
+            if log_header is not None:
+                handle.attrs["helios_version"] = log_header.code_version or ""
+                _write_log_header_groups(handle, log_header, source, compression)
+                metadata_group = handle["metadata"]
+                coordinate_model = log_header.metadata.get("coordinate_model", {})
+                coordinate_name = str(coordinate_model.get("coordinate_name", "x")) if isinstance(coordinate_model, dict) else "x"
+            else:
+                handle.attrs["helios_version"] = ""
+                _write_minimal_bpf_header_groups(handle, first_snapshot.fields, layout, compression)
+                metadata_group = _write_minimal_bpf_metadata(handle, source, bpf)
+                coordinate_name = "x"
+
+            source_group = metadata_group.create_group("source_files")
+            _write_scalar_dataset(source_group, "bpf", str(bpf_path), "")
+            if log_header is not None:
+                _write_scalar_dataset(source_group, "log", str(log_path), "")
+            _write_scalar_dataset(source_group, "requested", str(source), "")
+            _write_scalar_dataset(metadata_group, "source_precedence", source_precedence, "")
+            _write_scalar_dataset(metadata_group, "parse_mode", "bpf_primary", "")
+            _write_scalar_dataset(metadata_group, "bpf_run_date", layout.run_date, "")
+            _write_scalar_dataset(metadata_group, "bpf_run_clock", layout.run_clock, "")
+            _write_scalar_dataset(metadata_group, "bpf_record_count", layout.record_count, "")
+            _write_scalar_dataset(metadata_group, "bpf_trailing_records", layout.trailing_records, "")
+
+            time_group = handle.create_group("time")
+            time_dataset = _create_1d(time_group, "time", layout.n_snapshots, np.float64, "s", chunks=_time_chunk_shape(layout.n_snapshots))
+            cycle_dataset = _create_1d(time_group, "cycle", layout.n_snapshots, np.int64, "", chunks=_time_chunk_shape(layout.n_snapshots))
+
+            fields_group = handle.create_group("fields")
+            field_metadata_group = handle.create_group("field_metadata")
+            diagnostics_group = handle.create_group("diagnostics")
+
+            grid_group = handle["grid"]
+            dynamic_center = grid_group.create_dataset(
+                "dynamic_coordinate_center",
+                shape=(layout.n_snapshots, layout.n_zones),
+                dtype=np.float64,
+                compression=compression,
+                chunks=_field_chunk_shape(layout.n_snapshots, layout.n_zones),
+            )
+            _set_unit_attrs(dynamic_center, "cm")
+            _annotate_coordinate_dataset(dynamic_center, coordinate_name=coordinate_name, location="center", dynamic=True)
+            dynamic_edge = grid_group.create_dataset(
+                "dynamic_coordinate_edge",
+                shape=(layout.n_snapshots, layout.n_nodes),
+                dtype=np.float64,
+                compression=compression,
+                chunks=_field_chunk_shape(layout.n_snapshots, layout.n_nodes),
+            )
+            _set_unit_attrs(dynamic_edge, "cm")
+            _annotate_coordinate_dataset(dynamic_edge, coordinate_name=coordinate_name, location="edge", dynamic=True)
+            if "photon_energy_boundaries_eV" not in grid_group:
+                _write_array_dataset(
+                    grid_group,
+                    "photon_energy_boundaries_eV",
+                    np.asarray(first_snapshot.fields["frequency_group_boundaries_eV"], dtype=np.float64),
+                    "eV",
+                    compression=compression,
+                )
+
+            field_datasets: dict[str, h5py.Dataset] = {}
+            for name, values in first_snapshot.fields.items():
+                metadata = field_metadata_for_bpf_key(name)
+                field_datasets[name] = _create_bpf_field_dataset(
+                    fields_group,
+                    field_metadata_group,
+                    name,
+                    np.asarray(values),
+                    layout.n_snapshots,
+                    compression,
+                    metadata,
+                )
+            laser_source_metadata = field_metadata_for_bpf_key("laser_source_j_g")
+            if log_laser_source is not None:
+                laser_source_metadata = dict(laser_source_metadata)
+                laser_source_metadata["source"] = "log"
+                laser_source_metadata["status"] = "validated"
+                laser_source_metadata["description"] = (
+                    "Copied from aligned LOG LaserSrc because HELIOS integrates this cumulative source "
+                    "on internal timesteps; BPF-only files fall back to sampled trapezoidal integration."
+                )
+            laser_source_dataset = _create_bpf_field_dataset(
+                fields_group,
+                field_metadata_group,
+                "laser_source_j_g",
+                np.zeros(layout.n_zones, dtype=np.float64),
+                layout.n_snapshots,
+                compression,
+                laser_source_metadata,
+            )
+
+            def snapshot_iter():
+                yield first_snapshot
+                for snapshot_index in range(1, layout.n_snapshots):
+                    yield bpf.extract_snapshot(snapshot_index)
+
+            laser_cumulative = np.zeros(layout.n_zones, dtype=np.float64)
+            previous_laser_deposition: np.ndarray | None = None
+            previous_time_s: float | None = None
+            for written_index, snapshot in enumerate(snapshot_iter()):
+                time_dataset[written_index] = snapshot.time_s
+                cycle_dataset[written_index] = snapshot.cycle
+                dynamic_center[written_index, :] = snapshot.fields["zone_center_cm"]
+                dynamic_edge[written_index, :] = snapshot.fields["node_position_cm"]
+                for name, dataset in field_datasets.items():
+                    dataset[written_index, ...] = snapshot.fields[name]
+                if log_laser_source is not None:
+                    laser_source_dataset[written_index, :] = log_laser_source[written_index]
+                else:
+                    laser_deposition = np.asarray(snapshot.fields["laser_deposition_j_g_s"], dtype=np.float64)
+                    if previous_time_s is not None and previous_laser_deposition is not None:
+                        dt = max(0.0, float(snapshot.time_s) - float(previous_time_s))
+                        laser_cumulative += 0.5 * (previous_laser_deposition + laser_deposition) * dt
+                    laser_source_dataset[written_index, :] = laser_cumulative
+                    previous_time_s = float(snapshot.time_s)
+                    previous_laser_deposition = laser_deposition.copy()
+                emit_progress(
+                    "snapshots",
+                    written_index + 1,
+                    layout.n_snapshots,
+                    0.10 + 0.84 * ((written_index + 1) / max(1, layout.n_snapshots)),
+                    f"Writing BPF snapshots ({written_index + 1}/{layout.n_snapshots})",
+                )
+
+            for canonical, alias in LOG_COMPATIBLE_BPF_ALIASES.items():
+                if canonical in fields_group and alias not in fields_group:
+                    fields_group[alias] = fields_group[canonical]
+                    if canonical in field_metadata_group:
+                        metadata = {key: value for key, value in field_metadata_group[canonical].attrs.items()}
+                        metadata["field_name"] = alias
+                        metadata["alias_of"] = canonical
+                    else:
+                        metadata = alias_metadata(alias, canonical)
+                    _write_field_metadata_group(field_metadata_group, alias, metadata)
+
+            available_fields = sorted(fields_group.keys())
+            metadata_group.create_dataset("available_fields", data=np.asarray(available_fields, dtype=STRING_DTYPE))
+            _set_unit_attrs(metadata_group["available_fields"], "")
+            _write_scalar_dataset(metadata_group, "n_snapshots", layout.n_snapshots, "")
+            run_status_group = _replace_group(metadata_group, "run_status")
+            _write_nested_mapping(
+                run_status_group,
+                {
+                    "state": "complete",
+                    "source": "bpf",
+                    "indexed_snapshot_count": layout.n_snapshots,
+                    "valid_snapshot_count": layout.n_snapshots,
+                    "last_valid_snapshot_time_s": layout.last_time_s,
+                    "dropped_partial_final_block": False,
+                    "notes": ("BPF primary parse",),
+                },
+                unit_resolver=lambda path: "s" if path[-1] == "last_valid_snapshot_time_s" else "",
+            )
+            emit_progress("finalize", layout.n_snapshots, layout.n_snapshots, 0.98, f"Finalizing {target.name}")
+            logger.info("Wrote %s BPF snapshots to %s", layout.n_snapshots, target)
+            del snapshot, first_snapshot
+    record_duration("hdf5.write", time.perf_counter() - started_write)
+    emit_progress("done", 1, 1, 1.0, f"Wrote {target.name}")
+    return target
+
+
 def write_hdf5(
     input_path: str | Path,
     output_path: str | Path,
@@ -226,11 +769,25 @@ def write_hdf5(
     active_parser = parser or HeliosParser(active_logger)
     source = Path(input_path)
     target = Path(output_path)
+    selection = resolve_parse_sources(source)
     if target.exists() and not overwrite:
         raise FileExistsError(f"{target} already exists. Use --overwrite to replace it.")
 
     if target.exists():
         target.unlink()
+
+    if selection.bpf_path is not None:
+        return _write_hdf5_from_bpf(
+            selection.requested_path,
+            selection.bpf_path,
+            target,
+            log_path=selection.log_path,
+            source_precedence=selection.source_precedence,
+            compression=compression,
+            parser=active_parser,
+            logger=active_logger,
+            progress_callback=progress_callback,
+        )
 
     def emit_progress(stage: str, current: int, total: int, fraction: float, message: str) -> None:
         if progress_callback is None:
@@ -255,6 +812,7 @@ def write_hdf5(
         handle.attrs["source_file"] = str(source)
         handle.attrs["helios_version"] = header.code_version or ""
         handle.attrs["format"] = "HELIOS log converted to HDF5"
+        handle.attrs["schema_version"] = H5D_SCHEMA_VERSION
 
         grid_group = handle.create_group("grid")
         for name, values in header.grid.items():
@@ -291,6 +849,7 @@ def write_hdf5(
         metadata["source_file"] = str(source)
         eos_model = ",".join(dict.fromkeys(str(value) for value in header.materials.get("eos_model", []) if str(value)))
         for key, value in {
+            "schema_version": H5D_SCHEMA_VERSION,
             "geometry": metadata.get("geometry"),
             "simulation_name": header.simulation_name,
             "n_zones": header.n_zones,
@@ -304,6 +863,11 @@ def write_hdf5(
             "source_file": str(source),
         }.items():
             _write_scalar_dataset(metadata_group, key, value, "")
+        source_group = metadata_group.create_group("source_files")
+        _write_scalar_dataset(source_group, "log", str(source), "")
+        _write_scalar_dataset(source_group, "requested", str(source), "")
+        _write_scalar_dataset(metadata_group, "source_precedence", "log_only", "")
+        _write_scalar_dataset(metadata_group, "parse_mode", "log_only", "")
         metadata_group.create_dataset("header_sections", data=np.asarray(header.header_sections, dtype=STRING_DTYPE))
         _set_unit_attrs(metadata_group["header_sections"], "")
         if coordinate_model:
@@ -351,6 +915,7 @@ def write_hdf5(
         _set_unit_attrs(timestep_control_dataset, "")
 
         fields_group = handle.create_group("fields")
+        field_metadata_group = handle.create_group("field_metadata")
         diagnostics_group = handle.create_group("diagnostics")
         available_fields: list[str] = []
         batch_size = min(max(1, snapshot_capacity), 32)
@@ -406,10 +971,27 @@ def write_hdf5(
                 diagnostic_groups[path] = group
             return group
 
-        def ensure_field_dataset(name: str, unit: str) -> h5py.Dataset:
+        def ensure_field_dataset(name: str, unit: str, *, label: str | None = None) -> h5py.Dataset:
             dataset = field_datasets.get(name)
             if dataset is None:
-                dataset = _create_field_dataset(fields_group, name, snapshot_capacity, header.n_zones, unit, compression)
+                metadata = {
+                    "field_name": name,
+                    "source": "log",
+                    "dimensions": ("time", "zone"),
+                    "unit": unit,
+                    "label": label or name,
+                    "status": "validated",
+                }
+                dataset = _create_field_dataset(
+                    fields_group,
+                    name,
+                    snapshot_capacity,
+                    header.n_zones,
+                    unit,
+                    compression,
+                    metadata=metadata,
+                    field_metadata_group=field_metadata_group,
+                )
                 if name == "radius":
                     _annotate_coordinate_dataset(
                         dataset,
@@ -471,7 +1053,7 @@ def write_hdf5(
             return dataset
 
         for name, unit in first_snapshot.field_units.items():
-            ensure_field_dataset(name, unit)
+            ensure_field_dataset(name, unit, label=first_snapshot.raw_field_map.get(name, name))
 
         def flush_batch(batch_start: int, batch_count: int) -> None:
             if batch_count == 0:
@@ -515,7 +1097,7 @@ def write_hdf5(
 
             for name, values in snapshot.fields.items():
                 unit = snapshot.field_units.get(name, "")
-                ensure_field_dataset(name, unit)
+                ensure_field_dataset(name, unit, label=snapshot.raw_field_map.get(name, name))
                 field_batch_buffers[name][local_index, :] = values
                 active_field_names.add(name)
 

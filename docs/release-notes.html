@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HELIOS Parse / View Release Notes 1.0.1</title>
+  <title>HELIOS Parse / View Release Notes 1.1.0</title>
   <link rel="stylesheet" href="assets/manual.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>Release Notes</h1>
         <p>
-          HELIOS Parse / View 1.0.1, released 2026-04-29.
+          HELIOS Parse / View 1.1.0, released 2026-05-11.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
       </div>
@@ -28,25 +28,34 @@
 
   <main>
     <section>
-      <h2>Why 1.0.1</h2>
+      <h2>Why 1.1.0</h2>
       <p>
-        This is a patch release on top of the physics-gated 1.0.0 release. It keeps the production GUI focused on physically
-        reasonable workflows and removes hidden experimental pipelines from the production compute path.
+        This release finalizes the production parser/reader pipeline for BPF-primary HELIOS data while preserving LOG-only
+        workflows and the existing physics-gated desktop behavior.
       </p>
     </section>
 
     <section>
       <h2>Highlights in this release</h2>
       <ul>
-        <li>production backend no longer computes hidden Plasmon/XRTS or Transmission results unless dev/experimental flags are enabled</li>
-        <li>snapshot-row and zone-trace reader/viewer paths avoid full-field materialization for targeted reads</li>
+        <li>production parser accepts `.log` and `.bpf` inputs with explicit BPF-primary routing when a companion BPF exists</li>
+        <li>HDF5/H5D schema version 2.0 stores self-describing field metadata, source provenance, axis semantics, and aliases</li>
+        <li>BPF/LOG overlap fields were systematically cross-validated, including radiation pressure/energy and cumulative laser source behavior</li>
+        <li>remaining unresolved BPF records are preserved with honest raw names, confidence/status metadata, and forensic documentation</li>
         <li>release archive excludes tests, legacy shadow modules, reports, caches, and development audit outputs</li>
-        <li>package metadata and bundle name bumped to 1.0.1</li>
       </ul>
     </section>
 
     <section>
       <h2>Changelog</h2>
+      <h3>1.1.0</h3>
+      <ul>
+        <li>added production BPF parser integration and BPF-primary HDF5 conversion</li>
+        <li>added transparent `.log` / `.bpf` input routing, including LOG+BPF, LOG-only, and BPF-only modes</li>
+        <li>added dynamic reader field discovery and schema-aware plotting-mode selection</li>
+        <li>validated BPF record 14 as padded radiation energy density and derived LOG-compatible radiation pressure/energy aliases</li>
+        <li>documented final BPF field-forensics outcomes and confidence levels</li>
+      </ul>
       <h3>1.0.1</h3>
       <ul>
         <li>added backend feature gating for production-hidden physics modules</li>
@@ -89,7 +98,7 @@
         <li>selected demo HDF5 examples under <code>examples/</code></li>
       </ul>
       <p>
-        The 1.0.1 bundle intentionally omits tests, reports, old release outputs, and legacy shadow source files. Experimental Transmission/XCOM support remains in source behind development flags.
+        The 1.1.0 bundle intentionally omits tests, reports, old release outputs, and legacy shadow source files. Experimental Transmission/XCOM support remains in source behind development flags.
       </p>
     </section>
 
@@ -102,8 +111,8 @@
       <ul>
         <li>Author: Dmitrii Bespalov</li>
         <li>Organization: European XFEL</li>
-        <li>Release: 1.0.1</li>
-        <li>Date: 2026-04-29</li>
+        <li>Release: 1.1.0</li>
+        <li>Date: 2026-05-11</li>
       </ul>
     </section>
   </main>

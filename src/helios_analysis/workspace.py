@@ -77,6 +77,7 @@ from helios.services.derived.models import (
     WaveTrackingResult,
     XrdResult,
 )
+from helios_viewer.icon import load_ui_icon, set_button_icon
 from helios.services.units.conversions import (
     photon_energy_ev_from_wavelength_nm,
     photon_energy_kev_to_wavelength_angstrom,
@@ -374,7 +375,9 @@ class DerivedPlotPanel(QtWidgets.QWidget):
         self.nav_group = QtGui.QActionGroup(self)
         self.nav_group.setExclusive(True)
         pan_action = QtGui.QAction("Pan", self, checkable=True)
+        pan_action.setIcon(load_ui_icon("pan", size=16))
         zoom_action = QtGui.QAction("Zoom", self, checkable=True)
+        zoom_action.setIcon(load_ui_icon("zoom", size=16))
         self.nav_group.addAction(pan_action)
         self.nav_group.addAction(zoom_action)
         self.pan_button.setDefaultAction(pan_action)
@@ -383,7 +386,9 @@ class DerivedPlotPanel(QtWidgets.QWidget):
         pan_action.triggered.connect(lambda checked=False: self._set_navigation_mode("pan"))
         zoom_action.triggered.connect(lambda checked=False: self._set_navigation_mode("zoom"))
         self.reset_time_button = QtWidgets.QPushButton("Reset Time View")
+        set_button_icon(self.reset_time_button, "reset")
         self.reset_profile_button = QtWidgets.QPushButton("Reset Profile View")
+        set_button_icon(self.reset_profile_button, "reset")
         navigation_layout.addWidget(self.pan_button)
         navigation_layout.addWidget(self.zoom_button)
         navigation_layout.addSpacing(8)
@@ -432,6 +437,14 @@ class DerivedPlotPanel(QtWidgets.QWidget):
         self.time_plot.apply_theme(theme)
         self.profile_plot.apply_theme(theme)
         self.empty_state_label.setStyleSheet(f"color: {theme.subtle_text};")
+        pan_action = self.pan_button.defaultAction()
+        zoom_action = self.zoom_button.defaultAction()
+        if pan_action is not None:
+            pan_action.setIcon(load_ui_icon("pan", size=16))
+        if zoom_action is not None:
+            zoom_action.setIcon(load_ui_icon("zoom", size=16))
+        set_button_icon(self.reset_time_button, "reset")
+        set_button_icon(self.reset_profile_button, "reset")
 
     def clear(self) -> None:
         self._time_bundles = []
@@ -1266,6 +1279,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
 
         button_row = QtWidgets.QHBoxLayout()
         self.refresh_button = QtWidgets.QPushButton("Recompute")
+        set_button_icon(self.refresh_button, "refresh")
         self.refresh_button.clicked.connect(self.refresh_requested)
         button_row.addWidget(self.refresh_button)
         button_row.addStretch(1)
@@ -1425,6 +1439,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.activity_progress.hide()
         results_layout.addWidget(self.activity_progress)
         self.cancel_button = QtWidgets.QPushButton("Cancel current task")
+        set_button_icon(self.cancel_button, "cancel")
         self.cancel_button.setEnabled(False)
         self.cancel_button.hide()
         self.cancel_button.clicked.connect(self.cancel_requested.emit)
@@ -1455,7 +1470,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self._shock_nav_group = QtGui.QActionGroup(self)
         self._shock_nav_group.setExclusive(True)
         self._shock_pan_action = QtGui.QAction("Pan", self, checkable=True)
+        self._shock_pan_action.setIcon(load_ui_icon("pan", size=16))
         self._shock_zoom_action = QtGui.QAction("Zoom", self, checkable=True)
+        self._shock_zoom_action.setIcon(load_ui_icon("zoom", size=16))
         self._shock_nav_group.addAction(self._shock_pan_action)
         self._shock_nav_group.addAction(self._shock_zoom_action)
         self.shock_pan_button.setDefaultAction(self._shock_pan_action)
@@ -1464,7 +1481,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self._shock_pan_action.triggered.connect(lambda checked=False: self._set_shock_navigation_mode("pan"))
         self._shock_zoom_action.triggered.connect(lambda checked=False: self._set_shock_navigation_mode("zoom"))
         self.shock_reset_position_button = QtWidgets.QPushButton("Reset Position View")
+        set_button_icon(self.shock_reset_position_button, "reset")
         self.shock_reset_velocity_button = QtWidgets.QPushButton("Reset Velocity View")
+        set_button_icon(self.shock_reset_velocity_button, "reset")
         shock_navigation_layout.addWidget(self.shock_pan_button)
         shock_navigation_layout.addWidget(self.shock_zoom_button)
         shock_navigation_layout.addSpacing(8)
@@ -1868,6 +1887,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.transmission_energy_unit_combo.setCurrentIndex(max(0, self.transmission_energy_unit_combo.findData("eV")))
         self.transmission_energy_spin.setKeyboardTracking(False)
         self.transmission_refine_button = QtWidgets.QPushButton("Apply Transmission Model")
+        set_button_icon(self.transmission_refine_button, "refresh")
         self.transmission_refine_button.clicked.connect(self.transmission_refine_requested)
         self.transmission_mode_combo.currentIndexChanged.connect(self._on_transmission_controls_changed)
         self.transmission_energy_unit_combo.currentIndexChanged.connect(self._on_transmission_energy_unit_changed)
@@ -4066,11 +4086,35 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.performance_summary_label.setStyleSheet(f"color: {theme.subtle_text};")
         self.wavefront_metrics_label.setStyleSheet(f"color: {theme.subtle_text};")
         self.warning_summary_label.setStyleSheet(f"color: {theme.subtle_text};")
+        self._assign_command_icons()
         self._set_shock_navigation_mode("pan" if self._shock_pan_action.isChecked() else "zoom")
         if self._current_result is not None:
             self._refresh_current_result_display()
         else:
             self._sync_context_summary()
+
+    def _assign_command_icons(self) -> None:
+        action_icons = (
+            ("_shock_pan_action", "pan"),
+            ("_shock_zoom_action", "zoom"),
+        )
+        for attribute, icon_name in action_icons:
+            action = getattr(self, attribute, None)
+            if isinstance(action, QtGui.QAction):
+                icon = load_ui_icon(icon_name, size=16)
+                if not icon.isNull():
+                    action.setIcon(icon)
+        button_icons = (
+            ("refresh_button", "refresh"),
+            ("cancel_button", "cancel"),
+            ("shock_reset_position_button", "reset"),
+            ("shock_reset_velocity_button", "reset"),
+            ("transmission_refine_button", "refresh"),
+        )
+        for attribute, icon_name in button_icons:
+            button = getattr(self, attribute, None)
+            if isinstance(button, QtWidgets.QAbstractButton):
+                set_button_icon(button, icon_name)
 
     def _sync_context_summary(self) -> None:
         if not self._context.has_run or self._context.path is None:

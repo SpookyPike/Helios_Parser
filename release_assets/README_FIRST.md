@@ -1,17 +1,18 @@
-# HELIOS Parse / View 1.0.1
+# HELIOS Parse / View 1.1.0
 
 Code developed by Dmitrii Bespalov at European XFEL.
-Release date: 2026-04-29.
+Release date: 2026-05-11.
 
 ## Open this first
 
 This bundle contains the current HELIOS Parse / View source tree plus documentation, launch scripts, and a few demo HDF5 runs.
 
+The parser accepts HELIOS `.log` and `.bpf` inputs. BPF is the primary full-data source when present; LOG remains the setup metadata, diagnostics, and fallback path. Converted HDF5/H5D files are self-describing and expose dynamic field metadata for the reader/viewer.
+
 Production GUI and backend compute expose only physically gated v1 workflows by default. Experimental Plasmon/XRTS and Transmission workflows remain available only when `HELIOS_DEV_MODE=1` or `HELIOS_ENABLE_EXPERIMENTAL=1` is set.
 The bundle includes the XCOM support artifacts expected by the development/experimental code paths:
 
 - `x-com_fallback/` with the precomputed cold-XCOM attenuation tables
-- `helios_xcom_integration.zip` with the Python wrapper/backend integration package
 - `XCOM.tar.gz` with the vendor XCOM source archive
 
 ## Windows

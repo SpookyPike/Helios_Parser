@@ -3,7 +3,7 @@ from pathlib import Path
 from .hdf5 import WriteProgress, write_hdf5
 from .model import HeliosBlockIndex, HeliosHeader, HeliosPreview, RunStatusInfo, Simulation, Snapshot, SnapshotBlock, TextSpan
 from .parser import HeliosParser
-from .reader import HeliosRun, VisarBoundaryCandidate, VisarReadinessStatus, VisarSupportMetadata
+from .reader import FieldMetadata, HeliosRun, VisarBoundaryCandidate, VisarReadinessStatus, VisarSupportMetadata
 
 _DEFAULT_PARSER = HeliosParser()
 
@@ -26,6 +26,7 @@ __all__ = [
     "HeliosParser",
     "HeliosPreview",
     "HeliosRun",
+    "FieldMetadata",
     "inspect",
     "parse",
     "preview",

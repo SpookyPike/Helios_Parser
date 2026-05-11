@@ -48,6 +48,7 @@ class RunWorker(QtCore.QObject):
                 metadata=run.get_metadata(),
                 fields=fields,
                 field_units={name: run.get_field_unit(name) for name in fields},
+                field_metadata={name: asdict(run.get_field_metadata(name)) for name in fields},
                 diagnostics=diagnostics,
                 diagnostic_units={name: run.get_diagnostic_unit(name) for name in diagnostics},
                 regions=run.get_regions(),

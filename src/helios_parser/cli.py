@@ -9,8 +9,8 @@ from .parser import HeliosParser
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Convert HELIOS hydrodynamics logs to HDF5.")
-    parser.add_argument("input", type=Path, help="Path to the HELIOS log file.")
+    parser = argparse.ArgumentParser(description="Convert HELIOS hydrodynamics logs or BPF plot files to HDF5.")
+    parser.add_argument("input", type=Path, help="Path to a HELIOS .log file or .bpf plot file.")
     parser.add_argument("output", type=Path, help="Path to the HDF5 file to create.")
     parser.add_argument(
         "--compression",

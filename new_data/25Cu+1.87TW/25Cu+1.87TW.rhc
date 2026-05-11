@@ -1,0 +1,471 @@
+Workspace Format ID  = 5
+[Header Data]:
+   Format ID = 1
+   HELIOS Version_6.2.0
+[End Header Data]
+
+[Geometry Data]:
+   Format ID = 1
+   Geometry ID = 1
+   Min node position = 0
+[End Geometry Data]
+
+[Spatial Grid Data]:
+   Format ID = 23
+#
+  Number of Spatial Regions = 1
+#
+  Parameters for Region =  Cu
+#
+   Non-LTE material       = 0
+   Region width           = 25
+   Region width units     = 2
+   Est. num zones         = 50
+   Zone width R min       = 1e-006
+   Zone width R max       = 1e-006
+   Fractional mass R min  = 1e-010
+   Fractional mass R max  = 1e-010
+   Temperature model      = 0
+   Temperature            = 0.025
+   Temperature units      = 0
+   Analytic temp. expr.   = 
+   Velocity model         = 0
+   Velocity               = 0
+   Velocity units         = 0
+   Analytic velocity expr = 
+   Density model          = 0
+   Density                = 8.93
+   Density units          = 0
+   Analytic density expr. = 
+ [table format=1]:    Variable mass density:
+  # table rows = 0
+  # table cols = 2
+ [table format=1]:    Variable temperature:
+  # table rows = 0
+  # table cols = 2
+ [table format=1]:    Variable velocity:
+  # table rows = 0
+  # table cols = 2
+   Pressure density       = 1
+   Num. atoms/molecule    = 1
+   Mean atomic weight     = 63.5
+   Min. radius            = 0
+   Max. radius            = 0.0025
+   EOS data type          = 0
+   Include NLTE EOS       = 0
+   EOS locator ID         = 1
+   EOS filepath           = Cu.prp
+   EOS lib directory      = C:\Program Files (x86)\Prism\DataTables\PROPACEOS_4.2.0
+   Ideal gas, inc. ioniz. = 0
+   Ideal gas gamma        = 1.667
+   Use const. mean charge = 0
+   Constant mean charge   = 1
+   Opacity data type      = 0
+   Include NLTE Opacity   = 0
+   Opacity locator ID     = 1
+   Opacity filepath       = Cu.prp
+   Opacity lib dir        = C:\Program Files (x86)\Prism\DataTables\PROPACEOS_4.2.0
+   Opacity mult. on       = 0
+   Opacity multiplier     = 1
+   Use opacity constant   = 0
+   Const. opacity model   = 0
+   Opacity value model    = 0
+   Opacity value all hv   = 1e+006
+   Opacity value low hv   = 1e+006
+   Const. opac. max. T    = 1e+006
+   Const. opac. max. hv   = 1e+006
+   Conductivity Model     = 0
+   Other Cond. Model ID   = 0
+   Const conductivity     = 1
+   Other cond. param 1    = 1
+   Other cond. param 2    = 1
+   Other cond. param 3    = 1
+   Conductivity file path = 
+   Conductivity mult. on  = 0
+   Conductivity mult.     = 1
+   Use flux limiter       = 0
+   Flux limiter mult.     = 0.06
+   Fusion reactions on    = 0
+   Fusion transport on    = 0
+   Fus reac mass frac D   = 0
+   Fus reac mass frac T   = 0
+   Fus reac mass frac He3 = 0
+   Elec resistivity Model = 0
+   Resistivity mult. on   = 0
+   Const elec resistivity = 1
+   Elec resistivity mult. = 1
+   Elec resistivity file  = 
+   Region is void         = 0
+   Ion beam model         = 0
+   Ion beam table         =   
+#
+  Number of Atomic Elements = 0
+#
+   Zoning model                  = 0
+   Zone width at Rmin            = 1e-006
+   Zone width at Rmax            = 1e-006
+   Zone mass at Rmin             = 1e-010
+   Zone mass at Rmax             = 1e-010
+   Zone width model              = 0
+   Grid inner radius             = 0
+   Total number of zones         = 50
+ [table format=1]:   User set zone boundaries:
+  # table rows = 0
+  # table cols = 1
+  Zone widths:    # array elements = 50    [format=1]
+  1.00000e-006  1.27556e-006  1.62705e-006  2.07538e-006  2.64723e-006  3.37660e-006  4.30685e-006  5.49321e-006  7.00601e-006  8.93470e-006 
+  1.13929e-005  1.45242e-005  1.85099e-005  2.35762e-005  3.00023e-005  3.81247e-005  4.83329e-005  6.10453e-005  7.66428e-005  9.53276e-005 
+  1.16865e-004  1.40202e-004  1.63065e-004  1.81912e-004  1.92728e-004  1.92728e-004  1.81912e-004  1.63065e-004  1.40202e-004  1.16865e-004 
+  9.53276e-005  7.66428e-005  6.10453e-005  4.83329e-005  3.81247e-005  3.00023e-005  2.35762e-005  1.85099e-005  1.45242e-005  1.13929e-005 
+  8.93470e-006  7.00601e-006  5.49321e-006  4.30685e-006  3.37660e-006  2.64723e-006  2.07538e-006  1.62705e-006  1.27556e-006  1.00000e-006 
+  Zone masses:    # array elements = 50    [format=1]
+  8.93000e-006  1.13907e-005  1.45295e-005  1.85331e-005  2.36397e-005  3.01530e-005  3.84602e-005  4.90544e-005  6.25637e-005  7.97869e-005 
+  1.01738e-004  1.29701e-004  1.65293e-004  2.10536e-004  2.67921e-004  3.40453e-004  4.31613e-004  5.45134e-004  6.84421e-004  8.51276e-004 
+  1.04361e-003  1.25200e-003  1.45617e-003  1.62447e-003  1.72106e-003  1.72106e-003  1.62447e-003  1.45617e-003  1.25200e-003  1.04361e-003 
+  8.51276e-004  6.84421e-004  5.45134e-004  4.31613e-004  3.40453e-004  2.67921e-004  2.10536e-004  1.65293e-004  1.29701e-004  1.01738e-004 
+  7.97869e-005  6.25637e-005  4.90544e-005  3.84602e-005  3.01530e-005  2.36397e-005  1.85331e-005  1.45295e-005  1.13907e-005  8.93000e-006 
+#
+[End Spatial Grid Data]
+
+[Hydro Data]:
+   Format ID = 3
+#
+   Energy model                  = 1
+   Quiet start temperature       = 0.00000e+000
+   Boundary temp. at Rmin        = 0.00000e+000
+   Boundary temp. at Rmax        = 0.00000e+000
+   Allow free expansion at Rmin  = 1
+   Allow free expansion at Rmax  = 1
+   Apply art. visc. multiplier   = 0
+   Art. viscosity multiplier     = 1.00000e+000
+#
+[End Hydro Data]
+
+[Rad Trans Data]:
+   Format ID = 2
+#
+   Rad trans model               = 1
+   Regroup model                 = 0
+   Num rad trans angles          = 2
+   Num freq groups (typ. model)  = 200
+   Min photon energy             = 1.00000e-001
+ [table format=1]:    Photon energy grouping parameters:
+  # table rows = 0
+  # table cols = 2
+ [table format=1]:    Photon energy custom group boundaries:
+  # table rows = 0
+  # table cols = 0
+#
+[End Rad Trans Data]
+
+[Rad Source Data]:
+   Format ID = 3
+#
+   Rad source model at Rmin is on  = 0
+   Rad source model at Rmax is on  = 0
+   Rad source model at Rmin        = 1
+   Rad source model at Rmax        = 1
+   VisRad filepath for Rmin        = 
+   VisRad filepath for Rmin        = 
+   Flux multiplier                 = 1.00000e+000
+   Angle-dependent model ID        = 0
+ [table format=1]:    Time-dependent Drive Temperatures at Rmin:
+  # table rows = 0
+  # table cols = 0
+ [table format=1]:    Time-dependent Drive Temperatures at Rmax:
+  # table rows = 0
+  # table cols = 0
+ [table format=1]:    Time-dependent Drive and Brightness Temperatures at Rmin:
+  # table rows = 0
+  # table cols = 0
+ [table format=1]:    Time-dependent Drive and Brightness Temperatures at Rmax:
+  # table rows = 0
+  # table cols = 0
+#
+[End Rad Source Data]
+
+[Laser Source Data]:
+   Format ID = 10
+#
+   Number of laser beams         = 3
+   Height of plasma              = 1.00000e+000
+   Absorption model              = 0
+   Min. zbar for laser absorpt.  = 1.00000e-001
+   Parameters for beam:          = 1
+   Laser power model is on       = 1
+   Laser power model             = 1
+   Laser spatial profile model   = 0
+   Incident boundary model       = 1
+   Incident boundary index       = 1
+   Energy normalization model    = 0
+   Number of angles              = 1
+   Num angles setup model        = 1
+   Laser wavelength              = 5.15000e-001
+   Spot size                     = 0.00000e+000
+   Half cone angle               = 1.00000e+000
+   Focus position                = 0.00000e+000
+   Beam Incidence angle          = 4.50000e+001
+   Number of points at focus     = 1
+   Beam energy normalization     = 5.00000e-001
+   Region irradiated             = Cu
+   Laser power profile           = 0
+   Power table multiplier        = 2.00000e-001
+   Laser power reflected         = 0.00000e+000
+   Gaussian power model          = 0
+   Gaussian power                = 0.00000e+000
+   Gaussian width                = 0.00000e+000
+   Gaussian peak time            = 0.00000e+000
+   Include as external source    = 0
+ [table format=1]:    Time-dependent laser powers:
+  # table rows = 4
+  # table cols = 2
+  Time (sec):  
+0.00000e+000  2.00000e-010  6.20000e-009  6.40000e-009  
+  Laser power (TW):  
+0.00000e+000  9.33000e+000  9.33000e+000  0.00000e+000  
+#
+   Parameters for beam:          = 2
+   Laser power model is on       = 0
+   Laser power model             = 0
+   Laser spatial profile model   = 0
+   Incident boundary model       = 1
+   Incident boundary index       = 1
+   Energy normalization model    = 0
+   Number of angles              = 1
+   Num angles setup model        = 1
+   Laser wavelength              = 3.50000e-001
+   Spot size                     = 0.00000e+000
+   Half cone angle               = 1.00000e+000
+   Focus position                = 0.00000e+000
+   Beam Incidence angle          = 0.00000e+000
+   Number of points at focus     = 1
+   Beam energy normalization     = 5.00000e-001
+   Region irradiated             = 
+   Laser power profile           = 0
+   Power table multiplier        = 1.00000e+000
+   Laser power reflected         = 0.00000e+000
+   Gaussian power model          = 0
+   Gaussian power                = 0.00000e+000
+   Gaussian width                = 0.00000e+000
+   Gaussian peak time            = 0.00000e+000
+   Include as external source    = 0
+ [table format=1]:    Time-dependent laser powers:
+  # table rows = 0
+  # table cols = 0
+#
+   Parameters for beam:          = 3
+   Laser power model is on       = 0
+   Laser power model             = 0
+   Laser spatial profile model   = 0
+   Incident boundary model       = 1
+   Incident boundary index       = 1
+   Energy normalization model    = 0
+   Number of angles              = 1
+   Num angles setup model        = 1
+   Laser wavelength              = 3.50000e-001
+   Spot size                     = 0.00000e+000
+   Half cone angle               = 1.00000e+000
+   Focus position                = 0.00000e+000
+   Beam Incidence angle          = 0.00000e+000
+   Number of points at focus     = 1
+   Beam energy normalization     = 5.00000e-001
+   Region irradiated             = 
+   Laser power profile           = 0
+   Power table multiplier        = 1.00000e+000
+   Laser power reflected         = 0.00000e+000
+   Gaussian power model          = 0
+   Gaussian power                = 0.00000e+000
+   Gaussian width                = 0.00000e+000
+   Gaussian peak time            = 0.00000e+000
+   Include as external source    = 0
+ [table format=1]:    Time-dependent laser powers:
+  # table rows = 0
+  # table cols = 0
+#
+#
+[End Laser Source Data]
+
+[Ion Beam]:
+   Format ID = 20
+#
+   Ion beam is on                = 0
+   Ion beam power model          = 0
+   Ion beam constant power       = 0.00000e+000
+   Incident boundary model       = 1
+   Ion beam energy model         = 0
+   Ion beam kinetic energy       = 0.00000e+000
+   Energy table multiplier       = 1.00000e+000
+   Ion beam power profile        = 0
+   Power table multiplier        = 1.00000e+000
+   Gaussian power model          = 0
+   Gaussian power                = 0.00000e+000
+   Gaussian width                = 0.00000e+000
+   Gaussian peak time            = 0.00000e+000
+#
+  Parameters for Atomic Element =  
+#
+   Atomic number            = 0
+   Isotope index            = -1
+   Atomic weight            = 0.00000e+000
+   Number fraction          = 0.00000e+000
+   Element Symbol           = 
+   ATM specifier ID         = 0
+   Default atomic model ID  = 1
+   ATM filepath             = 
+#
+ [table format=1]:    Time-dependent ion beam energy:
+  # table rows = 0
+  # table cols = 0
+ [table format=1]:    Time-dependent ion beam powers:
+  # table rows = 0
+  # table cols = 0
+#
+[End Ion Beam Data]
+
+[MHD Data]:
+   Format ID = 1
+#
+   MHD is on                     = 0
+   MHD model                     = 1
+   Circuit resistance            = 1.00000e+000
+   Circuit inductance            = 1.00000e+000
+   Pinch length                  = 1.00000e+000
+ [table format=1]:    Time-dependent voltage:
+  # table rows = 0
+  # table cols = 0
+ [table format=1]:    Time-dependent current:
+  # table rows = 0
+  # table cols = 0
+#
+[End MHD Data]
+
+[Time Control Data]:
+   Format ID = 5
+#
+   Max num cycles                = 100000000
+   Max simulation time           = 4.50000e-009
+   Init time step                = 1.00000e-015
+   Min time step                 = 1.00000e-015
+   Max time step                 = 1.00000e-010
+   Elec temp time step param     = 3.00000e-002
+   Ion temp time step param      = 3.00000e-002
+   Rad temp time step param      = 5.00000e-002
+   Volume time step param        = 5.00000e-002
+   Courant time step param       = 2.00000e-001
+   B-field time step param       = 1.00000e-001
+   Elec temp time step no check  = 0
+   Ion temp time step no check   = 0
+   Rad temp time step no check   = 0
+   Volume time step no check     = 0
+   Courant time step no check    = 0
+   B-field time step no check    = 0
+   Restart from previous         = 0
+   Restart file                  = 
+   Restart time index            = -1
+   Include void regions          = 0
+#
+[End Time Control Data]
+
+[Output Control Data]:
+   Format ID = 9
+#
+   Output model                              = 1
+   Write freq-dependent radiation output     = 0
+   Write population output                   = 0
+   Use same time-based output times          = 1
+   Use same cycle-based output times         = 1
+   Cycle-based: freq-dep plot output param   = 5
+   Time-based : freq-dep plot output param   = 5
+   Cycle-based: populs. plot output param    = 5
+   Time-based : populs. plot output param    = 5
+   Cycle-based: freq-dep netcdf output param = 5
+   Time-based:  freq-dep plot output param   = 5
+   Cycle-based: populs. netcdf output param  = 5
+   Time-based:  populs. plot output param    = 5
+   Cycle-based: freq-dep log output param    = 5
+   Time-based:  freq-dep plot output param   = 5
+   Cycle-based: populs. log output param     = 5
+   Time-based:  populs. plot output param    = 5
+   Plot file type                            = 0
+   Write restart file                        = 0
+ [table format=1]:    Plot output params:
+  # table rows = 1
+  # table cols = 2
+  Beginning at sim time (sec):  
+0.00000e+000  
+  Output every (sec):  
+5.00000e-012  
+ [table format=1]:    NetCDF output params:
+  # table rows = 1
+  # table cols = 2
+  Beginning at sim time (sec):  
+0.00000e+000  
+  Output every (sec):  
+1.00000e+000  
+ [table format=1]:    Log output params:
+  # table rows = 1
+  # table cols = 2
+  Beginning at sim time (sec):  
+0.00000e+000  
+  Output every (sec):  
+1.00000e+000  
+ [table format=1]:    Restart output params:
+  # table rows = 0
+  # table cols = 2
+ [table format=1]:    Plot output params:
+  # table rows = 1
+  # table cols = 2
+  Beginning at cycle:  
+0.00000e+000  
+  Output every:  
+1.00000e+002  
+ [table format=1]:    NetCDF output params:
+  # table rows = 1
+  # table cols = 2
+  Beginning at cycle:  
+0.00000e+000  
+  Output every:  
+1.00000e+002  
+ [table format=1]:    Log output params:
+  # table rows = 1
+  # table cols = 2
+  Beginning at cycle:  
+0.00000e+000  
+  Output every:  
+1.00000e+002  
+ [table format=1]:    Restart output params:
+  # table rows = 0
+  # table cols = 2
+  Number of radiation bands                  = 0
+  Radiation band model                       = 0
+  Radiation band data units                  = 0
+#
+[End Output Control Data]
+
+[Atomic Processes Parameters]:
+   Format ID = 5
+#
+   Population model ID       = 1
+   Init Popul model ID       = 0
+   Coll Exc/Deexc mult.      = 1.00000e+000
+   Coll Iz/Rec mult.         = 1.00000e+000
+   Photo Exc/Stim emis mult. = 1.00000e+000
+   Photo Iz/Stim rec mult.   = 1.00000e+000
+   Spontaneous emis mult.    = 1.00000e+000
+   Radiative rec mult.       = 1.00000e+000
+   Autoiz/Diel rec mult.     = 1.00000e+000
+   Minimum CR temperature    = 5.00000e+001
+   Min. Osc. Strength for grid  = 1.00000e-003
+   Num pts in continuum      = 200
+   Num pts per BB transition = 15
+#
+[End Atomic Processes Parameters]
+
+[Dialog Settings Data]:
+   Format ID = 1
+#
+[End Dialog Settings Data]
+
+
+[End of Workspace File]
+
