@@ -5,15 +5,15 @@ viewing, and derived analysis.
 
 ## What is included
 
-- source code in [`src/`](C:/Users/dimab/Documents/Helios_parser/src)
-- scripts in [`scripts/`](C:/Users/dimab/Documents/Helios_parser/scripts)
-- documentation in [`docs/`](C:/Users/dimab/Documents/Helios_parser/docs)
-- tests in [`tests/`](C:/Users/dimab/Documents/Helios_parser/tests)
-- release ZIP bundles in [`outputs/release/`](C:/Users/dimab/Documents/Helios_parser/outputs/release)
+- source code in [`src/`](src/)
+- scripts in [`scripts/`](scripts/)
+- documentation in [`docs/`](docs/)
+- tests in [`tests/`](tests/)
+- release ZIP bundles in [`outputs/release/`](outputs/release/)
 
 The current shareable bundle is:
 
-- [`helios-parser-viewer-v1.0.1.zip`](C:/Users/dimab/Documents/Helios_parser/outputs/release/helios-parser-viewer-v1.0.1.zip)
+- `outputs/release/helios-parser-viewer-v1.1.1.zip` after building the current patch release
 
 ## Quick start on Windows
 
@@ -50,13 +50,13 @@ If you unpack the release archive instead of working from the repo:
 - Windows: run `Run_HELIOS_Analyzer.ps1`
 - Linux: run `run_helios_analyzer.sh`
 
-Those launcher scripts are also stored in [`release_assets/`](C:/Users/dimab/Documents/Helios_parser/release_assets).
+Those launcher scripts are also stored in [`release_assets/`](release_assets/).
 
 ## Where to start reading
 
-- [`README.md`](C:/Users/dimab/Documents/Helios_parser/README.md)
-- [`docs/index.html`](C:/Users/dimab/Documents/Helios_parser/docs/index.html)
-- [`docs/plasmon_xrts_observable.md`](C:/Users/dimab/Documents/Helios_parser/docs/plasmon_xrts_observable.md)
+- [`README.md`](README.md)
+- [`docs/index.html`](docs/index.html)
+- [`docs/bpf_h5d_schema.md`](docs/bpf_h5d_schema.md)
 
 ## Current packaging scope
 

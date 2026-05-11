@@ -12,6 +12,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from helios_app.release import APP_NAME, RELEASE_DATE, RELEASE_VERSION  # noqa: E402
+from helios_parser import write_hdf5  # noqa: E402
 
 
 OUTPUT_ROOT = ROOT / "outputs" / "release"
@@ -40,8 +41,11 @@ FILES_TO_COPY = (
     "pyproject.toml",
     "app_icon.png",
     "XCOM.tar.gz",
-    "5Fe+4.9TW+light.log",
-    "25Cu+1.4TW.log",
+)
+
+RELEASE_INPUT_FILES = (
+    ("sample_data/25Cu+1.87TW.log", ROOT / "new_data" / "25Cu+1.87TW" / "25Cu+1.87TW.log"),
+    ("sample_data/5Fe+4.9TW+light.bpf", ROOT / "new_data" / "5Fe+4.9TW+light" / "5Fe+4.9TW+light.bpf"),
 )
 
 OUTPUT_FILES_TO_COPY: tuple[tuple[str, Path], ...] = ()
@@ -78,6 +82,9 @@ EXAMPLE_FILES = (
     ("Cu_0166_stabilized.h5", ROOT / "Cu_0166_stabilized.h5"),
 )
 
+SCHEMA2_BPF_EXAMPLE_SOURCE = ROOT / "new_data" / "5Fe+4.9TW+light" / "5Fe+4.9TW+light.bpf"
+SCHEMA2_BPF_EXAMPLE_NAME = "5Fe+4.9TW+light_bpf_schema2.h5"
+
 
 def copy_tree(relative: str) -> None:
     source = ROOT / relative
@@ -92,6 +99,14 @@ def copy_tree(relative: str) -> None:
 
 def copy_file(relative: str) -> None:
     source = ROOT / relative
+    target = BUNDLE_DIR / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, target)
+
+
+def copy_named_file(relative: str, source: Path) -> None:
+    if not source.exists():
+        raise FileNotFoundError(f"Missing release input file: {source}")
     target = BUNDLE_DIR / relative
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, target)
@@ -123,9 +138,11 @@ def write_examples_readme() -> None:
 These files are included because they are practical for onboarding and small or moderate enough to redistribute in a shareable source bundle.
 
 - `5Fe+4.9TW+light_stabilized.h5`: very small planar example for basic open, Viewer, and quick legacy Shock checks
+- `{SCHEMA2_BPF_EXAMPLE_NAME}`: modern schema-2.0 BPF-derived example with rich dynamic field metadata, raw BPF record preservation, and non-zone axes
 - `Cu1e17_cyl_stabilized.h5`: cylindrical example for radius-aware viewer semantics
 - `Cu_0166_stabilized.h5`: moderate quick-look derived example for Shock, XRD, Spectroscopy, Preheat, and WaveFront comparison
 
+Sample raw inputs are in `sample_data/` so Parser mode can be tested from the release bundle without relying on local developer files.
 Larger layered advanced-analysis runs are documented with screenshots, but are not bundled here to keep the archive practical.
 Experimental Plasmon/XRTS and Transmission GUI panels are hidden in production unless HELIOS_DEV_MODE=1 or HELIOS_ENABLE_EXPERIMENTAL=1 is set.
 Release date: {RELEASE_DATE}
@@ -147,8 +164,10 @@ def copy_examples() -> None:
     examples_dir.mkdir(parents=True, exist_ok=True)
     for target_name, source in EXAMPLE_FILES:
         if not source.exists():
-            raise FileNotFoundError(f"Missing example file: {source}")
+            continue
         shutil.copy2(source, examples_dir / target_name)
+    schema2_target = examples_dir / SCHEMA2_BPF_EXAMPLE_NAME
+    write_hdf5(SCHEMA2_BPF_EXAMPLE_SOURCE, schema2_target, overwrite=True, compression="lzf")
     write_examples_readme()
 
 
@@ -186,6 +205,8 @@ def main() -> int:
         copy_file(relative)
     for relative in FILES_TO_COPY:
         copy_file(relative)
+    for relative, source in RELEASE_INPUT_FILES:
+        copy_named_file(relative, source)
     for relative, source in OUTPUT_DIRECTORIES_TO_COPY:
         copy_output_directory(relative, source)
     for relative, source in OUTPUT_FILES_TO_COPY:

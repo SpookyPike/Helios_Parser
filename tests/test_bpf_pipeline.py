@@ -18,7 +18,6 @@ ROOT = Path(__file__).resolve().parents[1]
 BPF_SAMPLE = ROOT / "new_data" / "5Fe+4.9TW+light" / "5Fe+4.9TW+light.bpf"
 LOG_BPF_SAMPLE = ROOT / "new_data" / "25Cu+1.87TW" / "25Cu+1.87TW.log"
 LOG_BPF_COMPANION = LOG_BPF_SAMPLE.with_suffix(".bpf")
-LOG_ONLY_SAMPLE = ROOT / "5Fe+4.9TW+light.log"
 
 
 def _assert_scale_close(testcase: unittest.TestCase, actual: np.ndarray, expected: np.ndarray, *, rtol: float, atol: float = 0.0) -> None:
@@ -172,8 +171,10 @@ class BpfPipelineTests(unittest.TestCase):
                 self.assertIn("log", bpf_run.get_metadata()["source_files"])
                 np.testing.assert_allclose(log_run.get_field("density"), bpf_run.get_field("density"))
 
+            log_only_source = tmpdir_path / LOG_BPF_SAMPLE.name
+            shutil.copyfile(LOG_BPF_SAMPLE, log_only_source)
             log_only = tmpdir_path / "log_only.h5"
-            write_hdf5(LOG_ONLY_SAMPLE, log_only, overwrite=True, compression="lzf")
+            write_hdf5(log_only_source, log_only, overwrite=True, compression="lzf")
             with HeliosRun(log_only) as run:
                 self.assertEqual(run.get_metadata()["source_precedence"], "log_only")
                 self.assertIn("density", run.list_fields())
@@ -190,14 +191,14 @@ class BpfPipelineTests(unittest.TestCase):
                 self.assertEqual(run.get_field_metadata("laser_source_j_g").source, "derived")
 
     def test_aligned_log_companion_supplies_cumulative_laser_source(self) -> None:
-        log_simulation = HeliosParser().parse(LOG_ONLY_SAMPLE)
+        log_simulation = HeliosParser().parse(LOG_BPF_SAMPLE)
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir_path = Path(tmpdir)
-            log_copy = tmpdir_path / LOG_ONLY_SAMPLE.name
-            bpf_copy = tmpdir_path / LOG_ONLY_SAMPLE.with_suffix(".bpf").name
-            shutil.copyfile(LOG_ONLY_SAMPLE, log_copy)
-            shutil.copyfile(BPF_SAMPLE, bpf_copy)
-            output = tmpdir_path / "fe_with_companion.h5"
+            log_copy = tmpdir_path / LOG_BPF_SAMPLE.name
+            bpf_copy = tmpdir_path / LOG_BPF_COMPANION.name
+            shutil.copyfile(LOG_BPF_SAMPLE, log_copy)
+            shutil.copyfile(LOG_BPF_COMPANION, bpf_copy)
+            output = tmpdir_path / "cu_with_companion.h5"
             write_hdf5(log_copy, output, overwrite=True, compression="lzf")
             with HeliosRun(output) as run:
                 self.assertEqual(run.get_metadata()["source_precedence"], "bpf_primary_log_metadata_exo_optional")

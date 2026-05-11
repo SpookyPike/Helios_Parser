@@ -3,7 +3,7 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `1.1.0`
+- Release: `1.1.1`
 - Release date: `2026-05-11`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
@@ -84,7 +84,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parser-viewer-v1.1.0.zip`
+- `outputs/release/helios-parser-viewer-v1.1.1.zip`
 
 The bundle includes:
 
@@ -99,6 +99,15 @@ Use:
 ```powershell
 python scripts\create_release_bundle.py
 ```
+
+## Changelog 1.1.1
+
+- hardened the viewer for rich BPF schema metadata: non-zone 2D fields now render on node, frequency, boundary, or raw BPF axes instead of zone coordinates
+- added practical field inventory filters by source, status, and axes, with compatibility aliases hidden by default
+- changed expected malformed-input CLI failures to concise parse errors without Python tracebacks
+- cleaned startup documentation for portable paths
+- made smoke/BPF tests rely on tracked fixtures instead of untracked root-level logs
+- refreshed release packaging to include tracked sample inputs and a schema-2.0 BPF-derived HDF5 example
 
 ## Changelog 1.1.0
 

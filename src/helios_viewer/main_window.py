@@ -65,6 +65,35 @@ FIELD_LABELS = {
     "zone_width": "Zone width",
 }
 
+FIELD_STATUS_LABELS = {
+    "validated": "validated",
+    "mapped": "mapped",
+    "derived": "derived",
+    "partially_characterized": "partial",
+    "unknown_bpf_record": "raw",
+    "legacy": "legacy",
+}
+
+FIELD_SOURCE_LABELS = {
+    "bpf": "BPF",
+    "log": "LOG",
+    "derived": "derived",
+    "unknown": "unknown",
+}
+
+AXIS_LABELS = {
+    "zone": "Zone index",
+    "node": "Node index",
+    "frequency": "Frequency group",
+    "frequency_edge": "Frequency group edge",
+    "boundary": "Boundary index",
+    "bpf_record_value": "BPF record value index",
+    "charge_state": "Charge state",
+    "region": "Region index",
+    "summary_value": "Summary value index",
+    "header_value": "Header value index",
+}
+
 COLORMAP_OPTIONS = [
     ("Cividis", "cividis"),
     ("Turbo", "turbo"),
@@ -137,6 +166,17 @@ def _pretty_diagnostic(path: str) -> str:
 def _field_item_text(name: str, unit: str) -> str:
     label = _pretty_name(name)
     return f"{label} [{unit}]" if unit else label
+
+
+def _metadata_text(metadata: dict[str, object]) -> str:
+    status = str(metadata.get("status", "") or "")
+    source = str(metadata.get("source", "") or "")
+    parts: list[str] = []
+    if status:
+        parts.append(FIELD_STATUS_LABELS.get(status, status))
+    if source:
+        parts.append(FIELD_SOURCE_LABELS.get(source, source))
+    return " ".join(parts)
 
 
 def _diagnostic_item_text(path: str, unit: str) -> str:
@@ -402,6 +442,9 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self._trace_reference_anchor_snapshot = 0
         self._combined_zone_mask_key: tuple[object, ...] | None = None
         self._combined_zone_mask_value: np.ndarray | None = None
+        self._field_filter_source = "__all__"
+        self._field_filter_status = "__all__"
+        self._field_filter_axes = "__all__"
         self._refresh_timer = QtCore.QTimer(self)
         self._refresh_timer.setSingleShot(True)
         self._refresh_timer.timeout.connect(self._flush_scheduled_refresh)
@@ -596,6 +639,27 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self.field_label.setWordWrap(True)
         field_group = QtWidgets.QGroupBox("Fields")
         field_layout = QtWidgets.QVBoxLayout(field_group)
+        filter_layout = QtWidgets.QGridLayout()
+        filter_layout.setContentsMargins(0, 0, 0, 0)
+        filter_layout.setHorizontalSpacing(6)
+        filter_layout.setVerticalSpacing(4)
+        self.field_source_filter_combo = QtWidgets.QComboBox()
+        self.field_source_filter_combo.addItem("All sources", "__all__")
+        self.field_source_filter_combo.currentIndexChanged.connect(self._on_field_filter_changed)
+        self.field_status_filter_combo = QtWidgets.QComboBox()
+        self.field_status_filter_combo.addItem("All statuses", "__all__")
+        self.field_status_filter_combo.currentIndexChanged.connect(self._on_field_filter_changed)
+        self.field_axes_filter_combo = QtWidgets.QComboBox()
+        self.field_axes_filter_combo.addItem("All axes", "__all__")
+        self.field_axes_filter_combo.currentIndexChanged.connect(self._on_field_filter_changed)
+        self.show_alias_fields_checkbox = QtWidgets.QCheckBox("Show compatibility aliases")
+        self.show_alias_fields_checkbox.setToolTip("Show duplicate compatibility names such as density when a canonical BPF field is also available.")
+        self.show_alias_fields_checkbox.stateChanged.connect(self._on_field_filter_changed)
+        filter_layout.addWidget(self.field_source_filter_combo, 0, 0)
+        filter_layout.addWidget(self.field_status_filter_combo, 0, 1)
+        filter_layout.addWidget(self.field_axes_filter_combo, 1, 0)
+        filter_layout.addWidget(self.show_alias_fields_checkbox, 1, 1)
+        field_layout.addLayout(filter_layout)
         field_layout.addWidget(self.field_list)
         field_layout.addWidget(self.field_label)
         layout.addWidget(field_group)
@@ -1136,6 +1200,57 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             return None
         return self._display_field_data("radius", self.radius_payload.unit, self.radius_payload.data)
 
+    def _metadata_for_field(self, field_name: str | None) -> dict[str, object]:
+        if self.run_payload is None or field_name is None:
+            return {}
+        metadata = (self.run_payload.field_metadata or {}).get(str(field_name), {})
+        return metadata if isinstance(metadata, dict) else {}
+
+    def _field_axes(self, field_name: str | None) -> tuple[str, ...]:
+        metadata = self._metadata_for_field(field_name)
+        axes = metadata.get("dimensions", ())
+        if isinstance(axes, (list, tuple)):
+            return tuple(str(axis) for axis in axes)
+        return ()
+
+    def _current_field_axes(self) -> tuple[str, ...]:
+        if self.current_field_payload is None:
+            return ()
+        return self._field_axes(self.current_field_payload.field_name)
+
+    def _is_alias_field(self, field_name: str) -> bool:
+        return bool(self._metadata_for_field(field_name).get("alias_of"))
+
+    def _field_is_zone_time(self, field_name: str | None, data: np.ndarray | None = None) -> bool:
+        axes = self._field_axes(field_name)
+        if axes != ("time", "zone"):
+            return False
+        if data is None or self.run_payload is None:
+            return True
+        return data.ndim == 2 and data.shape[1] == int(self.run_payload.summary["n_zones"])
+
+    def _field_is_supported_2d_time_axis(self, field_name: str | None, data: np.ndarray) -> bool:
+        axes = self._field_axes(field_name)
+        return data.ndim == 2 and len(axes) == 2 and axes[0] == "time"
+
+    def _secondary_axis_name(self, field_name: str | None) -> str:
+        axes = self._field_axes(field_name)
+        return axes[1] if len(axes) >= 2 else "axis_1"
+
+    def _axis_label_for_name(self, axis_name: str) -> str:
+        return AXIS_LABELS.get(axis_name, axis_name.replace("_", " ").capitalize())
+
+    def _axis_values_for_current_field(self, data: np.ndarray) -> tuple[np.ndarray, str, str]:
+        axis_name = self._secondary_axis_name(self.current_field_name)
+        length = int(data.shape[1]) if data.ndim >= 2 else int(data.size)
+        if axis_name == "charge_state":
+            values = np.arange(length, dtype=np.float64)
+        else:
+            values = np.arange(1, length + 1, dtype=np.float64)
+        label = self._axis_label_for_name(axis_name)
+        title = label.lower()
+        return values, label, title
+
     def _current_display_field_bundle(self) -> tuple[np.ndarray, str, str] | None:
         if self.current_field_payload is None:
             return None
@@ -1151,12 +1266,165 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             return
         for index in range(self.field_list.count()):
             item = self.field_list.item(index)
-            field_name = str(item.data(QtCore.Qt.UserRole))
+            value = item.data(QtCore.Qt.UserRole)
+            if value is None:
+                continue
+            field_name = str(value)
             unit = self._display_field_unit(field_name, self.run_payload.field_units.get(field_name, ""))
-            item.setText(_field_item_text(field_name, unit))
+            item.setText(self._field_item_text_with_metadata(field_name, unit))
         if self.current_field_name is not None and self.run_payload is not None:
             unit = self._display_field_unit(self.current_field_name, self.run_payload.field_units.get(self.current_field_name, ""))
-            self.field_label.setText(f"Field: {_field_item_text(self.current_field_name, unit)}")
+            self.field_label.setText(f"Field: {self._field_item_text_with_metadata(self.current_field_name, unit)}")
+
+    def _field_item_text_with_metadata(self, field_name: str, unit: str) -> str:
+        metadata = self._metadata_for_field(field_name)
+        label = str(metadata.get("label") or _pretty_name(field_name))
+        if metadata.get("alias_of"):
+            label = f"{label} -> {metadata.get('alias_of')}"
+        text = f"{label} [{unit}]" if unit else label
+        meta_text = _metadata_text(metadata)
+        return f"[{meta_text}] {text}" if meta_text else text
+
+    def _field_tooltip(self, field_name: str) -> str:
+        metadata = self._metadata_for_field(field_name)
+        axes = self._field_axes(field_name)
+        lines = [
+            str(metadata.get("label") or _pretty_name(field_name)),
+            f"Field: {field_name}",
+            f"Axes: {', '.join(axes) if axes else 'legacy'}",
+        ]
+        source = metadata.get("source")
+        status = metadata.get("status")
+        if source or status:
+            lines.append(f"Source/status: {source or '-'} / {status or '-'}")
+        if metadata.get("alias_of"):
+            lines.append(f"Compatibility alias of: {metadata.get('alias_of')}")
+        description = str(metadata.get("description") or "").strip()
+        if description:
+            lines.append(description)
+        return "\n".join(lines)
+
+    def _field_brush_for_status(self, status: str, alias_of: object | None = None) -> QtGui.QBrush:
+        if alias_of:
+            return QtGui.QBrush(QtGui.QColor("#64748b"))
+        colors = {
+            "validated": "#0f766e",
+            "mapped": "#2563eb",
+            "derived": "#7c3aed",
+            "partially_characterized": "#b45309",
+            "unknown_bpf_record": "#6b7280",
+            "legacy": "#334155",
+        }
+        return QtGui.QBrush(QtGui.QColor(colors.get(status, "#1f2937")))
+
+    def _field_group_name(self, field_name: str) -> str:
+        metadata = self._metadata_for_field(field_name)
+        if metadata.get("alias_of"):
+            return "Compatibility aliases"
+        status = str(metadata.get("status", "") or "")
+        if status == "unknown_bpf_record" or field_name.startswith("bpf_record_"):
+            return "Raw and unresolved BPF records"
+        return "Physics and mapped fields"
+
+    def _populate_field_filter_combos(self, payload: OpenRunPayload) -> None:
+        metadata = payload.field_metadata or {}
+        sources = sorted({str(meta.get("source")) for meta in metadata.values() if isinstance(meta, dict) and meta.get("source")})
+        statuses = sorted({str(meta.get("status")) for meta in metadata.values() if isinstance(meta, dict) and meta.get("status")})
+        axes_values = sorted(
+            {
+                ",".join(str(axis) for axis in meta.get("dimensions", ()))
+                for meta in metadata.values()
+                if isinstance(meta, dict) and meta.get("dimensions")
+            }
+        )
+        for combo, label, values in (
+            (self.field_source_filter_combo, "All sources", sources),
+            (self.field_status_filter_combo, "All statuses", statuses),
+            (self.field_axes_filter_combo, "All axes", axes_values),
+        ):
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItem(label, "__all__")
+            for value in values:
+                combo.addItem(value, value)
+            combo.setCurrentIndex(0)
+            combo.blockSignals(False)
+        self.show_alias_fields_checkbox.blockSignals(True)
+        self.show_alias_fields_checkbox.setChecked(False)
+        self.show_alias_fields_checkbox.blockSignals(False)
+
+    def _field_passes_filters(self, field_name: str) -> bool:
+        metadata = self._metadata_for_field(field_name)
+        if metadata.get("alias_of") and not self.show_alias_fields_checkbox.isChecked():
+            return False
+        source_filter = str(self.field_source_filter_combo.currentData())
+        status_filter = str(self.field_status_filter_combo.currentData())
+        axes_filter = str(self.field_axes_filter_combo.currentData())
+        if source_filter != "__all__" and str(metadata.get("source", "")) != source_filter:
+            return False
+        if status_filter != "__all__" and str(metadata.get("status", "")) != status_filter:
+            return False
+        axes = ",".join(self._field_axes(field_name))
+        if axes_filter != "__all__" and axes != axes_filter:
+            return False
+        return True
+
+    def _add_field_group_header(self, text: str) -> None:
+        item = QtWidgets.QListWidgetItem(text)
+        item.setFlags(QtCore.Qt.NoItemFlags)
+        item.setForeground(QtGui.QBrush(QtGui.QColor("#475569")))
+        font = item.font()
+        font.setBold(True)
+        item.setFont(font)
+        self.field_list.addItem(item)
+
+    def _refresh_field_browser(self, *, preserve_selection: str | None = None, select_fallback: bool = True) -> None:
+        if self.run_payload is None:
+            self.field_list.clear()
+            return
+        current = preserve_selection or self.current_field_name
+        grouped: dict[str, list[str]] = {
+            "Physics and mapped fields": [],
+            "Raw and unresolved BPF records": [],
+            "Compatibility aliases": [],
+        }
+        for field_name in self.run_payload.fields:
+            if self._field_passes_filters(field_name):
+                grouped[self._field_group_name(field_name)].append(field_name)
+
+        self.field_list.blockSignals(True)
+        self.field_list.clear()
+        first_field: str | None = None
+        selected_row: int | None = None
+        for group_name, fields in grouped.items():
+            if not fields:
+                continue
+            self._add_field_group_header(group_name)
+            for field_name in fields:
+                unit = self._display_field_unit(field_name, self.run_payload.field_units.get(field_name, ""))
+                item = QtWidgets.QListWidgetItem(self._field_item_text_with_metadata(field_name, unit))
+                item.setData(QtCore.Qt.UserRole, field_name)
+                metadata = self._metadata_for_field(field_name)
+                item.setToolTip(self._field_tooltip(field_name))
+                item.setForeground(self._field_brush_for_status(str(metadata.get("status", "")), metadata.get("alias_of")))
+                self.field_list.addItem(item)
+                if first_field is None:
+                    first_field = field_name
+                if current == field_name:
+                    selected_row = self.field_list.count() - 1
+        if self.field_list.count() == 0:
+            empty = QtWidgets.QListWidgetItem("No fields match the current filters")
+            empty.setFlags(QtCore.Qt.NoItemFlags)
+            self.field_list.addItem(empty)
+        self.field_list.blockSignals(False)
+        if selected_row is not None:
+            self.field_list.setCurrentRow(selected_row)
+        elif select_fallback and first_field is not None:
+            self._select_list_item_by_data(self.field_list, first_field)
+
+    def _on_field_filter_changed(self, *args) -> None:
+        del args
+        self._refresh_field_browser(preserve_selection=self.current_field_name)
 
     def _wire_persistent_controls(self) -> None:
         for combo in (
@@ -1591,6 +1859,10 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
     def _set_controls_enabled(self, enabled: bool) -> None:
         for widget in (
             self.field_list,
+            self.field_source_filter_combo,
+            self.field_status_filter_combo,
+            self.field_axes_filter_combo,
+            self.show_alias_fields_checkbox,
             self.map_orientation_combo,
             self.map_coordinate_combo,
             self.slice_mode_combo,
@@ -1749,16 +2021,8 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self.field_label.setText("Field: -")
         self.diagnostic_label.setText("Diagnostic: -")
 
-        self.field_list.clear()
-        for field_name in payload.fields:
-            unit = self._display_field_unit(field_name, payload.field_units.get(field_name, ""))
-            item = QtWidgets.QListWidgetItem(_field_item_text(field_name, unit))
-            item.setData(QtCore.Qt.UserRole, field_name)
-            metadata = (payload.field_metadata or {}).get(field_name, {})
-            axes = metadata.get("dimensions", ()) if isinstance(metadata, dict) else ()
-            label = metadata.get("label", field_name) if isinstance(metadata, dict) else field_name
-            item.setToolTip(f"{label}\nAxes: {', '.join(axes) if axes else 'legacy'}")
-            self.field_list.addItem(item)
+        self._populate_field_filter_combos(payload)
+        self._refresh_field_browser(select_fallback=False)
 
         self.diagnostic_list.clear()
         for path in payload.diagnostics:
@@ -1888,7 +2152,19 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self._emit_run_context_changed()
         self.run_loaded.emit(payload)
 
-        default_field = "density" if "density" in payload.fields else payload.fields[0]
+        visible_fields = [
+            str(self.field_list.item(index).data(QtCore.Qt.UserRole))
+            for index in range(self.field_list.count())
+            if self.field_list.item(index).data(QtCore.Qt.UserRole) is not None
+        ]
+        if "mass_density_g_cm3" in visible_fields:
+            default_field = "mass_density_g_cm3"
+        elif "density" in visible_fields:
+            default_field = "density"
+        elif visible_fields:
+            default_field = visible_fields[0]
+        else:
+            default_field = payload.fields[0]
         self._select_list_item_by_data(self.field_list, default_field)
         if payload.has_dynamic_radius and default_field != "radius":
             self.controller.load_field("radius")
@@ -2011,10 +2287,18 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         del previous
         if current is None:
             return
-        field_name = str(current.data(QtCore.Qt.UserRole))
+        field_value = current.data(QtCore.Qt.UserRole)
+        if field_value is None:
+            return
+        field_name = str(field_value)
         unit = self.run_payload.field_units.get(field_name, "") if self.run_payload is not None else ""
         unit = self._display_field_unit(field_name, unit)
-        self.field_label.setText(f"Field: {_field_item_text(field_name, unit)}")
+        metadata = self._metadata_for_field(field_name)
+        axes = self._field_axes(field_name)
+        detail = _metadata_text(metadata)
+        axis_text = ", ".join(axes) if axes else "legacy"
+        label = self._field_item_text_with_metadata(field_name, unit)
+        self.field_label.setText(f"Field: {label}\nAxes: {axis_text}" + (f" | {detail}" if detail else ""))
         self.current_field_name = field_name
         self.controller.load_field(field_name)
 
@@ -2435,6 +2719,8 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self.apply_levels_button.setEnabled(manual_enabled)
         allow_moving_mesh = self.run_payload is not None and self.run_payload.has_dynamic_radius and self.radius_payload is not None
         self._set_combo_item_enabled(self.map_coordinate_combo, "moving_radius", allow_moving_mesh)
+        current_is_zone_time = self.current_field_payload is None or self._field_is_zone_time(self.current_field_name, self.current_field_payload.data)
+        self.map_coordinate_combo.setEnabled(self.run_payload is not None and current_is_zone_time)
         if not allow_moving_mesh and self._map_coordinate_mode() == "moving_radius":
             fallback_index = self.map_coordinate_combo.findData("static_x")
             if fallback_index < 0:
@@ -2460,6 +2746,7 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         return (
             str(self.run_payload.path),
             "field_map",
+            self.current_field_name or "",
             coordinate_mode,
             orientation,
             render_mode,
@@ -2473,6 +2760,7 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         return (
             str(self.run_payload.path),
             "field_map",
+            self.current_field_name or "",
             int(self.run_payload.summary["n_zones"]),
             int(self.run_payload.summary["n_snapshots"]),
         )
@@ -2515,14 +2803,18 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
     def _update_slice_control_state(self) -> None:
         payload = self.run_payload
         slice_mode = self._slice_mode()
+        current_is_zone_time = self.current_field_payload is None or self._field_is_zone_time(self.current_field_name, self.current_field_payload.data)
+        self.line_coordinate_combo.setEnabled(payload is not None and current_is_zone_time)
         allow_radius = (
             payload is not None
+            and current_is_zone_time
             and payload.has_dynamic_radius
             and self.radius_payload is not None
             and slice_mode == "snapshot_lineout"
         )
         allow_moving_radius = (
             payload is not None
+            and current_is_zone_time
             and payload.has_dynamic_radius
             and self.radius_payload is not None
             and slice_mode == "time_trace"
@@ -2541,6 +2833,18 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             if fallback_mode == "moving_radius":
                 fallback_mode = "radius" if allow_radius else "static_x"
             self._set_line_coordinate_mode(fallback_mode)
+        if payload is not None and self.current_field_payload is not None and not current_is_zone_time and self.current_field_payload.data.ndim == 2:
+            axis_count = int(self.current_field_payload.data.shape[1])
+            self.trace_zone_spin.blockSignals(True)
+            self.trace_zone_spin.setRange(1, max(1, axis_count))
+            self.trace_zone_spin.setValue(min(max(1, self.trace_zone_spin.value()), max(1, axis_count)))
+            self.trace_zone_spin.blockSignals(False)
+        elif payload is not None:
+            self.trace_zone_spin.blockSignals(True)
+            self.trace_zone_spin.setRange(1, payload.summary["n_zones"])
+            self.trace_zone_spin.setValue(min(max(1, self.trace_zone_spin.value()), payload.summary["n_zones"]))
+            self.trace_zone_spin.blockSignals(False)
+
         trace_enabled = slice_mode == "time_trace"
         self.trace_reference_row_label.setEnabled(trace_enabled and self.run_payload is not None)
         self.trace_reference_stack.setEnabled(trace_enabled and self.run_payload is not None)
@@ -2549,6 +2853,14 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self._update_trace_reference_label()
 
     def _update_coordinate_note(self) -> None:
+        if self.current_field_payload is not None and not self._field_is_zone_time(self.current_field_name, self.current_field_payload.data):
+            axis_name = self._secondary_axis_name(self.current_field_name)
+            axis_label = self._axis_label_for_name(axis_name)
+            self.coordinate_note_label.setText(
+                f"Current field uses {axis_label.lower()} instead of zone coordinates. "
+                "Region/material masks and moving-mesh coordinate controls are disabled for this field."
+            )
+            return
         map_orientation = str(self.map_orientation_combo.currentData())
         map_coordinate = self._map_coordinate_mode()
         slice_mode = self._slice_mode()
@@ -2677,6 +2989,14 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
     def _update_trace_reference_label(self) -> None:
         if self.run_payload is None:
             self.trace_reference_label.setText("Reference: -")
+            return
+        if self.current_field_payload is not None and not self._field_is_zone_time(self.current_field_name, self.current_field_payload.data):
+            axis_name = self._secondary_axis_name(self.current_field_name)
+            axis_label = self._axis_label_for_name(axis_name)
+            if self._slice_mode() == "time_trace":
+                self.trace_reference_label.setText(f"Reference: {axis_label.lower()} {int(self.trace_zone_spin.value())}")
+            else:
+                self.trace_reference_label.setText(f"Reference: {axis_label.lower()} axis")
             return
         resolved = self._resolve_trace_reference()
         if resolved is None:
@@ -3522,8 +3842,14 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         if display_bundle is None:
             return
         display_field, display_unit, pretty_field = display_bundle
-        mask = self._combined_zone_mask()
-        raw_data = self._masked_matrix(display_field, mask)
+        if not self._field_is_supported_2d_time_axis(self.current_field_name, display_field):
+            axes = ", ".join(self._current_field_axes()) or str(tuple(display_field.shape))
+            self.field_map_widget.reset_dataset_state()
+            self._set_status_message(f"{pretty_field} has axes {axes}; no viewer plot is available for this shape.")
+            return
+        is_zone_time = self._field_is_zone_time(self.current_field_name, display_field)
+        mask = self._combined_zone_mask() if is_zone_time else np.array([], dtype=bool)
+        raw_data = self._masked_matrix(display_field, mask) if is_zone_time else np.asarray(display_field, dtype=np.float64)
         image, scale_note = self._prepare_display_image(raw_data)
         levels, auto_levels = self._current_map_levels(image)
         snapshot_index = self._current_snapshot_index()
@@ -3537,7 +3863,11 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         inactive_ranges: list[tuple[float, float]] = []
         laser_entry_position: float | None = None
         laser_entry_curve: np.ndarray | None = None
-        if coordinate_mode == "zone":
+        if not is_zone_time:
+            coordinate_values, coordinate_label, coordinate_title = self._axis_values_for_current_field(display_field)
+            coordinate_edges = self._centers_to_edges(coordinate_values)
+            coordinate_mode = self._secondary_axis_name(self.current_field_name)
+        elif coordinate_mode == "zone":
             coordinate_values = np.arange(1, self.run_payload.summary["n_zones"] + 1, dtype=np.float64)
             coordinate_edges = self._zone_coordinate_edges()
             coordinate_label = "Zone index"
@@ -3574,7 +3904,7 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         title += f" | {self._filter_brief_label()} | {scale_note}"
 
         show_slice_overlays = self.plot_tabs.currentWidget() is self.lineout_plot
-        show_reference_marker = show_slice_overlays and self._slice_mode() == "time_trace"
+        show_reference_marker = is_zone_time and show_slice_overlays and self._slice_mode() == "time_trace"
         reference_position: float | None = None
         if show_reference_marker:
             trace_zone = self._resolved_trace_zone_index()
@@ -3588,8 +3918,9 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
 
         colorbar_prefix = "log10 " if str(self.map_scale_combo.currentData()) == "log10" else ""
         colorbar_label = _label_with_unit(f"{colorbar_prefix}{pretty_field}".rstrip(), display_unit)
-        boundary_positions = None if coordinate_mode == "moving_radius" else self._region_boundary_positions(coordinate_mode, active_mask=mask)
-        laser_entry_position, laser_entry_curve = self._laser_entry_overlay()
+        boundary_positions = None if (not is_zone_time or coordinate_mode == "moving_radius") else self._region_boundary_positions(coordinate_mode, active_mask=mask)
+        if is_zone_time:
+            laser_entry_position, laser_entry_curve = self._laser_entry_overlay()
         render_mode = "mesh" if mesh_x is not None and mesh_y is not None else "image"
         view_context_key = self._field_map_view_context_key(
             coordinate_mode=coordinate_mode,
@@ -3663,9 +3994,75 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         if display_bundle is None:
             return
         display_field, display_unit, pretty_field = display_bundle
-        mask = self._combined_zone_mask()
+        if not self._field_is_supported_2d_time_axis(self.current_field_name, display_field):
+            axes = ", ".join(self._current_field_axes()) or str(tuple(display_field.shape))
+            self.lineout_plot.set_curves(
+                np.array([0.0], dtype=np.float64),
+                [np.array([np.nan], dtype=np.float64)],
+                title=f"{pretty_field}: axes {axes} are not supported by the viewer plot controls",
+                x_label="Axis",
+                y_label=_label_with_unit(pretty_field, display_unit),
+                value_scale_mode="linear",
+                preserve_view=preserve_view,
+            )
+            return
+        is_zone_time = self._field_is_zone_time(self.current_field_name, display_field)
+        mask = self._combined_zone_mask() if is_zone_time else np.array([], dtype=bool)
         slice_mode = self._slice_mode()
         display_time = self._display_time_values(np.asarray(self.run_payload.time, dtype=np.float64))
+
+        if not is_zone_time:
+            axis_values, axis_label, axis_title = self._axis_values_for_current_field(display_field)
+            axis_count = int(display_field.shape[1])
+            if slice_mode == "time_trace":
+                axis_index = int(np.clip(self.trace_zone_spin.value() - 1, 0, max(0, axis_count - 1)))
+                y = np.asarray(display_field[:, axis_index], dtype=np.float64)
+                line_scale_mode, scale_note = self._effective_value_scale_mode(y, str(self.line_scale_combo.currentData()))
+                current_time = self._display_time_value(float(self.run_payload.time[self._current_snapshot_index()]))
+                title = (
+                    f"{pretty_field} time trace | {axis_title} {axis_index + 1} | "
+                    f"current-time cursor = {current_time:.4e} {self._viewer_settings.time_unit} | {scale_note}"
+                )
+                self.lineout_plot.set_curves(
+                    display_time,
+                    [y],
+                    title=title,
+                    x_label=f"Time [{self._viewer_settings.time_unit}]",
+                    y_label=_label_with_unit(pretty_field, display_unit),
+                    curve_names=[pretty_field],
+                    value_scale_mode=line_scale_mode,
+                    boundary_positions=None,
+                    show_boundaries=False,
+                    cursor_position=current_time,
+                    show_cursor=True,
+                    preserve_view=preserve_view,
+                    view_context_key=self._line_plot_view_context_key(),
+                )
+                return
+
+            snapshot_index = self.snapshot_slider.value()
+            y = np.asarray(display_field[snapshot_index], dtype=np.float64)
+            line_scale_mode, scale_note = self._effective_value_scale_mode(y, str(self.line_scale_combo.currentData()))
+            time_value = self._display_time_value(float(self.run_payload.time[snapshot_index]))
+            title = (
+                f"{pretty_field} profile | snapshot {snapshot_index} | "
+                f"t={time_value:.4e} {self._viewer_settings.time_unit} | {axis_title} | {scale_note}"
+            )
+            self.lineout_plot.set_curves(
+                axis_values,
+                [y],
+                title=title,
+                x_label=axis_label,
+                y_label=_label_with_unit(pretty_field, display_unit),
+                curve_names=[pretty_field],
+                value_scale_mode=line_scale_mode,
+                boundary_positions=None,
+                show_boundaries=False,
+                show_cursor=False,
+                preserve_view=preserve_view,
+                view_context_key=self._line_plot_view_context_key(),
+            )
+            return
 
         if slice_mode == "time_trace":
             resolved = self._resolve_trace_reference()
@@ -3819,13 +4216,15 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             return
         if payload.field_name != self.current_field_name:
             return
-        if payload.data.ndim != 2:
+        if not self._field_is_supported_2d_time_axis(payload.field_name, payload.data):
             metadata = (self.run_payload.field_metadata or {}).get(payload.field_name, {}) if self.run_payload is not None else {}
             axes = metadata.get("dimensions", ()) if isinstance(metadata, dict) else ()
-            self._set_status_message(
-                f"Loaded {payload.field_name}: axes {', '.join(axes) if axes else payload.data.shape}; "
-                "use schema-aware analysis APIs for non-zone/time fields."
+            message = (
+                f"{payload.field_name} loaded but not plotted: axes {', '.join(axes) if axes else payload.data.shape}. "
+                "The viewer supports time-by-zone, time-by-node, time-by-frequency, time-by-boundary, and raw time-vector fields."
             )
+            self._set_status_message(message)
+            QtCore.QTimer.singleShot(0, lambda text=message: self._set_status_message(text))
             self.current_field_payload = None
             self.field_visualized.emit(payload.field_name)
             return
@@ -3834,6 +4233,9 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self._display_field_cache_key = None
         self._display_field_cache_value = None
         self._mouse_plot_auto_range_pending = True
+        self._update_map_control_state()
+        self._update_slice_control_state()
+        self._update_coordinate_note()
         self._refresh_field_map(preserve_view=not initial_field_render)
         self._refresh_line_plot(preserve_view=not initial_field_render)
         self._refresh_mouse_mode_plots()

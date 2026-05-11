@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HELIOS Parse / View Release Notes 1.1.0</title>
+  <title>HELIOS Parse / View Release Notes 1.1.1</title>
   <link rel="stylesheet" href="assets/manual.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>Release Notes</h1>
         <p>
-          HELIOS Parse / View 1.1.0, released 2026-05-11.
+          HELIOS Parse / View 1.1.1, released 2026-05-11.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
       </div>
@@ -28,26 +28,35 @@
 
   <main>
     <section>
-      <h2>Why 1.1.0</h2>
+      <h2>Why 1.1.1</h2>
       <p>
-        This release finalizes the production parser/reader pipeline for BPF-primary HELIOS data while preserving LOG-only
-        workflows and the existing physics-gated desktop behavior.
+        This patch hardens the 1.1 production parser/reader pipeline after clean-room acceptance validation, with emphasis
+        on rich BPF viewer usability, portable release packaging, and clean-clone tests.
       </p>
     </section>
 
     <section>
       <h2>Highlights in this release</h2>
       <ul>
-        <li>production parser accepts `.log` and `.bpf` inputs with explicit BPF-primary routing when a companion BPF exists</li>
-        <li>HDF5/H5D schema version 2.0 stores self-describing field metadata, source provenance, axis semantics, and aliases</li>
-        <li>BPF/LOG overlap fields were systematically cross-validated, including radiation pressure/energy and cumulative laser source behavior</li>
-        <li>remaining unresolved BPF records are preserved with honest raw names, confidence/status metadata, and forensic documentation</li>
-        <li>release archive excludes tests, legacy shadow modules, reports, caches, and development audit outputs</li>
+        <li>viewer routing now uses field axes, so frequency, node, boundary, and raw BPF vectors no longer render as zone fields</li>
+        <li>field browser filters by source, status, and axes, with compatibility aliases hidden by default</li>
+        <li>expected malformed-input CLI failures now produce concise parse errors instead of Python tracebacks</li>
+        <li>startup documentation and release packaging no longer rely on developer-machine paths or untracked root logs</li>
+        <li>release examples now include a schema-2.0 BPF-derived HDF5 file</li>
       </ul>
     </section>
 
     <section>
       <h2>Changelog</h2>
+      <h3>1.1.1</h3>
+      <ul>
+        <li>fixed viewer plotting for <code>time,frequency</code>, <code>time,node</code>, <code>time,boundary</code>, and <code>time,bpf_record_value</code> fields</li>
+        <li>added source/status/axes field filters and alias visibility control for rich BPF inventories</li>
+        <li>kept unsupported higher-dimensional fields user-facing and non-fatal</li>
+        <li>cleaned CLI parse-failure messaging for malformed or truncated inputs</li>
+        <li>moved smoke and BPF tests onto tracked fixtures so clean clones remain reproducible</li>
+        <li>added tracked sample inputs and a generated schema-2.0 BPF example to the release bundle</li>
+      </ul>
       <h3>1.1.0</h3>
       <ul>
         <li>added production BPF parser integration and BPF-primary HDF5 conversion</li>
@@ -98,7 +107,7 @@
         <li>selected demo HDF5 examples under <code>examples/</code></li>
       </ul>
       <p>
-        The 1.1.0 bundle intentionally omits tests, reports, old release outputs, and legacy shadow source files. Experimental Transmission/XCOM support remains in source behind development flags.
+        The 1.1.1 bundle intentionally omits tests, reports, old release outputs, and legacy shadow source files. Experimental Transmission/XCOM support remains in source behind development flags.
       </p>
     </section>
 
@@ -111,7 +120,7 @@
       <ul>
         <li>Author: Dmitrii Bespalov</li>
         <li>Organization: European XFEL</li>
-        <li>Release: 1.1.0</li>
+        <li>Release: 1.1.1</li>
         <li>Date: 2026-05-11</li>
       </ul>
     </section>

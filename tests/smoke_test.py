@@ -11,53 +11,50 @@ from helios_parser import HeliosParser, HeliosPreview, inspect, parse, preview, 
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SMALLEST = ROOT / "5Fe+4.9TW+light.log"
-VALIDATION = ROOT / "25Cu+1.4TW.log"
+TRACKED_SAMPLE = ROOT / "new_data" / "25Cu+1.87TW" / "25Cu+1.87TW.log"
 
 
 def main() -> None:
     parser = HeliosParser()
     mmap_parser = HeliosParser(access_mode="mmap")
-    header = inspect(SMALLEST)
-    preview_result = preview(SMALLEST)
-    mmap_preview = mmap_parser.preview(SMALLEST)
-    assert header.n_zones == 500
-    assert isinstance(preview_result, HeliosPreview)
-    assert preview_result.snapshot is not None
-    assert mmap_preview.snapshot is not None
-    assert preview_result.snapshot.fields["density"].shape == (500,)
-    np.testing.assert_allclose(preview_result.snapshot.fields["density"], mmap_preview.snapshot.fields["density"])
-
-    smallest = parse(SMALLEST)
-    assert smallest.metadata["n_zones"] == 500
-    assert smallest.time["time"].size > 1
-    assert smallest.fields["density"].shape == (smallest.time["time"].size, 500)
-    assert smallest.fields["temperature_e"].shape == smallest.fields["density"].shape
-    assert np.all(np.isfinite(smallest.grid["zone_mass"]))
-    assert "pressure" in smallest.fields
-    assert set(smallest.diagnostics) == {
-        "radiation_boundary_fluxes",
-        "energy_summary",
-        "energy_exchange",
-        "energy_balance",
-    }
-    assert set(smallest.input_parameters) == {
-        "hydro",
-        "laser_source",
-        "radiation_source",
-        "radiative_transfer",
-        "time_control",
-    }
-
-    validation = parser.parse(VALIDATION)
-    assert validation.metadata["n_zones"] == 50
-    assert validation.time["time"].size > 1
-    assert validation.fields["density"].shape == (validation.time["time"].size, 50)
-    assert smallest.raw_field_map.keys() == validation.raw_field_map.keys()
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        log_only = tmpdir_path / TRACKED_SAMPLE.name
+        log_only.write_bytes(TRACKED_SAMPLE.read_bytes())
+        header = inspect(log_only)
+        preview_result = preview(log_only)
+        mmap_preview = mmap_parser.preview(log_only)
+        assert header.n_zones == 50
+        assert isinstance(preview_result, HeliosPreview)
+        assert preview_result.snapshot is not None
+        assert mmap_preview.snapshot is not None
+        assert preview_result.snapshot.fields["density"].shape == (50,)
+        np.testing.assert_allclose(preview_result.snapshot.fields["density"], mmap_preview.snapshot.fields["density"])
+
+        simulation = parse(log_only)
+        assert simulation.metadata["n_zones"] == 50
+        assert simulation.time["time"].size > 1
+        assert simulation.fields["density"].shape == (simulation.time["time"].size, 50)
+        assert simulation.fields["temperature_e"].shape == simulation.fields["density"].shape
+        assert np.all(np.isfinite(simulation.grid["zone_mass"]))
+        assert "pressure" in simulation.fields
+        assert set(simulation.diagnostics) == {
+            "radiation_boundary_fluxes",
+            "energy_summary",
+            "energy_exchange",
+            "energy_balance",
+        }
+        assert set(simulation.input_parameters) == {
+            "hydro",
+            "laser_source",
+            "radiation_source",
+            "radiative_transfer",
+            "time_control",
+        }
+
         output = Path(tmpdir) / "helios.h5"
-        write_hdf5(SMALLEST, output, overwrite=True, parser=parser)
+        write_hdf5(log_only, output, overwrite=True, parser=parser)
         with h5py.File(output, "r") as handle:
             assert "/grid/x" in handle
             assert "/time/time" in handle
@@ -71,7 +68,7 @@ def main() -> None:
             assert handle["/fields/density"].attrs["unit"] == "g/cm3"
             assert handle["/fields/density"].attrs["units"] == "g/cm3"
             assert handle["/diagnostics/energy_summary/current/ions"].attrs["units"] == "J/cm**2"
-            assert handle["/fields/density"].shape[1] == 500
+            assert handle["/fields/density"].shape[1] == 50
 
     print("smoke test passed")
 

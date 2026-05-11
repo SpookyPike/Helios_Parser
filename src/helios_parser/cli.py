@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
+import sys
 
 from .hdf5 import write_hdf5
 from .parser import HeliosParser
@@ -31,13 +32,21 @@ def main() -> int:
     )
 
     parser = HeliosParser()
-    write_hdf5(
-        args.input,
-        args.output,
-        compression=args.compression,
-        overwrite=args.overwrite,
-        parser=parser,
-    )
+    try:
+        write_hdf5(
+            args.input,
+            args.output,
+            compression=args.compression,
+            overwrite=args.overwrite,
+            parser=parser,
+        )
+    except (FileNotFoundError, OSError, ValueError, EOFError) as exc:
+        if args.verbose:
+            raise
+        print(f"Parse error: {args.input}", file=sys.stderr)
+        print(f"Reason: {exc}", file=sys.stderr)
+        print("Hint: verify that the input is a complete HELIOS .log or .bpf file and that any companion file is not truncated.", file=sys.stderr)
+        return 2
     return 0
 
 

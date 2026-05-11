@@ -1,11 +1,11 @@
-# HELIOS Parse / View 1.1.0
+# HELIOS Parse / View 1.1.1
 
 Code developed by Dmitrii Bespalov at European XFEL.
 Release date: 2026-05-11.
 
 ## Open this first
 
-This bundle contains the current HELIOS Parse / View source tree plus documentation, launch scripts, and a few demo HDF5 runs.
+This bundle contains the current HELIOS Parse / View source tree plus documentation, launch scripts, sample inputs, and demo HDF5 runs.
 
 The parser accepts HELIOS `.log` and `.bpf` inputs. BPF is the primary full-data source when present; LOG remains the setup metadata, diagnostics, and fallback path. Converted HDF5/H5D files are self-describing and expose dynamic field metadata for the reader/viewer.
 
@@ -48,7 +48,9 @@ The script will:
 
 ## Included examples
 
-Look in the `examples/` folder for small and moderate demo HDF5 runs that are appropriate for onboarding.
+Look in the `examples/` folder for small and moderate demo HDF5 runs that are appropriate for onboarding. The BPF schema-2 example demonstrates the current dynamic field metadata and rich field inventory.
+
+Look in `sample_data/` for bundled raw LOG/BPF inputs that can be converted directly from Parser mode.
 
 ## Documentation
 
