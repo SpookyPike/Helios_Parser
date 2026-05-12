@@ -71,14 +71,14 @@ FIELD_STATUS_LABELS = {
     "derived": "derived",
     "partially_characterized": "partial",
     "unknown_bpf_record": "raw",
-    "legacy": "legacy",
+    "legacy": "parsed",
 }
 
 FIELD_SOURCE_LABELS = {
     "bpf": "BPF",
     "log": "LOG",
     "derived": "derived",
-    "unknown": "unknown",
+    "unknown": "",
 }
 
 AXIS_LABELS = {
@@ -172,11 +172,13 @@ def _metadata_text(metadata: dict[str, object]) -> str:
     status = str(metadata.get("status", "") or "")
     source = str(metadata.get("source", "") or "")
     parts: list[str] = []
-    if status:
+    if status and status != "legacy":
         parts.append(FIELD_STATUS_LABELS.get(status, status))
-    if source:
-        parts.append(FIELD_SOURCE_LABELS.get(source, source))
-    return " ".join(parts)
+    if source and source != "unknown":
+        source_text = FIELD_SOURCE_LABELS.get(source, source)
+        if source_text:
+            parts.append(source_text)
+    return " ".join(part for part in parts if part)
 
 
 def _diagnostic_item_text(path: str, unit: str) -> str:
@@ -1288,15 +1290,17 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
     def _field_tooltip(self, field_name: str) -> str:
         metadata = self._metadata_for_field(field_name)
         axes = self._field_axes(field_name)
+        source = str(metadata.get("source") or "")
+        status = str(metadata.get("status") or "")
+        source_label = FIELD_SOURCE_LABELS.get(source, source)
+        status_label = FIELD_STATUS_LABELS.get(status, status)
         lines = [
             str(metadata.get("label") or _pretty_name(field_name)),
             f"Field: {field_name}",
-            f"Axes: {', '.join(axes) if axes else 'legacy'}",
+            f"Axes: {', '.join(axes) if axes else 'inferred'}",
         ]
-        source = metadata.get("source")
-        status = metadata.get("status")
-        if source or status:
-            lines.append(f"Source/status: {source or '-'} / {status or '-'}")
+        if source_label or status_label:
+            lines.append(f"Source/status: {source_label or '-'} / {status_label or '-'}")
         if metadata.get("alias_of"):
             lines.append(f"Compatibility alias of: {metadata.get('alias_of')}")
         description = str(metadata.get("description") or "").strip()
@@ -1305,17 +1309,29 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         return "\n".join(lines)
 
     def _field_brush_for_status(self, status: str, alias_of: object | None = None) -> QtGui.QBrush:
+        app = QtWidgets.QApplication.instance()
+        palette = app.palette() if app is not None else self.palette()
+        is_dark = palette.color(QtGui.QPalette.Base).lightnessF() < 0.5
         if alias_of:
-            return QtGui.QBrush(QtGui.QColor("#64748b"))
-        colors = {
+            return QtGui.QBrush(QtGui.QColor("#cbd5e1" if is_dark else "#64748b"))
+        if status == "legacy" or not status:
+            return QtGui.QBrush(palette.color(QtGui.QPalette.Text))
+        dark_colors = {
+            "validated": "#5eead4",
+            "mapped": "#93c5fd",
+            "derived": "#c4b5fd",
+            "partially_characterized": "#fcd34d",
+            "unknown_bpf_record": "#d1d5db",
+        }
+        light_colors = {
             "validated": "#0f766e",
             "mapped": "#2563eb",
             "derived": "#7c3aed",
             "partially_characterized": "#b45309",
-            "unknown_bpf_record": "#6b7280",
-            "legacy": "#334155",
+            "unknown_bpf_record": "#4b5563",
         }
-        return QtGui.QBrush(QtGui.QColor(colors.get(status, "#1f2937")))
+        colors = dark_colors if is_dark else light_colors
+        return QtGui.QBrush(QtGui.QColor(colors.get(status, palette.color(QtGui.QPalette.Text).name())))
 
     def _field_group_name(self, field_name: str) -> str:
         metadata = self._metadata_for_field(field_name)
@@ -1346,7 +1362,13 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             combo.clear()
             combo.addItem(label, "__all__")
             for value in values:
-                combo.addItem(value, value)
+                if combo is self.field_source_filter_combo:
+                    display = FIELD_SOURCE_LABELS.get(value, value) or "Unspecified HDF5"
+                elif combo is self.field_status_filter_combo:
+                    display = FIELD_STATUS_LABELS.get(value, value)
+                else:
+                    display = value
+                combo.addItem(display, value)
             combo.setCurrentIndex(0)
             combo.blockSignals(False)
         self.show_alias_fields_checkbox.blockSignals(True)
@@ -1372,7 +1394,11 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
     def _add_field_group_header(self, text: str) -> None:
         item = QtWidgets.QListWidgetItem(text)
         item.setFlags(QtCore.Qt.NoItemFlags)
-        item.setForeground(QtGui.QBrush(QtGui.QColor("#475569")))
+        palette = self.field_list.palette()
+        color = palette.color(QtGui.QPalette.Text)
+        if palette.color(QtGui.QPalette.Base).lightnessF() >= 0.5:
+            color = QtGui.QColor("#475569")
+        item.setForeground(QtGui.QBrush(color))
         font = item.font()
         font.setBold(True)
         item.setFont(font)

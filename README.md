@@ -3,7 +3,7 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `1.1.2`
+- Release: `1.1.3`
 - Release date: `2026-05-11`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
@@ -85,7 +85,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parser-viewer-v1.1.2.zip`
+- `outputs/release/helios-parser-viewer-v1.1.3.zip`
 
 The bundle includes:
 
@@ -115,9 +115,15 @@ python scripts\build_linux_portable_tarball.py
 
 Expected artifact names:
 
-- `outputs/distributables/helios-parser-viewer-v1.1.2-windows-portable.zip`
-- `outputs/distributables/helios-parser-viewer_1.1.2_all.deb`
-- `outputs/distributables/helios-parser-viewer-v1.1.2-linux-portable.tar.gz`
+- `outputs/distributables/helios-parser-viewer-v1.1.3-windows-portable.zip`
+- `outputs/distributables/helios-parser-viewer_1.1.3_all.deb`
+- `outputs/distributables/helios-parser-viewer-v1.1.3-linux-portable.tar.gz`
+
+## Changelog 1.1.3
+
+- cleaned field-browser labels for normal legacy-schema HDF5 files so fallback metadata no longer appears as `[legacy unknown]`
+- brightened field-browser status colors in dark mode so unselected fields remain readable
+- rebuilt the Windows portable executable bundle with the viewer labeling/color fix
 
 ## Changelog 1.1.2
 

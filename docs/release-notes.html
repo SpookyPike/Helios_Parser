@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HELIOS Parse / View Release Notes 1.1.2</title>
+  <title>HELIOS Parse / View Release Notes 1.1.3</title>
   <link rel="stylesheet" href="assets/manual.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>Release Notes</h1>
         <p>
-          HELIOS Parse / View 1.1.2, released 2026-05-11.
+          HELIOS Parse / View 1.1.3, released 2026-05-12.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
       </div>
@@ -28,25 +28,31 @@
 
   <main>
     <section>
-      <h2>Why 1.1.2</h2>
+      <h2>Why 1.1.3</h2>
       <p>
-        This patch adds tested distributable runtime artifacts for the 1.1 production parser/viewer application, with emphasis
-        on no-install Windows use, Debian package layout, and clear Linux portable limitations.
+        This patch corrects viewer field-browser presentation for normal legacy-schema HDF5 files and refreshes the
+        Windows portable executable bundle so users no longer see internal fallback metadata or low-contrast field text.
       </p>
     </section>
 
     <section>
       <h2>Highlights in this release</h2>
       <ul>
-        <li>Windows portable artifact bundles the desktop app, parser CLI, Python runtime, Qt/PySide, h5py, NumPy, pyqtgraph, icons, samples, and schema-2.0 example</li>
-        <li>Debian package installs application files under <code>/opt/helios-parser-viewer</code> and exposes <code>/usr/bin</code> launchers</li>
-        <li>Linux portable fallback tarball is documented honestly as source-runtime portable, not an AppImage</li>
-        <li>packaged Windows executable was smoke-tested from extraction without source-tree <code>PYTHONPATH</code></li>
+        <li>normal legacy-schema HDF5 fields no longer display <code>[legacy unknown]</code> in the field browser</li>
+        <li>dark-mode field-list colors are theme-aware and brighter for unselected fields</li>
+        <li>Windows portable executable bundle was rebuilt and smoke-tested from extraction</li>
       </ul>
     </section>
 
     <section>
       <h2>Changelog</h2>
+      <h3>1.1.3</h3>
+      <ul>
+        <li>changed field-browser metadata labels to suppress internal legacy/unknown fallbacks for ordinary HDF5 files</li>
+        <li>renamed the fallback status presentation from legacy to parsed where it is still shown in filters/tooltips</li>
+        <li>made field-list foreground colors theme-aware so dark mode remains readable</li>
+        <li>rebuilt the Windows portable parser/viewer executable artifact</li>
+      </ul>
       <h3>1.1.2</h3>
       <ul>
         <li>added PyInstaller-based Windows portable runtime build and validation scripts</li>
@@ -114,7 +120,7 @@
         <li>selected demo HDF5 examples under <code>examples/</code></li>
       </ul>
       <p>
-        The 1.1.2 bundle intentionally omits tests, reports, old release outputs, and legacy shadow source files. Experimental Transmission/XCOM support remains in source behind development flags.
+        The 1.1.3 bundle intentionally omits tests, reports, old release outputs, and legacy shadow source files. Experimental Transmission/XCOM support remains in source behind development flags.
       </p>
     </section>
 
@@ -127,8 +133,8 @@
       <ul>
         <li>Author: Dmitrii Bespalov</li>
         <li>Organization: European XFEL</li>
-        <li>Release: 1.1.2</li>
-        <li>Date: 2026-05-11</li>
+        <li>Release: 1.1.3</li>
+        <li>Date: 2026-05-12</li>
       </ul>
     </section>
   </main>

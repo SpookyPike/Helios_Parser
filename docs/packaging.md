@@ -35,7 +35,7 @@ python scripts\validate_windows_portable.py
 Output:
 
 ```text
-outputs/distributables/helios-parser-viewer-v1.1.2-windows-portable.zip
+outputs/distributables/helios-parser-viewer-v1.1.3-windows-portable.zip
 ```
 
 Usage after extraction:
@@ -57,13 +57,13 @@ python scripts/build_debian_package.py
 Output:
 
 ```text
-outputs/distributables/helios-parser-viewer_1.1.2_all.deb
+outputs/distributables/helios-parser-viewer_1.1.3_all.deb
 ```
 
 Install on Debian/Ubuntu-like systems:
 
 ```bash
-sudo apt install ./outputs/distributables/helios-parser-viewer_1.1.2_all.deb
+sudo apt install ./outputs/distributables/helios-parser-viewer_1.1.3_all.deb
 ```
 
 Launchers:
@@ -91,7 +91,7 @@ python scripts/build_linux_portable_tarball.py
 Output:
 
 ```text
-outputs/distributables/helios-parser-viewer-v1.1.2-linux-portable.tar.gz
+outputs/distributables/helios-parser-viewer-v1.1.3-linux-portable.tar.gz
 ```
 
 This tarball is portable in the sense that it does not require an editable
