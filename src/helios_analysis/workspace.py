@@ -3998,14 +3998,10 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         if value_s is None or not math.isfinite(float(value_s)):
             return "-"
         value = float(np.asarray(self._display_time_from_seconds(float(value_s)), dtype=np.float64).reshape(-1)[0])
+        unit = self._time_unit()
         if abs(value) >= 0.1 and abs(value) < 1.0e4:
-            return f"{value:.3f} {self._time_unit()}"
-        magnitude_s = abs(float(value_s))
-        for unit, factor in (("s", 1.0), ("ms", 1.0e3), ("us", 1.0e6), ("ns", 1.0e9), ("ps", 1.0e12), ("fs", 1.0e15)):
-            scaled = float(value_s) * factor
-            if magnitude_s == 0.0 or (abs(scaled) >= 0.1 and abs(scaled) < 1000.0):
-                return f"{scaled:.3f} {unit}"
-        return f"{float(value_s):.3e} s"
+            return f"{value:.3f} {unit}"
+        return f"{value:.3e} {unit}"
 
     def _format_length(self, value_cm: float | None) -> str:
         if value_cm is None or not math.isfinite(float(value_cm)):
