@@ -166,6 +166,13 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
         self.assertAlmostEqual(float(vector_width[0]), width_fraction)
         self.assertTrue(np.isnan(vector_width[1]))
         self.assertTrue(np.isnan(vector_width[2]))
+        self.assertEqual(0.0, doppler_width_fraction(0.0, ion_mass_mu))
+        zero_width = doppler_width_fraction_array(
+            np.asarray([0.0, -1.0], dtype=np.float64),
+            np.asarray([ion_mass_mu, ion_mass_mu], dtype=np.float64),
+        )
+        self.assertEqual(0.0, float(zero_width[0]))
+        self.assertTrue(np.isnan(zero_width[1]))
 
     def test_cylindrical_mass_weighting_uses_edge_based_shell_geometry(self) -> None:
         dataset, context = _synthetic_dataset()
