@@ -123,6 +123,22 @@ class DerivedStabilityTests(unittest.TestCase):
             workspace.set_context(context)
             workspace.set_result(result)
             process_events(20)
+            self.assertIn(
+                "Weighting: Auto resolves per module",
+                workspace.analysis_banner.text(),
+            )
+            self.assertIn("XRD: Zone width", workspace.analysis_banner.text())
+            self.assertIn("Plasmon: Electron column", workspace.analysis_banner.text())
+            self.assertIn("Spectroscopy: Mass", workspace.analysis_banner.text())
+            self.assertIn(
+                "Weighting: Electron column", workspace.plasmon_summary_label.text()
+            )
+            self.assertIn(
+                "Execution: Quick look", workspace.plasmon_summary_label.text()
+            )
+            self.assertNotIn(
+                "exec=quicklook", workspace.plasmon_summary_label.text()
+            )
 
             workspace.xrd_display_combo.setCurrentIndex(workspace.xrd_display_combo.findData("q"))
             process_events(20)

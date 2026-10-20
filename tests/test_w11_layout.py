@@ -3,9 +3,9 @@ from __future__ import annotations
 import unittest
 
 import _test_bootstrap  # noqa: F401
+from _viewer_test_utils import get_app, process_events, reset_test_settings
 from PySide6 import QtWidgets
 
-from _viewer_test_utils import get_app, process_events, reset_test_settings
 from helios_app.main_app import HeliosParseViewMainWindow
 from helios_app.session_state import reset_session_state
 
@@ -41,7 +41,9 @@ class W11LayoutTests(unittest.TestCase):
             window._set_mode("derived")
             window.resize(1024, 768)
             workspace = window.derived_controller.widget()
-            workspace.result_tabs.setCurrentIndex(workspace.result_tabs.indexOf(workspace.preheat_tab))
+            workspace.result_tabs.setCurrentIndex(
+                workspace.result_tabs.indexOf(workspace.preheat_tab)
+            )
             process_events()
 
             self.assertIs(workspace.result_tabs.currentWidget(), workspace.preheat_tab)

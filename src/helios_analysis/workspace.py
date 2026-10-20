@@ -249,6 +249,24 @@ def _transmission_mode_label(value: str) -> str:
     return labels.get(str(value), str(value).replace("_", " ").title())
 
 
+def _weighting_label(value: str) -> str:
+    labels = {
+        "electron_column": "Electron column",
+        "electron_density": "Electron density",
+        "mass": "Mass",
+        "width": "Zone width",
+        "simple_mean": "Simple mean",
+    }
+    normalized = str(value or "").strip().lower()
+    return labels.get(normalized, normalized.replace("_", " ").title() or "Unspecified")
+
+
+def _execution_mode_label(value: str) -> str:
+    labels = {"quicklook": "Quick look", "benchmark": "Benchmark"}
+    normalized = str(value or "").strip().lower()
+    return labels.get(normalized, normalized.replace("_", " ").title() or "Unspecified")
+
+
 def _bundle_has_finite_data(bundle: DerivedPlotBundle) -> bool:
     x_values = np.asarray(bundle.x_values, dtype=np.float64)
     if x_values.size == 0 or not np.any(np.isfinite(x_values)):
@@ -1047,6 +1065,11 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.weighting_combo.addItem("Mass", "mass")
         self.weighting_combo.addItem("Width", "width")
         self.weighting_combo.addItem("Simple mean (debug)", "simple_mean")
+        self.weighting_combo.setToolTip(
+            "Auto lets each analysis module choose its documented default "
+            "weighting. The result summary and module details identify the "
+            "weighting each module applied."
+        )
         self.reuse_viewer_subset_checkbox = QtWidgets.QCheckBox("Reuse active Viewer subset")
         self.reuse_viewer_subset_checkbox.setChecked(True)
         geometry_layout.addRow("Observation side", self.observation_side_combo)
@@ -4542,11 +4565,31 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
     def set_result(self, result: DerivedAnalysisResult) -> None:
         self._current_result = result
         selected_preheat_region = None if result.preheat is None or str(result.preheat.target_selection_mode or "auto") != "user_selected" else result.preheat.target_region_id
+        requested_weighting = str(self.weighting_combo.currentData() or "auto")
+        weighting_summary = (
+            f"Weighting: {_weighting_label(result.selection.weighting_mode)}"
+        )
+        if requested_weighting == "auto":
+            module_weightings = []
+            for module_name, module_result in (
+                ("XRD", result.xrd),
+                ("Plasmon", result.plasmon),
+                ("Spectroscopy", result.spectroscopy),
+            ):
+                applied_mode = getattr(module_result, "weighting_mode", None)
+                if applied_mode:
+                    module_weightings.append(
+                        f"{module_name}: {_weighting_label(applied_mode)}"
+                    )
+            module_weighting_text = "; ".join(module_weightings)
+            weighting_summary = "Weighting: Auto resolves per module"
+            if module_weighting_text:
+                weighting_summary += f" ({module_weighting_text})"
         self._populate_preheat_target_combo(selected_region_id=selected_preheat_region, preheat=result.preheat)
         selection_notes = f" | filters: {'; '.join(result.selection.notes)}" if result.selection.notes else ""
         self.analysis_banner.setText(
             f"{result.dataset_path.name} | snapshot {result.snapshot_index} @ {self._format_time(result.snapshot_time_s)} | "
-            f"{result.selected_zone_count} selected zones | weighting={result.selection.weighting_mode} | "
+            f"{result.selected_zone_count} selected zones | {weighting_summary} | "
             f"{result.geometry.observation_side} side | LOS cos={result.geometry.line_of_sight_cosine:.3f}"
             f"{selection_notes}"
         )
@@ -5441,7 +5484,8 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             f"Effective isotropic-compression quick look | snapshot {xrd.snapshot_index} @ {self._format_time(self._current_result.snapshot_time_s if self._current_result is not None else None)} | "
             f"{len(xrd.layers)} active regions | probe={self._format_photon_value_from_kev(xrd.photon_energy_kev, '{:.4g}')} | "
             f"lambda={xrd.wavelength_angstrom * 0.1:.4f} nm | theta0={self._format_angle(xrd.initial_bragg_angle_deg, '{:.4g}')} | "
-            f"weighting={xrd.weighting_mode} | {xrd.geometry_summary} | display={display_label}"
+            f"Weighting: {_weighting_label(xrd.weighting_mode)} | "
+            f"{xrd.geometry_summary} | display={display_label}"
         )
         self.xrd_plot_panel.set_bundles(
             tuple(time_bundles),
@@ -5536,21 +5580,29 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         requested_note = ""
         if str(plasmon.requested_model_name) != str(plasmon.model_name):
             requested_note = f" | requested={plasmon.requested_model_name}"
-        mode_note = f" | exec={getattr(plasmon, 'execution_mode', 'quicklook')}"
+        execution_mode = getattr(plasmon, "execution_mode", "quicklook")
+        mode_note = f" | Execution: {_execution_mode_label(execution_mode)}"
         benchmark_note = ""
         if str(plasmon.benchmark_status or "not_applicable") != "not_applicable":
-            benchmark_note = f" | benchmark={plasmon.benchmark_status}"
+            benchmark_status = str(plasmon.benchmark_status).replace("_", " ").title()
+            benchmark_note = f" | Benchmark: {benchmark_status}"
             if not bool(plasmon.model_executed_fully):
-                benchmark_note += " | incomplete execution"
+                benchmark_note += " | Execution incomplete"
             if float(plasmon.fallback_fraction or 0.0) > 0.0:
                 benchmark_note += f" | fallback={100.0 * float(plasmon.fallback_fraction):.1f}%"
         preset_note = ""
         if str(getattr(plasmon, "benchmark_preset", PLASMON_BENCHMARK_PRESET_NONE)) != PLASMON_BENCHMARK_PRESET_NONE:
-            preset_note = f" | preset={getattr(plasmon, 'benchmark_preset', PLASMON_BENCHMARK_PRESET_NONE)}"
+            preset_value = str(
+                getattr(plasmon, "benchmark_preset", PLASMON_BENCHMARK_PRESET_NONE)
+            ).replace("_", " ").title()
+            preset_note = f" | Preset: {preset_value}"
         pending_note = " | pending recompute" if not request_matches and self._selected_plasmon_model() != PLASMON_MODEL_QUICKLOOK else ""
         self.plasmon_summary_label.setText(
             f"Snapshot {plasmon.snapshot_index} @ {self._format_time(self._current_result.snapshot_time_s if self._current_result is not None else None)} | "
-            f"{study_text} | Regime: {plasmon.regime_label} | weighting={plasmon.weighting_mode}{model_note}{requested_note}{mode_note}{benchmark_note}{preset_note}{pending_note} | "
+            f"{study_text} | Regime: {plasmon.regime_label} | "
+            f"Weighting: {_weighting_label(plasmon.weighting_mode)}"
+            f"{model_note}{requested_note}{mode_note}{benchmark_note}"
+            f"{preset_note}{pending_note} | "
             f"runtime={float(getattr(plasmon, 'total_runtime_s', 0.0)):.2f}s | {plasmon.geometry_summary}"
         )
         self._set_text_browser_text_preserving_scroll(
@@ -5838,7 +5890,8 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 transformed_profile_bundles.append(converted_bundle)
         self.spectroscopy_summary_label.setText(
             f"Snapshot {spectroscopy.snapshot_index} @ {self._format_time(self._current_result.snapshot_time_s if self._current_result is not None else None)} | "
-            f"LOS cos={spectroscopy.line_of_sight_cosine:.3f} | weighting={spectroscopy.weighting_mode} | "
+            f"LOS cos={spectroscopy.line_of_sight_cosine:.3f} | "
+            f"Weighting: {_weighting_label(spectroscopy.weighting_mode)} | "
             f"{spectroscopy.geometry_summary} | shift display={shift_label}"
         )
         self.spectroscopy_metrics.setPlainText(

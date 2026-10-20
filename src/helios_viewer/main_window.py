@@ -1480,10 +1480,10 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             empty = QtWidgets.QListWidgetItem("No fields match the current filters")
             empty.setFlags(QtCore.Qt.NoItemFlags)
             self.field_list.addItem(empty)
-        self.field_list.blockSignals(False)
         if selected_row is not None:
             self.field_list.setCurrentRow(selected_row)
-        elif select_fallback and first_field is not None:
+        self.field_list.blockSignals(False)
+        if selected_row is None and select_fallback and first_field is not None:
             self._select_list_item_by_data(self.field_list, first_field)
 
     def _on_field_filter_changed(self, *args) -> None:
@@ -1515,6 +1515,10 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self._theme = apply_theme(QtWidgets.QApplication.instance(), normalized)
         self._apply_theme_to_widgets()
         self._assign_command_icons()
+        self._refresh_field_browser(
+            preserve_selection=self.current_field_name,
+            select_fallback=False,
+        )
         if normalized in self.theme_actions and not self.theme_actions[normalized].isChecked():
             self.theme_actions[normalized].setChecked(True)
         if not self._suppress_preference_persist:
