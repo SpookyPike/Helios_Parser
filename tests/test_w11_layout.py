@@ -27,14 +27,36 @@ class W11LayoutTests(unittest.TestCase):
         window = self.open_window()
         try:
             process_events(200)
-            for size in ((1024, 768), (1280, 800), (1860, 1120)):
+            screen = window.screen()
+            available = screen.availableGeometry() if screen is not None else None
+            if available is None:
+                self.fail("The native desktop did not report available screen geometry.")
+
+            # Hosted native runners can expose a 1024x720 desktop. Fit the
+            # three laptop/desktop targets to that physical surface so the OS
+            # does not clamp the top-level window before Qt receives its size.
+            min_width = window.minimumSizeHint().width()
+            min_height = window.minimumSizeHint().height()
+            sizes = (
+                (
+                    min(1024, max(min_width, int(available.width() * 0.85))),
+                    min(768, max(min_height, int(available.height() * 0.85))),
+                ),
+                (
+                    min(1280, max(min_width, int(available.width() * 0.95))),
+                    min(800, max(min_height, int(available.height() * 0.90))),
+                ),
+                (
+                    min(1860, max(min_width, int(available.width() * 0.98))),
+                    min(1120, max(min_height, int(available.height() * 0.95))),
+                ),
+            )
+            for size in sizes:
                 with self.subTest(size=size):
                     window.resize(*size)
                     try:
                         wait_until(lambda: (window.width(), window.height()) == size, timeout_s=2.0)
                     except AssertionError as exc:
-                        screen = window.screen()
-                        available = screen.availableGeometry() if screen is not None else None
                         self.fail(
                             f"Requested client size {size}, got "
                             f"{(window.width(), window.height())}; "
