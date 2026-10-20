@@ -90,6 +90,7 @@ class DerivedFieldCapabilities:
     available_fields: tuple[str, ...] = ()
     optional_available_fields: tuple[str, ...] = ()
     missing_optional_fields: tuple[str, ...] = ()
+    not_loaded_optional_fields: tuple[str, ...] = ()
     dynamic_radius_available: bool = False
     run_status_available: bool = False
     visar_support_available: bool = False

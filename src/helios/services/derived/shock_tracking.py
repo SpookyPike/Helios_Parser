@@ -2328,7 +2328,14 @@ def track_shock_front(
     finite_position = np.isfinite(smoothed_position)
     signed_velocity = np.full(n_snapshots, np.nan, dtype=np.float64)
     if np.count_nonzero(finite_position) >= 2:
-        signed_velocity[finite_position] = np.gradient(smoothed_position[finite_position], dataset.time_s[finite_position])
+        selected_times = np.asarray(dataset.time_s[finite_position], dtype=np.float64)
+        _, inverse, counts = np.unique(selected_times, return_inverse=True, return_counts=True)
+        strictly_timed = finite_position.copy()
+        strictly_timed[finite_position] = counts[inverse] == 1
+        if np.count_nonzero(strictly_timed) >= 2:
+            signed_velocity[strictly_timed] = np.gradient(
+                smoothed_position[strictly_timed], np.asarray(dataset.time_s[strictly_timed], dtype=np.float64)
+            )
     speed_magnitude = np.abs(signed_velocity)
 
     interface_crossings: list[ShockInterfaceCrossing] = []
