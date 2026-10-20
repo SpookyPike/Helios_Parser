@@ -330,8 +330,18 @@ class BpfFile:
         self._payload_offsets: list[int] = []
         self._payload_lengths: list[int] = []
         self._partial_tail = b""
-        self._scan_records()
-        self.layout = self._infer_layout()
+        try:
+            self._scan_records()
+            self.layout = self._infer_layout()
+        except Exception:
+            try:
+                self._mmap.close()
+            except BufferError:
+                # NumPy views may still be referenced by the active traceback;
+                # releasing this object after unwinding closes the mapping.
+                pass
+            self._file.close()
+            raise
 
     def close(self) -> None:
         self._mmap.close()

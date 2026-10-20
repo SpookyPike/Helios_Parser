@@ -61,6 +61,26 @@ class BpfPipelineTests(unittest.TestCase):
 
 
 
+
+    def test_valid_one_frame_bpf_with_documented_trailer_is_complete(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            first_trailer = 2 + source.layout.block_records
+            first_trailer_start = source._payload_offsets[first_trailer] - 4
+            last_trailer_start = source._payload_offsets[-1] - 4
+            original = BPF_SAMPLE.read_bytes()
+            raw = original[:first_trailer_start] + original[last_trailer_start:]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            one_frame = Path(tmpdir) / "one_frame.bpf"
+            one_frame.write_bytes(raw)
+            with BpfFile(one_frame) as parsed:
+                self.assertEqual(parsed.layout.n_snapshots, 1)
+                self.assertTrue(parsed.layout.recognized_zero_trailer)
+            output = Path(tmpdir) / "one_frame.h5"
+            write_hdf5(one_frame, output)
+            with HeliosRun(output) as run:
+                self.assertEqual(run.n_snapshots, 1)
+                self.assertEqual(run.get_run_status()["state"], "complete")
+
     def test_truncated_first_bpf_snapshot_is_not_recovered(self) -> None:
         with BpfFile(BPF_SAMPLE) as source:
             record_index = BpfFile.snapshot_start(0, source.layout.block_records) + 5
