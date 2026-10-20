@@ -1,0 +1,81 @@
+{
+  "cases": {
+    "bpf_primary_streamed_log_companion": {
+      "equivalent_metrics": {
+        "field_checksums.density": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 3.318690048536814e-07,
+          "passed": true
+        },
+        "field_checksums.laser_deposition": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 136131833.68089053,
+          "passed": true
+        },
+        "field_checksums.laser_source": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 0.32074326223453486,
+          "passed": true
+        },
+        "output_snapshots": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 0.0,
+          "passed": true
+        },
+        "output_zones": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 0.0,
+          "passed": true
+        }
+      },
+      "metrics": {
+        "elapsed_s": {
+          "baseline_median": 5.514404925983399,
+          "candidate_median": 6.184203696902841,
+          "candidate_over_baseline_ratio": 1.1214634724706938,
+          "direction": "lower",
+          "normalized_regression_ratio": 1.1136679182108467,
+          "paired_median_ratio_bootstrap_95pct_ci": [
+            0.9833931017885119,
+            1.162668621633874
+          ],
+          "verdict": "inconclusive"
+        },
+        "peak_rss_delta_bytes": {
+          "baseline_median": 123977728.0,
+          "candidate_median": 112332800.0,
+          "candidate_over_baseline_ratio": 0.9060724197171931,
+          "direction": "lower",
+          "normalized_regression_ratio": 0.9060631092020486,
+          "paired_median_ratio_bootstrap_95pct_ci": [
+            0.9047163272715271,
+            0.9065102445472571
+          ],
+          "verdict": "improved"
+        },
+        "time_to_first_write_s": {
+          "baseline_median": 1.4367877340409905,
+          "candidate_median": 1.7100132161285728,
+          "candidate_over_baseline_ratio": 1.19016412488373,
+          "direction": "lower",
+          "normalized_regression_ratio": 1.12747396794743,
+          "paired_median_ratio_bootstrap_95pct_ci": [
+            1.0469465650953564,
+            1.3890506713674262
+          ],
+          "verdict": "regressed"
+        }
+      },
+      "paired": true,
+      "samples": 5
+    }
+  },
+  "failures": [
+    "bpf_primary_streamed_log_companion.elapsed_s: median regression ratio 1.114 exceeds 1.10",
+    "bpf_primary_streamed_log_companion.time_to_first_write_s: median regression ratio 1.127 exceeds 1.10"
+  ],
+  "minimum_samples": 5,
+  "paired": true,
+  "passed": false,
+  "schema_version": 1
+}

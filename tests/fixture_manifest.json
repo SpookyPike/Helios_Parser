@@ -132,7 +132,7 @@
     "test_run_status.py": ["local_fe_log", "local_cu1e17_log", "local_cu1e17_cyl_log", "local_h5_cu"],
     "test_coordinate_semantics.py": ["local_cu1e17_log", "local_cu1e17_cyl_log", "local_h5_cu"],
     "test_derived_backend_optimization.py": ["local_h5_cu1e17_cyl"],
-    "test_transmission_xcom.py": ["local_h5_50al_root"],
+    "test_transmission_xcom.py": ["local_h5_fe", "local_h5_cu", "local_h5_50al_root"],
     "test_validation.py": ["local_fe_log", "local_si_log", "local_cu0166_log"],
     "test_wave4_ingest.py": ["local_fe_log", "local_h5_cu"],
     "test_derived_phase412.py": ["local_h5_50al_root", "local_h5_cu_root", "local_h5_cu", "local_h5_si"],

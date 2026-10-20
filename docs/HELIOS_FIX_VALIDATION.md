@@ -25,9 +25,23 @@ All tests below ran from the disposable current-source tree created by `scripts/
 | `test_app_phase412.py` | PASS (earlier W13 run) | 11 tests; 221.097 s; clean exit |
 | `test_app_phase3.AppPhase3Tests.test_open_existing_hdf5_loads_viewer_and_mode_switching_preserves_viewer_state` | PASS (earlier W13 run) | Focused app/viewer lifecycle case |
 
-The first W14 targeted attempt exposed two test-harness issues, both corrected and rerun successfully: `test_transmission_xcom.py` lacked the `local_h5_50al_root` fixture declaration, and the stale-field UI test omitted field-axis metadata while deleting its Qt thread before normal window shutdown.
+The first W14 targeted attempt exposed two test-harness issues, both corrected and rerun successfully: `test_transmission_xcom.py` lacked the `local_h5_50al_root` fixture declaration, and the stale-field UI test omitted field-axis metadata while deleting its Qt thread before normal window shutdown. A follow-up focused run also passed `test_bpf_pipeline.py` (14 tests, 34.289 s), `test_wave4_ingest.py` (3 tests, 0.260 s), and `test_performance_comparator.py` (9 tests, 0.011 s).
 
-## Performance evidence and limits
+## Paired performance evidence and limits
+
+Paired before/after profiles and comparator outputs are archived under [`docs/performance/w14/`](performance/w14/). Measurements ran on the same Linux x86_64 host (12th Gen Intel Core i7-12700H, Python 3.12.13, NumPy 2.5.4, h5py 3.16.0, PySide6 6.12.0; 64 GiB RAM where the harness recorded it). Short cases used ten alternating pairs; slower loading and conversion cases used five pairs. Baseline source was `origin/master` at `76634468`; candidate source was branch commit `a319dca`. Source fingerprints, fixture records and raw samples are in the archived JSON.
+
+| Case | Result | Evidence |
+|---|---|---|
+| P01 grouped XCOM (1,300 zones, 3 materials × 4 energies) | PASS | 10 pairs; median 60.817 → 1.148 ms; lookup calls 5,200 → 12; optical-depth scalar-reference error 2.842e-13; exact comparator output in `xcom-comparison-10.json` |
+| P04 demand-driven derived loading (50Al stabilized HDF5) | PASS | 5 pairs; retained arrays 203.1 → 70.4 MB; optional arrays 125.0 MB → 0; peak RSS delta 473.0 → 205.5 MB; elapsed 0.546 → 0.247 s; all 12 output checksums equal |
+| P05 BPF companion conversion (Cu BPF + same-stem LOG) | FAIL / review required | 5 pairs; exact output equivalence passed; peak RSS delta improved 124.0 → 112.3 MB, but total-time median was 12.1% slower and first-write median 12.7% slower after normalization; first-write paired 95% interval was 1.047–1.389. The comparator correctly exits nonzero. The LOG fixture hash is recorded in the archived fixture JSON; this is the locally edited fixture version present during the run. Investigate parser-work cost or record an explicit accepted tradeoff before closing P05. |
+| P06 cache retention (10 repeated loads) | Diagnostic only; lifecycle gate still open | RSS was available, but inspection shows this benchmark retained ten distinct raw-data revisions and did not execute an application run-retirement hook. Its rising cache/RSS values cannot be treated as a valid open/analyze/retire result. The archived profile exposes this gap; rerun after the lifecycle benchmark models actual retirement. |
+| P07 HDF5 access | PASS for comparator; timing inconclusive | 10 pairs; all representative median ratios were within about 1.3% of baseline and classified inconclusive. The earlier exploratory zone-trace result remains a one-off and is not a speed claim. This profile predates the RAM-capture fallback, so `ram_bytes` is null in its environment record. |
+
+The paired artifacts are evidence for their named fixtures and source fingerprints only; they are not CI timing limits. P05 remains unresolved, and P06 needs a valid retirement benchmark before its memory gate can pass.
+
+## Earlier exploratory performance evidence
 
 The work-count tests above passed, including the 1,300-zone grouped-XCOM case and duplicate reader-request coverage. An exploratory `bench_hdf5_access.py` run compared the existing Cu HDF5 layout (`64 × 256` chunks) to a newly converted candidate (`16 × 300` chunks), at 461 snapshots × 300 zones. Median measurements (32 accesses per category, one process/run) were:
 
@@ -60,10 +74,10 @@ This single exploratory run shows a zone-trace regression for the candidate layo
 | F15 Display units | W10 canonical/display conversion (`bb65a93`, `f83e1fe`) | Viewer unit tests and app phase3 | Focused `test_app_phase3.py` passed |
 | F16 Spectrum grids | W12 exact axes (`33407e1`) | `test_plasmon_energy_grid_cache.py` | Passed |
 | F17 Radian precision | W10 canonical controls (`e875a8c`) | Unit round-trip tests | Existing targeted work passed during implementation; not rerun in this W14 pass |
-| F18 Streamed companion | W04 streamed source and alignment (`936b3fb`) | `test_wave4_ingest.py` | Existing targeted work passed during implementation; peak-RSS comparison pending |
-| F19 Demand loading/memory | W07 lazy fields and budgets (`03fa549`, `df0a422`) | `test_derived_backend_optimization.py`, cache budget tests | Work-count/budget tests passed; representative fresh-process RSS comparison pending |
+| F18 Streamed companion | W04 streamed source and alignment (`936b3fb`) | `test_wave4_ingest.py` | Focused tests passed; paired output-equivalence and RSS improved, but P05 time/first-write regression is over the 10% review threshold |
+| F19 Demand loading/memory | W07 lazy fields and budgets (`03fa549`, `df0a422`) | `test_derived_backend_optimization.py`, cache budget tests | Work-count/budget tests and paired derived-load/RSS comparison passed; cache-retirement RSS gate still needs a lifecycle-valid run |
 | F20 Cache clearing | W05 stable bucket identity (`aa4b475`) | `test_cache_lifecycle.py` | Passed |
-| F21 Grouped XCOM | W12b grouped lookups (`5048a9c`) | `test_transmission_xcom.py`, including 1,300 zones | Passed; exploratory layout benchmark does not measure XCOM timing |
+| F21 Grouped XCOM | W12b grouped lookups (`5048a9c`) | `test_transmission_xcom.py`, including 1,300 zones | Passed; paired P01 confirms 5,200 → 12 lookups/run and a 52.9× median speedup on the archived fixture |
 | F22 Pending I/O | W08 request coalescing (`25f66e7`) | `test_viewer_wave2.py` | Passed |
 | F23 Per-field metadata | W08 lazy metadata (`d99955f`) | `test_reader.py` | Passed |
 | F24 Theme contrast | W11 theme refresh (`6d5effb`) | Theme/accessibility tests | Existing targeted work passed during implementation; native theme review pending |
@@ -72,8 +86,9 @@ This single exploratory run shows a zone-trace regression for the candidate layo
 ## Remaining release checks
 
 - Full dynamically discovered release suite and smoke: incomplete by user preference; rerun only if required for a release decision.
-- Paired performance comparator with ten alternating samples for short cases, five fresh processes for conversion/RSS, environment/fixture fingerprints, and retained raw JSON: pending.
-- Fresh-process peak RSS for streaming conversion and cache retirement: pending; work-count and cache byte-budget tests do not substitute for RSS.
+- P05 BPF companion paired timing review: unresolved because total conversion and first-write timing exceed the proposed 10% regression threshold; exact output equivalence and lower peak RSS are recorded.
+- Cache-retirement RSS: pending a corrected ten-cycle benchmark that actually retires each run revision. The first diagnostic retained distinct raw revisions and is not considered an acceptance measurement.
+- The P01/P04/P05/P07 paired profiles, comparisons and fixture manifests are archived; P01/P04 passed, P07 was inconclusive, and P05 failed its timing threshold.
 - Native GUI latency/accessibility and lifecycle checks on supported desktop platforms: pending; offscreen Linux tests only.
 - PyInstaller/frozen-runtime resource smoke: pending because the supported frozen build environment was not exercised.
 

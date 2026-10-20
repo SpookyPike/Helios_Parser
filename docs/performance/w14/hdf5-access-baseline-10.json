@@ -1,0 +1,805 @@
+{
+  "cases": {
+    "cu_hdf5_access": {
+      "fixtures": {
+        "baseline_h5": {
+          "path": "/data/projects/playground/Helios_parser/Cu_0166_stabilized.h5",
+          "sha256": "65825e5281600ccb7983ac9a8042e9b4bd088439b748e2cc4c7240a84b174723"
+        },
+        "source_log": {
+          "path": "/data/projects/playground/Helios_parser/Cu_0166.log",
+          "sha256": "b3836b16a1420b6b328384f60afbed841c18bcaaf4e39f08bca261931d96cadf"
+        }
+      },
+      "samples": [
+        {
+          "index": 0,
+          "metrics": {
+            "baseline.slider_scrub.median_total_ms": 0.4654176300391555,
+            "baseline.snapshot_access.median_latency_ms": 0.0072410330176353455,
+            "baseline.zone_access.median_latency_ms": 0.010927906259894371,
+            "candidate.slider_scrub.median_total_ms": 0.4378741141408682,
+            "candidate.snapshot_access.median_latency_ms": 0.006777467206120491,
+            "candidate.zone_access.median_latency_ms": 0.023491564206779003
+          },
+          "pair_order": [
+            "baseline",
+            "candidate"
+          ],
+          "process_elapsed_s": 3.028216768987477,
+          "stdout_json": {
+            "baseline": {
+              "chunks": [
+                64,
+                256
+              ],
+              "dtype": "float64",
+              "path": "/data/projects/playground/Helios_parser/Cu_0166_stabilized.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.49417203990742564,
+                "median_total_ms": 0.4654176300391555,
+                "throughput_mb_s": 296.42384265091414
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.017812184523791075,
+                "median_latency_ms": 0.0072410330176353455,
+                "throughput_mb_s": 128.4973415988314
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.02904776920331642,
+                "median_latency_ms": 0.010927906259894371,
+                "throughput_mb_s": 121.08161746564319
+              }
+            },
+            "candidate": {
+              "chunks": [
+                16,
+                300
+              ],
+              "dtype": "float64",
+              "path": "/tmp/tmpxd20n4gt/Cu_0166_chunked.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.44082209933549166,
+                "median_total_ms": 0.4378741141408682,
+                "throughput_mb_s": 332.2981656791139
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.012785087164957076,
+                "median_latency_ms": 0.006777467206120491,
+                "throughput_mb_s": 179.022507226112
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.038655220123473555,
+                "median_latency_ms": 0.023491564206779003,
+                "throughput_mb_s": 90.98773380856896
+              }
+            }
+          }
+        },
+        {
+          "index": 1,
+          "metrics": {
+            "baseline.slider_scrub.median_total_ms": 0.48333650920540094,
+            "baseline.snapshot_access.median_latency_ms": 0.00730541069060564,
+            "baseline.zone_access.median_latency_ms": 0.010860967449843884,
+            "candidate.slider_scrub.median_total_ms": 0.4158590454608202,
+            "candidate.snapshot_access.median_latency_ms": 0.006271060556173325,
+            "candidate.zone_access.median_latency_ms": 0.023401575163006783
+          },
+          "pair_order": [
+            "baseline",
+            "candidate"
+          ],
+          "process_elapsed_s": 3.1461789689492434,
+          "stdout_json": {
+            "baseline": {
+              "chunks": [
+                64,
+                256
+              ],
+              "dtype": "float64",
+              "path": "/data/projects/playground/Helios_parser/Cu_0166_stabilized.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.5151322693563998,
+                "median_total_ms": 0.48333650920540094,
+                "throughput_mb_s": 284.36264570071654
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.02746755490079522,
+                "median_latency_ms": 0.00730541069060564,
+                "throughput_mb_s": 83.32807079631014
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.04483514203457162,
+                "median_latency_ms": 0.010860967449843884,
+                "throughput_mb_s": 78.44629724144143
+              }
+            },
+            "candidate": {
+              "chunks": [
+                16,
+                300
+              ],
+              "dtype": "float64",
+              "path": "/tmp/tmp1ps7iftt/Cu_0166_chunked.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.419315998442471,
+                "median_total_ms": 0.4158590454608202,
+                "throughput_mb_s": 349.34124990248193
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.01202005660161376,
+                "median_latency_ms": 0.006271060556173325,
+                "throughput_mb_s": 190.41660411713147
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.037646706914529204,
+                "median_latency_ms": 0.023401575163006783,
+                "throughput_mb_s": 93.42519352068099
+              }
+            }
+          }
+        },
+        {
+          "index": 2,
+          "metrics": {
+            "baseline.slider_scrub.median_total_ms": 0.49884209875017405,
+            "baseline.snapshot_access.median_latency_ms": 0.007939059287309647,
+            "baseline.zone_access.median_latency_ms": 0.012141070328652859,
+            "candidate.slider_scrub.median_total_ms": 0.4761520540341735,
+            "candidate.snapshot_access.median_latency_ms": 0.0072231050580739975,
+            "candidate.zone_access.median_latency_ms": 0.024428009055554867
+          },
+          "pair_order": [
+            "baseline",
+            "candidate"
+          ],
+          "process_elapsed_s": 3.44614461902529,
+          "stdout_json": {
+            "baseline": {
+              "chunks": [
+                64,
+                256
+              ],
+              "dtype": "float64",
+              "path": "/data/projects/playground/Helios_parser/Cu_0166_stabilized.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.5449195741675794,
+                "median_total_ms": 0.49884209875017405,
+                "throughput_mb_s": 268.8183393370846
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.02571775985416025,
+                "median_latency_ms": 0.007939059287309647,
+                "throughput_mb_s": 88.9975788075783
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.0402678779209964,
+                "median_latency_ms": 0.012141070328652859,
+                "throughput_mb_s": 87.34383485036703
+              }
+            },
+            "candidate": {
+              "chunks": [
+                16,
+                300
+              ],
+              "dtype": "float64",
+              "path": "/tmp/tmpffnnil2t/Cu_0166_chunked.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.4725517355836928,
+                "median_total_ms": 0.4761520540341735,
+                "throughput_mb_s": 309.98589989107427
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.01615150540601462,
+                "median_latency_ms": 0.0072231050580739975,
+                "throughput_mb_s": 141.70928974352276
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.04755245754495263,
+                "median_latency_ms": 0.024428009055554867,
+                "throughput_mb_s": 73.96359852866472
+              }
+            }
+          }
+        },
+        {
+          "index": 3,
+          "metrics": {
+            "baseline.slider_scrub.median_total_ms": 0.5638134898617864,
+            "baseline.snapshot_access.median_latency_ms": 0.008417991921305656,
+            "baseline.zone_access.median_latency_ms": 0.012555043213069439,
+            "candidate.slider_scrub.median_total_ms": 0.4360155435279012,
+            "candidate.snapshot_access.median_latency_ms": 0.007289927452802658,
+            "candidate.zone_access.median_latency_ms": 0.0246299896389246
+          },
+          "pair_order": [
+            "baseline",
+            "candidate"
+          ],
+          "process_elapsed_s": 3.4825318660587072,
+          "stdout_json": {
+            "baseline": {
+              "chunks": [
+                64,
+                256
+              ],
+              "dtype": "float64",
+              "path": "/data/projects/playground/Helios_parser/Cu_0166_stabilized.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.6414917297661304,
+                "median_total_ms": 0.5638134898617864,
+                "throughput_mb_s": 228.34959236871848
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.027799542294815183,
+                "median_latency_ms": 0.008417991921305656,
+                "throughput_mb_s": 82.33295120840465
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.05171495286049321,
+                "median_latency_ms": 0.012555043213069439,
+                "throughput_mb_s": 68.0103274655234
+              }
+            },
+            "candidate": {
+              "chunks": [
+                16,
+                300
+              ],
+              "dtype": "float64",
+              "path": "/tmp/tmph7_nqlbo/Cu_0166_chunked.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.4422490601427853,
+                "median_total_ms": 0.4360155435279012,
+                "throughput_mb_s": 331.22597242537
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.015341312973760068,
+                "median_latency_ms": 0.007289927452802658,
+                "throughput_mb_s": 149.19312077719928
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.04135935159865767,
+                "median_latency_ms": 0.0246299896389246,
+                "throughput_mb_s": 85.03883022722243
+              }
+            }
+          }
+        },
+        {
+          "index": 4,
+          "metrics": {
+            "baseline.slider_scrub.median_total_ms": 0.5469514289870858,
+            "baseline.snapshot_access.median_latency_ms": 0.00849342904984951,
+            "baseline.zone_access.median_latency_ms": 0.013433047570288181,
+            "candidate.slider_scrub.median_total_ms": 0.4506729310378432,
+            "candidate.snapshot_access.median_latency_ms": 0.006977585144340992,
+            "candidate.zone_access.median_latency_ms": 0.025168526917696
+          },
+          "pair_order": [
+            "candidate",
+            "baseline"
+          ],
+          "process_elapsed_s": 3.517808483913541,
+          "stdout_json": {
+            "baseline": {
+              "chunks": [
+                64,
+                256
+              ],
+              "dtype": "float64",
+              "path": "/data/projects/playground/Helios_parser/Cu_0166_stabilized.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.5960469716228545,
+                "median_total_ms": 0.5469514289870858,
+                "throughput_mb_s": 245.75978400018985
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.029291761165950447,
+                "median_latency_ms": 0.00849342904984951,
+                "throughput_mb_s": 78.13863927156369
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.0511100806761533,
+                "median_latency_ms": 0.013433047570288181,
+                "throughput_mb_s": 68.81520890549612
+              }
+            },
+            "candidate": {
+              "chunks": [
+                16,
+                300
+              ],
+              "dtype": "float64",
+              "path": "/tmp/tmpd9omvocc/Cu_0166_chunked.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.45690371189266443,
+                "median_total_ms": 0.4506729310378432,
+                "throughput_mb_s": 320.60228706220715
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.018103382899425924,
+                "median_latency_ms": 0.006977585144340992,
+                "throughput_mb_s": 126.43042309222663
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.05249988316791132,
+                "median_latency_ms": 0.025168526917696,
+                "throughput_mb_s": 66.99349915993685
+              }
+            }
+          }
+        },
+        {
+          "index": 5,
+          "metrics": {
+            "baseline.slider_scrub.median_total_ms": 0.5502421408891678,
+            "baseline.snapshot_access.median_latency_ms": 0.008177012205123901,
+            "baseline.zone_access.median_latency_ms": 0.013237004168331623,
+            "candidate.slider_scrub.median_total_ms": 0.4673894727602601,
+            "candidate.snapshot_access.median_latency_ms": 0.007736962288618088,
+            "candidate.zone_access.median_latency_ms": 0.024647917598485947
+          },
+          "pair_order": [
+            "baseline",
+            "candidate"
+          ],
+          "process_elapsed_s": 3.5983604649081826,
+          "stdout_json": {
+            "baseline": {
+              "chunks": [
+                64,
+                256
+              ],
+              "dtype": "float64",
+              "path": "/data/projects/playground/Helios_parser/Cu_0166_stabilized.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.599117309320718,
+                "median_total_ms": 0.5502421408891678,
+                "throughput_mb_s": 244.50032192540831
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.02865550050046295,
+                "median_latency_ms": 0.008177012205123901,
+                "throughput_mb_s": 79.8736130725765
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.039571954403072596,
+                "median_latency_ms": 0.013237004168331623,
+                "throughput_mb_s": 88.87988809148021
+              }
+            },
+            "candidate": {
+              "chunks": [
+                16,
+                300
+              ],
+              "dtype": "float64",
+              "path": "/tmp/tmpghvyd23b/Cu_0166_chunked.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.4782945034094155,
+                "median_total_ms": 0.4673894727602601,
+                "throughput_mb_s": 306.2639732545929
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.01951478043338284,
+                "median_latency_ms": 0.007736962288618088,
+                "throughput_mb_s": 117.28640079699011
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.04824841016670689,
+                "median_latency_ms": 0.024647917598485947,
+                "throughput_mb_s": 72.8967206743987
+              }
+            }
+          }
+        },
+        {
+          "index": 6,
+          "metrics": {
+            "baseline.slider_scrub.median_total_ms": 0.580685562454164,
+            "baseline.snapshot_access.median_latency_ms": 0.008697505109012127,
+            "baseline.zone_access.median_latency_ms": 0.013429438695311546,
+            "candidate.slider_scrub.median_total_ms": 0.45992503874003887,
+            "candidate.snapshot_access.median_latency_ms": 0.0075196148827672005,
+            "candidate.zone_access.median_latency_ms": 0.02678798045963049
+          },
+          "pair_order": [
+            "candidate",
+            "baseline"
+          ],
+          "process_elapsed_s": 3.446753482101485,
+          "stdout_json": {
+            "baseline": {
+              "chunks": [
+                64,
+                256
+              ],
+              "dtype": "float64",
+              "path": "/data/projects/playground/Helios_parser/Cu_0166_stabilized.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.6095435237511992,
+                "median_total_ms": 0.580685562454164,
+                "throughput_mb_s": 240.318154967046
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.024975255655590445,
+                "median_latency_ms": 0.008697505109012127,
+                "throughput_mb_s": 91.64344064933215
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.03922618634533137,
+                "median_latency_ms": 0.013429438695311546,
+                "throughput_mb_s": 89.66333989092607
+              }
+            },
+            "candidate": {
+              "chunks": [
+                16,
+                300
+              ],
+              "dtype": "float64",
+              "path": "/tmp/tmpmnyw9uv5/Cu_0166_chunked.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.4689103225246072,
+                "median_total_ms": 0.45992503874003887,
+                "throughput_mb_s": 312.3931548602513
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.013367833162192255,
+                "median_latency_ms": 0.0075196148827672005,
+                "throughput_mb_s": 171.21835166587655
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.03724038106156513,
+                "median_latency_ms": 0.02678798045963049,
+                "throughput_mb_s": 94.4445459108423
+              }
+            }
+          }
+        },
+        {
+          "index": 7,
+          "metrics": {
+            "baseline.slider_scrub.median_total_ms": 0.6254949839785695,
+            "baseline.snapshot_access.median_latency_ms": 0.00847748015075922,
+            "baseline.zone_access.median_latency_ms": 0.013142591342329979,
+            "candidate.slider_scrub.median_total_ms": 0.4747015191242099,
+            "candidate.snapshot_access.median_latency_ms": 0.007539056241512299,
+            "candidate.zone_access.median_latency_ms": 0.024961656890809536
+          },
+          "pair_order": [
+            "candidate",
+            "baseline"
+          ],
+          "process_elapsed_s": 3.4195426390506327,
+          "stdout_json": {
+            "baseline": {
+              "chunks": [
+                64,
+                256
+              ],
+              "dtype": "float64",
+              "path": "/data/projects/playground/Helios_parser/Cu_0166_stabilized.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.664338527712971,
+                "median_total_ms": 0.6254949839785695,
+                "throughput_mb_s": 220.49658252439775
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.021005369490012527,
+                "median_latency_ms": 0.00847748015075922,
+                "throughput_mb_s": 108.96348957171499
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.03199539060005918,
+                "median_latency_ms": 0.013142591342329979,
+                "throughput_mb_s": 109.92679923400418
+              }
+            },
+            "candidate": {
+              "chunks": [
+                16,
+                300
+              ],
+              "dtype": "float64",
+              "path": "/tmp/tmp3ss4b5q9/Cu_0166_chunked.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.4876822349615395,
+                "median_total_ms": 0.4747015191242099,
+                "throughput_mb_s": 300.36848689301206
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.013049342669546604,
+                "median_latency_ms": 0.007539056241512299,
+                "throughput_mb_s": 175.39721481270016
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.05409013829194009,
+                "median_latency_ms": 0.024961656890809536,
+                "throughput_mb_s": 65.02388401972965
+              }
+            }
+          }
+        },
+        {
+          "index": 8,
+          "metrics": {
+            "baseline.slider_scrub.median_total_ms": 0.5664025666192174,
+            "baseline.snapshot_access.median_latency_ms": 0.008574454113841057,
+            "baseline.zone_access.median_latency_ms": 0.013296958059072495,
+            "candidate.slider_scrub.median_total_ms": 0.443001976236701,
+            "candidate.snapshot_access.median_latency_ms": 0.006870599463582039,
+            "candidate.zone_access.median_latency_ms": 0.02433755435049534
+          },
+          "pair_order": [
+            "candidate",
+            "baseline"
+          ],
+          "process_elapsed_s": 3.4091435640584677,
+          "stdout_json": {
+            "baseline": {
+              "chunks": [
+                64,
+                256
+              ],
+              "dtype": "float64",
+              "path": "/data/projects/playground/Helios_parser/Cu_0166_stabilized.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.6034948164597154,
+                "median_total_ms": 0.5664025666192174,
+                "throughput_mb_s": 242.7268155496712
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.03002229641424492,
+                "median_latency_ms": 0.008574454113841057,
+                "throughput_mb_s": 76.23728470980674
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.04291733057470992,
+                "median_latency_ms": 0.013296958059072495,
+                "throughput_mb_s": 81.95176241876554
+              }
+            },
+            "candidate": {
+              "chunks": [
+                16,
+                300
+              ],
+              "dtype": "float64",
+              "path": "/tmp/tmpchl4defx/Cu_0166_chunked.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.4455987364053726,
+                "median_total_ms": 0.443001976236701,
+                "throughput_mb_s": 328.7360646075518
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.02263067290186882,
+                "median_latency_ms": 0.006870599463582039,
+                "throughput_mb_s": 101.13788349554518
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.053846924856770784,
+                "median_latency_ms": 0.02433755435049534,
+                "throughput_mb_s": 65.31758105521598
+              }
+            }
+          }
+        },
+        {
+          "index": 9,
+          "metrics": {
+            "baseline.slider_scrub.median_total_ms": 0.5445214919745922,
+            "baseline.snapshot_access.median_latency_ms": 0.008622533641755581,
+            "baseline.zone_access.median_latency_ms": 0.013297074474394321,
+            "candidate.slider_scrub.median_total_ms": 0.49741705879569054,
+            "candidate.snapshot_access.median_latency_ms": 0.007770489901304245,
+            "candidate.zone_access.median_latency_ms": 0.02682558260858059
+          },
+          "pair_order": [
+            "candidate",
+            "baseline"
+          ],
+          "process_elapsed_s": 3.482795180985704,
+          "stdout_json": {
+            "baseline": {
+              "chunks": [
+                64,
+                256
+              ],
+              "dtype": "float64",
+              "path": "/data/projects/playground/Helios_parser/Cu_0166_stabilized.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.5689684767276049,
+                "median_total_ms": 0.5445214919745922,
+                "throughput_mb_s": 257.4560472005372
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.03329767059767619,
+                "median_latency_ms": 0.008622533641755581,
+                "throughput_mb_s": 68.73809243385135
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.035249955544713885,
+                "median_latency_ms": 0.013297074474394321,
+                "throughput_mb_s": 99.77745573167638
+              }
+            },
+            "candidate": {
+              "chunks": [
+                16,
+                300
+              ],
+              "dtype": "float64",
+              "path": "/tmp/tmpbbyo024x/Cu_0166_chunked.h5",
+              "shape": [
+                461,
+                300
+              ],
+              "slider_scrub": {
+                "count": 64,
+                "mean_total_ms": 0.49577379832044244,
+                "median_total_ms": 0.49741705879569054,
+                "throughput_mb_s": 295.4661490709118
+              },
+              "snapshot_access": {
+                "mean_latency_ms": 0.019186511053703725,
+                "median_latency_ms": 0.007770489901304245,
+                "throughput_mb_s": 119.29309883222209
+              },
+              "zone_access": {
+                "mean_latency_ms": 0.04497503687161952,
+                "median_latency_ms": 0.02682558260858059,
+                "throughput_mb_s": 78.2022900602816
+              }
+            }
+          }
+        }
+      ],
+      "settings": {
+        "command": [
+          "{python}",
+          "{source}/scripts/bench_hdf5_access.py",
+          "--baseline-h5",
+          "{fixture:baseline_h5}",
+          "--source-log",
+          "{fixture:source_log}",
+          "--field",
+          "density",
+          "--snapshot",
+          "200",
+          "--zone",
+          "120"
+        ],
+        "metrics": {
+          "baseline.slider_scrub.median_total_ms": "lower",
+          "baseline.snapshot_access.median_latency_ms": "lower",
+          "baseline.zone_access.median_latency_ms": "lower",
+          "candidate.slider_scrub.median_total_ms": "lower",
+          "candidate.snapshot_access.median_latency_ms": "lower",
+          "candidate.zone_access.median_latency_ms": "lower"
+        },
+        "samples": 10,
+        "warmups": 1
+      }
+    }
+  },
+  "created_at_utc": "2026-10-20T13:43:44Z",
+  "environment": {
+    "cpu_count": 20,
+    "h5py": "3.16.0",
+    "implementation": "CPython",
+    "machine": "x86_64",
+    "numpy": "2.5.4",
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "processor": "",
+    "pyside6": "6.12.0",
+    "python": "3.12.13",
+    "ram_bytes": null
+  },
+  "pair_seed": 2048,
+  "paired": true,
+  "schema_version": 1,
+  "side": "baseline",
+  "source": {
+    "git_revision": "76634468fb41fe9f3ca044a76879d91ee8ab70af",
+    "source_sha256": "a4eaee0cd5884e1e3eee6474fecaf094197a798f800bf943291fcddf115809c3"
+  }
+}
