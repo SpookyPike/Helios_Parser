@@ -452,6 +452,10 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         options_group = QtWidgets.QGroupBox("Parse Options")
         options_layout = QtWidgets.QFormLayout(options_group)
         self.output_path_edit = QtWidgets.QLineEdit()
+        self.output_path_edit.setAccessibleName("Output HDF5 path")
+        self.output_path_edit.setAccessibleDescription(
+            "Choose where the converted HDF5 file will be written."
+        )
         browse_output_button = QtWidgets.QPushButton("Browse...")
         set_button_icon(browse_output_button, "folder")
         browse_output_button.clicked.connect(self._browse_output_path)

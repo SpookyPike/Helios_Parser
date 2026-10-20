@@ -426,6 +426,14 @@ class DerivedPlotPanel(QtWidgets.QWidget):
         self.profile_combo = _PopupAwareComboBox()
         self.time_label = QtWidgets.QLabel("Time traces")
         self.profile_label = QtWidgets.QLabel("Snapshot profiles")
+        self.time_combo.setAccessibleName(self.time_label.text())
+        self.time_combo.setAccessibleDescription(
+            "Choose which time trace is shown in this panel."
+        )
+        self.profile_combo.setAccessibleName(self.profile_label.text())
+        self.profile_combo.setAccessibleDescription(
+            "Choose which snapshot profile is shown in this panel."
+        )
         controls_layout.addWidget(self.time_label, 0, 0)
         controls_layout.addWidget(self.time_combo, 0, 1)
         controls_layout.addWidget(self.profile_label, 1, 0)
@@ -541,6 +549,8 @@ class DerivedPlotPanel(QtWidgets.QWidget):
     def set_section_labels(self, primary_label: str, secondary_label: str) -> None:
         self.time_label.setText(str(primary_label))
         self.profile_label.setText(str(secondary_label))
+        self.time_combo.setAccessibleName(self.time_label.text())
+        self.profile_combo.setAccessibleName(self.profile_label.text())
 
     def set_expected_options(
         self,
@@ -1842,13 +1852,25 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         preheat_controls_layout.addWidget(self.preheat_offset_combo, 0, 5)
         preheat_controls_layout.addWidget(QtWidgets.QLabel("Snapshot"), 1, 0)
         self.preheat_snapshot_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.preheat_snapshot_slider.setAccessibleName("Preheat snapshot")
+        self.preheat_snapshot_slider.setAccessibleDescription(
+            "Choose the snapshot used for the Preheat analysis."
+        )
         apply_absolute_click_slider_behavior(self.preheat_snapshot_slider)
         self.preheat_snapshot_slider.setTracking(True)
         preheat_controls_layout.addWidget(self.preheat_snapshot_slider, 1, 1, 1, 3)
         self.preheat_snapshot_spin = QtWidgets.QSpinBox()
+        self.preheat_snapshot_spin.setAccessibleName("Preheat snapshot index")
+        self.preheat_snapshot_spin.setAccessibleDescription(
+            "Select the zero-based snapshot used for the Preheat analysis."
+        )
         self.preheat_snapshot_spin.setKeyboardTracking(False)
         preheat_controls_layout.addWidget(self.preheat_snapshot_spin, 1, 4)
         self.preheat_time_spin = QtWidgets.QDoubleSpinBox()
+        self.preheat_time_spin.setAccessibleName("Preheat snapshot time")
+        self.preheat_time_spin.setAccessibleDescription(
+            "Select the Preheat snapshot by simulation time."
+        )
         self.preheat_time_spin.setKeyboardTracking(False)
         self.preheat_time_spin.setDecimals(6)
         self.preheat_time_spin.setRange(-1.0e18, 1.0e18)

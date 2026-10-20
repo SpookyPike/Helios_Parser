@@ -696,10 +696,18 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
 
         self.trace_reference_row_label = QtWidgets.QLabel("Reference zone")
         self.trace_zone_spin = QtWidgets.QSpinBox()
+        self.trace_zone_spin.setAccessibleName("Reference zone index")
+        self.trace_zone_spin.setAccessibleDescription(
+            "Select the zone index used as the reference for line plots."
+        )
         self.trace_zone_spin.setMinimum(1)
         self.trace_zone_spin.setKeyboardTracking(False)
         self.trace_zone_spin.valueChanged.connect(self._on_trace_reference_changed)
         self.trace_coordinate_spin = QtWidgets.QDoubleSpinBox()
+        self.trace_coordinate_spin.setAccessibleName("Reference coordinate")
+        self.trace_coordinate_spin.setAccessibleDescription(
+            "Select the coordinate used as the reference for line plots."
+        )
         self.trace_coordinate_spin.setDecimals(12)
         self.trace_coordinate_spin.setKeyboardTracking(False)
         self.trace_coordinate_spin.valueChanged.connect(self._on_trace_reference_changed)
@@ -743,12 +751,20 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         percentile_layout.setContentsMargins(0, 0, 0, 0)
         percentile_layout.setSpacing(4)
         self.percentile_low_spin = QtWidgets.QDoubleSpinBox()
+        self.percentile_low_spin.setAccessibleName("Lower percentile clip threshold")
+        self.percentile_low_spin.setAccessibleDescription(
+            "Set the lower percentile used to clip the displayed color range."
+        )
         self.percentile_low_spin.setRange(0.0, 49.0)
         self.percentile_low_spin.setDecimals(1)
         self.percentile_low_spin.setKeyboardTracking(False)
         self.percentile_low_spin.setValue(1.0)
         self.percentile_low_spin.valueChanged.connect(self._refresh_field_map_preserving_view)
         self.percentile_high_spin = QtWidgets.QDoubleSpinBox()
+        self.percentile_high_spin.setAccessibleName("Upper percentile clip threshold")
+        self.percentile_high_spin.setAccessibleDescription(
+            "Set the upper percentile used to clip the displayed color range."
+        )
         self.percentile_high_spin.setRange(51.0, 100.0)
         self.percentile_high_spin.setDecimals(1)
         self.percentile_high_spin.setKeyboardTracking(False)
@@ -763,8 +779,16 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         manual_layout.setContentsMargins(0, 0, 0, 0)
         manual_layout.setSpacing(4)
         self.level_min_edit = QtWidgets.QLineEdit()
+        self.level_min_edit.setAccessibleName("Manual color range minimum")
+        self.level_min_edit.setAccessibleDescription(
+            "Enter the lower value for the manual plot color range."
+        )
         self.level_min_edit.setPlaceholderText("min")
         self.level_max_edit = QtWidgets.QLineEdit()
+        self.level_max_edit.setAccessibleName("Manual color range maximum")
+        self.level_max_edit.setAccessibleDescription(
+            "Enter the upper value for the manual plot color range."
+        )
         self.level_max_edit.setPlaceholderText("max")
         self.apply_levels_button = QtWidgets.QPushButton("Apply")
         set_button_icon(self.apply_levels_button, "refresh")

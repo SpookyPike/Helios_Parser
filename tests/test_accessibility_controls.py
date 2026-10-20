@@ -17,6 +17,12 @@ class AccessibilityControlsTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.app = get_app()
 
+    def assert_accessible_name(self, widget: QtWidgets.QWidget, expected: str) -> None:
+        self.assertEqual(widget.accessibleName(), expected)
+        interface = QtGui.QAccessible.queryAccessibleInterface(widget)
+        self.assertIsNotNone(interface)
+        self.assertEqual(interface.text(QtGui.QAccessible.Text.Name), expected)
+
     def test_snapshot_controls_have_accessible_names_and_descriptions(self) -> None:
         reset_test_settings()
         reset_session_state()
@@ -81,6 +87,34 @@ class AccessibilityControlsTests(unittest.TestCase):
             )
         finally:
             viewer.close()
+            process_events()
+
+    def test_remaining_editors_and_plot_selectors_have_accessible_names(self) -> None:
+        reset_test_settings()
+        reset_session_state()
+        window = HeliosParseViewMainWindow()
+        try:
+            viewer = window.viewer_controller.window
+            workspace = window.derived_controller.widget()
+            named_controls = (
+                (window.output_path_edit, "Output HDF5 path"),
+                (viewer.trace_zone_spin, "Reference zone index"),
+                (viewer.trace_coordinate_spin, "Reference coordinate"),
+                (viewer.percentile_low_spin, "Lower percentile clip threshold"),
+                (viewer.percentile_high_spin, "Upper percentile clip threshold"),
+                (viewer.level_min_edit, "Manual color range minimum"),
+                (viewer.level_max_edit, "Manual color range maximum"),
+                (workspace.preheat_snapshot_slider, "Preheat snapshot"),
+                (workspace.preheat_snapshot_spin, "Preheat snapshot index"),
+                (workspace.preheat_time_spin, "Preheat snapshot time"),
+                (workspace.preheat_plot_panel.time_combo, "Time traces"),
+                (workspace.preheat_plot_panel.profile_combo, "Snapshot profiles"),
+            )
+            for control, expected in named_controls:
+                with self.subTest(control=expected):
+                    self.assert_accessible_name(control, expected)
+        finally:
+            window.close()
             process_events()
 
 
