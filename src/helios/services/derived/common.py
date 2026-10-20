@@ -443,6 +443,8 @@ def load_run_data(
             or time_s is None
             or static_x is None
             or static_x_edges is None
+            or zone_width is None
+            or (has_dynamic_radius is True and (radius is None or radius_edges is None))
             or zone_region_id is None
             or zone_material_index is None
             or (density is None and "density" not in missing_core_fields)

@@ -71,6 +71,7 @@ class CacheCoordinator:
         self._bytes_used = 0
         self._clock = 0
         self._evictions = 0
+        self._retired_revisions: set[Any] = set()
         # One lock protects the allocation ledger and every bucket registered
         # with this coordinator. Bucket operations acquire this lock before
         # touching their OrderedDict, so global eviction cannot race a writer.
@@ -147,6 +148,7 @@ class CacheCoordinator:
 
         with self._lock:
             revision_key = getattr(revision, "cache_key", revision)
+            self._retired_revisions.add(revision_key)
             removed = 0
             for bucket in tuple(self._buckets.values()):
                 for key, value in tuple(bucket._items.items()):
@@ -154,6 +156,15 @@ class CacheCoordinator:
                         del bucket[key]
                         removed += 1
             return removed
+
+    def rejects_entry(self, key: Any, value: Any) -> bool:
+        with self._lock:
+            value_revision = getattr(value, "revision", None)
+            value_revision_key = getattr(value_revision, "cache_key", None)
+            return (
+                _contains_any_revision(key, self._retired_revisions)
+                or value_revision_key in self._retired_revisions
+            )
 
     def touch(self, bucket: BoundedCacheBucket, key: Any) -> None:
         with self._lock:
@@ -237,6 +248,8 @@ class BoundedCacheBucket(MutableMapping[Any, Any]):
 
     def __setitem__(self, key: Any, value: Any) -> None:
         with self._guard():
+            if self.coordinator is not None and self.coordinator.rejects_entry(key, value):
+                return
             size = estimate_nbytes(value)
             if self.max_bytes is not None and int(self.max_bytes) > 0 and size > int(self.max_bytes):
                 self.pop(key, None)
@@ -373,6 +386,21 @@ def _contains_revision(value: Any, revision_key: Any) -> bool:
     if isinstance(value, dict):
         return any(
             _contains_revision(key, revision_key) or _contains_revision(item, revision_key)
+            for key, item in value.items()
+        )
+    return False
+
+
+def _contains_any_revision(value: Any, revision_keys: set[Any]) -> bool:
+    if isinstance(value, tuple):
+        if value in revision_keys:
+            return True
+        return any(_contains_any_revision(item, revision_keys) for item in value)
+    if isinstance(value, list):
+        return any(_contains_any_revision(item, revision_keys) for item in value)
+    if isinstance(value, dict):
+        return any(
+            _contains_any_revision(key, revision_keys) or _contains_any_revision(item, revision_keys)
             for key, item in value.items()
         )
     return False

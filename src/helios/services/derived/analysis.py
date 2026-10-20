@@ -50,7 +50,7 @@ from helios.services.derived.plasmon_config import (
 )
 from helios.services.derived.plasmon import evaluate_plasmon_regime
 from helios.services.derived.preheat import evaluate_preheat
-from helios.services.derived.selection import AnalysisStateCache, build_analysis_geometry, build_analysis_mask
+from helios.services.derived.selection import AnalysisStateCache, build_analysis_geometry, build_analysis_mask, resolve_weighting_mode
 from helios.services.derived.shock_tracking import (
     build_interface_events_from_wave_tracking,
     track_shock_front,
@@ -579,6 +579,23 @@ def _compute_module_results(
             missing = ("no zones remain after the active selection",)
         else:
             missing = contract.missing_requirements(dataset)
+            if contract.name == "spectroscopy":
+                weighting_mode = resolve_weighting_mode(parameters.weighting_mode, module_name="spectroscopy")
+                weighted_field = {
+                    "mass": "density",
+                    "electron_density": "electron_density",
+                    "electron_column": "electron_density",
+                }.get(weighting_mode)
+                capabilities = getattr(dataset, "field_capabilities", None)
+                available_fields = set(getattr(capabilities, "available_fields", ())) | set(
+                    getattr(capabilities, "optional_available_fields", ())
+                )
+                if capabilities is not None and weighted_field is not None and weighted_field not in available_fields:
+                    missing = tuple(dict.fromkeys((*missing, weighted_field)))
+                if capabilities is not None and (
+                    parameters.exclude_low_density or float(parameters.min_density_g_cm3) > 0.0
+                ) and "density" not in available_fields:
+                    missing = tuple(dict.fromkeys((*missing, "density")))
         if missing:
             reason = (
                 "This module has not been loaded for the active tab. Open its tab to request it."
@@ -632,7 +649,8 @@ def _compute_module_results(
         # Snapshot-local products carry their own generation index. The
         # enclosing result may already have advanced while this inactive
         # module was retained, so its index is the only safe reuse check.
-        if existing is not None and not include_time_plots and int(getattr(existing, "snapshot_index", -1)) == int(snapshot_index):
+        was_available = base_availability.get(contract.name, DerivedModuleAvailability(contract.name, False)).available
+        if existing is not None and was_available and not include_time_plots and int(getattr(existing, "snapshot_index", -1)) == int(snapshot_index):
             computed[contract.name] = existing
             continue
         if progress_check is not None:

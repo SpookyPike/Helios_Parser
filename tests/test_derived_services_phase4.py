@@ -103,6 +103,41 @@ def _synthetic_dataset() -> tuple[DerivedRunData, RunContext]:
 
 
 class DerivedServicesPhase4Tests(unittest.TestCase):
+    def test_same_snapshot_activation_recomputes_unavailable_module_placeholder(self) -> None:
+        dataset, context = uniform_al_dataset(2.7, 10.0)
+        parameters = DerivedAnalysisParameters()
+        first = compute_analysis_result(
+            dataset,
+            context,
+            parameters=parameters,
+            context_key=("same-snapshot-xrd",),
+            requested_modules={"xrd"},
+            requested_time_plot_modules=(),
+            include_wavefront=False,
+        )
+        activated = refresh_analysis_result_for_snapshot(
+            dataset,
+            context,
+            parameters=parameters,
+            context_key=("same-snapshot-spectroscopy",),
+            base_result=first,
+            requested_modules={"spectroscopy"},
+        )
+        fresh = compute_analysis_result(
+            dataset,
+            context,
+            parameters=parameters,
+            context_key=("same-snapshot-fresh",),
+            requested_modules={"spectroscopy"},
+            requested_time_plot_modules=(),
+            include_wavefront=False,
+        )
+        availability = {item.module: item.available for item in activated.module_availability}
+        self.assertTrue(availability["spectroscopy"])
+        self.assertIsNot(activated.spectroscopy, first.spectroscopy)
+        self.assertAlmostEqual(fresh.spectroscopy.bulk_velocity_cm_s, activated.spectroscopy.bulk_velocity_cm_s)
+        self.assertEqual(len(fresh.spectroscopy.profile_plots), len(activated.spectroscopy.profile_plots))
+
     def test_lazy_module_revisit_recomputes_snapshot_local_product(self) -> None:
         dataset, context = uniform_al_dataset(2.7, 10.0)
         dataset.summary["n_snapshots"] = 2

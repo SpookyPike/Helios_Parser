@@ -146,6 +146,15 @@ class CacheLifecycleTests(unittest.TestCase):
         self.assertEqual([("density", 1)], list(viewer))
         self.assertEqual(80, coordinator.stats().bytes_used)
 
+    def test_retired_revision_rejects_late_cache_publication(self) -> None:
+        coordinator = CacheCoordinator(max_bytes=1024)
+        bucket = CacheLayer(coordinator=coordinator).bucket("raw")
+        retired = RunRevision.create("late-run.h5")
+        coordinator.retire_revision(retired)
+        bucket[(retired.cache_key, "field:density")] = np.arange(8, dtype=np.float64)
+        self.assertEqual([], list(bucket))
+        self.assertEqual(0, coordinator.stats().bytes_used)
+
     def test_analyzer_cache_sets_share_the_session_coordinator(self) -> None:
         viewer = AnalyzerCacheSet()
         derived = AnalyzerCacheSet()

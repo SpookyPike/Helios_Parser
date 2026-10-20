@@ -17,6 +17,7 @@ from helios.cache import clear_session_raw_data_cache
 from helios.runtime import RunContext, RunRevision
 from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
 from helios.services.derived.common import _OPTIONAL_FIELD_DTYPES, _build_field_capabilities, field_capability_summary, load_run_data, publish_field_payload, publish_open_run_payload
+from helios.services.derived import common
 from helios.services.derived.transmission import evaluate_transmission
 from helios.services.derived.selection import (
     AnalysisStateCache,
@@ -261,6 +262,35 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
         self.assertTrue(bool(dataset.field_capabilities.run_status_available))
         self.assertTrue(bool(dataset.field_capabilities.visar_support_available))
 
+    def test_evicted_geometry_array_is_refilled_from_reader(self) -> None:
+        path = HDF5_ROOT / "Cu_0166_stabilized.h5"
+        for cache_name, dataset_name in (
+            ("field:zone_width", "zone_width_cm"),
+            ("field:radius", "radius_cm"),
+            ("field:radius:edge", "radius_edge_cm"),
+        ):
+            with self.subTest(cache_name=cache_name):
+                clear_session_raw_data_cache(reason="geometry-eviction-test")
+                initial = load_run_data(path, requested_fields=())
+                key = (common.run_identity_for_path(path), cache_name)
+                coordinator = common._RUN_ARRAY_BUCKET.coordinator
+                for bucket in (common._RUN_META_BUCKET, common._RUN_ARRAY_BUCKET):
+                    for candidate in bucket:
+                        if candidate != key:
+                            bucket.get(candidate)
+                original_limit = coordinator.max_bytes
+                try:
+                    coordinator.set_limit(coordinator.stats().bytes_used - 1)
+                    self.assertNotIn(key, common._RUN_ARRAY_BUCKET)
+                finally:
+                    coordinator.set_limit(original_limit)
+                recovered = load_run_data(path, requested_fields=())
+                initial_array = getattr(initial, dataset_name)
+                recovered_array = getattr(recovered, dataset_name)
+                self.assertIsNotNone(initial_array)
+                self.assertEqual(initial_array.shape, recovered_array.shape)
+                np.testing.assert_array_equal(initial_array, recovered_array)
+
 
     def test_ambiguous_legacy_pressure_does_not_create_total_pressure_capability(self) -> None:
         optional = {name: None for name in _OPTIONAL_FIELD_DTYPES}
@@ -407,6 +437,43 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
         self.assertTrue(availability["spectroscopy"])
         self.assertFalse(availability["plasmon"])
         self.assertFalse(availability["transmission"])
+
+        weighted_result = compute_analysis_result(
+            dataset,
+            context,
+            parameters=DerivedAnalysisParameters(weighting_mode="electron_column"),
+            context_key=("missing-electron-density-weighted",),
+            requested_modules={"spectroscopy"},
+            requested_time_plot_modules={"spectroscopy"},
+            include_wavefront=False,
+        )
+        weighted_availability = {item.module: item for item in weighted_result.module_availability}
+        self.assertFalse(weighted_availability["spectroscopy"].available)
+        self.assertIn("electron_density", weighted_availability["spectroscopy"].reason)
+
+    def test_mass_weighted_spectroscopy_requires_density(self) -> None:
+        source = HDF5_ROOT / "Cu_0166_stabilized.h5"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / source.name
+            shutil.copy2(source, path)
+            path.chmod(0o600)
+            with h5py.File(path, "r+") as handle:
+                del handle["fields/density"]
+            clear_session_raw_data_cache(reason="missing-density-weighted-spectroscopy-test")
+            dataset = load_run_data(path, requested_fields=())
+            context = _context_from_dataset(path, dataset)
+            result = compute_analysis_result(
+                dataset,
+                context,
+                parameters=DerivedAnalysisParameters(),
+                context_key=("missing-density-spectroscopy",),
+                requested_modules={"spectroscopy"},
+                requested_time_plot_modules={"spectroscopy"},
+                include_wavefront=False,
+            )
+        availability = {item.module: item for item in result.module_availability}
+        self.assertFalse(availability["spectroscopy"].available)
+        self.assertIn("density", availability["spectroscopy"].reason)
 
     def test_weighted_means_matches_scalar_weighted_average(self) -> None:
         path = HDF5_ROOT / "Cu_0166_stabilized.h5"
