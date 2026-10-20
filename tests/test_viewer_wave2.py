@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import SimpleNamespace
+import threading
 import unittest
+from unittest import mock
 
 import numpy as np
 
@@ -225,6 +227,64 @@ class ViewerWave2Tests(unittest.TestCase):
             self.assertEqual(len(traces), 1)
             self.assertEqual(traces[0][1], 299)
             self.assertEqual(controller._pending_jobs, 2)
+        finally:
+            controller.shutdown()
+
+    def test_100_equivalent_requests_per_read_kind_make_one_reader_call(self) -> None:
+        controller = RunController()
+        try:
+            controller.open_file(HDF5_ROOT / "Cu_0166_stabilized.h5")
+            wait_until(lambda: controller.run_payload is not None, timeout_s=10.0)
+            cases = (
+                ("get_field", controller.load_field, ("density",), controller.field_loaded),
+                ("get_snapshot_field", controller.load_snapshot_field, ("density", 5), controller.snapshot_field_loaded),
+                ("get_time_trace", controller.load_field_trace, ("density", 7), controller.field_trace_loaded),
+                (
+                    "get_diagnostic",
+                    controller.load_diagnostic,
+                    ("energy_summary/current/ions",),
+                    controller.diagnostic_loaded,
+                ),
+            )
+            for method_name, submit_request, args, signal in cases:
+                with self.subTest(request_kind=method_name):
+                    completed: list[object] = []
+                    callback = completed.append
+                    signal.connect(callback)
+                    busy_events: list[bool] = []
+                    busy_callback = busy_events.append
+                    controller.busy_changed.connect(busy_callback)
+                    started = threading.Event()
+                    release = threading.Event()
+                    physical_calls: list[int] = []
+                    original = getattr(HeliosRun, method_name)
+
+                    def blocked_read(run, *read_args, **read_kwargs):
+                        physical_calls.append(1)
+                        started.set()
+                        if not release.wait(5.0):
+                            raise TimeoutError("test did not release blocked HDF5 read")
+                        return original(run, *read_args, **read_kwargs)
+
+                    try:
+                        with mock.patch.object(HeliosRun, method_name, new=blocked_read):
+                            submit_request(*args)
+                            self.assertTrue(started.wait(5.0))
+                            for _ in range(99):
+                                submit_request(*args)
+                            self.assertEqual(controller._pending_jobs, 1)
+                            self.assertEqual(len(controller._pending_requests), 1)
+                            self.assertEqual(busy_events, [True])
+                            release.set()
+                            wait_until(lambda: len(completed) == 1, timeout_s=10.0)
+                        self.assertEqual(len(physical_calls), 1)
+                        self.assertEqual(controller._pending_jobs, 0)
+                        self.assertFalse(controller._pending_requests)
+                        self.assertEqual(busy_events, [True, False])
+                    finally:
+                        release.set()
+                        signal.disconnect(callback)
+                        controller.busy_changed.disconnect(busy_callback)
         finally:
             controller.shutdown()
 
