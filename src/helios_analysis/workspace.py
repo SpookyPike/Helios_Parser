@@ -2413,7 +2413,16 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             self.result_status_label.setText("Plasmon preset: load a run before applying benchmark defaults.")
             return
         try:
-            dataset = load_run_data(Path(self._context.path))
+            # Benchmark presets only need material/region layout and, for the
+            # driven preset, the density profile. Use the active open revision
+            # and avoid loading every optional diagnostic history just to
+            # choose zone bounds. The shared raw cache reuses arrays already
+            # loaded by the controller.
+            dataset = load_run_data(
+                Path(self._context.path),
+                revision=self._context.revision,
+                requested_fields=(),
+            )
             al_ids = self._al_material_ids_for_dataset(dataset)
             if not al_ids:
                 raise ValueError("No Al material resolved from EOS/opacity metadata.")
