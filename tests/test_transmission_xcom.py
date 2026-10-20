@@ -441,8 +441,8 @@ class TransmissionXcomTests(unittest.TestCase):
     def test_fallback_table_loglog_interpolation_and_transmission_from_areal_density(self) -> None:
         table = self._fallback_table_json()
         cu_rows = table["materials"]["cu"]["rows"]
-        row0 = next(row for row in cu_rows if int(row["energy_eV"]) == 2500)
-        row1 = next(row for row in cu_rows if int(row["energy_eV"]) == 3000)
+        bracket = int(np.searchsorted([row["energy_eV"] for row in cu_rows], 2800.0))
+        row0, row1 = cu_rows[bracket - 1], cu_rows[bracket]
         lookup = lookup_fallback_mu_rho("cu", 2.8)
         self.assertEqual("interpolated", lookup.interpolation_kind)
         expected_mu = math.exp(
@@ -781,14 +781,12 @@ class TransmissionXcomTests(unittest.TestCase):
         self.assertEqual(1, probe.call_count)
 
     def test_cu0166_reference_curve_matches_xcom_backend_within_tolerance_when_backend_is_active(self) -> None:
-        reference_points = (
-            (1000.0, 3.14248e-17),
-            (2800.0, 1.20652e-02),
-            (4600.0, 4.53259e-03),
-            (6400.0, 6.47505e-02),
-            (8200.0, 2.1526e-01),
-            (10000.0, 3.6210e-01),
-        )
+        # Native XCOM 3.1 coefficients for the Cu request below. The old
+        # transmission fixture did not correspond to its material/areal density.
+        reference_points = tuple((energy, math.exp(-coefficient * 2.2 * 25e-4)) for energy, coefficient in (
+            (1000.0, 10570.0), (2800.0, 896.1), (4600.0, 237.9),
+            (6400.0, 96.82), (8200.0, 49.11), (10000.0, 216.0),
+        ))
         status = describe_optional_cold_backend(probe_compute=True, force=True)
         if not status.available:
             self.skipTest(f"XCOM backend is not compute-capable in this environment: {status.status}")

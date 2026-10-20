@@ -17,6 +17,7 @@ already present in the parsed payload.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cached_property
 import hashlib
 import importlib
 from importlib import resources
@@ -675,8 +676,10 @@ def lookup_fallback_mu_rho(
     energy_kev: float,
     *,
     quantity: str = _FALLBACK_TABLE_DEFAULT_QUANTITY,
-    allow_extrapolation: bool = True,
+    allow_extrapolation: bool = False,
 ) -> ColdAttenuationTableLookup:
+    if not math.isfinite(float(energy_kev)) or float(energy_kev) <= 0.0:
+        raise ValueError("Fallback XCOM energy must be finite and positive.")
     original_label = None if material is None else str(material)
     normalized_label = _normalized_material_key_token(material)
     material_key = canonical_fallback_table_key(material)
@@ -687,8 +690,8 @@ def lookup_fallback_mu_rho(
         raise ValueError(f"Fallback XCOM table has no rows for {material_key}.")
     minimum_kev = float(xs[0]) * 1.0e-3
     maximum_kev = float(xs[-1]) * 1.0e-3
-    lower_limit = minimum_kev / _FALLBACK_TABLE_EXTRAP_FACTOR
-    upper_limit = maximum_kev * _FALLBACK_TABLE_EXTRAP_FACTOR
+    lower_limit = minimum_kev / _FALLBACK_TABLE_EXTRAP_FACTOR if allow_extrapolation else minimum_kev
+    upper_limit = maximum_kev * _FALLBACK_TABLE_EXTRAP_FACTOR if allow_extrapolation else maximum_kev
     if float(energy_kev) < lower_limit or float(energy_kev) > upper_limit:
         raise ValueError(
             f"Energy {float(energy_kev):.4g} keV is outside the allowed fallback-table range "
@@ -738,7 +741,7 @@ class PrecomputedColdTableBackend:
 
     backend_name = "XCOM table"
 
-    @property
+    @cached_property
     def backend_fingerprint(self) -> str:
         return str(_fallback_table_fingerprint() or "precomputed_xcom_table")
 

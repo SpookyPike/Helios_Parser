@@ -2,6 +2,13 @@
   "schema_version": 1,
   "description": "Fixture inventory for portable core and historical integration suites. Local-only fixtures must be supplied by the operator; absence is an error, never a skip.",
   "fixtures": {
+    "tracked_xcom_archive": {
+      "path": "XCOM.tar.gz",
+      "size_bytes": 172805,
+      "sha256": "b2bdd0608bbece4809a337b7264c85b7997f608a1f8e2181ce5201421efcc0de",
+      "format": "NIST XCOM 3.1 source/data archive",
+      "provenance": "tracked vendor archive; compiled only for native table validation"
+    },
     "tracked_cu_log": {
       "path": "new_data/25Cu+1.87TW/25Cu+1.87TW.log",
       "size_bytes": 16839197,
@@ -154,6 +161,7 @@
     }
   },
   "entry_requirements": {
+    "test_xcom_table_precision.py": ["tracked_xcom_archive"],
     "test_conversion_atomicity.py": ["tracked_fe_bpf"],
     "test_run_revision.py": ["tracked_fe_bpf"],
     "test_qt_lifecycle.py": ["tracked_fe_bpf"],
