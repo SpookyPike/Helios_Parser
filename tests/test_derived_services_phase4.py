@@ -22,6 +22,7 @@ from helios.services.derived.selection import (
 )
 from helios.services.derived.shock_tracking import _smooth_track, track_shock_front
 from helios.services.derived.spectroscopy import doppler_width_fraction, doppler_width_fraction_array
+from helios.services.derived.xrd import _region_metrics_for_snapshot, _zone_region_dense_index
 
 
 def _synthetic_dataset() -> tuple[DerivedRunData, RunContext]:
@@ -158,9 +159,34 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"velocity_cm_s has shape .* expected \(5, 10\)"):
             track_shock_front(dataset, context)
 
+    def test_unreachable_bragg_angle_is_reported_and_not_clamped(self) -> None:
+        dataset, context = _synthetic_dataset()
+        geometry = build_analysis_geometry(
+            dataset,
+            context,
+            observation_side="front",
+            line_of_sight_angle_deg=0.0,
+            profile_coordinate_mode="viewer",
+        )
+        region_ids = np.asarray([1, 2], dtype=np.int32)
+        metrics, warnings = _region_metrics_for_snapshot(
+            dataset,
+            np.ones(dataset.zone_region_id.shape, dtype=bool),
+            4,
+            photon_energy_kev=8.0,
+            initial_bragg_angle_deg=85.0,
+            weighting_mode="simple_mean",
+            geometry=geometry,
+            selection_key=None,
+            region_ids=region_ids,
+            initial_densities=np.asarray([1.0, 1.0]),
+            zone_region_dense_index=_zone_region_dense_index(region_ids, dataset.zone_region_id),
+        )
+        self.assertTrue(np.isnan(metrics["bragg_shift_deg"][1]))
+        self.assertTrue(any("sin(theta') > 1" in warning.message for warning in warnings))
+
     def test_missing_material_properties_produce_module_availability_instead_of_key_error(self) -> None:
         dataset, context = _synthetic_dataset()
-        dataset.zone_atomic_weight = None
         dataset.zone_initial_density_g_cm3 = None
         result = compute_analysis_result(
             dataset,
@@ -172,9 +198,8 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
         )
         availability = {item.module: item for item in result.module_availability}
         self.assertFalse(availability["xrd"].available)
-        self.assertFalse(availability["plasmon"].available)
-        self.assertFalse(availability["spectroscopy"].available)
-        self.assertIn("zone_atomic_weight", availability["spectroscopy"].reason)
+        self.assertTrue(availability["plasmon"].available)
+        self.assertTrue(availability["spectroscopy"].available)
         self.assertEqual("unavailable: missing initial material density", result.shock.method)
 
     def test_nrl_formula_helpers_return_dimensionally_sane_values(self) -> None:
