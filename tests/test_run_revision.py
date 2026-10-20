@@ -19,6 +19,8 @@ class RunRevisionTests(unittest.TestCase):
             self.assertEqual(first.canonical_path, second.canonical_path)
             self.assertEqual(first.file_size, second.file_size)
             self.assertEqual(first.modified_ns, second.modified_ns)
+            self.assertEqual(first.file_device, second.file_device)
+            self.assertEqual(first.file_inode, second.file_inode)
             self.assertNotEqual(first.open_token, second.open_token)
             self.assertNotEqual(first.cache_key, second.cache_key)
 
@@ -30,7 +32,7 @@ class RunRevisionTests(unittest.TestCase):
 
             self.assertEqual(str(path.resolve()), revision.canonical_path)
             self.assertEqual("convert-7", revision.conversion_id)
-            self.assertEqual(5, len(revision.cache_key))
+            self.assertEqual(7, len(revision.cache_key))
 
 
 if __name__ == "__main__":

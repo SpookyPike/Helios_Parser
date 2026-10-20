@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 import math
+import os
 from pathlib import Path
+import tempfile
 from unittest import mock
 import unittest
 
+import h5py
 import numpy as np
 
 import _test_bootstrap  # noqa: F401
 
 from _viewer_test_utils import HDF5_ROOT
 from helios.cache import clear_session_raw_data_cache
-from helios.runtime import RunContext
+from helios.runtime import RunContext, RunRevision
 from helios.services.derived.analysis import DerivedAnalysisParameters
 from helios.services.derived.common import _OPTIONAL_FIELD_DTYPES, _build_field_capabilities, field_capability_summary, load_run_data, publish_field_payload, publish_open_run_payload
 from helios.services.derived.transmission import evaluate_transmission
@@ -25,7 +28,7 @@ from helios.services.derived.selection import (
     weighted_average,
     weighted_means,
 )
-from helios_parser import HeliosRun
+from helios_parser import HeliosRun, write_hdf5
 from helios.services.derived.xrd import estimate_xrd
 from helios.services.units.conversions import photon_energy_kev_to_wavelength_angstrom
 
@@ -339,6 +342,32 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
             repeated = load_run_data(path, requested_fields=("pressure_i",))
             self.assertIsNotNone(repeated.pressure_i_j_cm3)
             self.assertEqual([], calls)
+
+    def test_same_path_reopen_loads_replaced_values_when_size_and_mtime_match(self) -> None:
+        source = Path(__file__).resolve().parents[1] / "new_data" / "5Fe+4.9TW+light" / "5Fe+4.9TW+light.bpf"
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "same-path-replacement.h5"
+            write_hdf5(source, path)
+            original_stat = path.stat()
+            first_revision = RunRevision.create(path)
+            first = load_run_data(path, revision=first_revision, requested_fields=())
+            original_value = float(first.density_g_cm3[0, 0])
+
+            with h5py.File(path, "r+") as handle:
+                density = handle["fields/density"]
+                density[0, 0] = original_value + 1.0
+            os.utime(path, ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns))
+            replaced_stat = path.stat()
+
+            self.assertEqual(original_stat.st_size, replaced_stat.st_size)
+            self.assertEqual(original_stat.st_mtime_ns, replaced_stat.st_mtime_ns)
+            self.assertEqual(original_stat.st_dev, replaced_stat.st_dev)
+            self.assertEqual(original_stat.st_ino, replaced_stat.st_ino)
+            second_revision = RunRevision.create(path)
+            self.assertNotEqual(first_revision.cache_key, second_revision.cache_key)
+
+            reopened = load_run_data(path, revision=second_revision, requested_fields=())
+            self.assertEqual(original_value + 1.0, float(reopened.density_g_cm3[0, 0]))
 
     def test_weighted_means_matches_scalar_weighted_average(self) -> None:
         path = HDF5_ROOT / "Cu_0166_stabilized.h5"

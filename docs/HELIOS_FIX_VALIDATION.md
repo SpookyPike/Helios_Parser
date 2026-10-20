@@ -68,7 +68,7 @@ This single exploratory run shows a zone-trace regression for the candidate layo
 |---|---|---|---|
 | F01 Atomic conversion | W01 atomic HDF5 publication (`46afa14`) | `test_streaming_conversion.py`, `test_conversion_atomicity.py` | Linux focused atomicity coverage and Windows locked-destination overwrite test passed; Windows workflow #39463169762 covers native replacement behavior. |
 | F02 Source-energy budget | W04 cumulative source semantics (`936b3fb`) | `test_wave6_derived.py`, Preheat energy-budget cases | Focused suite passed |
-| F03 Stale run revision | W05 revision-scoped caches/tasks (`54e6255`, `18879d0`) | `test_run_revision.py`, viewer stale-result tests | Targeted suites passed |
+| F03 Stale run revision | W05 revision-scoped caches/tasks (`54e6255`, `18879d0`), device/inode fingerprint | `test_run_revision.py`, `test_viewer_wave2.py`, same-path derived reload regression | Revision identity tests and stale-result tests passed. A changed HDF5 value with restored size/mtime now proves fresh same-path derived loading uses the new revision. |
 | F04 BPF validity | W02 frame/domain validation (`06a8215`, `840d147`) | `test_bpf_pipeline.py`, `test_snapshot_numeric_domains.py` | Existing targeted work passed during implementation; not rerun in this W14 pass |
 | F05 Partial final snapshot | W02 partial-frame reporting (`b13c542`) | `test_bpf_pipeline.py` truncation cases | Existing targeted work passed during implementation; not rerun in this W14 pass |
 | F06 Pressure semantics | W03 explicit plasma/total pressure (`365b8b9`) | BPF/reader/derived pressure parity cases | Existing targeted work passed during implementation; not rerun in this W14 pass |
@@ -104,3 +104,11 @@ This single exploratory run shows a zone-trace regression for the candidate layo
 - Linux PyInstaller frozen-runtime smoke passed: GUI startup, BPF-to-H5D CLI conversion, and scientific-resource hash checks. Windows portable build, extracted-resource hash comparison, and smoke passed.
 
 The current branch has passing focused evidence for the performance-sensitive reader, cache, derived, viewer, spectrum-cache, and XCOM paths. The post-fix Linux W14 full-profile gate, P06 cache-retirement and active-task memory measurements, P08 paired UI no-regression comparison, Linux frozen-runtime smoke, and Windows native/portable smoke pass. P08 timing improvement remains inconclusive, as allowed by the plan when no repeatable regression exceeds the 10% review threshold.
+
+## Deterministic performance-gate evidence
+
+| Gate | Result | Evidence |
+|---|---|---|
+| P02 pending-I/O coalescing | PASS | `test_viewer_wave2.py` submits 100 equivalent requests for each of four read kinds while the underlying reader call is blocked; each group produces exactly one physical read, one pending entry, and balanced busy transitions. It also verifies retry after an error. |
+| P03 metadata fan-out | PASS | `test_reader.py` counts attribute parsing on 10-, 104-, and 1,000-field synthetic HDF5 inventories: one parse for a narrow request, no additional parse on repeat, and one parse for each remaining field only when full inventory is requested. |
+| P09 same-path reopen correctness | PASS | `test_run_revision.py` verifies device/inode are part of the immutable revision identity. `test_derived_backend_optimization.py::test_same_path_reopen_loads_replaced_values_when_size_and_mtime_match` changes a real converted HDF5 field in place, restores size/mtime, confirms device/inode are unchanged, and verifies a fresh revision returns the changed values instead of stale cache data. |

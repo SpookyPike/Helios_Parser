@@ -27,6 +27,8 @@ class RunRevision:
     """Identity for one explicit open of a run, including same-path reloads."""
 
     canonical_path: str
+    file_device: int | None
+    file_inode: int | None
     file_size: int | None
     modified_ns: int | None
     conversion_id: str | None
@@ -37,11 +39,18 @@ class RunRevision:
         candidate = Path(path).expanduser().resolve(strict=False)
         try:
             stat_result = candidate.stat()
+            device = getattr(stat_result, "st_dev", None)
+            inode = getattr(stat_result, "st_ino", None)
+            device = None if device is None else int(device)
+            inode = None if inode is None else int(inode)
             size, modified_ns = int(stat_result.st_size), int(stat_result.st_mtime_ns)
         except OSError:
+            device = inode = None
             size = modified_ns = None
         return cls(
             canonical_path=str(candidate),
+            file_device=device,
+            file_inode=inode,
             file_size=size,
             modified_ns=modified_ns,
             conversion_id=None if conversion_id is None else str(conversion_id),
@@ -50,7 +59,15 @@ class RunRevision:
 
     @property
     def cache_key(self) -> tuple[object, ...]:
-        return (self.canonical_path, self.file_size, self.modified_ns, self.conversion_id, self.open_token)
+        return (
+            self.canonical_path,
+            self.file_device,
+            self.file_inode,
+            self.file_size,
+            self.modified_ns,
+            self.conversion_id,
+            self.open_token,
+        )
 
 
 def _shared_read_only_array(values: np.ndarray | list[float] | tuple[float, ...], dtype) -> np.ndarray:
