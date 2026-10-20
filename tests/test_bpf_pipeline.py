@@ -60,6 +60,44 @@ class BpfPipelineTests(unittest.TestCase):
 
 
 
+
+    def test_truncated_first_bpf_snapshot_is_not_recovered(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            record_index = BpfFile.snapshot_start(0, source.layout.block_records) + 5
+            cut_at = source._payload_offsets[record_index] - 4
+            raw = BPF_SAMPLE.read_bytes()[:cut_at]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            truncated = Path(tmpdir) / "truncated_first.bpf"
+            truncated.write_bytes(raw)
+            with self.assertRaisesRegex(ValueError, "complete BPF snapshot block"):
+                BpfFile(truncated)
+
+    def test_corruption_in_complete_middle_record_is_fatal(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            record_index = BpfFile.snapshot_start(3, source.layout.block_records) + 5
+            payload_end = source._payload_offsets[record_index] + source._payload_lengths[record_index]
+            raw = bytearray(BPF_SAMPLE.read_bytes())
+        closing = struct.unpack_from("<i", raw, payload_end)[0]
+        struct.pack_into("<i", raw, payload_end, closing + 4)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            corrupted = Path(tmpdir) / "corrupted_middle.bpf"
+            corrupted.write_bytes(raw)
+            with self.assertRaisesRegex(ValueError, "marker mismatch"):
+                BpfFile(corrupted)
+
+    def test_negative_bpf_density_is_rejected(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            record_index = BpfFile.snapshot_start(0, source.layout.block_records) + 8
+            payload_start = source._payload_offsets[record_index]
+            raw = bytearray(BPF_SAMPLE.read_bytes())
+        struct.pack_into("<d", raw, payload_start, -1.0)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            corrupted = Path(tmpdir) / "negative_density.bpf"
+            corrupted.write_bytes(raw)
+            with BpfFile(corrupted) as bpf:
+                with self.assertRaisesRegex(ValueError, "negative mass density"):
+                    next(bpf.iter_snapshots())
+
     def test_partial_final_bpf_snapshot_is_dropped_and_reported(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             truncated = Path(tmpdir) / "truncated.bpf"
