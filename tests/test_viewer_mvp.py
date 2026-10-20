@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 
+from PySide6 import QtCore
 from _viewer_test_utils import EXPECTED, HDF5_ROOT, find_row_by_data, get_app, reset_test_settings, wait_until
 
 import _test_bootstrap  # noqa: F401
@@ -36,9 +37,19 @@ class ViewerMVPTests(unittest.TestCase):
 
                     self.assertIn(f"Zones: {expected['zones']}", window.summary_text.toPlainText())
                     self.assertIn(f"Snapshots: {expected['snapshots']}", window.summary_text.toPlainText())
-                    self.assertEqual(window.field_list.count(), len(window.run_payload.fields))
+                    listed_fields = {
+                        str(window.field_list.item(index).data(QtCore.Qt.ItemDataRole.UserRole))
+                        for index in range(window.field_list.count())
+                        if window.field_list.item(index).data(QtCore.Qt.ItemDataRole.UserRole) is not None
+                    }
+                    self.assertTrue(set(window.run_payload.fields).issubset(listed_fields))
+                    self.assertEqual(len(listed_fields), sum(
+                        window.field_list.item(index).data(QtCore.Qt.ItemDataRole.UserRole) is not None
+                        for index in range(window.field_list.count())
+                    ))
+                    self.assertIn("pressure", listed_fields)
                     self.assertEqual(window.snapshot_slider.maximum(), expected["snapshots"] - 1)
-                    self.assertIn("Density", window.field_label.text())
+                    self.assertIn("density", window.field_label.text().casefold())
                     self.assertEqual(window.field_map_widget.current_orientation, "time_x_coord_y")
                     self.assertIn("Time [", window.field_map_widget.current_x_label)
                     self.assertTrue(
