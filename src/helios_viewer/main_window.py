@@ -889,15 +889,25 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         layout.setSpacing(8)
 
         self.snapshot_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.snapshot_slider.setAccessibleName("Snapshot")
+        self.snapshot_slider.setAccessibleDescription(
+            "Choose the snapshot displayed in the viewer."
+        )
         self.snapshot_slider.setMinimumHeight(24)
         apply_absolute_click_slider_behavior(self.snapshot_slider)
         self.snapshot_slider.valueChanged.connect(self._on_snapshot_changed)
         self.snapshot_spin = QtWidgets.QSpinBox()
+        self.snapshot_spin.setAccessibleName("Snapshot index")
+        self.snapshot_spin.setAccessibleDescription(
+            "Select the zero-based snapshot index displayed in the viewer."
+        )
         self.snapshot_spin.setMinimumHeight(24)
         self.snapshot_spin.valueChanged.connect(self._on_snapshot_changed)
         self.snapshot_time_label = QtWidgets.QLabel("time: -")
 
-        layout.addWidget(QtWidgets.QLabel("Snapshot"))
+        snapshot_label = QtWidgets.QLabel("Snapshot")
+        snapshot_label.setBuddy(self.snapshot_spin)
+        layout.addWidget(snapshot_label)
         layout.addWidget(self.snapshot_slider, 1)
         layout.addWidget(self.snapshot_spin)
         layout.addWidget(self.snapshot_time_label)
@@ -976,29 +986,41 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         adjust_layout.setVerticalSpacing(4)
 
         self.mouse_time_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.mouse_time_slider.setAccessibleName("Probe time")
+        self.mouse_time_slider.setAccessibleDescription(
+            "Move the probe to a time in the simulation."
+        )
         self.mouse_time_slider.setMinimumHeight(24)
         self.mouse_time_slider.valueChanged.connect(self._on_mouse_time_slider_changed)
         self.mouse_time_spin = QtWidgets.QDoubleSpinBox()
+        self.mouse_time_spin.setAccessibleName("Probe time")
         self.mouse_time_spin.setDecimals(12)
         self.mouse_time_spin.setKeyboardTracking(False)
         self.mouse_time_spin.setMinimumHeight(24)
         self.mouse_time_spin.setMaximumWidth(170)
         self.mouse_time_spin.valueChanged.connect(self._on_mouse_time_spin_changed)
         self.mouse_time_row_label = QtWidgets.QLabel("Time")
+        self.mouse_time_row_label.setBuddy(self.mouse_time_spin)
         adjust_layout.addWidget(self.mouse_time_row_label, 0, 0)
         adjust_layout.addWidget(self.mouse_time_slider, 0, 1)
         adjust_layout.addWidget(self.mouse_time_spin, 0, 2)
 
         self.mouse_coordinate_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.mouse_coordinate_slider.setAccessibleName("Probe coordinate")
+        self.mouse_coordinate_slider.setAccessibleDescription(
+            "Move the probe to a coordinate in the simulation."
+        )
         self.mouse_coordinate_slider.setMinimumHeight(24)
         self.mouse_coordinate_slider.valueChanged.connect(self._on_mouse_coordinate_slider_changed)
         self.mouse_coordinate_spin = QtWidgets.QDoubleSpinBox()
+        self.mouse_coordinate_spin.setAccessibleName("Probe coordinate")
         self.mouse_coordinate_spin.setDecimals(12)
         self.mouse_coordinate_spin.setKeyboardTracking(False)
         self.mouse_coordinate_spin.setMinimumHeight(24)
         self.mouse_coordinate_spin.setMaximumWidth(190)
         self.mouse_coordinate_spin.valueChanged.connect(self._on_mouse_coordinate_spin_changed)
         self.mouse_coordinate_row_label = QtWidgets.QLabel("Coordinate")
+        self.mouse_coordinate_row_label.setBuddy(self.mouse_coordinate_spin)
         adjust_layout.addWidget(self.mouse_coordinate_row_label, 1, 0)
         adjust_layout.addWidget(self.mouse_coordinate_slider, 1, 1)
         adjust_layout.addWidget(self.mouse_coordinate_spin, 1, 2)

@@ -9,6 +9,7 @@ from _viewer_test_utils import get_app, process_events, reset_test_settings
 from helios_analysis.workspace import HeliosDerivedWorkspace
 from helios_app.main_app import HeliosParseViewMainWindow
 from helios_app.session_state import reset_session_state
+from helios_viewer.main_window import HeliosViewerMainWindow
 
 
 class AccessibilityControlsTests(unittest.TestCase):
@@ -49,6 +50,19 @@ class AccessibilityControlsTests(unittest.TestCase):
             self.assertTrue(any(label.buddy() is workspace.zone_upper_spin for label in labels))
         finally:
             workspace.close()
+            process_events()
+
+    def test_viewer_probe_and_snapshot_controls_are_named(self) -> None:
+        viewer = HeliosViewerMainWindow()
+        try:
+            self.assertEqual(viewer.snapshot_slider.accessibleName(), "Snapshot")
+            self.assertEqual(viewer.snapshot_spin.accessibleName(), "Snapshot index")
+            self.assertEqual(viewer.mouse_time_slider.accessibleName(), "Probe time")
+            self.assertEqual(viewer.mouse_time_spin.accessibleName(), "Probe time")
+            self.assertEqual(viewer.mouse_coordinate_slider.accessibleName(), "Probe coordinate")
+            self.assertEqual(viewer.mouse_coordinate_spin.accessibleName(), "Probe coordinate")
+        finally:
+            viewer.close()
             process_events()
 
 
