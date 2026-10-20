@@ -1,15 +1,26 @@
 from __future__ import annotations
 
+import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 
 import _test_bootstrap  # noqa: F401
-from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_settings
+from _viewer_test_utils import get_app, process_events, reset_test_settings
 from PySide6 import QtCore, QtGui
 from test_viewer_wave2 import _build_open_run_payload
 
+from helios_parser import write_hdf5
 from helios_viewer.main_window import HeliosViewerMainWindow
 from helios_viewer.style import DARK_THEME, LIGHT_THEME
+
+
+TRACKED_BPF = (
+    Path(__file__).resolve().parents[1]
+    / "new_data"
+    / "5Fe+4.9TW+light"
+    / "5Fe+4.9TW+light.bpf"
+)
 
 
 def _contrast_ratio(foreground: str, background: str) -> float:
@@ -40,10 +51,12 @@ class W11ThemeCopyTests(unittest.TestCase):
         window = HeliosViewerMainWindow()
         try:
             window._set_theme_mode("light")
-            payload = _build_open_run_payload(
-                HDF5_ROOT / "Cu_0166_stabilized.h5",
-                window.controller.run_generation,
-            )
+            with tempfile.TemporaryDirectory() as tmpdir:
+                run_path = write_hdf5(TRACKED_BPF, Path(tmpdir) / "theme-fixture.h5")
+                payload = _build_open_run_payload(
+                    run_path,
+                    window.controller.run_generation,
+                )
             payload.field_metadata = {
                 name: {
                     "status": "validated",
