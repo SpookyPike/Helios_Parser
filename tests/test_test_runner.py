@@ -148,10 +148,15 @@ class TestSuiteRunnerTests(unittest.TestCase):
                 report = root / "reports"
                 report.mkdir()
                 marker = root / "late-child-write.txt"
-                child_code = f"import time; time.sleep(0.4); open({str(marker)!r}, 'w').write('late')"
+                child_code = (
+                    "import signal, time; signal.signal(signal.SIGTERM, signal.SIG_IGN); "
+                    f"time.sleep(0.4); open({str(marker)!r}, 'w').write('late')"
+                )
                 wrapper_code = (
                     "import subprocess, sys; "
-                    f"child = subprocess.Popen([sys.executable, '-c', {child_code!r}]); child.wait()"
+                    f"subprocess.Popen([sys.executable, '-c', {child_code!r}], "
+                    "stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); "
+                    "import time; time.sleep(2)"
                 )
                 wrapper = run_test_suite.TestEntry(
                     "wrapper-child.py", (sys.executable, "-c", wrapper_code), "test"

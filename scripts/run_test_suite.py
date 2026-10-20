@@ -283,11 +283,18 @@ def run_entry(entry: TestEntry, report_dir: Path, root: Path = ROOT) -> dict[str
                 try:
                     tail, _ = process.communicate(timeout=1.0)
                 except subprocess.TimeoutExpired:
+                    tail, _ = process.communicate()
+                # Descendants can close the wrapper's pipes and outlive its
+                # process. Remove any remaining group members before continuing.
+                try:
+                    os.killpg(process.pid, 0)
+                except ProcessLookupError:
+                    pass
+                else:
                     try:
                         os.killpg(process.pid, signal.SIGKILL)
                     except ProcessLookupError:
                         pass
-                    tail, _ = process.communicate()
             elif os.name == "nt":
                 subprocess.run(
                     ["taskkill", "/PID", str(process.pid), "/T", "/F"],
