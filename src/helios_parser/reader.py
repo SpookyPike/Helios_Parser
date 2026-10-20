@@ -213,6 +213,8 @@ class HeliosRun:
         )
 
     def _load_field_metadata(self, name: str | None = None) -> dict[str, FieldMetadata]:
+        if not hasattr(self, "_field_metadata_cache"):
+            self._field_metadata_cache = {}
         if name is None:
             for field_name, dataset in self._field_datasets.items():
                 if field_name not in self._field_metadata_cache:
