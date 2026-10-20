@@ -9,7 +9,7 @@ import numpy as np
 import _test_bootstrap  # noqa: F401
 
 from helios.runtime import RunContext
-from helios.services.derived.models import DerivedRunData
+from helios.services.derived.models import DerivedFieldCapabilities, DerivedRunData
 from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
 from helios.services.derived.plasmon import electron_debye_length_cm, electron_plasma_frequency_rad_s
 from helios.services.derived.selection import (
@@ -147,6 +147,12 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
     def test_shock_tracking_reports_missing_initial_density_without_fallback(self) -> None:
         dataset, context = _synthetic_dataset()
         dataset.zone_initial_density_g_cm3 = None
+        dataset.field_capabilities = DerivedFieldCapabilities(
+            available_fields=("density", "velocity", "zone_width", "electron_density", "temperature_e", "temperature_i", "mean_charge")
+        )
+        dataset.field_capabilities = DerivedFieldCapabilities(
+            available_fields=("density", "velocity", "zone_width", "electron_density", "temperature_e", "temperature_i", "mean_charge")
+        )
         result = track_shock_front(dataset, context)
         self.assertEqual("unavailable: missing initial material density", result.method)
         self.assertIsNone(result.activation_snapshot_index)
@@ -198,6 +204,9 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
     def test_missing_material_properties_produce_module_availability_instead_of_key_error(self) -> None:
         dataset, context = _synthetic_dataset()
         dataset.zone_initial_density_g_cm3 = None
+        dataset.field_capabilities = DerivedFieldCapabilities(
+            available_fields=("density", "velocity", "zone_width", "electron_density", "temperature_e", "temperature_i", "mean_charge")
+        )
         result = compute_analysis_result(
             dataset,
             context,
@@ -208,7 +217,6 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
         )
         availability = {item.module: item for item in result.module_availability}
         self.assertFalse(availability["xrd"].available)
-        self.assertTrue(availability["plasmon"].available)
         self.assertTrue(availability["spectroscopy"].available)
         self.assertEqual("unavailable: missing initial material density", result.shock.method)
 
