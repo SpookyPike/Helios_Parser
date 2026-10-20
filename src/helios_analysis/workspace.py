@@ -3244,10 +3244,11 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 self.preheat_time_spin.setValue(0.0)
             manual_mode = self._preheat_time_mode == "manual"
             self.preheat_offset_combo.setEnabled(not manual_mode and preheat.latest_pre_entry_snapshot_index is not None)
-            has_time_axis = bool(time_axis_s.size)
-            self.preheat_snapshot_slider.setEnabled(manual_mode and has_time_axis)
-            self.preheat_snapshot_spin.setEnabled(manual_mode and has_time_axis)
-            self.preheat_time_spin.setEnabled(manual_mode and has_time_axis)
+            # Manual preheat mode follows the app's selected/global snapshot;
+            # local controls stay display-only to avoid a second snapshot source.
+            self.preheat_snapshot_slider.setEnabled(False)
+            self.preheat_snapshot_spin.setEnabled(False)
+            self.preheat_time_spin.setEnabled(False)
             self.preheat_offset_combo.setToolTip(
                 "Choose how many snapshots earlier than target shock entry to inspect."
                 if self.preheat_offset_combo.isEnabled()

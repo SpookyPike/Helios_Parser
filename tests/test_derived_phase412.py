@@ -75,7 +75,13 @@ class DerivedPhase412Tests(unittest.TestCase):
         path = ROOT / "Cu_0166_stabilized.h5"
         dataset = load_run_data(path)
         context = _context_from_dataset(path, dataset)
-        result = compute_analysis_result(dataset, context, parameters=DerivedAnalysisParameters(), context_key=("phase412", "legend"))
+        result = compute_analysis_result(
+            dataset,
+            context,
+            parameters=DerivedAnalysisParameters(),
+            context_key=("phase412", "legend"),
+            requested_time_plot_modules=frozenset({"plasmon", "spectroscopy"}),
+        )
 
         workspace = HeliosDerivedWorkspace()
         try:

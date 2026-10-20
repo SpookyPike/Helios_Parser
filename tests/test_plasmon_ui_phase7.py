@@ -85,7 +85,7 @@ class PlasmonUiPhase7Tests(unittest.TestCase):
         )
         selected_snapshot_index, note = workspace._resolve_preheat_snapshot_index(preheat)
         self.assertEqual(selected_snapshot_index, 2)
-        self.assertIn("global snapshot", note.lower())
+        self.assertIn("selected snapshot", note.lower())
         workspace._sync_preheat_navigation_controls(preheat, selected_snapshot_index=selected_snapshot_index)
         self.assertEqual(workspace.preheat_snapshot_slider.value(), 2)
         self.assertEqual(workspace.preheat_snapshot_spin.value(), 2)

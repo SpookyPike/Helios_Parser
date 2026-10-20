@@ -162,6 +162,7 @@ def plasmon_ui_capabilities(
         PlasmonPlotCapabilityOption("electron_density", "Electron density vs time"),
         PlasmonPlotCapabilityOption("electron_temperature", "Electron temperature vs time"),
         PlasmonPlotCapabilityOption("ion_temperature", "Ion temperature vs time"),
+        PlasmonPlotCapabilityOption("temperatures", "Electron and ion temperature vs time"),
         PlasmonPlotCapabilityOption("mean_charge", "Mean charge vs time"),
         PlasmonPlotCapabilityOption("debye_length", "Debye length vs time"),
     )
