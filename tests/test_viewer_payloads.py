@@ -8,8 +8,9 @@ from _viewer_test_utils import EXPECTED, HDF5_ROOT, combo_set_data, find_row_by_
 
 import _test_bootstrap  # noqa: F401
 from helios_parser import HeliosRun
+from helios_viewer.controller import RunController
 from helios_viewer.main_window import HeliosViewerMainWindow
-from helios_viewer.models import OpenRunPayload
+from helios_viewer.models import FieldPayload, OpenRunPayload
 from helios_viewer.plots import signed_log10_transform
 
 
@@ -130,6 +131,29 @@ class ViewerPayloadTests(unittest.TestCase):
             self.assertFalse(bool(item.isEnabled()))
         finally:
             window.close()
+
+    def test_oversized_field_payload_is_delivered_without_cache_retention(self) -> None:
+        controller = RunController()
+        delivered: list[FieldPayload] = []
+        controller.field_loaded.connect(delivered.append)
+        controller.field_cache.max_bytes = 8
+        request_key = controller._make_request_key("field", ("density",))
+        self.assertTrue(controller._begin_request(request_key))
+        payload = FieldPayload(
+            run_generation=controller.run_generation,
+            field_name="density",
+            unit="g/cm3",
+            data=np.ones(2, dtype=np.float64),
+            request_key=request_key,
+        )
+        try:
+            controller._handle_field_loaded(payload)
+            self.assertEqual([payload], delivered)
+            self.assertEqual(0, controller._pending_jobs)
+            self.assertEqual(set(), controller._pending_requests)
+            self.assertEqual(0, len(controller.field_cache))
+        finally:
+            controller.shutdown()
 
     def test_2d_orientation_and_coordinate_payloads_match_reader(self) -> None:
         for name in EXPECTED:

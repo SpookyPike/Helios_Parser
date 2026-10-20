@@ -71,6 +71,13 @@ class CacheLifecycleTests(unittest.TestCase):
         self.assertEqual(24, estimate_nbytes(value))
         self.assertIs(value[0:1].base, value)
 
+    def test_aggregate_oversized_value_is_not_retained(self) -> None:
+        coordinator = CacheCoordinator(max_bytes=16)
+        bucket = CacheLayer(coordinator=coordinator).bucket("small")
+        bucket["too-large"] = np.arange(3, dtype=np.float64)
+        self.assertEqual(0, len(bucket))
+        self.assertEqual(0, coordinator.stats().bytes_used)
+
     def test_cache_set_accepts_injected_per_layer_budgets(self) -> None:
         cache_set = AnalyzerCacheSet(raw_bucket_byte_limit=32, derived_bucket_byte_limit=48)
         raw_bucket = cache_set.raw_data_cache.bucket("raw")
