@@ -5,7 +5,7 @@
 **Plan:** [HELIOS_FIX_IMPLEMENTATION_PLAN.md](HELIOS_FIX_IMPLEMENTATION_PLAN.md)
 **Audit:** [HELIOS_AUDIT_2026-10-20.md](HELIOS_AUDIT_2026-10-20.md)
 
-This is validation evidence, not a release sign-off. The user asked to prefer focused tests and run the full suite only when needed. After the two earlier full-profile failures were fixed and verified with focused tests, the full profile was rerun because W14 requires post-fix integration evidence. The latest run, after the cache-retirement lifecycle change, completed all 78 entries with zero failures, zero timeouts, zero missing entries, and two explicit test skips. The Linux full-profile gate passes; native/frozen platform checks and active-task/view memory limits remain open release work.
+This is validation evidence, not a release sign-off. The user asked to prefer focused tests and run the full suite only when needed. After the two earlier full-profile failures were fixed and verified with focused tests, the full profile was rerun because W14 requires post-fix integration evidence. The latest run, after the cache-retirement lifecycle change, completed all 78 entries with zero failures, zero timeouts, zero missing entries, and two explicit test skips. The Linux full-profile gate passes. Native Linux Wayland accessibility/lifecycle/layout/theme checks also pass; Windows/frozen-runtime validation, native latency measurement, and active-task/view memory limits remain open release work.
 
 ## Focused validation
 
@@ -13,6 +13,7 @@ All tests below ran from the disposable current-source tree created by `scripts/
 
 | Target | Result | Evidence |
 |---|---|---|
+| Native Wayland UI | PASS | `test_accessibility_controls.py`, `test_qt_lifecycle.py`, `test_w11_layout.py`, and `test_w11_theme_copy.py`: 12 tests passed with `QT_QPA_PLATFORM=wayland`; exact resize assertions wait for compositor acknowledgement. The size request test also passed with `QT_QPA_PLATFORM=xcb` (1 test). |
 | `test_cache_lifecycle.py` | PASS | Stable bucket identity and clear lifecycle |
 | `test_derived_backend_optimization.py` | PASS | Field-read and derived-backend work counts |
 | `test_plasmon_energy_grid_cache.py` | PASS | Exact spectrum-grid cache behavior |
@@ -72,8 +73,8 @@ This single exploratory run shows a zone-trace regression for the candidate layo
 | F09 Independent modules | W06 capability-aware analysis (`764ec90`, `7ee6a35`), no-detection validation (`0ffa1c4`) | `test_wave6_derived.py`, `test_derived_stability.py`, `test_v1_release_gate.py` | No-detection and independent-analysis checks passed; the full run's separate manual-preheat assertion passed after focused correction |
 | F10 Standalone BPF analysis | W06 prerequisite/partial-data handling (`4cd5cf8`, `1e03e84`) | BPF partial metadata and analysis cases | Existing targeted work passed during implementation; not rerun in this W14 pass |
 | F11 Desktop BPF workflow | W09 preview/convert routing (`e1bb5a1`) | BPF desktop workflow tests | Existing targeted work passed during implementation; not rerun in this W14 pass |
-| F12 Accessible names | W11 named controls (`b588c31`, `efae132`) | UI accessibility checks | Existing targeted work passed during implementation; native platform check pending |
-| F13 Window sizes | W11 scrollable tall pages (`f8f2eca`) | Layout/accessibility checks | Existing targeted work passed during implementation; native platform check pending |
+| F12 Accessible names | W11 named controls (`b588c31`, `efae132`) | UI accessibility checks | Full/offscreen suite and native Wayland accessibility checks passed; Windows native check pending |
+| F13 Window sizes | W11 scrollable tall pages (`f8f2eca`) | Layout/accessibility checks | Native Wayland layout/lifecycle suite passed after waiting for compositor resize acknowledgement; XCB size request passed; Windows native check pending |
 | F14 Release test gate | W00 runner and W13 lifecycle (`bbe0cb5`, `c9a4372`), fixture declarations (`b1712a6`, `8e57270`) | `test_test_runner.py`, `test_qt_lifecycle.py`, full profile | Post-fix full profile executed 78/78 entries with 0 failures, 0 timeouts, 0 missing entries, and 2 explicit skips; Linux full-profile gate passes |
 | F15 Display units | W10 canonical/display conversion (`bb65a93`, `f83e1fe`) | Viewer unit tests and app phase3 | Focused `test_app_phase3.py` passed |
 | F16 Spectrum grids | W12 exact axes (`33407e1`) | `test_plasmon_energy_grid_cache.py` | Passed |
@@ -84,7 +85,7 @@ This single exploratory run shows a zone-trace regression for the candidate layo
 | F21 Grouped XCOM | W12b grouped lookups (`5048a9c`) | `test_transmission_xcom.py`, including 1,300 zones | Passed; paired P01 confirms 5,200 → 12 lookups/run and a 52.9× median speedup on the archived fixture |
 | F22 Pending I/O | W08 request coalescing (`25f66e7`) | `test_viewer_wave2.py` | Passed |
 | F23 Per-field metadata | W08 lazy metadata (`d99955f`) | `test_reader.py` | Passed |
-| F24 Theme contrast | W11 theme refresh (`6d5effb`) | Theme/accessibility tests | Existing targeted work passed during implementation; native theme review pending |
+| F24 Theme contrast | W11 theme refresh (`6d5effb`) | Theme/accessibility tests | Full/offscreen suite and native Wayland theme checks passed; Windows native theme review pending |
 | F25 Packaged resources | W12c package data (`8fc08e9`) | Installed wheel/sdist resource smoke | Earlier packaging smoke passed; frozen-runtime resource check unavailable/not run |
 
 ## Remaining release checks
@@ -93,7 +94,7 @@ This single exploratory run shows a zone-trace regression for the candidate layo
 - P05 BPF companion paired timing review: passed after the narrow parser path; speedup remains unproven because the paired confidence intervals are inconclusive.
 - Cache-retirement evidence: ten large-fixture open/analyze/retire cycles cleared all 24 revision-owned entries per cycle and retained zero cache bytes. After the initial cycle, post-retirement RSS stayed within a 0.26 MiB range over cycles 2–10; RSS remains above its starting point because native allocators retain pages. The benchmark does not claim an RSS ceiling for arrays retained by active tasks or views.
 - The P01/P04/P05/P07 paired profiles, comparisons and fixture manifests are archived; P01/P04 passed, P07 was inconclusive, and the final P05 comparison passed after optimization. The earlier P05 failure is retained as a before-optimization profile.
-- Native GUI latency/accessibility and lifecycle checks on supported desktop platforms: pending; offscreen Linux tests only.
+- Native Linux Wayland accessibility/lifecycle/layout/theme checks passed (12 tests), and the size request test passed on XCB. Windows native checks remain pending. Native UI latency measurement with the plan's interaction sample remains unrun.
 - PyInstaller/frozen-runtime resource smoke: pending because the supported frozen build environment was not exercised.
 
-The current branch has passing focused evidence for the performance-sensitive reader, cache, derived, viewer, spectrum-cache, and XCOM paths. The post-fix Linux W14 full-profile gate and synchronous P06 cache-retirement gate pass. Overall release completion remains open because supported native desktop and frozen-runtime checks have not been run; the cache budget also excludes arrays retained by active tasks and views.
+The current branch has passing focused evidence for the performance-sensitive reader, cache, derived, viewer, spectrum-cache, and XCOM paths. The post-fix Linux W14 full-profile gate and synchronous P06 cache-retirement gate pass. Overall release completion remains open because Windows native checks, frozen-runtime smoke, and native UI latency measurement have not been run; the cache budget also excludes arrays retained by active tasks and views.

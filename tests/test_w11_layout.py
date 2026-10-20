@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 import _test_bootstrap  # noqa: F401
-from _viewer_test_utils import get_app, process_events, reset_test_settings
+from _viewer_test_utils import get_app, process_events, reset_test_settings, wait_until
 from PySide6 import QtWidgets
 
 from helios_app.main_app import HeliosParseViewMainWindow
@@ -26,10 +26,11 @@ class W11LayoutTests(unittest.TestCase):
     def test_requested_desktop_client_sizes_are_honored(self) -> None:
         window = self.open_window()
         try:
+            process_events(200)
             for size in ((1024, 768), (1280, 800), (1860, 1120)):
                 with self.subTest(size=size):
                     window.resize(*size)
-                    process_events()
+                    wait_until(lambda: (window.width(), window.height()) == size, timeout_s=2.0)
                     self.assertEqual((window.width(), window.height()), size)
         finally:
             window.close()
