@@ -51,3 +51,7 @@ _tmp_plasmon_fourth_pass/
 /coordinate_model_final_validation_report.md
 /outputs/reports/
 /outputs/validation_outputs/
+/outputs/release/helios-parser-viewer-v*.zip
+/outputs/distributables/helios-parser-viewer_*.deb
+/outputs/distributables/helios-parser-viewer-v*-windows-portable.zip
+/outputs/distributables/helios-parser-viewer-v*-linux-portable.tar.gz
