@@ -3,7 +3,7 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `1.2.0`
+- Release: `1.2.1`
 - Release date: `2026-10-20`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
@@ -77,6 +77,7 @@ Start with the documentation index:
 - [BPF H5D schema](docs/bpf_h5d_schema.md)
 - [BPF deep forensic analysis](docs/bpf_deep_forensic_analysis.md)
 - [Packaging and distributable artifacts](docs/packaging.md)
+- [XCOM tables, accuracy limits, and regeneration](docs/xcom-tables.md)
 - [Architecture reference](docs/architecture_extension.md)
 - [Plasmon XRTS observable note](docs/plasmon_xrts_observable.md)
 - [Startup manual](STARTUP_MANUAL.md)
@@ -85,7 +86,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parser-viewer-v1.2.0.zip`
+- `outputs/release/helios-parser-viewer-v1.2.1.zip`
 
 The bundle includes:
 
@@ -115,9 +116,21 @@ python scripts\build_linux_portable_tarball.py
 
 Expected artifact names:
 
-- `outputs/distributables/helios-parser-viewer-v1.2.0-windows-portable.zip`
-- `outputs/distributables/helios-parser-viewer_1.2.0_all.deb`
-- `outputs/distributables/helios-parser-viewer-v1.2.0-linux-portable.tar.gz`
+- `outputs/distributables/helios-parser-viewer-v1.2.1-windows-portable.zip`
+- `outputs/distributables/helios-parser-viewer_1.2.1_all.deb`
+- `outputs/distributables/helios-parser-viewer-v1.2.1-linux-portable.tar.gz`
+
+Published v1.2.1 downloads include the source bundle, Debian package, and Linux portable tarball.
+The source bundle supports Windows through its launcher. A v1.2.1 Windows portable executable
+was not rebuilt in this release; GitHub CI was skipped as requested.
+
+## Changelog 1.2.1
+
+- regenerated cold XCOM tables with binary64 arithmetic and adaptive energy sampling
+- preserved both limits at absorption edges, correcting large Cu/Fe interpolation errors
+- checked independent native-XCOM holdouts with sampled numerical error below 0.01%
+- disabled extrapolation by default and cached table fingerprints for repeated calculations
+- documented table provenance, precision limits, regeneration, and local validation
 
 ## Changelog 1.2.0
 

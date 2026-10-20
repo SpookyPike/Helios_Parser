@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HELIOS Parse / View Release Notes 1.2.0</title>
+  <title>HELIOS Parse / View Release Notes 1.2.1</title>
   <link rel="stylesheet" href="assets/manual.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>Release Notes</h1>
         <p>
-          HELIOS Parse / View 1.2.0, released 2026-10-20.
+          HELIOS Parse / View 1.2.1, released 2026-10-20.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
       </div>
@@ -28,27 +28,35 @@
 
   <main>
     <section>
-      <h2>Why 1.2.0</h2>
+      <h2>Why 1.2.1</h2>
       <p>
-        This release brings the parser, HDF5 conversion, analysis services, desktop interface, and packaging through a broad
-        reliability and usability update. It also documents the performance checks used to evaluate the changes.
+        This patch corrects cold-XCOM interpolation around absorption edges and improves the numerical precision
+        and reproducibility of the bundled attenuation tables.
       </p>
     </section>
 
     <section>
       <h2>Highlights in this release</h2>
       <ul>
-        <li>safer LOG/BPF conversion with atomic output publication and clearer corruption versus truncation handling</li>
-        <li>versioned H5D schema 2.1 pressure semantics, explicit run status, and corrected cumulative source-energy accounting</li>
-        <li>revision-aware cache retirement, bounded cache ownership, and demand-driven derived data loading</li>
-        <li>independent analysis-module availability with specific missing-input explanations</li>
-        <li>improved BPF workflows, accessibility names, window layouts, theme updates, and packaged scientific resources</li>
-        <li>targeted performance regression tests and reproducible before/after benchmark tooling</li>
+        <li>binary64 XCOM calculations with full-precision coefficient storage and adaptive sampling over 1–12 keV</li>
+        <li>paired below/above-edge rows prevent interpolation across atomic absorption discontinuities</li>
+        <li>independent native holdouts across 12 base materials show sampled interpolation errors below 0.01%</li>
+        <li>strict energy-range defaults and cached table fingerprints for repeated calculations</li>
+        <li><a href="xcom-tables.md">documented provenance, regeneration, and scientific limits</a></li>
       </ul>
     </section>
 
     <section>
       <h2>Changelog</h2>
+      <h3>1.2.1</h3>
+      <ul>
+        <li>regenerated all 12 base materials and the SiO2 glass alias with edge-aware adaptive energy grids</li>
+        <li>corrected the Cu/Fe edge interpolation regressions and the native-only Cu transmission reference fixture</li>
+        <li>made extrapolation opt-in and rejected non-finite or non-positive query energies</li>
+        <li>avoided repeated JSON hashing after increasing table resolution</li>
+        <li>verified table reproducibility and targeted scientific/resource checks locally; GitHub CI was intentionally skipped</li>
+        <li>published source, Debian, and Linux portable assets; the v1.2.1 Windows portable executable was not rebuilt</li>
+      </ul>
       <h3>1.2.0</h3>
       <ul>
         <li>made conversion publication atomic and strengthened LOG/BPF numeric, marker, partial-record, and companion validation</li>
@@ -136,13 +144,14 @@
         <li>selected demo HDF5 examples under <code>examples/</code></li>
       </ul>
       <p>
-        The 1.2.0 bundle intentionally omits tests, internal audit and validation reports, old release outputs, and legacy shadow source files. Experimental Transmission/XCOM support remains in source behind development flags.
+        The 1.2.1 bundle intentionally omits tests, internal audit and validation reports, old release outputs, and legacy shadow source files. Experimental Transmission/XCOM support remains in source behind development flags.
       </p>
     </section>
 
     <section>
       <h2>Known validation limits</h2>
       <ul>
+        <li>XCOM remains a neutral-atom cold baseline. The interpolation tolerance does not establish physical accuracy for warm dense matter or near-edge chemical structure.</li>
         <li>The native Orca screen-reader and keyboard walkthrough remains unverified. Automated accessibility checks and Windows UI checks pass.</li>
         <li>Performance comparisons found no repeatable median regression above the review threshold, but speedup measurements for several scenarios remain inconclusive.</li>
       </ul>
@@ -157,7 +166,7 @@
       <ul>
         <li>Author: Dmitrii Bespalov</li>
         <li>Organization: European XFEL</li>
-        <li>Release: 1.2.0</li>
+        <li>Release: 1.2.1</li>
         <li>Date: 2026-10-20</li>
       </ul>
     </section>

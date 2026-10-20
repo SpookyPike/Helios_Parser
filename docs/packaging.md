@@ -12,6 +12,13 @@ The real desktop entry point is `helios_parse_view`, implemented by
 `python -m helios_parser`. The HDF5-only viewer is `helios_hdf5_viewer`,
 implemented by `python -m helios_viewer`.
 
+## v1.2.1 availability
+
+The published v1.2.1 release contains the cross-platform source ZIP, Debian package,
+Linux portable tarball, and checksums. GitHub CI was intentionally skipped; no new
+Windows portable executable was built. Windows users can run the v1.2.1 source
+bundle or build the portable ZIP locally using the instructions below.
+
 ## Maintainer Build Requirements
 
 From a clean checkout on the target build machine:
@@ -35,7 +42,7 @@ python scripts\validate_windows_portable.py
 Output:
 
 ```text
-outputs/distributables/helios-parser-viewer-v1.2.0-windows-portable.zip
+outputs/distributables/helios-parser-viewer-v1.2.1-windows-portable.zip
 ```
 
 Usage after extraction:
@@ -57,13 +64,13 @@ python scripts/build_debian_package.py
 Output:
 
 ```text
-outputs/distributables/helios-parser-viewer_1.2.0_all.deb
+outputs/distributables/helios-parser-viewer_1.2.1_all.deb
 ```
 
 Install on Debian/Ubuntu-like systems:
 
 ```bash
-sudo apt install ./outputs/distributables/helios-parser-viewer_1.2.0_all.deb
+sudo apt install ./outputs/distributables/helios-parser-viewer_1.2.1_all.deb
 ```
 
 Launchers:
@@ -91,7 +98,7 @@ python scripts/build_linux_portable_tarball.py
 Output:
 
 ```text
-outputs/distributables/helios-parser-viewer-v1.2.0-linux-portable.tar.gz
+outputs/distributables/helios-parser-viewer-v1.2.1-linux-portable.tar.gz
 ```
 
 This tarball is portable in the sense that it does not require an editable
