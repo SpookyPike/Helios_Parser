@@ -48,14 +48,19 @@ def _field_families(field_names: list[str]) -> list[str]:
     return detected
 
 
-def _tail_snippet(path: Path, *, line_count: int = 20) -> str:
-    try:
-        with path.open("r", encoding="utf-8", errors="replace") as handle:
-            lines = handle.readlines()
-    except Exception:
+def _tail_snippet(path: Path, *, line_count: int = 20, max_bytes: int = 64 * 1024) -> str:
+    if path.suffix.lower() == ".bpf" or line_count <= 0 or max_bytes <= 0:
         return ""
-    snippet = "".join(lines[-line_count:]).strip()
-    return snippet
+    try:
+        with path.open("rb") as handle:
+            handle.seek(0, 2)
+            size = handle.tell()
+            handle.seek(max(0, size - max_bytes))
+            tail = handle.read(max_bytes)
+    except OSError:
+        return ""
+    text = tail.decode("utf-8", errors="replace")
+    return "\n".join(text.splitlines()[-line_count:]).strip()
 
 
 @dataclass(slots=True)

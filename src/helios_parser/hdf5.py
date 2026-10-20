@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import json
 import logging
+import re
+import tempfile
 import os
 import secrets
 import stat
 import time
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Callable
 
@@ -16,7 +19,7 @@ import numpy as np
 from helios.instrumentation import record_duration
 from .bpf import LOG_COMPATIBLE_BPF_ALIASES, BpfFile, alias_metadata, field_metadata_for_bpf_key
 from .document import diagnostic_value_width, flatten_snapshot_diagnostics, normalize_diagnostic_value, reconcile_diagnostic_width
-from .parser import HeliosParser
+from .parser import DEFAULT_TOKENIZER, HeliosParser
 
 LOGGER = logging.getLogger(__name__)
 STRING_DTYPE = h5py.string_dtype(encoding="utf-8")
@@ -534,6 +537,104 @@ def _write_minimal_bpf_metadata(handle: h5py.File, source: Path, bpf: BpfFile) -
     return metadata_group
 
 
+def _log_cycle_time_tokens(block_text: str) -> tuple[str, str]:
+    lines = block_text.splitlines()
+    header = next((index for index, line in enumerate(lines) if re.match(r"^\s*Cycle\s+Time\s+\(s\)", line)), None)
+    if header is None or header + 1 >= len(lines):
+        raise ValueError("LOG snapshot is missing cycle/time metadata.")
+    tokens = lines[header + 1].split()
+    if len(tokens) < 2:
+        raise ValueError("LOG snapshot has malformed cycle/time metadata.")
+    return tokens[0], tokens[1]
+
+
+def _decimal_token(token: str) -> Decimal:
+    normalized = DEFAULT_TOKENIZER.normalize_number_token(token).replace("D", "E").replace("d", "E")
+    try:
+        value = Decimal(normalized)
+    except InvalidOperation as exc:
+        raise ValueError(f"Invalid numeric token {token!r}.") from exc
+    if not value.is_finite():
+        raise ValueError(f"Non-finite numeric token {token!r}.")
+    return value
+
+
+def _log_time_matches_bpf(token: str, bpf_time_s: float) -> bool:
+    decimal_time = _decimal_token(token)
+    half_quantum = Decimal(1).scaleb(decimal_time.as_tuple().exponent) / Decimal(2)
+    center = float(decimal_time)
+    roundoff = 4.0 * abs(float(np.spacing(max(abs(center), abs(float(bpf_time_s)), 1.0e-300))))
+    return abs(float(bpf_time_s) - center) <= float(half_quantum) + roundoff
+
+
+def _stage_aligned_log_companion(
+    source: Path,
+    bpf_path: Path,
+    log_path: Path | None,
+    staging_path: Path,
+    *,
+    parser: HeliosParser,
+    logger: logging.Logger,
+) -> tuple[Any | None, bool]:
+    if log_path is None or not log_path.exists():
+        return None, False
+    explicitly_requested = source.suffix.lower() == ".log"
+    try:
+        with BpfFile(bpf_path) as bpf, parser.open_document(log_path) as document:
+            layout = bpf.layout
+            log_header = document.inspect()
+            if int(log_header.n_zones) != int(layout.n_zones):
+                raise ValueError(f"LOG/BPF zone-count mismatch: log={log_header.n_zones}, bpf={layout.n_zones}.")
+            bpf_headers = list(bpf.iter_snapshot_headers())
+            blocks = document.index.snapshot_blocks
+            aligned = len(blocks) == layout.n_snapshots and len(bpf_headers) == layout.n_snapshots
+            candidate_complete = True
+            snapshot_count = 0
+            with h5py.File(staging_path, "w") as stage:
+                candidate = stage.create_dataset(
+                    "laser_source_j_g",
+                    shape=(layout.n_snapshots, layout.n_zones),
+                    dtype=np.float64,
+                    chunks=_field_chunk_shape(layout.n_snapshots, layout.n_zones),
+                    fillvalue=np.nan,
+                )
+                iterator = document.iter_snapshots_streaming(header=log_header)
+                for index, snapshot in enumerate(iterator):
+                    snapshot_count += 1
+                    if index >= layout.n_snapshots:
+                        aligned = False
+                        continue
+                    bpf_time, bpf_cycle = bpf_headers[index]
+                    cycle_token, time_token = _log_cycle_time_tokens(document.buffer.slice(blocks[index].span))
+                    if _decimal_token(cycle_token) != Decimal(bpf_cycle) or int(snapshot.cycle) != bpf_cycle:
+                        aligned = False
+                    if not _log_time_matches_bpf(time_token, bpf_time):
+                        aligned = False
+                    if int(snapshot.cycle) != bpf_cycle:
+                        aligned = False
+                    laser = snapshot.fields.get("laser_source")
+                    if laser is None:
+                        candidate_complete = False
+                    else:
+                        values = np.asarray(laser, dtype=np.float64)
+                        if values.shape != (layout.n_zones,) or not np.all(np.isfinite(values)):
+                            candidate_complete = False
+                        else:
+                            candidate[index] = values
+                status = iterator.run_status
+                if snapshot_count != layout.n_snapshots or (status is not None and status.state == "truncated"):
+                    aligned = False
+            if not aligned:
+                logger.warning("Ignoring unaligned LOG companion %s for BPF %s; BPF metadata and sampled source will be used.", log_path, bpf_path)
+                return None, False
+            return log_header, candidate_complete
+    except Exception:
+        if explicitly_requested:
+            raise
+        logger.warning("Could not validate optional LOG companion %s; falling back to standalone BPF metadata.", log_path, exc_info=True)
+        return None, False
+
+
 def _write_hdf5_from_bpf(
     source: Path,
     bpf_path: Path,
@@ -546,22 +647,49 @@ def _write_hdf5_from_bpf(
     logger: logging.Logger,
     progress_callback: Callable[[WriteProgress], None] | None,
 ) -> Path:
+    with tempfile.TemporaryDirectory(prefix="helios-log-stage-") as staging_dir:
+        stage_path = Path(staging_dir) / "companion.h5"
+        log_header, source_aligned = _stage_aligned_log_companion(
+            source, bpf_path, log_path, stage_path, parser=parser, logger=logger
+        )
+        if not stage_path.exists():
+            with h5py.File(stage_path, "w"):
+                pass
+        with h5py.File(stage_path, "r") as staged:
+            source_dataset = staged["laser_source_j_g"] if log_header is not None and source_aligned else None
+            return _write_hdf5_from_bpf_validated(
+                source,
+                bpf_path,
+                target,
+                log_path=log_path if log_header is not None else None,
+                source_precedence=source_precedence if log_header is not None else "bpf_primary",
+                compression=compression,
+                parser=parser,
+                logger=logger,
+                progress_callback=progress_callback,
+                log_header=log_header,
+                log_source_dataset=source_dataset,
+            )
+
+
+def _write_hdf5_from_bpf_validated(
+    source: Path,
+    bpf_path: Path,
+    target: Path,
+    *,
+    log_path: Path | None,
+    source_precedence: str,
+    compression: str | None,
+    parser: HeliosParser,
+    logger: logging.Logger,
+    progress_callback: Callable[[WriteProgress], None] | None,
+    log_header,
+    log_source_dataset: h5py.Dataset | None,
+) -> Path:
     def emit_progress(stage: str, current: int, total: int, fraction: float, message: str) -> None:
         if progress_callback is None:
             return
         progress_callback(WriteProgress(stage, int(current), max(1, int(total)), max(0.0, min(1.0, float(fraction))), message))
-
-    log_header = None
-    log_simulation = None
-    if log_path is not None and log_path.exists():
-        with parser.open_document(log_path) as document:
-            log_header = document.inspect()
-        try:
-            log_simulation = parser.parse(log_path)
-        except Exception:
-            if source.suffix.lower() == ".log":
-                raise
-            logger.warning("Could not parse optional LOG companion fields from %s", log_path, exc_info=True)
 
     started_write = time.perf_counter()
     emit_progress("prepare", 0, 1, 0.02, f"Opening {bpf_path.name}")
@@ -569,29 +697,6 @@ def _write_hdf5_from_bpf(
         layout = bpf.layout
         snapshots = iter(bpf.iter_snapshots())
         first_snapshot = next(snapshots)
-        if log_header is not None and int(log_header.n_zones) != int(layout.n_zones):
-            raise ValueError(f"LOG/BPF zone-count mismatch: log={log_header.n_zones}, bpf={layout.n_zones}.")
-        log_laser_source = None
-        if log_simulation is not None and "laser_source" in log_simulation.fields:
-            candidate = np.asarray(log_simulation.fields["laser_source"], dtype=np.float64)
-            log_time = np.asarray(log_simulation.time.get("time", []), dtype=np.float64)
-            expected_shape = (layout.n_snapshots, layout.n_zones)
-            time_aligned = (
-                log_time.shape == (layout.n_snapshots,)
-                and np.isclose(float(log_time[0]), layout.first_time_s, rtol=1.0e-6, atol=1.0e-14)
-                and np.isclose(float(log_time[-1]), layout.last_time_s, rtol=1.0e-6, atol=1.0e-14)
-            )
-            if candidate.shape == expected_shape and time_aligned:
-                log_laser_source = candidate
-            else:
-                logger.warning(
-                    "Ignoring LOG laser_source override for %s: field shape=%s expected=%s time_aligned=%s",
-                    log_path,
-                    candidate.shape,
-                    expected_shape,
-                    time_aligned,
-                )
-
         emit_progress("prepare", 0, layout.n_snapshots, 0.08, f"Preparing BPF layout for {layout.n_snapshots} snapshots")
         with h5py.File(target, "w") as handle:
             handle.attrs["source_file"] = str(source)
@@ -674,7 +779,7 @@ def _write_hdf5_from_bpf(
                     metadata,
                 )
             laser_source_metadata = field_metadata_for_bpf_key("laser_source_j_g")
-            if log_laser_source is not None:
+            if log_source_dataset is not None:
                 laser_source_metadata = dict(laser_source_metadata)
                 laser_source_metadata["source"] = "log"
                 laser_source_metadata["status"] = "validated"
@@ -691,6 +796,15 @@ def _write_hdf5_from_bpf(
                 compression,
                 laser_source_metadata,
             )
+            bpf_sampled_source_dataset = _create_bpf_field_dataset(
+                fields_group,
+                field_metadata_group,
+                "laser_source_bpf_sampled_j_g",
+                np.zeros(layout.n_zones, dtype=np.float64),
+                layout.n_snapshots,
+                compression,
+                field_metadata_for_bpf_key("laser_source_bpf_sampled_j_g"),
+            )
 
             def snapshot_iter():
                 yield first_snapshot
@@ -706,16 +820,17 @@ def _write_hdf5_from_bpf(
                 dynamic_edge[written_index, :] = snapshot.fields["node_position_cm"]
                 for name, dataset in field_datasets.items():
                     dataset[written_index, ...] = snapshot.fields[name]
-                if log_laser_source is not None:
-                    laser_source_dataset[written_index, :] = log_laser_source[written_index]
+                laser_deposition = np.asarray(snapshot.fields["laser_deposition_j_g_s"], dtype=np.float64)
+                if previous_time_s is not None and previous_laser_deposition is not None:
+                    dt = max(0.0, float(snapshot.time_s) - float(previous_time_s))
+                    laser_cumulative += 0.5 * (previous_laser_deposition + laser_deposition) * dt
+                bpf_sampled_source_dataset[written_index, :] = laser_cumulative
+                if log_source_dataset is not None:
+                    laser_source_dataset[written_index, :] = log_source_dataset[written_index]
                 else:
-                    laser_deposition = np.asarray(snapshot.fields["laser_deposition_j_g_s"], dtype=np.float64)
-                    if previous_time_s is not None and previous_laser_deposition is not None:
-                        dt = max(0.0, float(snapshot.time_s) - float(previous_time_s))
-                        laser_cumulative += 0.5 * (previous_laser_deposition + laser_deposition) * dt
                     laser_source_dataset[written_index, :] = laser_cumulative
-                    previous_time_s = float(snapshot.time_s)
-                    previous_laser_deposition = laser_deposition.copy()
+                previous_time_s = float(snapshot.time_s)
+                previous_laser_deposition = laser_deposition.copy()
                 emit_progress(
                     "snapshots",
                     written_index + 1,

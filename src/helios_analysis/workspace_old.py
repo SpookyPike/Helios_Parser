@@ -3189,7 +3189,12 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         budget_rows: list[tuple[str, str, str, str]] = []
         for row in preheat.budget_rows:
             value_text = "-" if row.integrated_value is None else f"{_format_optional(row.integrated_value, '{:.4g}')} {row.unit}"
-            budget_rows.append((str(row.label), value_text, self._format_fraction(row.fraction_of_observed), " ".join(row.notes)))
+            notes = list(row.notes)
+            if row.coverage_fraction is not None:
+                notes.append(f"data coverage: {100.0 * float(row.coverage_fraction):.1f}%")
+            if not row.available and not notes:
+                notes.append("unavailable for selected interval")
+            budget_rows.append((str(row.label), value_text, self._format_fraction(row.fraction_of_observed), " ".join(notes)))
         self.preheat_budget_table.setRowCount(len(budget_rows))
         for row_index, row_values in enumerate(budget_rows):
             for column, text in enumerate(row_values):

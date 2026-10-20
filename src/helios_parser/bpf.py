@@ -202,6 +202,14 @@ DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
         "status": "validated",
         "description": "Derived as radiation energy density divided by mass density; matches LOG radiation energy within LOG text precision.",
     },
+    "laser_source_bpf_sampled_j_g": {
+        "unit": "J/g",
+        "label": "BPF sampled laser source",
+        "axes": ("zone",),
+        "status": "estimated",
+        "description": "Trapezoidal integration of exported BPF laser-deposition samples, accumulated from zero at the first exported snapshot; it cannot account for pre-export deposition or internal unsampled timesteps.",
+        "quantity": "cumulative_specific_energy",
+    },
     "laser_source_j_g": {
         "unit": "J/g",
         "label": "Laser source",
@@ -641,6 +649,24 @@ class BpfFile:
                 f"{self.path} snapshot {snapshot_index} ionization fractions do not sum to one "
                 f"(min={float(row_sums.min()):.6g}, max={float(row_sums.max()):.6g})."
             )
+
+    def iter_snapshot_headers(self) -> Iterator[tuple[float, int]]:
+        """Yield validated (time, cycle) pairs without decoding field records."""
+        previous_time = -np.inf
+        previous_cycle = -1
+        for index in range(self.layout.n_snapshots):
+            header = self.array(self.snapshot_start(index, self.layout.block_records), "f64")
+            if header.size < 3:
+                raise ValueError(f"{self.path} snapshot {index} has a short header.")
+            time_s = float(header[1])
+            if not np.isfinite(time_s):
+                raise ValueError(f"{self.path} snapshot {index} has non-finite time.")
+            cycle = _header_integer(header[2], "cycle", self.path, index)
+            if time_s < previous_time or cycle < previous_cycle:
+                raise ValueError(f"{self.path} snapshot {index} has decreasing time or cycle metadata.")
+            previous_time = time_s
+            previous_cycle = cycle
+            yield time_s, cycle
 
     def iter_snapshots(self) -> Iterator[BpfSnapshot]:
         previous_time = -np.inf

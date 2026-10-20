@@ -292,7 +292,7 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
         self.assertIsNotNone(dataset.radiation_heating_j_g_s)
         self.assertIsNotNone(dataset.radiation_cooling_j_g_s)
         self.assertIsNotNone(dataset.radiation_net_heating_j_g_s)
-        self.assertIsNotNone(dataset.laser_source_j_g_s)
+        self.assertIsNotNone(dataset.laser_source_j_g)
         self.assertIsNotNone(dataset.laser_deposition_j_g_s)
         self.assertEqual("completed", dataset.run_status["state"] if dataset.run_status is not None else None)
         self.assertEqual("velocity", dataset.visar_support_metadata.get("velocity_field_name") if dataset.visar_support_metadata is not None else None)

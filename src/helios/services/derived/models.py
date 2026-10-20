@@ -161,7 +161,7 @@ class DerivedRunData:
     radiation_cooling_j_g_s: np.ndarray | None = None
     radiation_sink_j_g_s: np.ndarray | None = None
     radiation_net_heating_j_g_s: np.ndarray | None = None
-    laser_source_j_g_s: np.ndarray | None = None
+    laser_source_j_g: np.ndarray | None = None
     laser_deposition_j_g_s: np.ndarray | None = None
     radius_cm: np.ndarray | None = None
     radius_edge_cm: np.ndarray | None = None
@@ -406,6 +406,7 @@ class PreheatBudgetRow:
     fraction_of_observed: float | None = None
     available: bool = True
     notes: tuple[str, ...] = ()
+    coverage_fraction: float | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -64,29 +64,23 @@ def _optional_array(dataset: DerivedRunData, attr_name: str) -> np.ndarray | Non
 def _total_pressure_array(dataset: DerivedRunData) -> np.ndarray | None:
     if dataset.pressure_total_j_cm3 is not None:
         return np.asarray(dataset.pressure_total_j_cm3, dtype=np.float64)
-    components: list[np.ndarray] = []
-    if dataset.pressure_i_j_cm3 is not None:
-        components.append(np.asarray(dataset.pressure_i_j_cm3, dtype=np.float64))
-    if dataset.pressure_e_j_cm3 is not None:
-        components.append(np.asarray(dataset.pressure_e_j_cm3, dtype=np.float64))
-    if dataset.pressure_radiation_j_cm3 is not None:
-        components.append(np.asarray(dataset.pressure_radiation_j_cm3, dtype=np.float64))
-    if not components:
+    if any(value is None for value in (dataset.pressure_i_j_cm3, dataset.pressure_e_j_cm3, dataset.pressure_radiation_j_cm3)):
         return None
-    return np.nansum(np.asarray(components, dtype=np.float64), axis=0)
+    components = np.asarray(
+        [dataset.pressure_i_j_cm3, dataset.pressure_e_j_cm3, dataset.pressure_radiation_j_cm3],
+        dtype=np.float64,
+    )
+    return np.sum(components, axis=0)
 
 
 def _internal_energy_array(dataset: DerivedRunData) -> np.ndarray | None:
-    components: list[np.ndarray] = []
-    if dataset.ion_energy_j_g is not None:
-        components.append(np.asarray(dataset.ion_energy_j_g, dtype=np.float64))
-    if dataset.electron_energy_j_g is not None:
-        components.append(np.asarray(dataset.electron_energy_j_g, dtype=np.float64))
-    if dataset.radiation_energy_j_g is not None:
-        components.append(np.asarray(dataset.radiation_energy_j_g, dtype=np.float64))
-    if not components:
+    if any(value is None for value in (dataset.ion_energy_j_g, dataset.electron_energy_j_g, dataset.radiation_energy_j_g)):
         return None
-    return np.nansum(np.asarray(components, dtype=np.float64), axis=0)
+    components = np.asarray(
+        [dataset.ion_energy_j_g, dataset.electron_energy_j_g, dataset.radiation_energy_j_g],
+        dtype=np.float64,
+    )
+    return np.sum(components, axis=0)
 
 
 def _material_label(dataset: DerivedRunData, material_table_index: int | None) -> str | None:
@@ -459,37 +453,87 @@ def _first_marker_time(metric: np.ndarray, time_s: np.ndarray, threshold: float)
     return float(time_s[index]), float(array[index])
 
 
-def _source_term_budget(
-    dataset: DerivedRunData,
+def _rate_integration_budget(
+    field: np.ndarray | None,
     *,
-    attr_name: str,
-    density: np.ndarray,
-    zone_width: np.ndarray,
+    reference_areal_mass: np.ndarray,
+    target_mask: np.ndarray,
+    time_s: np.ndarray,
+    time_indices: np.ndarray,
+) -> tuple[np.ndarray | None, float | None, float]:
+    if field is None or time_indices.size == 0:
+        return None, None, 0.0
+    rates = np.asarray(field, dtype=np.float64)[:, target_mask]
+    masses = np.asarray(reference_areal_mass, dtype=np.float64)
+    selected_rates = rates[time_indices]
+    valid = np.isfinite(selected_rates) & np.isfinite(masses)[None, :]
+    coverage = float(np.count_nonzero(valid) / max(1, valid.size))
+    if not np.all(valid):
+        return None, None, coverage
+    target_rate = np.sum(masses[None, :] * selected_rates, axis=1)
+    cumulative = np.full(np.asarray(time_s).shape, np.nan, dtype=np.float64)
+    first = int(time_indices[0])
+    cumulative[first] = 0.0
+    for position in range(1, time_indices.size):
+        left = int(time_indices[position - 1])
+        right = int(time_indices[position])
+        dt = float(time_s[right] - time_s[left])
+        if dt < 0.0:
+            return None, None, coverage
+        cumulative[right] = float(cumulative[left]) + 0.5 * (target_rate[position - 1] + target_rate[position]) * dt
+    return cumulative, float(cumulative[int(time_indices[-1])]), coverage
+
+
+def _cumulative_energy_difference_budget(
+    cumulative_energy_j_g: np.ndarray | None,
+    *,
+    reference_areal_mass: np.ndarray,
     target_mask: np.ndarray,
     time_indices: np.ndarray,
-) -> tuple[np.ndarray | None, float | None]:
-    field = _optional_array(dataset, attr_name)
-    if field is None or time_indices.size == 0:
-        return None, None
-    target_rate = np.nansum(density[:, target_mask] * field[:, target_mask] * zone_width[:, target_mask], axis=1)
-    cumulative = np.full(target_rate.shape, np.nan, dtype=np.float64)
-    if time_indices.size:
-        cumulative[int(time_indices[0])] = 0.0
-    if time_indices.size >= 2:
-        for position in range(1, time_indices.size):
-            left = int(time_indices[position - 1])
-            right = int(time_indices[position])
-            dt = float(dataset.time_s[right] - dataset.time_s[left])
-            cumulative[right] = float(cumulative[left]) + 0.5 * (float(target_rate[left]) + float(target_rate[right])) * dt
-    last_value = float(cumulative[int(time_indices[-1])]) if time_indices.size else None
-    return cumulative, last_value
+) -> tuple[np.ndarray | None, float | None, float]:
+    if cumulative_energy_j_g is None or time_indices.size == 0:
+        return None, None, 0.0
+    values = np.asarray(cumulative_energy_j_g, dtype=np.float64)[:, target_mask]
+    selected = values[time_indices]
+    masses = np.asarray(reference_areal_mass, dtype=np.float64)
+    valid = np.isfinite(selected) & np.isfinite(masses)[None, :]
+    coverage = float(np.count_nonzero(valid) / max(1, valid.size))
+    if not np.all(valid):
+        return None, None, coverage
+    delta = selected - selected[0:1, :]
+    cumulative = np.full(values.shape[0], np.nan, dtype=np.float64)
+    cumulative[time_indices] = np.sum(masses[None, :] * delta, axis=1)
+    return cumulative, float(cumulative[int(time_indices[-1])]), coverage
 
 
-def _energy_areal_density(energy_j_g: np.ndarray | None, density: np.ndarray, zone_width: np.ndarray, target_mask: np.ndarray) -> np.ndarray | None:
-    if energy_j_g is None:
+def _selected_data_coverage(
+    values: np.ndarray | None,
+    *,
+    target_mask: np.ndarray,
+    time_indices: np.ndarray,
+) -> float:
+    if values is None or time_indices.size == 0:
+        return 0.0
+    selected = np.asarray(values, dtype=np.float64)[time_indices][:, target_mask]
+    return float(np.count_nonzero(np.isfinite(selected)) / max(1, selected.size))
+
+
+def _energy_areal_density(
+    energy_j_g: np.ndarray | None,
+    reference_areal_mass: np.ndarray,
+    target_mask: np.ndarray,
+    time_indices: np.ndarray,
+) -> np.ndarray | None:
+    if energy_j_g is None or time_indices.size == 0:
         return None
-    energy = np.asarray(energy_j_g, dtype=np.float64)
-    return np.nansum(density[:, target_mask] * energy[:, target_mask] * zone_width[:, target_mask], axis=1)
+    energy = np.asarray(energy_j_g, dtype=np.float64)[:, target_mask]
+    selected = energy[time_indices]
+    masses = np.asarray(reference_areal_mass, dtype=np.float64)
+    if not np.all(np.isfinite(selected)) or not np.all(np.isfinite(masses)):
+        return None
+    result = np.full(energy.shape[0], np.nan, dtype=np.float64)
+    result[time_indices] = np.sum(masses[None, :] * selected, axis=1)
+    return result
 
 
 def _support_warning(primary_branch: WaveBranchSummary) -> tuple[DerivedWarning, ...]:
@@ -656,7 +700,7 @@ def evaluate_preheat(
     delta_ee = None if electron_energy is None else np.asarray(electron_energy[:, target_mask], dtype=np.float64) - np.asarray(electron_energy[0, target_mask], dtype=np.float64)
     radiation_net_heating = _optional_array(dataset, "radiation_net_heating_j_g_s")
     laser_deposition = _optional_array(dataset, "laser_deposition_j_g_s")
-    laser_source = _optional_array(dataset, "laser_source_j_g_s")
+    laser_source = _optional_array(dataset, "laser_source_j_g")
     temperature_r = _optional_array(dataset, "temperature_radiation_ev")
     pressure_i = _optional_array(dataset, "pressure_i_j_cm3")
     pressure_e = _optional_array(dataset, "pressure_e_j_cm3")
@@ -792,38 +836,61 @@ def evaluate_preheat(
             finite_laser = np.asarray(laser_deposition[snapshot_index, target_mask], dtype=np.float64)
             laser_peak[snapshot_index] = float(np.nanmax(finite_laser)) if np.any(np.isfinite(finite_laser)) else np.nan
 
-    laser_cumulative, laser_dep_budget = _source_term_budget(
-        dataset,
-        attr_name="laser_deposition_j_g_s",
-        density=density,
-        zone_width=zone_width,
-        target_mask=target_mask,
-        time_indices=preheat_indices,
-    )
-    laser_source_cumulative, laser_source_budget = _source_term_budget(
-        dataset,
-        attr_name="laser_source_j_g_s",
-        density=density,
-        zone_width=zone_width,
-        target_mask=target_mask,
-        time_indices=preheat_indices,
-    )
-    radiation_cumulative, radiation_budget = _source_term_budget(
-        dataset,
-        attr_name="radiation_net_heating_j_g_s",
-        density=density,
-        zone_width=zone_width,
-        target_mask=target_mask,
-        time_indices=preheat_indices,
-    )
-    observed_internal = _energy_areal_density(internal_energy, density, zone_width, target_mask)
-    observed_electron = _energy_areal_density(electron_energy, density, zone_width, target_mask)
-    observed_ion = _energy_areal_density(ion_energy, density, zone_width, target_mask)
-    observed_radiation = _energy_areal_density(radiation_energy, density, zone_width, target_mask)
+    geometry = str(dataset.metadata.get("geometry", "")).strip().lower()
+    budget_geometry_supported = geometry in {"planar", "planar/cartesian", "cartesian"}
+    reference_areal_mass = None
+    mass_consistency_warning = None
+    if budget_geometry_supported and preheat_indices.size:
+        start_index = int(preheat_indices[0])
+        reference_areal_mass = density[start_index, target_mask] * zone_width[start_index, target_mask]
+        mass_history = density[preheat_indices][:, target_mask] * zone_width[preheat_indices][:, target_mask]
+        mass_valid = np.isfinite(mass_history) & np.isfinite(reference_areal_mass)[None, :]
+        if not np.all(mass_valid):
+            reference_areal_mass = None
+        elif reference_areal_mass.size:
+            scale = np.maximum(np.abs(reference_areal_mass), 1.0e-30)
+            max_mass_error = float(np.max(np.abs(mass_history - reference_areal_mass[None, :]) / scale[None, :]))
+            if max_mass_error > 1.0e-3:
+                mass_consistency_warning = f"Selected-zone areal mass changes by up to {max_mass_error:.3g} relative to the interval start; budget conservation assumptions are violated."
+    budget_inputs_available = reference_areal_mass is not None
+    if budget_inputs_available:
+        laser_cumulative, laser_dep_budget, laser_dep_coverage = _rate_integration_budget(
+            laser_deposition,
+            reference_areal_mass=reference_areal_mass,
+            target_mask=target_mask,
+            time_s=time_s,
+            time_indices=preheat_indices,
+        )
+        laser_source_cumulative, laser_source_budget, laser_source_coverage = _cumulative_energy_difference_budget(
+            laser_source,
+            reference_areal_mass=reference_areal_mass,
+            target_mask=target_mask,
+            time_indices=preheat_indices,
+        )
+        radiation_cumulative, radiation_budget, radiation_coverage = _rate_integration_budget(
+            radiation_net_heating,
+            reference_areal_mass=reference_areal_mass,
+            target_mask=target_mask,
+            time_s=time_s,
+            time_indices=preheat_indices,
+        )
+        observed_internal = _energy_areal_density(internal_energy, reference_areal_mass, target_mask, preheat_indices)
+        observed_electron = _energy_areal_density(electron_energy, reference_areal_mass, target_mask, preheat_indices)
+        observed_ion = _energy_areal_density(ion_energy, reference_areal_mass, target_mask, preheat_indices)
+        observed_radiation = _energy_areal_density(radiation_energy, reference_areal_mass, target_mask, preheat_indices)
+    else:
+        laser_cumulative = laser_source_cumulative = radiation_cumulative = None
+        laser_dep_budget = laser_source_budget = radiation_budget = None
+        laser_dep_coverage = laser_source_coverage = radiation_coverage = None
+        observed_internal = observed_electron = observed_ion = observed_radiation = None
     observed_internal_delta = None if observed_internal is None else float(observed_internal[int(preheat_indices[-1])] - observed_internal[int(preheat_indices[0])])
     observed_electron_delta = None if observed_electron is None else float(observed_electron[int(preheat_indices[-1])] - observed_electron[int(preheat_indices[0])])
     observed_ion_delta = None if observed_ion is None else float(observed_ion[int(preheat_indices[-1])] - observed_ion[int(preheat_indices[0])])
     observed_radiation_delta = None if observed_radiation is None else float(observed_radiation[int(preheat_indices[-1])] - observed_radiation[int(preheat_indices[0])])
+    electron_coverage = _selected_data_coverage(electron_energy, target_mask=target_mask, time_indices=preheat_indices)
+    ion_coverage = _selected_data_coverage(ion_energy, target_mask=target_mask, time_indices=preheat_indices)
+    radiation_energy_coverage = _selected_data_coverage(radiation_energy, target_mask=target_mask, time_indices=preheat_indices)
+    internal_coverage = min(electron_coverage, ion_coverage, radiation_energy_coverage)
 
     accounted_laser = laser_dep_budget if laser_dep_budget is not None else laser_source_budget
     residual_budget = None if observed_internal_delta is None else observed_internal_delta - float((accounted_laser or 0.0) + (radiation_budget or 0.0))
@@ -852,7 +919,8 @@ def evaluate_preheat(
             integrated_value=_finite_or_none(laser_dep_budget),
             fraction_of_observed=(None if observed_reference in (None, 0.0) or laser_dep_budget is None else float(laser_dep_budget / observed_reference)),
             available=laser_dep_budget is not None,
-            notes=("Preferred laser-source accounting channel when available.",),
+            notes=tuple(note for note in ("Preferred laser-source accounting channel when available.", mass_consistency_warning if budget_inputs_available else "Planar Lagrangian energy budget unavailable: unsupported geometry or missing reference mass.") if note),
+            coverage_fraction=laser_dep_coverage,
         ),
         PreheatBudgetRow(
             key="laser_source",
@@ -861,7 +929,8 @@ def evaluate_preheat(
             integrated_value=_finite_or_none(laser_source_budget),
             fraction_of_observed=(None if observed_reference in (None, 0.0) or laser_source_budget is None else float(laser_source_budget / observed_reference)),
             available=laser_source_budget is not None,
-            notes=("Auxiliary source-term channel; may overlap with laser deposition depending on the stored run format.",),
+            notes=tuple(note for note in ("Cumulative energy is differenced from the interval start and is an alternative to the rate integral; do not add both channels.", mass_consistency_warning if budget_inputs_available else "Planar Lagrangian energy budget unavailable: unsupported geometry or missing reference mass.") if note),
+            coverage_fraction=laser_source_coverage,
         ),
         PreheatBudgetRow(
             key="radiation_net_heating",
@@ -870,6 +939,8 @@ def evaluate_preheat(
             integrated_value=_finite_or_none(radiation_budget),
             fraction_of_observed=(None if observed_reference in (None, 0.0) or radiation_budget is None else float(radiation_budget / observed_reference)),
             available=radiation_budget is not None,
+            notes=tuple(note for note in (mass_consistency_warning if budget_inputs_available else "Planar Lagrangian energy budget unavailable: unsupported geometry or missing reference mass.",) if note),
+            coverage_fraction=radiation_coverage,
         ),
         PreheatBudgetRow(
             key="observed_electron_delta",
@@ -878,6 +949,7 @@ def evaluate_preheat(
             integrated_value=_finite_or_none(observed_electron_delta),
             fraction_of_observed=(None if observed_reference in (None, 0.0) or observed_electron_delta is None else float(observed_electron_delta / observed_reference)),
             available=observed_electron_delta is not None,
+            coverage_fraction=electron_coverage,
         ),
         PreheatBudgetRow(
             key="observed_ion_delta",
@@ -886,6 +958,7 @@ def evaluate_preheat(
             integrated_value=_finite_or_none(observed_ion_delta),
             fraction_of_observed=(None if observed_reference in (None, 0.0) or observed_ion_delta is None else float(observed_ion_delta / observed_reference)),
             available=observed_ion_delta is not None,
+            coverage_fraction=ion_coverage,
         ),
         PreheatBudgetRow(
             key="observed_radiation_delta",
@@ -894,6 +967,7 @@ def evaluate_preheat(
             integrated_value=_finite_or_none(observed_radiation_delta),
             fraction_of_observed=(None if observed_reference in (None, 0.0) or observed_radiation_delta is None else float(observed_radiation_delta / observed_reference)),
             available=observed_radiation_delta is not None,
+            coverage_fraction=radiation_energy_coverage,
         ),
         PreheatBudgetRow(
             key="observed_internal_delta",
@@ -902,6 +976,7 @@ def evaluate_preheat(
             integrated_value=_finite_or_none(observed_internal_delta),
             fraction_of_observed=1.0 if observed_reference not in (None, 0.0) else None,
             available=observed_internal_delta is not None,
+            coverage_fraction=internal_coverage,
         ),
         PreheatBudgetRow(
             key="residual",
@@ -1246,7 +1321,7 @@ def evaluate_preheat(
         missing_fields=missing_fields,
         thresholds=thresholds,
         state_metrics=state_metrics,
-        budget_rows=tuple(row for row in budget_rows if row.available),
+        budget_rows=tuple(budget_rows),
         onset_markers=onset_markers,
         time_plots=time_plots,
         profile_plots=tuple(),

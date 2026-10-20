@@ -68,7 +68,7 @@ _OPTIONAL_FIELD_ATTRS: dict[str, str] = {
     "radiation_cooling": "radiation_cooling_j_g_s",
     "radiation_sink": "radiation_sink_j_g_s",
     "radiation_net_heating": "radiation_net_heating_j_g_s",
-    "laser_source": "laser_source_j_g_s",
+    "laser_source": "laser_source_j_g",
     "laser_deposition": "laser_deposition_j_g_s",
 }
 
@@ -573,7 +573,7 @@ def load_run_data(path: str | Path) -> DerivedRunData:
         radiation_cooling_j_g_s=optional_fields["radiation_cooling"],
         radiation_sink_j_g_s=optional_fields["radiation_sink"],
         radiation_net_heating_j_g_s=optional_fields["radiation_net_heating"],
-        laser_source_j_g_s=optional_fields["laser_source"],
+        laser_source_j_g=optional_fields["laser_source"],
         laser_deposition_j_g_s=optional_fields["laser_deposition"],
         radius_cm=radius,
         radius_edge_cm=radius_edges,

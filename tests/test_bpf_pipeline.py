@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import shutil
+import re
 import struct
 import tempfile
 import unittest
+from decimal import Decimal
+from unittest import mock
 from pathlib import Path
 
 import h5py
@@ -178,6 +181,7 @@ class BpfPipelineTests(unittest.TestCase):
                 self.assertIn("radiation_energy_j_g", fields)
                 self.assertIn("plasma_pressure_j_cm3", fields)
                 self.assertIn("total_pressure_j_cm3", fields)
+                self.assertIn("laser_source_bpf_sampled_j_g", fields)
 
                 plasma = run.get_field("pressure_j_cm3")
                 explicit_plasma = run.get_field("plasma_pressure_j_cm3")
@@ -260,7 +264,8 @@ class BpfPipelineTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as tmpdir:
             output = Path(tmpdir) / "cu_from_log.h5"
-            write_hdf5(LOG_BPF_SAMPLE, output, overwrite=True, compression="lzf")
+            with mock.patch.object(HeliosParser, "parse", side_effect=AssertionError("BPF-primary conversion must stream LOG snapshots")):
+                write_hdf5(LOG_BPF_SAMPLE, output, overwrite=True, compression="lzf")
             with HeliosRun(output) as run:
                 self.assertEqual(run.get_metadata()["source_precedence"], "bpf_primary_log_metadata_exo_optional")
                 for name in overlapping_fields:
@@ -328,6 +333,47 @@ class BpfPipelineTests(unittest.TestCase):
                 self.assertEqual(run.get_metadata()["source_precedence"], "bpf_primary_log_metadata_exo_optional")
                 self.assertEqual(run.get_field_metadata("laser_source_j_g").source, "log")
                 np.testing.assert_allclose(run.get_field("laser_source"), log_simulation.fields["laser_source"])
+
+
+
+    def test_malformed_optional_log_falls_back_to_standalone_bpf(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            bpf_copy = tmp / BPF_SAMPLE.name
+            shutil.copyfile(BPF_SAMPLE, bpf_copy)
+            bpf_copy.with_suffix(".log").write_text("broken optional companion\n", encoding="utf-8")
+            output = tmp / "standalone.h5"
+            write_hdf5(bpf_copy, output)
+            with HeliosRun(output) as run:
+                metadata = run.get_metadata()
+                self.assertEqual(metadata["source_precedence"], "bpf_primary")
+                self.assertNotIn("log", metadata["source_files"])
+                self.assertEqual(run.get_field_metadata("laser_source_j_g").source, "derived")
+
+    def test_interior_time_misalignment_discards_companion_metadata_and_source(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            log_copy = tmp / LOG_BPF_SAMPLE.name
+            bpf_copy = tmp / LOG_BPF_COMPANION.name
+            shutil.copyfile(LOG_BPF_COMPANION, bpf_copy)
+            text = LOG_BPF_SAMPLE.read_text(encoding="utf-8", errors="replace")
+            lines = text.splitlines()
+            header_lines = [index for index, line in enumerate(lines) if re.match(r"^\s*Cycle\s+Time\s+\(s\)", line)]
+            time_row = header_lines[1] + 1
+            tokens = lines[time_row].split()
+            original = Decimal(tokens[1].replace("D", "E").replace("d", "E"))
+            quantum = Decimal(1).scaleb(original.as_tuple().exponent)
+            tokens[1] = str(original + quantum)
+            lines[time_row] = "  ".join(tokens)
+            log_copy.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            output = tmp / "misaligned.h5"
+            write_hdf5(log_copy, output)
+            with HeliosRun(output) as run:
+                metadata = run.get_metadata()
+                self.assertEqual(metadata["source_precedence"], "bpf_primary")
+                self.assertNotIn("log", metadata["source_files"])
+                self.assertEqual(run.get_field_metadata("laser_source_j_g").source, "derived")
+                self.assertIn("laser_source_bpf_sampled_j_g", run.list_fields())
 
     def test_legacy_sparse_file_still_opens_without_field_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
