@@ -2365,6 +2365,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             self.plasmon_compare_model_list.blockSignals(False)
 
     def _selected_plasmon_probe_energy_kev(self) -> float:
+        canonical = getattr(self, "_canonical_physical_values", {}).get("plasmon_energy_kev")
+        if canonical is not None:
+            return float(canonical)
         return float(self._photon_display_to_kev(float(self.plasmon_energy_spin.value()), unit=self._photon_spin_unit(self.plasmon_energy_spin)))
 
     def _plasmon_k_angstrom_inv_from_angle_deg(self, angle_deg: float, *, energy_kev: float | None = None) -> float:
