@@ -5,7 +5,7 @@
 **Plan:** [HELIOS_FIX_IMPLEMENTATION_PLAN.md](HELIOS_FIX_IMPLEMENTATION_PLAN.md)
 **Audit:** [HELIOS_AUDIT_2026-10-20.md](HELIOS_AUDIT_2026-10-20.md)
 
-This is validation evidence, not a release sign-off. The user asked to prefer focused tests and run the full suite only when needed. A final W14 full-profile run was warranted after integration and completed all 78 entries; its two failures were followed by focused fixes and reruns. The full profile was not repeated after those narrow follow-ups, so the W14 gate remains formally open.
+This is validation evidence, not a release sign-off. The user asked to prefer focused tests and run the full suite only when needed. After the two earlier full-profile failures were fixed and verified with focused tests, the full profile was rerun because W14 requires post-fix integration evidence. The final run completed all 78 entries with zero failures, zero timeouts, zero missing entries, and two explicit test skips. The Linux full-profile gate passes; cache-retirement performance and native/frozen platform checks remain open release work.
 
 ## Focused validation
 
@@ -29,7 +29,7 @@ The first W14 targeted attempt exposed two test-harness issues, both corrected a
 
 A later W14 review batch ran ten targeted suites in fresh disposable processes: numeric notation, snapshot numeric domains, pressure semantics, derived-module contracts, accessibility controls, BPF desktop workflow, packaged resources, Qt lifecycle, W11 layout, and theme refresh. All ten passed after correcting the packaged-resource test to compare against the actual source under `src/helios/services/derived/resources/`; its first run had failed because it expected a nonexistent repository-root copy. The final per-suite manifest is `/tmp/helios-pr-review-targeted/manifest.json`, and the corrected resource-suite rerun is `/tmp/helios-pr-review-packaged/manifest.json` in this validation environment.
 
-The final full-profile manifest is `/tmp/helios-final-reverification-20261020/manifest.json`: 78 entries executed, 76 passed, 2 failed, and none were missing or skipped. `test_viewer_phase2.py` sampled the redraw counter before a queued refresh had settled; an explicit idle wait was added and its moving-mesh hover test passed. `test_wave6_derived.py` exposed a conflict over manual preheat navigation controls; manual mode now enables its slider/spin/time controls, consistent with the mode-sync contract, and its focused preheat-mode test passed. The phase-7 test that verifies the initial selection also passed under the updated contract. These exact follow-up tests passed together, but the full profile was not rerun.
+The pre-fix full-profile manifest is `/tmp/helios-final-reverification-20261020/manifest.json`: 78 entries executed, 76 passed, and 2 failed. `test_viewer_phase2.py` sampled the redraw counter before a queued refresh had settled; an explicit idle wait was added. `test_wave6_derived.py` exposed a conflict over manual preheat navigation controls; manual mode now enables its slider/spin/time controls, consistent with the mode-sync contract. The moving-mesh hover, manual preheat-mode, and phase-7 initial-selection tests all passed in focused follow-up runs. The required post-fix full rerun then passed all 78 entries; its authoritative manifest is `/tmp/helios-final-review-20261020/manifest.json` (76 unittest modules, one payload wrapper, one smoke entry; zero failures/timeouts/missing entries; two explicit skips).
 
 ## Paired performance evidence and limits
 
@@ -74,7 +74,7 @@ This single exploratory run shows a zone-trace regression for the candidate layo
 | F11 Desktop BPF workflow | W09 preview/convert routing (`e1bb5a1`) | BPF desktop workflow tests | Existing targeted work passed during implementation; not rerun in this W14 pass |
 | F12 Accessible names | W11 named controls (`b588c31`, `efae132`) | UI accessibility checks | Existing targeted work passed during implementation; native platform check pending |
 | F13 Window sizes | W11 scrollable tall pages (`f8f2eca`) | Layout/accessibility checks | Existing targeted work passed during implementation; native platform check pending |
-| F14 Release test gate | W00 runner and W13 lifecycle (`bbe0cb5`, `c9a4372`), fixture declarations (`b1712a6`, `8e57270`) | `test_test_runner.py`, `test_qt_lifecycle.py`, full profile | Full profile executed 78/78 entries: 76 passed, 2 failed; both failing behaviors passed targeted follow-ups, but no post-fix full rerun was made |
+| F14 Release test gate | W00 runner and W13 lifecycle (`bbe0cb5`, `c9a4372`), fixture declarations (`b1712a6`, `8e57270`) | `test_test_runner.py`, `test_qt_lifecycle.py`, full profile | Post-fix full profile executed 78/78 entries with 0 failures, 0 timeouts, 0 missing entries, and 2 explicit skips; Linux full-profile gate passes |
 | F15 Display units | W10 canonical/display conversion (`bb65a93`, `f83e1fe`) | Viewer unit tests and app phase3 | Focused `test_app_phase3.py` passed |
 | F16 Spectrum grids | W12 exact axes (`33407e1`) | `test_plasmon_energy_grid_cache.py` | Passed |
 | F17 Radian precision | W10 canonical controls (`e875a8c`) | Unit round-trip tests | Existing targeted work passed during implementation; not rerun in this W14 pass |
@@ -89,11 +89,11 @@ This single exploratory run shows a zone-trace regression for the candidate layo
 
 ## Remaining release checks
 
-- Full dynamically discovered release suite and smoke: all entries executed; rerun once after the two focused fixes before treating W14 as green or using this as release sign-off.
+- Full dynamically discovered release suite and smoke: post-fix run passed all 78 entries (76 modules, one wrapper, one smoke); two tests explicitly skipped. This satisfies the Linux full-profile gate, but is not by itself release sign-off.
 - P05 BPF companion paired timing review: passed after the narrow parser path; speedup remains unproven because the paired confidence intervals are inconclusive.
 - Cache-retirement RSS: pending a lifecycle test that actually retires each run revision. The 30-cycle benchmark confirms the aggregate cap and LRU saturation but intentionally does not claim retirement.
 - The P01/P04/P05/P07 paired profiles, comparisons and fixture manifests are archived; P01/P04 passed, P07 was inconclusive, and the final P05 comparison passed after optimization. The earlier P05 failure is retained as a before-optimization profile.
 - Native GUI latency/accessibility and lifecycle checks on supported desktop platforms: pending; offscreen Linux tests only.
 - PyInstaller/frozen-runtime resource smoke: pending because the supported frozen build environment was not exercised.
 
-The current branch has passing focused evidence for the performance-sensitive reader, cache, derived, viewer, spectrum-cache, and XCOM paths. W14 and the release completion gate are not marked complete because the required paired timing/memory and native/frozen checks remain outstanding.
+The current branch has passing focused evidence for the performance-sensitive reader, cache, derived, viewer, spectrum-cache, and XCOM paths. The post-fix Linux W14 full-profile gate passes. The overall release completion gate remains open because P06 lacks a lifecycle-valid run-retirement measurement and native desktop/frozen-runtime checks remain outstanding.
