@@ -49,7 +49,7 @@
             repository. It combines three layers that used to be handled separately:
           </p>
           <ul>
-            <li><strong>Parser mode</strong>: preview HELIOS <code>.log</code> files and convert them to stabilized HDF5.</li>
+            <li><strong>Parser mode</strong>: preview HELIOS <code>.log</code> and <code>.bpf</code> files and convert them to stabilized HDF5.</li>
             <li><strong>Viewer mode</strong>: inspect HDF5 runs with explicit center/edge coordinate semantics, region/material overlays, lineouts, mouse probes, and diagnostics.</li>
             <li><strong>Derived / Analysis mode</strong>: use fast legacy Shock diagnostics plus lazy advanced WaveFront, interface-event, and Preheat analysis.</li>
           </ul>
@@ -104,10 +104,10 @@
       <h2>Core workflows</h2>
       <div class="two-col">
         <div class="card">
-          <h3>1. Parse a HELIOS log</h3>
+          <h3>1. Parse a HELIOS input</h3>
           <ol class="steps">
-            <li>Open Parser mode and select a <code>.log</code> file.</li>
-            <li>Use the fast preview to inspect snapshot count, fields, geometry, and approximate data volume.</li>
+            <li>Open Parser mode and select a <code>.log</code> or <code>.bpf</code> file.</li>
+            <li>Use the fast preview to inspect indexed snapshot count, expected fields, known metadata, and approximate data volume. BPF frame validity and companion alignment are checked during conversion.</li>
             <li>Convert to stabilized HDF5. The parser keeps explicit run-status metadata and drops only a damaged final block when necessary.</li>
           </ol>
         </div>
