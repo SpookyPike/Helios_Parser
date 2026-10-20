@@ -26,6 +26,11 @@ from .tokenizer import RegexTokenizer
 
 LOGGER = logging.getLogger(__name__)
 
+
+class SnapshotDomainError(ValueError):
+    """A parsed snapshot violates a required numeric-domain invariant."""
+
+
 DEFAULT_TOKENIZER = RegexTokenizer()
 NUMBER_TOKEN_RE = DEFAULT_TOKENIZER.number_pattern
 CYCLE_HEADER_RE = DEFAULT_TOKENIZER.cycle_header_pattern
@@ -983,9 +988,16 @@ class SnapshotBlockSemanticParser:
         cycle_tokens = _extract_number_tokens(lines[cycle_line_index + 1])
         if len(cycle_tokens) < 3:
             raise ValueError(f"Malformed cycle line: {lines[cycle_line_index + 1]}")
-        cycle = int(float(cycle_tokens[0]))
+        cycle_value = float(cycle_tokens[0])
         time_value = float(cycle_tokens[1])
         time_step = float(cycle_tokens[2])
+        if not np.isfinite(cycle_value) or not cycle_value.is_integer():
+            raise SnapshotDomainError(f"Snapshot cycle must be a finite integer, got {cycle_tokens[0]!r}.")
+        if not np.isfinite(time_value):
+            raise SnapshotDomainError(f"Snapshot time must be finite, got {cycle_tokens[1]!r}.")
+        if not np.isfinite(time_step):
+            raise SnapshotDomainError(f"Snapshot time step must be finite, got {cycle_tokens[2]!r}.")
+        cycle = int(cycle_value)
         control_text = lines[cycle_line_index + 1].strip()
 
         first_header_index = _consume_until_table_header_in_block(lines, cycle_line_index + 2)

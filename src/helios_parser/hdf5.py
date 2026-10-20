@@ -567,7 +567,8 @@ def _write_hdf5_from_bpf(
     emit_progress("prepare", 0, 1, 0.02, f"Opening {bpf_path.name}")
     with BpfFile(bpf_path) as bpf:
         layout = bpf.layout
-        first_snapshot = bpf.extract_snapshot(0)
+        snapshots = iter(bpf.iter_snapshots())
+        first_snapshot = next(snapshots)
         if log_header is not None and int(log_header.n_zones) != int(layout.n_zones):
             raise ValueError(f"LOG/BPF zone-count mismatch: log={log_header.n_zones}, bpf={layout.n_zones}.")
         log_laser_source = None
@@ -690,8 +691,7 @@ def _write_hdf5_from_bpf(
 
             def snapshot_iter():
                 yield first_snapshot
-                for snapshot_index in range(1, layout.n_snapshots):
-                    yield bpf.extract_snapshot(snapshot_index)
+                yield from snapshots
 
             laser_cumulative = np.zeros(layout.n_zones, dtype=np.float64)
             previous_laser_deposition: np.ndarray | None = None

@@ -290,6 +290,14 @@ def alias_metadata(alias: str, canonical: str) -> dict[str, Any]:
     return metadata
 
 
+def _header_integer(value: float, label: str, path: Path, snapshot_index: int | None = None) -> int:
+    numeric = float(value)
+    location = f" snapshot {snapshot_index}" if snapshot_index is not None else ""
+    if not np.isfinite(numeric) or not numeric.is_integer():
+        raise ValueError(f"{path}{location} has invalid {label}: {numeric!r}.")
+    return int(numeric)
+
+
 def _shape_width(shape: str, layout: BpfLayout) -> int:
     if shape == "n_zones":
         return layout.n_zones
@@ -372,9 +380,9 @@ class BpfFile:
         header = self.array(2, "f64")
         if header.size < 7:
             raise ValueError(f"{self.path} first BPF snapshot header is too short.")
-        n_nodes = int(round(float(header[4])))
+        n_nodes = _header_integer(header[4], "node count", self.path)
         n_zones = n_nodes - 1
-        n_freq_bins = int(round(float(header[6])))
+        n_freq_bins = _header_integer(header[6], "frequency-bin count", self.path)
         if n_nodes <= 1 or n_freq_bins <= 0:
             raise ValueError(f"{self.path} has implausible BPF layout values: nodes={n_nodes}, freq_bins={n_freq_bins}.")
         block_records = 69 + 2 * n_zones
@@ -384,8 +392,8 @@ class BpfFile:
             current_header = self.array(next_record, "f64")
             if current_header.size < 7:
                 break
-            current_nodes = int(round(float(current_header[4])))
-            current_freq = int(round(float(current_header[6])))
+            current_nodes = _header_integer(current_header[4], "node count", self.path)
+            current_freq = _header_integer(current_header[6], "frequency-bin count", self.path)
             if current_nodes != n_nodes or current_freq != n_freq_bins:
                 break
             n_snapshots += 1
@@ -481,10 +489,11 @@ class BpfFile:
         fields["dominant_charge_state"] = np.argmax(fractions, axis=1).astype(np.float64)
 
         header = fields["snapshot_header"]
+        cycle = _header_integer(header[2], "cycle", self.path, snapshot_index)
         return BpfSnapshot(
             index=snapshot_index,
             time_s=float(header[1]),
-            cycle=int(round(float(header[2]))),
+            cycle=cycle,
             fields=fields,
         )
 
@@ -506,6 +515,10 @@ class BpfFile:
             values = fields[key]
             if not np.all(np.isfinite(values)):
                 raise ValueError(f"{self.path} snapshot {snapshot_index} field {key} contains non-finite values.")
+        if not np.all(np.diff(fields["node_position_cm"]) > 0.0):
+            raise ValueError(f"{self.path} snapshot {snapshot_index} has non-positive cell widths.")
+        if np.any(fields["mass_density_g_cm3"] < 0.0):
+            raise ValueError(f"{self.path} snapshot {snapshot_index} has negative mass density.")
         if not np.all(np.isfinite(fractions)):
             raise ValueError(f"{self.path} snapshot {snapshot_index} contains non-finite ionization fractions.")
         if np.nanmin(fractions) < -1.0e-8:

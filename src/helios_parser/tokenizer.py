@@ -40,7 +40,7 @@ FIELD_ALIAS_MAP = {
 @dataclass(slots=True)
 class RegexTokenizer:
     number_pattern: re.Pattern[str] = field(
-        default_factory=lambda: re.compile(r"[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:E[-+]?\d+|[-+]\d{2,3})?")
+        default_factory=lambda: re.compile(r"[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:[EeDd][-+]?\d+|[-+]\d{2,3})?")
     )
     malformed_exponent_pattern: re.Pattern[str] = field(
         default_factory=lambda: re.compile(r"(?<![A-Za-z])([+-]?(?:\d+\.\d*|\.\d+))([+-]\d{2,3})(?!\d)")
