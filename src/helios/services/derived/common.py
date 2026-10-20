@@ -33,7 +33,8 @@ _OPTIONAL_FIELD_DTYPES: dict[str, object] = {
     "pressure_i": np.float64,
     "pressure_e": np.float64,
     "pressure_radiation": np.float64,
-    "pressure": np.float64,
+    "plasma_pressure_j_cm3": np.float64,
+    "total_pressure_j_cm3": np.float64,
     "artificial_viscosity": np.float64,
     "ion_energy": np.float64,
     "electron_energy": np.float64,
@@ -54,7 +55,8 @@ _OPTIONAL_FIELD_ATTRS: dict[str, str] = {
     "pressure_i": "pressure_i_j_cm3",
     "pressure_e": "pressure_e_j_cm3",
     "pressure_radiation": "pressure_radiation_j_cm3",
-    "pressure": "pressure_total_j_cm3",
+    "plasma_pressure_j_cm3": "pressure_plasma_j_cm3",
+    "total_pressure_j_cm3": "pressure_total_j_cm3",
     "artificial_viscosity": "artificial_viscosity_j_cm3",
     "ion_energy": "ion_energy_j_g",
     "electron_energy": "electron_energy_j_g",
@@ -205,7 +207,11 @@ def _build_field_capabilities(
     pressure_i = optional_field_values.get("pressure_i")
     pressure_e = optional_field_values.get("pressure_e")
     pressure_radiation = optional_field_values.get("pressure_radiation")
-    pressure_total = optional_field_values.get("pressure")
+    pressure_total = optional_field_values.get("total_pressure_j_cm3")
+    if "pressure" in available_fields and pressure_total is None and not (
+        pressure_i is not None and pressure_e is not None and pressure_radiation is not None
+    ):
+        notes.append("An ambiguous legacy pressure field was not treated as total pressure; required components are unavailable.")
     if pressure_i is not None and pressure_e is not None and pressure_radiation is not None and pressure_total is not None:
         total_pressure_matches = _finite_allclose(
             pressure_total,
@@ -258,7 +264,8 @@ def _build_field_capabilities(
         run_status_available=run_status is not None,
         visar_support_available=visar_support_metadata is not None,
         pressure_components_available=all(optional_field_values.get(name) is not None for name in ("pressure_i", "pressure_e", "pressure_radiation")),
-        total_pressure_available=optional_field_values.get("pressure") is not None,
+        plasma_pressure_available=optional_field_values.get("plasma_pressure_j_cm3") is not None,
+        total_pressure_available=optional_field_values.get("total_pressure_j_cm3") is not None,
         radiation_components_available=all(optional_field_values.get(name) is not None for name in ("radiation_heating", "radiation_cooling")),
         radiation_net_heating_available=optional_field_values.get("radiation_net_heating") is not None,
         kinetic_energy_available=optional_field_values.get("kinetic_energy") is not None,
@@ -268,7 +275,12 @@ def _build_field_capabilities(
 
 def _build_wave_physics_capabilities(field_capabilities: DerivedFieldCapabilities) -> WavePhysicsCapabilities:
     notes: list[str] = []
-    pressure_support_level = "components" if field_capabilities.pressure_components_available else ("total_only" if field_capabilities.total_pressure_available else "unavailable")
+    pressure_support_level = (
+        "components" if field_capabilities.pressure_components_available
+        else "total_only" if field_capabilities.total_pressure_available
+        else "plasma_only" if field_capabilities.plasma_pressure_available
+        else "unavailable"
+    )
     viscosity_support_level = "available" if "artificial_viscosity" in field_capabilities.optional_available_fields else "unavailable"
     if field_capabilities.radiation_components_available and field_capabilities.radiation_net_heating_available:
         radiation_support_level = "components+net"
@@ -280,6 +292,8 @@ def _build_wave_physics_capabilities(field_capabilities: DerivedFieldCapabilitie
         radiation_support_level = "unavailable"
     if pressure_support_level == "unavailable":
         notes.append("Total-pressure wave evidence will have to degrade because no pressure fields are available.")
+    elif pressure_support_level == "plasma_only":
+        notes.append("Only plasma pressure is available; total-pressure wave evidence is disabled because radiation pressure is missing.")
     if viscosity_support_level == "unavailable":
         notes.append("Shock-like evidence can only use pressure/density/velocity hooks until artificial viscosity is available.")
     if not field_capabilities.dynamic_radius_available:
@@ -467,6 +481,24 @@ def load_run_data(path: str | Path) -> DerivedRunData:
         else:
             increment_counter("shared_raw_cache.run.hit")
 
+        if optional_fields["plasma_pressure_j_cm3"] is None:
+            if optional_fields["pressure_i"] is not None and optional_fields["pressure_e"] is not None:
+                optional_fields["plasma_pressure_j_cm3"] = _share_array(
+                    run_key,
+                    "field:plasma_pressure_j_cm3",
+                    np.asarray(optional_fields["pressure_i"]) + np.asarray(optional_fields["pressure_e"]),
+                    np.float64,
+                )
+        if optional_fields["total_pressure_j_cm3"] is None and all(
+            optional_fields[name] is not None for name in ("pressure_i", "pressure_e", "pressure_radiation")
+        ):
+            optional_fields["total_pressure_j_cm3"] = _share_array(
+                run_key,
+                "field:total_pressure_j_cm3",
+                np.asarray(optional_fields["pressure_i"]) + np.asarray(optional_fields["pressure_e"]) + np.asarray(optional_fields["pressure_radiation"]),
+                np.float64,
+            )
+
         assert summary is not None and metadata is not None and regions is not None and materials is not None
         if run_status is None and isinstance(summary, dict):
             summary_status = summary.get("run_status")
@@ -528,7 +560,8 @@ def load_run_data(path: str | Path) -> DerivedRunData:
         pressure_i_j_cm3=optional_fields["pressure_i"],
         pressure_e_j_cm3=optional_fields["pressure_e"],
         pressure_radiation_j_cm3=optional_fields["pressure_radiation"],
-        pressure_total_j_cm3=optional_fields["pressure"],
+        pressure_plasma_j_cm3=optional_fields["plasma_pressure_j_cm3"],
+        pressure_total_j_cm3=optional_fields["total_pressure_j_cm3"],
         artificial_viscosity_j_cm3=optional_fields["artificial_viscosity"],
         ion_energy_j_g=optional_fields["ion_energy"],
         electron_energy_j_g=optional_fields["electron_energy"],
@@ -603,6 +636,7 @@ def field_capability_summary(dataset: DerivedRunData) -> dict[str, object]:
         "run_status_available": bool(capabilities.run_status_available),
         "visar_support_available": bool(capabilities.visar_support_available),
         "pressure_components_available": bool(capabilities.pressure_components_available),
+        "plasma_pressure_available": bool(capabilities.plasma_pressure_available),
         "total_pressure_available": bool(capabilities.total_pressure_available),
         "radiation_components_available": bool(capabilities.radiation_components_available),
         "radiation_net_heating_available": bool(capabilities.radiation_net_heating_available),

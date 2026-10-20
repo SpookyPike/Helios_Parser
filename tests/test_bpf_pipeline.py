@@ -176,6 +176,17 @@ class BpfPipelineTests(unittest.TestCase):
                 self.assertIn("radiation_net_heating_j_g_s", fields)
                 self.assertIn("radiation_energy_density_j_cm3", fields)
                 self.assertIn("radiation_energy_j_g", fields)
+                self.assertIn("plasma_pressure_j_cm3", fields)
+                self.assertIn("total_pressure_j_cm3", fields)
+
+                plasma = run.get_field("pressure_j_cm3")
+                explicit_plasma = run.get_field("plasma_pressure_j_cm3")
+                total = run.get_field("total_pressure_j_cm3")
+                np.testing.assert_array_equal(explicit_plasma, plasma)
+                np.testing.assert_array_equal(run.get_field("pressure"), total)
+                np.testing.assert_array_equal(total, plasma + run.get_field("pressure_radiation"))
+                self.assertEqual(run.get_field_metadata("pressure").alias_of, "total_pressure_j_cm3")
+                self.assertEqual(run.get_field_metadata("pressure").quantity, "total_pressure")
 
                 density = run.get_field("density")
                 canonical_density = run.get_field("mass_density_g_cm3")
@@ -254,7 +265,21 @@ class BpfPipelineTests(unittest.TestCase):
                 self.assertEqual(run.get_metadata()["source_precedence"], "bpf_primary_log_metadata_exo_optional")
                 for name in overlapping_fields:
                     with self.subTest(field=name):
-                        _assert_scale_close(self, run.get_field(name), log_simulation.fields[name], rtol=1.0e-3, atol=1.0e-10)
+                        if name == "pressure":
+                            np.testing.assert_allclose(
+                                run.get_field("total_pressure_j_cm3"),
+                                log_simulation.fields[name],
+                                rtol=1.0e-3,
+                                atol=1.0,
+                            )
+                        else:
+                            _assert_scale_close(self, run.get_field(name), log_simulation.fields[name], rtol=1.0e-3, atol=1.0e-10)
+                np.testing.assert_allclose(
+                    run.get_field("pressure_j_cm3"),
+                    log_simulation.fields["pressure_i"] + log_simulation.fields["pressure_e"],
+                    rtol=1.0e-3,
+                    atol=1.0,
+                )
 
     def test_input_routing_accepts_log_bpf_and_missing_companions(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

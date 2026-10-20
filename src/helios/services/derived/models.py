@@ -94,6 +94,7 @@ class DerivedFieldCapabilities:
     run_status_available: bool = False
     visar_support_available: bool = False
     pressure_components_available: bool = False
+    plasma_pressure_available: bool = False
     total_pressure_available: bool = False
     radiation_components_available: bool = False
     radiation_net_heating_available: bool = False
@@ -147,6 +148,7 @@ class DerivedRunData:
     pressure_i_j_cm3: np.ndarray | None = None
     pressure_e_j_cm3: np.ndarray | None = None
     pressure_radiation_j_cm3: np.ndarray | None = None
+    pressure_plasma_j_cm3: np.ndarray | None = None
     pressure_total_j_cm3: np.ndarray | None = None
     artificial_viscosity_j_cm3: np.ndarray | None = None
     ion_energy_j_g: np.ndarray | None = None

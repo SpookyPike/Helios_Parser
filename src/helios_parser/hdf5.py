@@ -20,7 +20,7 @@ from .parser import HeliosParser
 
 LOGGER = logging.getLogger(__name__)
 STRING_DTYPE = h5py.string_dtype(encoding="utf-8")
-H5D_SCHEMA_VERSION = "2.0"
+H5D_SCHEMA_VERSION = "2.1"
 SUPPORTED_INPUT_SUFFIXES = {".log", ".bpf"}
 
 
@@ -57,7 +57,7 @@ def _json_attr(value: Any) -> str:
 def _set_field_metadata(dataset: h5py.Dataset, metadata: dict[str, Any]) -> None:
     unit = str(metadata.get("unit", metadata.get("units", "")) or "")
     _set_unit_attrs(dataset, unit)
-    for key in ("field_name", "source", "label", "status", "description", "alias_of"):
+    for key in ("field_name", "source", "label", "status", "description", "alias_of", "quantity"):
         if key in metadata and metadata[key] is not None:
             dataset.attrs[key] = str(metadata[key])
     dimensions = metadata.get("dimensions")
@@ -984,6 +984,12 @@ def _write_hdf5_unpublished(
                     "label": label or name,
                     "status": "validated",
                 }
+                if name == "plasma_pressure_j_cm3":
+                    metadata.update(quantity="plasma_pressure", label="Plasma pressure", description="Ion pressure plus electron pressure; excludes radiation pressure.")
+                elif name == "total_pressure_j_cm3":
+                    metadata.update(quantity="total_pressure", label="Total pressure", description="Ion plus electron plus radiation pressure.")
+                elif name == "pressure":
+                    metadata.update(quantity="total_pressure", label="Total pressure", status="alias", alias_of="total_pressure_j_cm3", description="Compatibility alias of total_pressure_j_cm3.")
                 dataset = _create_field_dataset(
                     fields_group,
                     name,
@@ -1166,6 +1172,27 @@ def _write_hdf5_unpublished(
                 dataset.resize((step,))
             else:
                 dataset.resize((step, dataset.shape[1]))
+
+        if "pressure" in fields_group and "total_pressure_j_cm3" in fields_group:
+            del fields_group["pressure"]
+            fields_group["pressure"] = fields_group["total_pressure_j_cm3"]
+            if "pressure" in field_metadata_group:
+                del field_metadata_group["pressure"]
+            _write_field_metadata_group(
+                field_metadata_group,
+                "pressure",
+                {
+                    "field_name": "pressure",
+                    "source": "log",
+                    "dimensions": ("time", "zone"),
+                    "unit": "J/cm3",
+                    "label": "Total pressure",
+                    "status": "alias",
+                    "quantity": "total_pressure",
+                    "alias_of": "total_pressure_j_cm3",
+                    "description": "Compatibility alias of total_pressure_j_cm3.",
+                },
+            )
 
         stream_status = iterator.run_status or header.run_status
         if stream_status is None:

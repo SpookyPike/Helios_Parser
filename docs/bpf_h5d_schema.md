@@ -24,8 +24,10 @@ The H5D file keeps the existing reader-compatible layout:
   metadata.
 - `/diagnostics`: log-derived diagnostics when available.
 
-Schema version `2.0` adds self-describing field metadata while preserving the
-legacy `/fields/<name>` dataset contract.
+Schema version `2.1` adds explicit plasma/total pressure quantities and
+corrects the legacy `pressure` alias to mean total pressure. This is a versioned
+semantic correction for BPF-derived files. The existing `pressure_j_cm3` field
+continues to mean plasma pressure.
 
 ## Field Metadata
 
@@ -37,6 +39,7 @@ Every new field dataset stores:
 - `units` / `unit`
 - `label`
 - `status`
+- optional `quantity` (for example `plasma_pressure` or `total_pressure`)
 - optional `description`
 - optional `plotting_hints`
 - optional `alias_of`
@@ -88,8 +91,11 @@ fields:
 - LOG `Velocity` maps to `zone_outer_velocity_cm_s`, the right/outer BPF
   interface velocity for each zone. `fluid_velocity_cm_s` remains the
   EXO-compatible zone-centered average of adjacent interface velocities.
-- LOG `Pressure` maps to derived `pressure_j_cm3 =
-  ion_pressure_j_cm3 + electron_pressure_j_cm3`.
+- `pressure_j_cm3` and `plasma_pressure_j_cm3` mean plasma pressure:
+  `ion_pressure_j_cm3 + electron_pressure_j_cm3`.
+- `total_pressure_j_cm3` means plasma plus radiation pressure. The legacy
+  `pressure` field is a hard-link alias of `total_pressure_j_cm3`, matching the
+  LOG parser and derived-analysis interpretation.
 - LOG `RadNetHeat` maps to derived `radiation_net_heating_j_g_s =
   radiation_heating_j_g_s - radiation_cooling_j_g_s`.
 - LOG `Prad` / `pressure_radiation` maps to

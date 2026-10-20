@@ -9,6 +9,8 @@ from typing import Any, Iterator
 
 import numpy as np
 
+from .quantities import plasma_pressure, total_pressure
+
 
 @dataclass(frozen=True, slots=True)
 class BpfRecordSpec:
@@ -160,7 +162,16 @@ DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
         "label": "Plasma pressure",
         "axes": ("zone",),
         "status": "derived",
-        "description": "Derived as ion pressure plus electron pressure; matches LOG plasma pressure within LOG text precision.",
+        "description": "Plasma pressure derived as ion pressure plus electron pressure. It excludes radiation pressure.",
+        "quantity": "plasma_pressure",
+    },
+    "total_pressure_j_cm3": {
+        "unit": "J/cm3",
+        "label": "Total pressure",
+        "axes": ("zone",),
+        "status": "derived",
+        "description": "Total pressure derived as ion plus electron plus radiation pressure.",
+        "quantity": "total_pressure",
     },
     "radiation_net_heating_j_g_s": {
         "unit": "J/g/s",
@@ -182,6 +193,7 @@ DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
         "axes": ("zone",),
         "status": "validated",
         "description": "Derived as one third of BPF radiation energy density; matches LOG radiation pressure.",
+        "quantity": "radiation_pressure",
     },
     "radiation_energy_j_g": {
         "unit": "J/g",
@@ -246,7 +258,8 @@ LOG_COMPATIBLE_BPF_ALIASES: dict[str, str] = {
     "radiation_net_heating_j_g_s": "radiation_net_heating",
     "radiation_pressure_j_cm3": "pressure_radiation",
     "radiation_energy_j_g": "radiation_energy",
-    "pressure_j_cm3": "pressure",
+    "pressure_j_cm3": "plasma_pressure_j_cm3",
+    "total_pressure_j_cm3": "pressure",
     "laser_source_j_g": "laser_source",
     "laser_deposition_j_g_s": "laser_deposition",
 }
@@ -547,11 +560,14 @@ class BpfFile:
         interface_velocity = fields["interface_velocity_cm_s"]
         fields["fluid_velocity_cm_s"] = 0.5 * (interface_velocity[:-1] + interface_velocity[1:])
         fields["zone_outer_velocity_cm_s"] = interface_velocity[1:].copy()
-        fields["pressure_j_cm3"] = fields["ion_pressure_j_cm3"] + fields["electron_pressure_j_cm3"]
+        fields["pressure_j_cm3"] = plasma_pressure(fields["ion_pressure_j_cm3"], fields["electron_pressure_j_cm3"])
         fields["radiation_net_heating_j_g_s"] = fields["radiation_heating_j_g_s"] - fields["radiation_cooling_j_g_s"]
         radiation_energy_density = fields["bpf_record_14"][1:-1].copy()
         fields["radiation_energy_density_j_cm3"] = radiation_energy_density
         fields["radiation_pressure_j_cm3"] = radiation_energy_density / 3.0
+        fields["total_pressure_j_cm3"] = total_pressure(
+            fields["ion_pressure_j_cm3"], fields["electron_pressure_j_cm3"], fields["radiation_pressure_j_cm3"]
+        )
         fields["radiation_energy_j_g"] = radiation_energy_density / np.where(
             fields["mass_density_g_cm3"] != 0.0,
             fields["mass_density_g_cm3"],

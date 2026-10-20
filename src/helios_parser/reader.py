@@ -75,6 +75,7 @@ class FieldMetadata:
     description: str = ""
     plotting_hints: dict[str, Any] | None = None
     alias_of: str | None = None
+    quantity: str = ""
 
 
 def _normalize_loaded_value(value: Any) -> Any:
@@ -205,6 +206,7 @@ class HeliosRun:
             description=str(attr_source.get("description", "") or ""),
             plotting_hints=plotting_hints if isinstance(plotting_hints, dict) else None,
             alias_of=str(attr_source["alias_of"]) if attr_source.get("alias_of") else None,
+            quantity=str(attr_source.get("quantity", "") or ""),
         )
 
     def _load_field_metadata(self) -> dict[str, FieldMetadata]:

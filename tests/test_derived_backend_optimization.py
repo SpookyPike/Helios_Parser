@@ -13,7 +13,7 @@ from _viewer_test_utils import HDF5_ROOT
 from helios.cache import clear_session_raw_data_cache
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters
-from helios.services.derived.common import field_capability_summary, load_run_data, publish_field_payload, publish_open_run_payload
+from helios.services.derived.common import _OPTIONAL_FIELD_DTYPES, _build_field_capabilities, field_capability_summary, load_run_data, publish_field_payload, publish_open_run_payload
 from helios.services.derived.transmission import evaluate_transmission
 from helios.services.derived.selection import (
     AnalysisStateCache,
@@ -253,6 +253,22 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
         self.assertTrue(bool(dataset.field_capabilities.run_status_available))
         self.assertTrue(bool(dataset.field_capabilities.visar_support_available))
 
+
+    def test_ambiguous_legacy_pressure_does_not_create_total_pressure_capability(self) -> None:
+        optional = {name: None for name in _OPTIONAL_FIELD_DTYPES}
+        optional["pressure_i"] = np.asarray([1.0])
+        optional["pressure_e"] = np.asarray([2.0])
+        capabilities = _build_field_capabilities(
+            available_fields=("pressure", "pressure_i", "pressure_e"),
+            optional_field_values=optional,
+            has_dynamic_radius=False,
+            run_status=None,
+            visar_support_metadata=None,
+            velocity=np.asarray([0.0]),
+        )
+        self.assertFalse(capabilities.total_pressure_available)
+        self.assertTrue(any("ambiguous legacy pressure" in note for note in capabilities.consistency.notes))
+
     def test_load_run_data_promotes_optional_fields_and_capabilities(self) -> None:
         path = _resolve_existing_path(
             HDF5_ROOT / "Cu1e17_cyl_stabilized.h5",
@@ -264,6 +280,7 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
         self.assertIsNotNone(dataset.pressure_i_j_cm3)
         self.assertIsNotNone(dataset.pressure_e_j_cm3)
         self.assertIsNotNone(dataset.pressure_radiation_j_cm3)
+        self.assertIsNotNone(dataset.pressure_plasma_j_cm3)
         self.assertIsNotNone(dataset.pressure_total_j_cm3)
         self.assertIsNotNone(dataset.artificial_viscosity_j_cm3)
         self.assertIsNotNone(dataset.ion_energy_j_g)
@@ -282,6 +299,7 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
         self.assertTrue(summary["run_status_available"])
         self.assertTrue(summary["visar_support_available"])
         self.assertTrue(summary["pressure_components_available"])
+        self.assertTrue(summary["plasma_pressure_available"])
         self.assertTrue(summary["total_pressure_available"])
         self.assertTrue(summary["radiation_components_available"])
         self.assertTrue(summary["radiation_net_heating_available"])

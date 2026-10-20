@@ -58,6 +58,14 @@
       "dimensions": {"zones": "header/iterator validated", "geometry": "cylindrical"},
       "provenance": "ignored local historical fixture; not included in a clean checkout"
     },
+    "local_h5_cu1e17_cyl": {
+      "path": "Cu1e17_cyl_stabilized.h5",
+      "size_bytes": 15610896,
+      "sha256": "de47ad95045487514da6e00c4406c9ab220e1358a2dc1f5424a27d864466b061",
+      "format": "HELIOS HDF5",
+      "dimensions": {"zones": 400, "snapshots": 71, "regions": 1, "materials": 1},
+      "provenance": "ignored local derived fixture; generated from the historical cylindrical Cu LOG"
+    },
     "local_cu0166_log": {
       "path": "Cu_0166.log",
       "size_bytes": 43392983,
@@ -123,6 +131,7 @@
     "test_snapshot_numeric_domains.py": ["local_fe_log"],
     "test_run_status.py": ["local_fe_log", "local_cu1e17_log", "local_cu1e17_cyl_log", "local_h5_cu"],
     "test_coordinate_semantics.py": ["local_cu1e17_log", "local_cu1e17_cyl_log", "local_h5_cu"],
+    "test_derived_backend_optimization.py": ["local_h5_cu1e17_cyl"],
     "test_validation.py": ["local_fe_log", "local_si_log", "local_cu0166_log"],
     "test_wave4_ingest.py": ["local_fe_log", "local_h5_cu"],
     "test_derived_phase412.py": ["local_h5_50al_root", "local_h5_cu_root", "local_h5_cu", "local_h5_si"],

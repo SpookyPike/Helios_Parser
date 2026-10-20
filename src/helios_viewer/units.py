@@ -77,7 +77,16 @@ NUMBER_DENSITY_FACTORS = {
 }
 
 
-PRESSURE_FIELDS = {"pressure", "pressure_e", "pressure_i", "pressure_radiation", "artificial_viscosity"}
+PRESSURE_FIELDS = {
+    "pressure",
+    "pressure_e",
+    "pressure_i",
+    "pressure_radiation",
+    "pressure_j_cm3",
+    "plasma_pressure_j_cm3",
+    "total_pressure_j_cm3",
+    "artificial_viscosity",
+}
 DENSITY_FIELDS = {"density"}
 TEMPERATURE_FIELDS = {"temperature_e", "temperature_i", "temperature_radiation"}
 LENGTH_FIELDS = {"radius", "zone_width"}

@@ -23,6 +23,7 @@ from helios.instrumentation import timed_block
 from .coordinates import CoordinateValidationIssue, build_coordinate_model, coordinate_name_for_geometry
 from .model import HeliosHeader, HeliosPreview, Simulation, Snapshot
 from .tokenizer import RegexTokenizer
+from .quantities import plasma_pressure, total_pressure
 
 LOGGER = logging.getLogger(__name__)
 
@@ -1077,10 +1078,17 @@ class SnapshotBlockSemanticParser:
                 temperature_values = np.asarray(temperature, dtype=np.float64)
                 if not np.all(np.isfinite(temperature_values)) or np.any(temperature_values < 0.0):
                     raise SnapshotDomainError(f"Snapshot at cycle {cycle} has invalid {temperature_key} values.")
-        if all(name in fields for name in ("pressure_i", "pressure_e", "pressure_radiation")):
-            fields["pressure"] = fields["pressure_i"] + fields["pressure_e"] + fields["pressure_radiation"]
-            field_units["pressure"] = field_units["pressure_i"]
-            raw_field_map["pressure"] = "Ion press + Elec press + Rad press"
+        if all(name in fields for name in ("pressure_i", "pressure_e")):
+            fields["plasma_pressure_j_cm3"] = plasma_pressure(fields["pressure_i"], fields["pressure_e"])
+            field_units["plasma_pressure_j_cm3"] = field_units["pressure_i"]
+            raw_field_map["plasma_pressure_j_cm3"] = "Ion press + Elec press"
+            if "pressure_radiation" in fields:
+                fields["total_pressure_j_cm3"] = total_pressure(fields["pressure_i"], fields["pressure_e"], fields["pressure_radiation"])
+                field_units["total_pressure_j_cm3"] = field_units["pressure_i"]
+                raw_field_map["total_pressure_j_cm3"] = "Ion press + Elec press + Rad press"
+                fields["pressure"] = fields["total_pressure_j_cm3"]
+                field_units["pressure"] = field_units["pressure_i"]
+                raw_field_map["pressure"] = "Total pressure (ion + electron + radiation)"
 
         return Snapshot(
             cycle=cycle,
