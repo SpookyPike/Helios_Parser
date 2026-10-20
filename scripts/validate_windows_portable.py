@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import os
 import shutil
 import subprocess
@@ -25,11 +26,15 @@ ROOT_MARKERS = ("PYTHONPATH",)
 
 
 def main() -> int:
-    if not ZIP_PATH.exists():
-        raise FileNotFoundError(ZIP_PATH)
+    parser = argparse.ArgumentParser(description="Smoke-test a built Windows portable bundle.")
+    parser.add_argument("--zip-path", type=Path, default=ZIP_PATH)
+    args = parser.parse_args()
+    zip_path = args.zip_path.resolve()
+    if not zip_path.exists():
+        raise FileNotFoundError(zip_path)
     with tempfile.TemporaryDirectory(prefix="helios_windows_portable_") as tmpdir:
         tmp = Path(tmpdir)
-        with zipfile.ZipFile(ZIP_PATH) as archive:
+        with zipfile.ZipFile(zip_path) as archive:
             archive.extractall(tmp)
         app_root = tmp / f"helios-parser-viewer-v{RELEASE_VERSION}-windows-portable"
         cli = app_root / "helios_to_hdf5.exe"
@@ -51,7 +56,7 @@ def main() -> int:
         with h5py.File(output, "r") as handle:
             schema = handle.attrs.get("schema_version")
             field_count = len(handle["fields"].keys())
-        if str(schema) != "2.0" or field_count < 20:
+        if str(schema) != "2.1" or field_count < 20:
             raise RuntimeError(f"unexpected portable output schema={schema!r} fields={field_count}")
         env["QT_QPA_PLATFORM"] = "offscreen"
         process = subprocess.Popen([str(gui), str(output)], cwd=tmp, env=env)

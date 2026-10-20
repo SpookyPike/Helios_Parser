@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import ctypes
 import os
 import tempfile
 import unittest
+from ctypes import wintypes
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
@@ -75,6 +77,46 @@ class ConversionAtomicityTests(unittest.TestCase):
             output.chmod(0o640)
             write_hdf5(BPF_SAMPLE, output, overwrite=True)
             self.assertEqual(output.stat().st_mode & 0o777, 0o640)
+
+    @unittest.skipUnless(os.name == "nt", "Windows file sharing semantics")
+    def test_overwrite_preserves_destination_locked_against_replacement(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "locked-result.h5"
+            original = b"previous result"
+            output.write_bytes(original)
+
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            kernel32.CreateFileW.argtypes = (
+                wintypes.LPCWSTR,
+                wintypes.DWORD,
+                wintypes.DWORD,
+                wintypes.LPVOID,
+                wintypes.DWORD,
+                wintypes.DWORD,
+                wintypes.HANDLE,
+            )
+            kernel32.CreateFileW.restype = wintypes.HANDLE
+            kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+            kernel32.CloseHandle.restype = wintypes.BOOL
+            handle = kernel32.CreateFileW(
+                str(output),
+                0x80000000,  # GENERIC_READ
+                0,  # deny read/write/delete sharing while replacement is attempted
+                None,
+                3,  # OPEN_EXISTING
+                0x80,  # FILE_ATTRIBUTE_NORMAL
+                None,
+            )
+            if handle is None or handle == wintypes.HANDLE(-1).value:
+                raise ctypes.WinError(ctypes.get_last_error())
+            try:
+                with self.assertRaises(PermissionError):
+                    write_hdf5(BPF_SAMPLE, output, overwrite=True)
+            finally:
+                self.assertTrue(kernel32.CloseHandle(handle))
+
+            self.assertEqual(output.read_bytes(), original)
+            self.assertEqual(list(Path(tmpdir).glob(".locked-result.h5.*.tmp")), [])
 
 
 if __name__ == "__main__":

@@ -154,6 +154,8 @@
     }
   },
   "entry_requirements": {
+    "test_conversion_atomicity.py": ["tracked_fe_bpf"],
+    "test_qt_lifecycle.py": ["tracked_fe_bpf"],
     "smoke_test.py": ["tracked_cu_log"],
     "test_bpf_pipeline.py": ["tracked_cu_log", "tracked_cu_bpf", "tracked_fe_bpf"],
     "test_cli_errors.py": ["tracked_fe_bpf"],

@@ -9,8 +9,9 @@ import unittest
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
-from _viewer_test_utils import HDF5_ROOT, ROOT, get_app
+from _viewer_test_utils import ROOT, get_app
 from PySide6 import QtCore
+from helios_parser import write_hdf5
 
 from helios_analysis.workspace import HeliosDerivedWorkspace
 from helios_app.main_app import HeliosParseViewMainWindow
@@ -47,13 +48,17 @@ class QtLifecycleTests(unittest.TestCase):
         self.assertEqual(workspace._preset_pool.activeThreadCount(), 0)
 
     def test_viewer_close_drains_queued_open_and_stops_worker_thread(self) -> None:
-        viewer = HeliosViewerMainWindow()
-        viewer.controller.open_file(HDF5_ROOT / "Cu_0166_stabilized.h5")
-        QtCore.QThread.msleep(10)
+        source = ROOT / "new_data" / "5Fe+4.9TW+light" / "5Fe+4.9TW+light.bpf"
+        with tempfile.TemporaryDirectory(prefix="helios-close-viewer-") as temp_dir:
+            fixture = Path(temp_dir) / "queued-open.h5"
+            write_hdf5(source, fixture)
+            viewer = HeliosViewerMainWindow()
+            viewer.controller.open_file(fixture)
+            QtCore.QThread.msleep(10)
 
-        viewer.close()
+            viewer.close()
 
-        self.assertFalse(viewer.controller.worker_thread.isRunning())
+            self.assertFalse(viewer.controller.worker_thread.isRunning())
 
     def test_parser_close_waits_for_active_conversion(self) -> None:
         source = ROOT / "new_data" / "5Fe+4.9TW+light" / "5Fe+4.9TW+light.bpf"
