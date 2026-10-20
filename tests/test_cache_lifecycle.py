@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+import gc
 
 import numpy as np
 
@@ -93,6 +94,18 @@ class CacheLifecycleTests(unittest.TestCase):
 
         self.assertEqual(shared.nbytes, coordinator.stats().bytes_used)
         self.assertEqual(0, coordinator.stats().evictions)
+
+    def test_aggregate_accounting_releases_values_when_cache_owner_is_collected(self) -> None:
+        coordinator = CacheCoordinator(max_bytes=32)
+        bucket = CacheLayer(coordinator=coordinator).bucket("ephemeral")
+        bucket["array"] = np.arange(16, dtype=np.uint8)
+        self.assertEqual(16, coordinator.stats().bytes_used)
+
+        del bucket
+        gc.collect()
+
+        self.assertEqual(0, coordinator.stats().bytes_used)
+        self.assertEqual(0, coordinator.stats().registered_buckets)
 
     def test_analyzer_cache_sets_share_the_session_coordinator(self) -> None:
         viewer = AnalyzerCacheSet()

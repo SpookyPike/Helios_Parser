@@ -62,11 +62,67 @@ class CacheCoordinator:
     def __init__(self, max_bytes: int | None = None) -> None:
         self.max_bytes = None if max_bytes is None else max(0, int(max_bytes))
         self._buckets: weakref.WeakValueDictionary[int, BoundedCacheBucket] = weakref.WeakValueDictionary()
+        self._bucket_refs: dict[int, weakref.ReferenceType[BoundedCacheBucket]] = {}
+        self._entry_allocations: dict[int, dict[Any, dict[int, int]]] = {}
+        self._allocation_refs: dict[int, int] = {}
+        self._allocation_sizes: dict[int, int] = {}
+        self._bytes_used = 0
         self._clock = 0
         self._evictions = 0
 
     def register(self, bucket: BoundedCacheBucket) -> None:
+        bucket_id = id(bucket)
+        if bucket_id in self._buckets:
+            return
         self._buckets[id(bucket)] = bucket
+        self._bucket_refs[bucket_id] = weakref.ref(bucket, lambda _ref, key=bucket_id: self._discard_bucket_id(key))
+        self._entry_allocations[bucket_id] = {}
+        for key, value in tuple(bucket._items.items()):
+            self.entry_updated(bucket, key, value)
+
+    def unregister(self, bucket: BoundedCacheBucket) -> None:
+        self._discard_bucket_id(id(bucket))
+
+    def _discard_bucket_id(self, bucket_id: int) -> None:
+        if bucket_id not in self._buckets:
+            if bucket_id not in self._entry_allocations:
+                self._bucket_refs.pop(bucket_id, None)
+                return
+        entries = self._entry_allocations.pop(bucket_id, {})
+        for allocations in entries.values():
+            self._release_allocations(allocations)
+        self._bucket_refs.pop(bucket_id, None)
+        self._buckets.pop(bucket_id, None)
+
+    def _release_allocations(self, allocations: dict[int, int]) -> None:
+        for allocation_id in allocations:
+            refs = self._allocation_refs.get(allocation_id, 0) - 1
+            if refs <= 0:
+                self._allocation_refs.pop(allocation_id, None)
+                self._bytes_used -= self._allocation_sizes.pop(allocation_id, 0)
+            else:
+                self._allocation_refs[allocation_id] = refs
+
+    def entry_updated(self, bucket: BoundedCacheBucket, key: Any, value: Any) -> None:
+        self.entry_removed(bucket, key)
+        allocations = _array_allocation_sizes(value)
+        self._entry_allocations.setdefault(id(bucket), {})[key] = allocations
+        for allocation_id, size in allocations.items():
+            refs = self._allocation_refs.get(allocation_id, 0)
+            if refs == 0:
+                self._allocation_sizes[allocation_id] = size
+                self._bytes_used += size
+            self._allocation_refs[allocation_id] = refs + 1
+
+    def entry_removed(self, bucket: BoundedCacheBucket, key: Any) -> None:
+        allocations = self._entry_allocations.get(id(bucket), {}).pop(key, None)
+        if allocations is None:
+            return
+        self._release_allocations(allocations)
+
+    def clear_bucket(self, bucket: BoundedCacheBucket) -> None:
+        for key in tuple(self._entry_allocations.get(id(bucket), {})):
+            self.entry_removed(bucket, key)
 
     def touch(self, bucket: BoundedCacheBucket, key: Any) -> None:
         self._clock += 1
@@ -77,7 +133,7 @@ class CacheCoordinator:
         self.enforce()
 
     def bytes_used(self) -> int:
-        return estimate_nbytes(tuple(value for bucket in self._buckets.values() for value in bucket._items.values()))
+        return int(self._bytes_used)
 
     def stats(self) -> CacheCoordinatorStats:
         return CacheCoordinatorStats(
@@ -106,7 +162,8 @@ class CacheCoordinator:
             self._evictions += 1
 
 
-_DEFAULT_CACHE_COORDINATOR = CacheCoordinator()
+DEFAULT_AGGREGATE_CACHE_BYTE_LIMIT = 512 * 1024 * 1024
+_DEFAULT_CACHE_COORDINATOR = CacheCoordinator(max_bytes=DEFAULT_AGGREGATE_CACHE_BYTE_LIMIT)
 
 
 @dataclass(eq=False)
@@ -145,21 +202,28 @@ class BoundedCacheBucket(MutableMapping[Any, Any]):
             size = estimate_nbytes(value)
             if size > self.coordinator.max_bytes:
                 raise ValueError(f"Cache entry requires {size} bytes; aggregate limit is {self.coordinator.max_bytes}.")
+        if self.coordinator is not None:
+            self.coordinator.register(self)
         self._items[key] = value
         self._items.move_to_end(key)
         if self.coordinator is not None:
-            self.coordinator.register(self)
+            self.coordinator.entry_updated(self, key, value)
             self.coordinator.touch(self, key)
         self._evict_if_needed()
         if self.coordinator is not None:
             self.coordinator.enforce()
 
     def __delitem__(self, key: Any) -> None:
+        if self.coordinator is not None:
+            self.coordinator.entry_removed(self, key)
         del self._items[key]
         self._entry_age.pop(key, None)
 
     def __iter__(self) -> Iterator[Any]:
-        return iter(self._items)
+        # Mapping views (for example ``values()``) call ``__getitem__`` while
+        # iterating. Reads update LRU order, so iterate over a stable key
+        # snapshot rather than the mutable OrderedDict view.
+        return iter(tuple(self._items))
 
     def __len__(self) -> int:
         return len(self._items)
@@ -176,6 +240,8 @@ class BoundedCacheBucket(MutableMapping[Any, Any]):
         return default
 
     def clear(self, *, reason: str | None = None) -> None:
+        if self.coordinator is not None:
+            self.coordinator.clear_bucket(self)
         self._items.clear()
         self._entry_age.clear()
         self._clears += 1
@@ -204,9 +270,47 @@ class BoundedCacheBucket(MutableMapping[Any, Any]):
 
     def _evict_key(self, key: Any) -> None:
         if key in self._items:
+            if self.coordinator is not None:
+                self.coordinator.entry_removed(self, key)
             del self._items[key]
             self._entry_age.pop(key, None)
             self._evictions += 1
+
+
+def _array_allocation_sizes(value: Any) -> dict[int, int]:
+    """Return unique NumPy base allocations retained by one cache entry."""
+
+    arrays: dict[int, int] = {}
+    objects: set[int] = set()
+
+    def visit(item: Any) -> None:
+        if isinstance(item, np.ndarray):
+            base = item
+            while isinstance(getattr(base, "base", None), np.ndarray):
+                base = base.base
+            arrays[id(base)] = int(base.nbytes)
+            return
+        identity = id(item)
+        if identity in objects:
+            return
+        if isinstance(item, dict):
+            objects.add(identity)
+            for key, child in item.items():
+                visit(key)
+                visit(child)
+            return
+        if isinstance(item, (tuple, list, set, frozenset)):
+            objects.add(identity)
+            for child in item:
+                visit(child)
+            return
+        if is_dataclass(item) and not isinstance(item, type):
+            objects.add(identity)
+            for descriptor in fields(item):
+                visit(getattr(item, descriptor.name))
+
+    visit(value)
+    return arrays
 
 
 def estimate_nbytes(value: Any) -> int:
@@ -329,6 +433,11 @@ class AnalyzerCacheSet:
     coordinator: CacheCoordinator = field(default_factory=lambda: _DEFAULT_CACHE_COORDINATOR, repr=False)
 
     def __post_init__(self) -> None:
+        for layer in (self.raw_data_cache, self.derived_cache, self.view_cache):
+            previous_coordinator = layer.coordinator
+            if previous_coordinator is not None and previous_coordinator is not self.coordinator:
+                for bucket in layer._buckets.values():
+                    previous_coordinator.unregister(bucket)
         self.raw_data_cache.coordinator = self.coordinator
         self.derived_cache.coordinator = self.coordinator
         self.view_cache.coordinator = self.coordinator

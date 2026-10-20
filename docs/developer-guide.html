@@ -90,9 +90,10 @@
       <p>
         All <code>AnalyzerCacheSet</code> instances and the session raw-data cache register their buckets with one process-local
         <code>CacheCoordinator</code>. An optional aggregate byte limit evicts the least-recently-used entry across owners and counts
-        shared NumPy base allocations once. Shipping defaults remain unset until representative-run measurements establish suitable
-        values. Cache byte counts exclude arrays retained by active tasks, workspaces, or callers, and do not claim to bound process RSS;
-        inspect those owners separately when measuring memory retention.
+        shared NumPy base allocations once. The process default is 512 MiB: representative core datasets measured 0.3 MiB, 9.5 MiB,
+        and 62.6 MiB, so the cap holds several of the largest run datasets while bounding retained cache ownership. The cap is
+        configurable for tests and deployments. Cache byte counts exclude arrays retained by active tasks, workspaces, or callers,
+        and do not claim to bound process RSS; inspect those owners separately when measuring memory retention.
       </p>
     </section>
 
