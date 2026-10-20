@@ -41,6 +41,9 @@ from .workspace import HeliosDerivedWorkspace
 
 
 LOGGER = logging.getLogger(__name__)
+_BASE_DERIVED_OPTIONAL_FIELDS = frozenset(
+    {"pressure_i", "pressure_e", "pressure_radiation", "total_pressure_j_cm3", "artificial_viscosity"}
+)
 
 
 @dataclass(slots=True)
@@ -513,7 +516,8 @@ class DerivedController(QtCore.QObject):
             dataset = self._dataset_cache.get(dataset_key)
             if dataset is None:
                 started = time.perf_counter()
-                dataset = load_run_data(path, revision=revision)
+                requested_fields = None if request.include_wavefront else _BASE_DERIVED_OPTIONAL_FIELDS
+                dataset = load_run_data(path, revision=revision, requested_fields=requested_fields)
                 self._dataset_cache[dataset_key] = dataset
                 LOGGER.info("Loaded derived dataset %s in %.3fs", path.name, time.perf_counter() - started)
             if request.update_kind == "snapshot":

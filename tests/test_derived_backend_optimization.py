@@ -310,6 +310,36 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
         self.assertIsNotNone(summary["radiation_net_heating_matches_components"])
         self.assertIsNotNone(summary["kinetic_energy_matches_velocity"])
 
+    def test_requested_optional_field_reads_are_demand_driven_and_reused(self) -> None:
+        path = _resolve_existing_path(
+            HDF5_ROOT / "Cu1e17_cyl_stabilized.h5",
+            Path(__file__).resolve().parents[1] / "Cu1e17_cyl_stabilized.h5",
+        )
+        clear_session_raw_data_cache(reason="demand-driven-test")
+        original_get_field = HeliosRun.get_field
+        calls: list[str] = []
+
+        def counted_get_field(run, name, *args, **kwargs):
+            calls.append(str(name))
+            return original_get_field(run, name, *args, **kwargs)
+
+        with mock.patch.object(HeliosRun, "get_field", new=counted_get_field):
+            initial = load_run_data(path, requested_fields=())
+            self.assertIsNone(initial.pressure_i_j_cm3)
+            self.assertIn("pressure_i", initial.field_capabilities.not_loaded_optional_fields)
+            self.assertNotIn("pressure_i", initial.field_capabilities.missing_optional_fields)
+            self.assertFalse(set(calls) & set(_OPTIONAL_FIELD_DTYPES))
+
+            calls.clear()
+            promoted = load_run_data(path, requested_fields=("pressure_i",))
+            self.assertIsNotNone(promoted.pressure_i_j_cm3)
+            self.assertIn("pressure_i", calls)
+
+            calls.clear()
+            repeated = load_run_data(path, requested_fields=("pressure_i",))
+            self.assertIsNotNone(repeated.pressure_i_j_cm3)
+            self.assertEqual([], calls)
+
     def test_weighted_means_matches_scalar_weighted_average(self) -> None:
         path = HDF5_ROOT / "Cu_0166_stabilized.h5"
         dataset = load_run_data(path)

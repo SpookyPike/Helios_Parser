@@ -230,9 +230,11 @@ def _build_field_capabilities(
     visar_support_metadata: dict[str, object] | None,
     velocity: np.ndarray,
     available_material_properties: tuple[str, ...] = (),
+    not_loaded_optional_fields: tuple[str, ...] = (),
 ) -> DerivedFieldCapabilities:
     optional_available = tuple(sorted(name for name, values in optional_field_values.items() if values is not None))
-    missing_optional = tuple(sorted(name for name, values in optional_field_values.items() if values is None))
+    not_loaded = tuple(sorted(str(name) for name in not_loaded_optional_fields))
+    missing_optional = tuple(sorted(name for name, values in optional_field_values.items() if values is None and name not in not_loaded))
     notes: list[str] = []
     total_pressure_matches: bool | None = None
     radiation_net_matches: bool | None = None
@@ -294,6 +296,7 @@ def _build_field_capabilities(
         available_fields=tuple(str(name) for name in available_fields),
         optional_available_fields=optional_available,
         missing_optional_fields=missing_optional,
+        not_loaded_optional_fields=not_loaded,
         dynamic_radius_available=bool(has_dynamic_radius),
         run_status_available=run_status is not None,
         visar_support_available=visar_support_metadata is not None,
@@ -370,16 +373,25 @@ def _optional_zone_material_property(regions: dict[str, object], name: str, n_zo
     return build_zone_property_from_regions(regions, np.asarray(values, dtype=np.float64), n_zones)
 
 
-def load_run_data(path: str | Path, *, revision: RunRevision | None = None) -> DerivedRunData:
+def load_run_data(
+    path: str | Path,
+    *,
+    revision: RunRevision | None = None,
+    requested_fields: Iterable[str] | None = None,
+) -> DerivedRunData:
     """Load the field subset needed by the current Derived mode.
 
-    This preserves the current lightweight load path for existing modules while
-    also promoting richer optional hydro fields, run-status metadata, and
-    VISAR-readiness support into one capability-driven payload for future
-    modules.
+    ``requested_fields=None`` preserves the legacy cold-open behavior. Internal
+    callers can pass an explicit optional-field set; uncached optional fields
+    outside that set remain absent and are reported separately from fields not
+    present in the source. A later request builds a new immutable dataset view
+    over the shared arrays already in the session cache.
     """
 
     source = Path(path)
+    requested_optional = set(_OPTIONAL_FIELD_DTYPES) if requested_fields is None else {
+        str(name) for name in requested_fields if str(name) in _OPTIONAL_FIELD_DTYPES
+    }
     # Direct callers retain fingerprint-based refresh behavior. UI callers pass
     # the token created at explicit open, so same-path replacements cannot
     # collide even when size and mtime are restored.
@@ -431,6 +443,10 @@ def load_run_data(path: str | Path, *, revision: RunRevision | None = None) -> D
             or temperature_i is None
             or electron_density is None
             or mean_charge is None
+            or (
+                requested_fields is not None
+                and any(optional_fields[name] is None and (fields is None or name in fields) for name in requested_optional)
+            )
         )
         if needs_open:
             increment_counter("shared_raw_cache.run.miss")
@@ -485,13 +501,6 @@ def load_run_data(path: str | Path, *, revision: RunRevision | None = None) -> D
                     temperature_e = _share_array(run_key, "field:temperature_e", run.get_field("temperature_e"), np.float64)
                 if temperature_i is None:
                     temperature_i = _share_array(run_key, "field:temperature_i", run.get_field("temperature_i"), np.float64)
-                if temperature_r is None and "temperature_radiation" in field_names:
-                    temperature_r = _share_array(
-                        run_key,
-                        "field:temperature_radiation",
-                        run.get_field("temperature_radiation"),
-                        np.float64,
-                    )
                 if electron_density is None:
                     electron_density = _share_array(run_key, "field:electron_density", run.get_field("electron_density"), np.float64)
                 if mean_charge is None:
@@ -516,13 +525,14 @@ def load_run_data(path: str | Path, *, revision: RunRevision | None = None) -> D
                     if dynamic_edge is not None:
                         radius_edges = _share_array(run_key, "field:radius:edge", dynamic_edge, np.float64)
                 for field_name, dtype in _OPTIONAL_FIELD_DTYPES.items():
-                    if optional_fields[field_name] is None and field_name in field_names:
+                    if field_name in requested_optional and optional_fields[field_name] is None and field_name in field_names:
                         optional_fields[field_name] = _share_array(
                             run_key,
                             f"field:{field_name}",
                             run.get_field(field_name),
                             dtype,
                         )
+                temperature_r = optional_fields["temperature_radiation"]
         else:
             increment_counter("shared_raw_cache.run.hit")
 
@@ -577,6 +587,10 @@ def load_run_data(path: str | Path, *, revision: RunRevision | None = None) -> D
                     ("initial_mass_density", zone_initial_density),
                     ("initial_temperature", zone_initial_temperature),
                 ) if values is not None
+            ),
+            not_loaded_optional_fields=tuple(
+                name for name, values in optional_fields.items()
+                if values is None and name in available_fields
             ),
         )
         wave_physics_capabilities = _build_wave_physics_capabilities(capability_summary)
