@@ -33,8 +33,8 @@ class CacheLifecycleTests(unittest.TestCase):
         self.assertEqual(0, len(bucket))
 
         layer.remove_bucket("fields", reason="owner-destroyed")
-        self.assertIsNot(bucket, layer.bucket("fields"))
         self.assertNotIn("fields", layer.stats().buckets)
+        self.assertIsNot(bucket, layer.bucket("fields"))
 
 
 if __name__ == "__main__":
