@@ -4464,6 +4464,8 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self._preset_request_generation += 1
+        self._parameter_change_timer.stop()
+        self._busy_elapsed_timer.stop()
         self._preset_pool.clear()
         self._preset_pool.waitForDone(5000)
         super().closeEvent(event)
