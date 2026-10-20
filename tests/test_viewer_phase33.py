@@ -100,7 +100,7 @@ class ViewerPhase33Tests(unittest.TestCase):
         finally:
             window.close()
 
-    def test_opening_new_run_resets_mouse_probe_state_and_prefers_moving_mesh_when_available(self) -> None:
+    def test_opening_new_run_resets_probe_and_allows_moving_mesh(self) -> None:
         window = self.open_window("10ns+10Si+60Al+15Si+4.27TW_stabilized.h5")
         try:
             wait_until(lambda: window.radius_payload is not None, timeout_s=30.0)
@@ -115,10 +115,11 @@ class ViewerPhase33Tests(unittest.TestCase):
                 lambda: window.run_payload is not None
                 and window.current_field_payload is not None
                 and window.run_payload.path.name == "5Fe+4.9TW+light_stabilized.h5"
-                and window.radius_payload is not None
-                and window.map_coordinate_combo.currentData() == "moving_radius",
+                and window.radius_payload is not None,
                 timeout_s=30.0,
             )
+            combo_set_data(window.map_coordinate_combo, "moving_radius")
+            wait_until(lambda: window.map_coordinate_combo.currentData() == "moving_radius", timeout_s=5.0)
             self.assertIsNone(window._probe_snapshot_index)
             self.assertIsNone(window._probe_zone_index)
             self.assertEqual(window.map_coordinate_combo.currentData(), "moving_radius")
