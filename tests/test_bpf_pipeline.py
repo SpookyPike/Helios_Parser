@@ -96,6 +96,22 @@ class BpfPipelineTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "complete BPF snapshot block"):
                 BpfFile(truncated)
 
+    def test_corrupt_partial_record_after_valid_prefix_is_fatal(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            second_snapshot = BpfFile.snapshot_start(1, source.layout.block_records)
+            tail_start = source._payload_offsets[second_snapshot + 1] - 4
+            raw = BPF_SAMPLE.read_bytes()[:tail_start] + struct.pack("<i", 1234567) + b"garbage"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            corrupted = Path(tmpdir) / "corrupt_partial_tail.bpf"
+            corrupted.write_bytes(raw)
+            with self.assertRaisesRegex(ValueError, "corrupt partial BPF data"):
+                BpfFile(corrupted)
+            output = Path(tmpdir) / "existing.h5"
+            output.write_bytes(b"sentinel")
+            with self.assertRaisesRegex(ValueError, "corrupt partial BPF data"):
+                write_hdf5(corrupted, output, overwrite=True)
+            self.assertEqual(b"sentinel", output.read_bytes())
+
     def test_corruption_in_complete_middle_record_is_fatal(self) -> None:
         with BpfFile(BPF_SAMPLE) as source:
             record_index = BpfFile.snapshot_start(3, source.layout.block_records) + 5

@@ -479,7 +479,7 @@ class BpfFile:
                     f"{self.path} has unrecognized trailing BPF records after {n_snapshots} complete snapshots: "
                     f"lengths={trailer_lengths}."
                 )
-        elif self._partial_tail and not self._valid_partial_final_record(
+        if self._partial_tail and not self._valid_partial_final_record(
             next_record, trailing_count, n_nodes, n_zones, n_freq_bins, block_records
         ):
             raise ValueError(f"{self.path} has corrupt partial BPF data after {n_snapshots} complete snapshots.")
