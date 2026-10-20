@@ -151,9 +151,26 @@ class DerivedController(QtCore.QObject):
             self._schedule_recompute()
 
     def set_run_context(self, context: RunContext) -> None:
+        previous_context_key = self._context.context_key
+        next_context_key = context.context_key
+        revision_changed = bool(self._context.has_run and context.has_run and previous_context_key != next_context_key)
+        if revision_changed:
+            self._recompute_timer.stop()
+            self._tasks.cancel(self._active_task_id)
+            self._active_task_id = None
+            self._active_task_request_key = None
+            self._active_task_token = None
+            self._active_request_key = None
+            self._active_reuse_request_key = None
+            self._pending_request = None
+            self._displayed_result_key = None
+            self._displayed_reuse_request_key = None
+            self._displayed_result = None
         self._context = context.copy()
         if self._workspace_alive:
             self._workspace.set_context(self._context)
+            if revision_changed:
+                self._workspace.clear_results("Run changed; recalculating derived results for the new revision.")
         if not self._context.has_run:
             self._tasks.cancel(self._active_task_id)
             self._active_request_key = None
