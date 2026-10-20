@@ -196,6 +196,7 @@ def _build_field_capabilities(
     run_status: dict[str, object] | None,
     visar_support_metadata: dict[str, object] | None,
     velocity: np.ndarray,
+    available_material_properties: tuple[str, ...] = (),
 ) -> DerivedFieldCapabilities:
     optional_available = tuple(sorted(name for name, values in optional_field_values.items() if values is not None))
     missing_optional = tuple(sorted(name for name, values in optional_field_values.items() if values is None))
@@ -269,6 +270,7 @@ def _build_field_capabilities(
         radiation_components_available=all(optional_field_values.get(name) is not None for name in ("radiation_heating", "radiation_cooling")),
         radiation_net_heating_available=optional_field_values.get("radiation_net_heating") is not None,
         kinetic_energy_available=optional_field_values.get("kinetic_energy") is not None,
+        available_material_properties=tuple(available_material_properties),
         consistency=consistency,
     )
 
@@ -326,6 +328,13 @@ def _build_wave_physics_capabilities(field_capabilities: DerivedFieldCapabilitie
         radiation_support_level=radiation_support_level,
         notes=tuple(notes),
     )
+
+
+def _optional_zone_material_property(regions: dict[str, object], name: str, n_zones: int) -> np.ndarray | None:
+    values = regions.get(name)
+    if values is None:
+        return None
+    return build_zone_property_from_regions(regions, np.asarray(values, dtype=np.float64), n_zones)
 
 
 def load_run_data(path: str | Path, *, revision: RunRevision | None = None) -> DerivedRunData:
@@ -513,21 +522,9 @@ def load_run_data(path: str | Path, *, revision: RunRevision | None = None) -> D
         assert electron_density is not None and mean_charge is not None
         available_fields = tuple(str(name) for name in fields)
         n_zones = int(summary["n_zones"])
-        zone_atomic_weight = build_zone_property_from_regions(
-            regions,
-            np.asarray(regions["atomic_weight"], dtype=np.float64),
-            n_zones,
-        )
-        zone_initial_density = build_zone_property_from_regions(
-            regions,
-            np.asarray(regions["initial_mass_density"], dtype=np.float64),
-            n_zones,
-        )
-        zone_initial_temperature = build_zone_property_from_regions(
-            regions,
-            np.asarray(regions["initial_temperature"], dtype=np.float64),
-            n_zones,
-        )
+        zone_atomic_weight = _optional_zone_material_property(regions, "atomic_weight", n_zones)
+        zone_initial_density = _optional_zone_material_property(regions, "initial_mass_density", n_zones)
+        zone_initial_temperature = _optional_zone_material_property(regions, "initial_temperature", n_zones)
         laser_entry = infer_laser_entry(
             metadata=metadata,
             n_zones=n_zones,
@@ -541,6 +538,13 @@ def load_run_data(path: str | Path, *, revision: RunRevision | None = None) -> D
             run_status=None if run_status is None else dict(run_status),
             visar_support_metadata=None if visar_support_metadata is None else dict(visar_support_metadata),
             velocity=velocity,
+            available_material_properties=tuple(
+                name for name, values in (
+                    ("atomic_weight", zone_atomic_weight),
+                    ("initial_mass_density", zone_initial_density),
+                    ("initial_temperature", zone_initial_temperature),
+                ) if values is not None
+            ),
         )
         wave_physics_capabilities = _build_wave_physics_capabilities(capability_summary)
     return DerivedRunData(

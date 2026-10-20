@@ -199,10 +199,10 @@ def _validate_spectroscopy_module_result(result: object) -> None:
 
 
 _MODULE_CONTRACTS: tuple[DerivedModuleContract[object], ...] = (
-    DerivedModuleContract(name="xrd", compute=estimate_xrd, validate=_validate_xrd_module_result),
-    DerivedModuleContract(name="plasmon", compute=evaluate_plasmon_regime, validate=_validate_module_result),
-    DerivedModuleContract(name="transmission", compute=evaluate_transmission, validate=_validate_module_result),
-    DerivedModuleContract(name="spectroscopy", compute=evaluate_spectroscopy, validate=_validate_spectroscopy_module_result),
+    DerivedModuleContract(name="xrd", compute=estimate_xrd, validate=_validate_xrd_module_result, required_material_properties=("zone_initial_density_g_cm3",)),
+    DerivedModuleContract(name="plasmon", compute=evaluate_plasmon_regime, validate=_validate_module_result, required_material_properties=("zone_atomic_weight",)),
+    DerivedModuleContract(name="transmission", compute=evaluate_transmission, validate=_validate_module_result, required_capabilities=("density", "electron_density")),
+    DerivedModuleContract(name="spectroscopy", compute=evaluate_spectroscopy, validate=_validate_spectroscopy_module_result, required_material_properties=("zone_atomic_weight",)),
 )
 _PREPARED_MODULE_CONTRACTS: tuple[DerivedModuleContract[object], ...] = (
     DerivedModuleContract(

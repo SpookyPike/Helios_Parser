@@ -99,6 +99,7 @@ class DerivedFieldCapabilities:
     radiation_components_available: bool = False
     radiation_net_heating_available: bool = False
     kinetic_energy_available: bool = False
+    available_material_properties: tuple[str, ...] = ()
     consistency: DerivedFieldConsistency = field(default_factory=DerivedFieldConsistency)
 
 
@@ -167,9 +168,9 @@ class DerivedRunData:
     radius_edge_cm: np.ndarray | None = None
     zone_region_id: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=np.int32))
     zone_material_index: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=np.int32))
-    zone_atomic_weight: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=np.float64))
-    zone_initial_density_g_cm3: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=np.float64))
-    zone_initial_temperature_ev: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=np.float64))
+    zone_atomic_weight: np.ndarray | None = field(default_factory=lambda: np.empty(0, dtype=np.float64))
+    zone_initial_density_g_cm3: np.ndarray | None = field(default_factory=lambda: np.empty(0, dtype=np.float64))
+    zone_initial_temperature_ev: np.ndarray | None = field(default_factory=lambda: np.empty(0, dtype=np.float64))
     laser_entry: dict[str, Any] | None = None
     run_status: dict[str, Any] | None = None
     visar_support_metadata: dict[str, Any] | None = None

@@ -23,12 +23,17 @@ class DerivedModuleContract(Generic[ResultT]):
     compute: Callable[..., ResultT]
     validate: Callable[[ResultT], None]
     required_capabilities: tuple[str, ...] = ()
+    required_material_properties: tuple[str, ...] = ()
     supports_lazy_time_plots: bool = True
 
     def capabilities_met(self, dataset: object) -> bool:
         field_capabilities = getattr(dataset, "field_capabilities", None)
+        if field_capabilities is None and self.required_capabilities:
+            return False
+        if any(getattr(dataset, name, None) is None for name in self.required_material_properties):
+            return False
         if field_capabilities is None:
-            return len(self.required_capabilities) == 0
+            return True
         available = set(getattr(field_capabilities, "available_fields", ()))
         optional_available = set(getattr(field_capabilities, "optional_available_fields", ()))
         flags = {
