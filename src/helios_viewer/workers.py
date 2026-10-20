@@ -25,7 +25,7 @@ class RunWorker(QtCore.QObject):
     field_trace_loaded = QtCore.Signal(object)
     diagnostic_loaded = QtCore.Signal(object)
     status = QtCore.Signal(str, int, object)
-    error = QtCore.Signal(str, str, int, object)
+    error = QtCore.Signal(str, str, int, object, object)
 
     def __init__(self) -> None:
         super().__init__()
@@ -35,11 +35,11 @@ class RunWorker(QtCore.QObject):
     def _emit_status(self, message: str, generation: int) -> None:
         self.status.emit(str(message), int(generation), self._revision)
 
-    def _emit_error(self, exc: Exception, generation: int) -> None:
-        self.error.emit(str(exc), traceback.format_exc(), int(generation), self._revision)
+    def _emit_error(self, exc: Exception, generation: int, request_key: tuple[object, ...]) -> None:
+        self.error.emit(str(exc), traceback.format_exc(), int(generation), self._revision, request_key)
 
-    @QtCore.Slot(str, int, object)
-    def open_run(self, path_text: str, generation: int, revision: RunRevision) -> None:
+    @QtCore.Slot(str, int, object, object)
+    def open_run(self, path_text: str, generation: int, revision: RunRevision, request_key: tuple[object, ...]) -> None:
         try:
             self._close_current_run()
             self._revision = revision
@@ -74,20 +74,19 @@ class RunWorker(QtCore.QObject):
                 run_status=run.get_run_status(),
                 visar_support_metadata=asdict(run.get_visar_support_metadata()),
                 revision=revision,
+                request_key=request_key,
             )
             self.run_opened.emit(payload)
             LOGGER.info("Opened %s in %.3f s", path.name, time.perf_counter() - started)
             self._emit_status(f"Opened {path.name}", generation)
         except Exception as exc:
-            self._emit_error(exc, generation)
+            self._emit_error(exc, generation, request_key)
 
-    @QtCore.Slot(str, int)
-    def load_field(self, field_name: str, generation: int) -> None:
+    @QtCore.Slot(str, int, object)
+    def load_field(self, field_name: str, generation: int, request_key: tuple[object, ...]) -> None:
         try:
             if self._run is None:
-                LOGGER.debug("Ignoring field load %s for generation %s because no run is open.", field_name, generation)
-                self._emit_status(f"Ignored stale field request: {field_name}", generation)
-                return
+                raise RuntimeError(f"Cannot load field {field_name}: no run is open.")
             self._emit_status(f"Loading field: {field_name}", generation)
             started = time.perf_counter()
             edge_data: np.ndarray | None = None
@@ -108,25 +107,19 @@ class RunWorker(QtCore.QObject):
                 data=data,
                 edge_data=edge_data,
                 revision=self._revision,
+                request_key=request_key,
             )
             self.field_loaded.emit(payload)
             LOGGER.info("Loaded field %s in %.3f s", field_name, time.perf_counter() - started)
             self._emit_status(f"Loaded field: {field_name}", generation)
         except Exception as exc:
-            self._emit_error(exc, generation)
+            self._emit_error(exc, generation, request_key)
 
-    @QtCore.Slot(str, int, int)
-    def load_snapshot_field(self, field_name: str, snapshot_index: int, generation: int) -> None:
+    @QtCore.Slot(str, int, int, object)
+    def load_snapshot_field(self, field_name: str, snapshot_index: int, generation: int, request_key: tuple[object, ...]) -> None:
         try:
             if self._run is None:
-                LOGGER.debug(
-                    "Ignoring snapshot field load %s[%s] for generation %s because no run is open.",
-                    field_name,
-                    snapshot_index,
-                    generation,
-                )
-                self._emit_status(f"Ignored stale snapshot field request: {field_name}", generation)
-                return
+                raise RuntimeError(f"Cannot load snapshot field {field_name}[{snapshot_index}]: no run is open.")
             normalized_snapshot = self._run._normalize_snapshot_index(int(snapshot_index))
             self._emit_status(f"Loading snapshot field: {field_name}[{normalized_snapshot}]", generation)
             started = time.perf_counter()
@@ -149,20 +142,19 @@ class RunWorker(QtCore.QObject):
                 data=data,
                 edge_data=edge_data,
                 revision=self._revision,
+                request_key=request_key,
             )
             self.snapshot_field_loaded.emit(payload)
             LOGGER.info("Loaded snapshot field %s[%s] in %.3f s", field_name, normalized_snapshot, time.perf_counter() - started)
             self._emit_status(f"Loaded snapshot field: {field_name}[{normalized_snapshot}]", generation)
         except Exception as exc:
-            self._emit_error(exc, generation)
+            self._emit_error(exc, generation, request_key)
 
-    @QtCore.Slot(str, int, int)
-    def load_field_trace(self, field_name: str, zone_index: int, generation: int) -> None:
+    @QtCore.Slot(str, int, int, object)
+    def load_field_trace(self, field_name: str, zone_index: int, generation: int, request_key: tuple[object, ...]) -> None:
         try:
             if self._run is None:
-                LOGGER.debug("Ignoring field trace load %s[:,%s] for generation %s because no run is open.", field_name, zone_index, generation)
-                self._emit_status(f"Ignored stale field trace request: {field_name}", generation)
-                return
+                raise RuntimeError(f"Cannot load field trace {field_name}[:,{zone_index}]: no run is open.")
             self._emit_status(f"Loading field trace: {field_name} zone {int(zone_index) + 1}", generation)
             started = time.perf_counter()
             data = np.asarray(self._run.get_time_trace(field_name, int(zone_index)), dtype=np.float64)
@@ -173,20 +165,19 @@ class RunWorker(QtCore.QObject):
                 unit=self._run.get_field_unit(field_name),
                 data=data,
                 revision=self._revision,
+                request_key=request_key,
             )
             self.field_trace_loaded.emit(payload)
             LOGGER.info("Loaded field trace %s[:,%s] in %.3f s", field_name, zone_index, time.perf_counter() - started)
             self._emit_status(f"Loaded field trace: {field_name} zone {int(zone_index) + 1}", generation)
         except Exception as exc:
-            self._emit_error(exc, generation)
+            self._emit_error(exc, generation, request_key)
 
-    @QtCore.Slot(str, int)
-    def load_diagnostic(self, path: str, generation: int) -> None:
+    @QtCore.Slot(str, int, object)
+    def load_diagnostic(self, path: str, generation: int, request_key: tuple[object, ...]) -> None:
         try:
             if self._run is None:
-                LOGGER.debug("Ignoring diagnostic load %s for generation %s because no run is open.", path, generation)
-                self._emit_status(f"Ignored stale diagnostic request: {path}", generation)
-                return
+                raise RuntimeError(f"Cannot load diagnostic {path}: no run is open.")
             self._emit_status(f"Loading diagnostic: {path}", generation)
             started = time.perf_counter()
             payload = DiagnosticPayload(
@@ -195,12 +186,13 @@ class RunWorker(QtCore.QObject):
                 unit=self._run.get_diagnostic_unit(path),
                 data=np.asarray(self._run.get_diagnostic(path)),
                 revision=self._revision,
+                request_key=request_key,
             )
             self.diagnostic_loaded.emit(payload)
             LOGGER.info("Loaded diagnostic %s in %.3f s", path, time.perf_counter() - started)
             self._emit_status(f"Loaded diagnostic: {path}", generation)
         except Exception as exc:
-            self._emit_error(exc, generation)
+            self._emit_error(exc, generation, request_key)
 
     @QtCore.Slot()
     def close_run(self) -> None:

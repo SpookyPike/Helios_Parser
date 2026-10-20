@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
 
 import numpy as np
@@ -9,6 +10,7 @@ import _test_bootstrap  # noqa: F401
 
 from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_settings, wait_until
 from helios_parser import HeliosRun
+from helios.runtime import RunRevision
 from helios_viewer.controller import RunController
 from helios_viewer.main_window import HeliosViewerMainWindow, _REFRESH_FIELD_MAP, _REFRESH_LINE
 from helios_viewer.models import DiagnosticPayload, FieldPayload, FieldTracePayload, OpenRunPayload, SnapshotFieldPayload
@@ -145,6 +147,84 @@ class ViewerWave2Tests(unittest.TestCase):
             self.assertIs(controller.snapshot_field_cache[("density", 4)], snapshot_payload)
             self.assertIs(controller.field_trace_cache[("density", 1)], trace_payload)
             self.assertIsNone(controller.field_cache.get("density"))
+        finally:
+            controller.shutdown()
+
+    def test_equivalent_pending_reads_coalesce_and_retry_after_error(self) -> None:
+        controller = RunController()
+        try:
+            controller.worker_thread.quit()
+            controller.worker_thread.wait(2000)
+            controller._run_generation = 7
+            controller._run_revision = RunRevision.create(HDF5_ROOT / "Cu_0166_stabilized.h5")
+            emitted: list[tuple[object, ...]] = []
+            controller._field_requested.connect(lambda *args: emitted.append(tuple(args)))
+
+            for _ in range(100):
+                controller.load_field("density")
+
+            self.assertEqual(len(emitted), 1)
+            self.assertEqual(controller._pending_jobs, 1)
+            self.assertEqual(len(controller._pending_requests), 1)
+            first_key = emitted[0][-1]
+
+            controller._handle_error("read failed", "temporary", 7, controller._run_revision, first_key)
+            self.assertEqual(controller._pending_jobs, 0)
+            self.assertFalse(controller._pending_requests)
+
+            controller.load_field("density")
+            self.assertEqual(len(emitted), 2)
+            self.assertEqual(controller._pending_jobs, 1)
+        finally:
+            controller.shutdown()
+
+    def test_distinct_pending_reads_have_independent_completion_identity(self) -> None:
+        controller = RunController()
+        try:
+            controller.worker_thread.quit()
+            controller.worker_thread.wait(2000)
+            controller._run_generation = 8
+            controller._run_revision = RunRevision.create(HDF5_ROOT / "Cu_0166_stabilized.h5")
+            emitted: list[tuple[object, ...]] = []
+            controller._field_requested.connect(lambda *args: emitted.append(tuple(args)))
+            busy_values: list[bool] = []
+            controller.busy_changed.connect(busy_values.append)
+
+            controller.load_field("density")
+            controller.load_field("velocity")
+            self.assertEqual(len(emitted), 2)
+            self.assertEqual(controller._pending_jobs, 2)
+
+            controller._handle_error("read failed", "density unavailable", 8, controller._run_revision, emitted[0][-1])
+            self.assertEqual(controller._pending_jobs, 1)
+            self.assertEqual(len(controller._pending_requests), 1)
+            self.assertEqual(busy_values, [True])
+        finally:
+            controller.shutdown()
+
+    def test_negative_and_positive_equivalent_selections_share_pending_reads(self) -> None:
+        controller = RunController()
+        try:
+            controller.worker_thread.quit()
+            controller.worker_thread.wait(2000)
+            controller._run_generation = 9
+            controller._run_revision = RunRevision.create(HDF5_ROOT / "Cu_0166_stabilized.h5")
+            controller.run_payload = SimpleNamespace(summary={"n_snapshots": 461, "n_zones": 300})
+            snapshots: list[tuple[object, ...]] = []
+            traces: list[tuple[object, ...]] = []
+            controller._snapshot_field_requested.connect(lambda *args: snapshots.append(tuple(args)))
+            controller._field_trace_requested.connect(lambda *args: traces.append(tuple(args)))
+
+            controller.load_snapshot_field("density", -1)
+            controller.load_snapshot_field("density", 460)
+            controller.load_field_trace("density", -1)
+            controller.load_field_trace("density", 299)
+
+            self.assertEqual(len(snapshots), 1)
+            self.assertEqual(snapshots[0][1], 460)
+            self.assertEqual(len(traces), 1)
+            self.assertEqual(traces[0][1], 299)
+            self.assertEqual(controller._pending_jobs, 2)
         finally:
             controller.shutdown()
 
