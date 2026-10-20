@@ -30,6 +30,7 @@ CORE_NAMES = {
 }
 TIMEOUT_SECONDS = 120
 TIMEOUT_OVERRIDES = {
+    "test_app_phase412.py": 300,
     "test_validation.py": 300,
     "test_viewer_payloads.py": 300,
     "test_wave6_derived.py": 300,

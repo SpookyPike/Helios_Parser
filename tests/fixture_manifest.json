@@ -34,6 +34,22 @@
       "dimensions": {"zones": 500, "snapshots": "header/iterator validated"},
       "provenance": "ignored local historical fixture; not included in a clean checkout"
     },
+    "local_cu14_log": {
+      "path": "25Cu+1.4TW.log",
+      "size_bytes": 16839197,
+      "sha256": "9fa814394ece3c47b0de6e8543aeb5a581cc8e2c14652e0af27a930f2ac0fda5",
+      "format": "HELIOS LOG",
+      "dimensions": {"zones": 50, "snapshots": 901},
+      "provenance": "ignored local historical fixture; not included in a clean checkout"
+    },
+    "local_si15_log": {
+      "path": "10ns+15Si+70Al+10Si+4.27TW.log",
+      "size_bytes": 268463956,
+      "sha256": "9dad64407540893973cf6166dc1daee5de6551da53bf2adae0130eff7ad1b200",
+      "format": "HELIOS LOG",
+      "dimensions": {"zones": 1300, "snapshots": 701},
+      "provenance": "ignored local historical fixture; not included in a clean checkout"
+    },
     "local_si_log": {
       "path": "10ns+10Si+60Al+15Si+4.27TW.log",
       "size_bytes": 268467946,
@@ -132,8 +148,9 @@
     "test_run_status.py": ["local_fe_log", "local_cu1e17_log", "local_cu1e17_cyl_log", "local_h5_cu"],
     "test_coordinate_semantics.py": ["local_cu1e17_log", "local_cu1e17_cyl_log", "local_h5_cu"],
     "test_derived_backend_optimization.py": ["local_h5_cu1e17_cyl"],
+    "test_app_phase412.py": ["local_h5_50al_root"],
     "test_transmission_xcom.py": ["local_h5_fe", "local_h5_cu", "local_h5_50al_root"],
-    "test_validation.py": ["local_fe_log", "local_si_log", "local_cu0166_log"],
+    "test_validation.py": ["local_fe_log", "local_si_log", "local_cu0166_log", "local_cu14_log", "local_si15_log"],
     "test_wave4_ingest.py": ["local_fe_log", "local_h5_cu"],
     "test_derived_phase412.py": ["local_h5_50al_root", "local_h5_cu_root", "local_h5_cu", "local_h5_si"],
     "test_wave6_derived.py": ["local_h5_50al_root", "local_h5_cu_root"]

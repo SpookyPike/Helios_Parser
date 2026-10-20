@@ -75,6 +75,10 @@ class TestSuiteRunnerTests(unittest.TestCase):
             self.assertTrue(env["HELIOS_TEST_SETTINGS_DIR"].startswith(tmp))
             self.assertTrue(Path(env["HELIOS_TEST_SETTINGS_DIR"]).is_dir())
 
+    def test_known_heavy_qt_suites_have_named_timeout_overrides(self) -> None:
+        self.assertEqual(run_test_suite.TIMEOUT_OVERRIDES["test_app_phase412.py"], 300)
+        self.assertEqual(run_test_suite.TIMEOUT_OVERRIDES["test_wave6_derived.py"], 300)
+
     def test_runner_records_success_and_signal(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             report = Path(tmp) / "reports"
