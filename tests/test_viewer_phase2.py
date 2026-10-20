@@ -92,7 +92,10 @@ class ViewerPhase2Tests(unittest.TestCase):
             combo_set_data(window.map_orientation_combo, "time_x_coord_y")
             combo_set_data(window.map_coordinate_combo, "moving_radius")
             window.plot_tabs.setCurrentWidget(window.mouse_tab)
-            process_events()
+            wait_until(
+                lambda: not window._refresh_timer.isActive() and window._pending_refresh_flags == 0,
+                timeout_s=5.0,
+            )
 
             render_count = window.field_map_widget.render_call_count
             mesh_count = window.field_map_widget.mesh_render_count
