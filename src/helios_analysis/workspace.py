@@ -2922,27 +2922,19 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
     def _plasmon_request_control_has_active_input(self) -> bool:
         for widget in getattr(self, "_plasmon_request_controls", ()):
             if isinstance(widget, QtWidgets.QAbstractSpinBox):
-                if widget.hasFocus():
-                    return True
                 line_edit = widget.lineEdit()
-                if line_edit is not None and line_edit.hasFocus():
+                if line_edit is not None and line_edit.hasFocus() and line_edit.isModified():
                     return True
             elif isinstance(widget, _PopupAwareComboBox):
-                if widget.hasFocus() or widget.is_popup_visible():
+                if widget.is_popup_visible():
                     return True
             elif isinstance(widget, QtWidgets.QComboBox):
-                if widget.hasFocus():
-                    return True
                 view = widget.view()
-                if view is not None and (view.isVisible() or view.window().isVisible()):
+                if view is not None and view.isVisible():
                     return True
             elif isinstance(widget, QtWidgets.QAbstractItemView):
-                if widget.hasFocus():
-                    return True
                 if widget.viewport() is not None and widget.viewport().hasFocus():
                     return True
-            elif isinstance(widget, QtWidgets.QWidget) and widget.hasFocus():
-                return True
         return False
 
     def _should_defer_plasmon_recompute(self, sender: object | None) -> bool:

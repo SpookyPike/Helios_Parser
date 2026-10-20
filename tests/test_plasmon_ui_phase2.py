@@ -9,9 +9,10 @@ from unittest import mock
 import numpy as np
 
 try:
-    from PySide6 import QtCore, QtWidgets  # type: ignore
+    from PySide6 import QtCore, QtTest, QtWidgets  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover - optional GUI dependency in CI/container
     QtCore = None  # type: ignore
+    QtTest = None  # type: ignore
     QtWidgets = None  # type: ignore
 
 import _test_bootstrap  # noqa: F401
@@ -26,7 +27,7 @@ from helios.services.derived.plasmon_config import (
     PLASMON_OBSERVABLE_MODE_XRTS,
     PLASMON_OBSERVABLE_MODE_XRTS_ARTICLE_NATIVE,
 )
-from helios.services.derived.models import DerivedRunData, DerivedWarning
+from helios.services.derived.models import DerivedFieldCapabilities, DerivedRunData, DerivedWarning
 from helios.services.derived.plasmon_validation import q_to_angle_deg, uniform_al_dataset
 
 if QtWidgets is not None:
@@ -87,6 +88,17 @@ def _synthetic_dataset() -> tuple[DerivedRunData, RunContext]:
         zone_initial_density_g_cm3=np.full(n_zones, 1.0, dtype=np.float64),
         zone_initial_temperature_ev=np.full(n_zones, 1.0, dtype=np.float64),
         laser_entry=None,
+        field_capabilities=DerivedFieldCapabilities(
+            available_fields=(
+                "density",
+                "zone_width",
+                "velocity",
+                "temperature_e",
+                "temperature_i",
+                "electron_density",
+                "mean_charge",
+            ),
+        ),
     )
     context = RunContext(
         path=Path("synthetic_plasmon.h5"),
@@ -223,7 +235,7 @@ class PlasmonUiPhase2Tests(unittest.TestCase):
         self.assertGreater(workspace.plasmon_tab.width(), workspace.plasmon_sidebar.width())
         workspace.close()
 
-    def test_workspace_prefers_policy_comparison_plot_when_enabled(self) -> None:
+    def test_workspace_exposes_policy_comparison_when_enabled(self) -> None:
         dataset, context = uniform_al_dataset(2.7, 0.3)
         parameters = DerivedAnalysisParameters(
             plasmon_model="rpa",
@@ -249,6 +261,11 @@ class PlasmonUiPhase2Tests(unittest.TestCase):
         workspace.set_result(result)
         workspace.result_tabs.setCurrentWidget(workspace.plasmon_tab)
         process_events(50)
+        self.assertIn("spectrum_compare_policies", _combo_keys(workspace.plasmon_plot_panel.time_combo))
+        self.assertTrue(_combo_item_enabled(workspace.plasmon_plot_panel.time_combo, "spectrum_compare_policies"))
+        workspace.plasmon_plot_panel.time_combo.setCurrentIndex(
+            workspace.plasmon_plot_panel.time_combo.findData("spectrum_compare_policies")
+        )
         self.assertEqual(workspace.plasmon_plot_panel.time_combo.currentData(), "spectrum_compare_policies")
         workspace.close()
 
@@ -307,6 +324,7 @@ class PlasmonUiPhase2Tests(unittest.TestCase):
         workspace = HeliosDerivedWorkspace()
         workspace.set_context(context)
         workspace.show()
+        workspace.setFocus()
         workspace.set_result(result)
         workspace.result_tabs.setCurrentWidget(workspace.plasmon_tab)
         process_events(50)
@@ -375,7 +393,7 @@ class PlasmonUiPhase2Tests(unittest.TestCase):
         assert line_edit is not None
         original_text = line_edit.text()
         line_edit.selectAll()
-        line_edit.setText("9.5")
+        QtTest.QTest.keyClicks(line_edit, "9.5")
         process_events(20)
         workspace._populate_plasmon(result.plasmon)
         self.assertTrue(line_edit.hasFocus())
