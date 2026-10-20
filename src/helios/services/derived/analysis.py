@@ -373,6 +373,7 @@ def compute_analysis_result(
             parameters=parameters,
             snapshot_index=snapshot_index,
             geometry=geometry,
+            selected_zone_count=int(selection.selected_zone_count),
             requested_time_plot_modules=requested_time_modules,
             requested_modules=requested_analysis_modules,
             base_result=base_result,
@@ -493,6 +494,7 @@ def refresh_analysis_result_for_snapshot(
             parameters=parameters,
             snapshot_index=snapshot_index,
             geometry=geometry,
+            selected_zone_count=int(selection.selected_zone_count),
             requested_time_plot_modules=frozenset(),
             requested_modules=None if requested_modules is None else frozenset(str(name) for name in requested_modules),
             base_result=base_result,
@@ -546,6 +548,7 @@ def _compute_module_results(
     parameters: DerivedAnalysisParameters,
     snapshot_index: int,
     geometry,
+    selected_zone_count: int,
     requested_time_plot_modules: frozenset[str],
     requested_modules: frozenset[str] | None,
     base_result: DerivedAnalysisResult | None,
@@ -572,6 +575,8 @@ def _compute_module_results(
                 availability.append(base_availability.get(contract.name, DerivedModuleAvailability(contract.name, True)))
                 continue
             missing = ("not loaded for the active tab",)
+        elif int(selected_zone_count) <= 0:
+            missing = ("no zones remain after the active selection",)
         else:
             missing = contract.missing_requirements(dataset)
         if missing:

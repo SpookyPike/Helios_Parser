@@ -639,7 +639,7 @@ class DerivedPlotPanel(QtWidgets.QWidget):
             expected_options=self._expected_profile_options,
             missing_reason=self._missing_profile_reason,
         )
-        if self.time_combo.count():
+        if self._time_bundles:
             self.time_combo.setEnabled(True)
             self.time_plot.setEnabled(True)
             self.reset_time_button.setEnabled(True)
@@ -655,7 +655,7 @@ class DerivedPlotPanel(QtWidgets.QWidget):
             self.time_plot.clear_cursor_marker()
             self.time_plot.setEnabled(False)
             self.reset_time_button.setEnabled(False)
-        if self.profile_combo.count():
+        if self._profile_bundles:
             self.profile_combo.setEnabled(True)
             self.profile_plot.setEnabled(True)
             self.reset_profile_button.setEnabled(True)

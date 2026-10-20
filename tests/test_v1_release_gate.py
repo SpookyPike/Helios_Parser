@@ -17,7 +17,11 @@ import _test_bootstrap  # noqa: F401
 from helios.services.derived import analysis as analysis_module
 from helios.services.derived.analysis import DerivedAnalysisParameters
 from helios.services.derived.module_contract import DerivedModuleContract
-from helios.services.derived.physical_sanity import validate_spectroscopy_result, validate_xrd_result
+from helios.services.derived.physical_sanity import (
+    validate_shock_result,
+    validate_spectroscopy_result,
+    validate_xrd_result,
+)
 
 if QtWidgets is not None:
     from _viewer_test_utils import get_app, process_events, reset_test_settings
@@ -66,6 +70,14 @@ class V1FeatureGateTests(unittest.TestCase):
 
 
 class V1PhysicalSanityTests(unittest.TestCase):
+    def test_no_shock_detection_is_a_valid_empty_result(self) -> None:
+        no_detection = SimpleNamespace(
+            activation_snapshot_index=None,
+            position_cm=np.asarray([np.nan, np.nan]),
+            speed_magnitude_cm_s=np.asarray([np.nan, np.nan]),
+        )
+        validate_shock_result(no_detection)
+
     def test_xrd_sanity_rejects_impossible_compression(self) -> None:
         result = SimpleNamespace(
             wavelength_angstrom=1.5,
@@ -113,8 +125,8 @@ class V1BackendFeatureGateTests(unittest.TestCase):
         dataset = SimpleNamespace(path=Path("dummy.h5"), time_s=np.asarray([0.0], dtype=np.float64))
         context = SimpleNamespace()
         geometry = SimpleNamespace()
-        selection = SimpleNamespace()
-        shock = SimpleNamespace(warnings=())
+        selection = SimpleNamespace(selected_zone_count=1)
+        shock = SimpleNamespace(method="synthetic", warnings=())
         with (
             mock.patch.object(analysis_module, "_MODULE_CONTRACTS", contracts),
             mock.patch.object(
