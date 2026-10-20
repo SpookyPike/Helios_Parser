@@ -16,6 +16,9 @@ dist/
 tmp_*/
 _tmp_*/
 
+# Generated Python package metadata
+*.egg-info/
+
 # Large local raw datasets and derived HDF5 work products
 *.log
 *.h5
