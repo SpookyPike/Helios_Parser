@@ -33,6 +33,8 @@ jobs:
             --only test_qt_lifecycle.py `
             --only test_accessibility_controls.py `
             --only test_w11_layout.py `
+            --only test_w11_theme_copy.py `
+            --only test_packaged_scientific_resources.py `
             --report-dir $report
       - name: Upload focused test manifest and logs
         if: always()

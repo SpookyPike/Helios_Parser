@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
+import tempfile
 import unittest
 from importlib import resources
 from pathlib import Path
@@ -13,6 +15,7 @@ from helios.services.derived.plasmon_reference_data import (
     USER_DRIVEN_AL_DISPERSION_REFERENCE,
 )
 from helios.services.derived.xcom_hook import fallback_table_available
+from scripts.validate_windows_portable import verify_portable_scientific_resources
 
 
 class PackagedScientificResourceTests(unittest.TestCase):
@@ -73,6 +76,29 @@ class PackagedScientificResourceTests(unittest.TestCase):
         self.assertGreaterEqual(
             spec.count('"helios/services/derived/reference_data/plasmon"'), 2
         )
+
+    def test_portable_resource_hash_check_rejects_missing_or_changed_tables(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        source_resources = (
+            repo_root / "src/helios/services/derived/resources",
+            repo_root / "src/helios/services/derived/reference_data/plasmon",
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app_root = Path(tmpdir) / "portable" / "_internal"
+            expected = []
+            for resource_root in source_resources:
+                for source in resource_root.rglob("*.json"):
+                    relative = source.relative_to(repo_root / "src")
+                    bundled = app_root / relative
+                    bundled.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(source, bundled)
+                    expected.append(bundled)
+
+            verify_portable_scientific_resources(app_root.parent, repo_root)
+            self.assertTrue(expected)
+            expected[0].write_bytes(b"changed payload")
+            with self.assertRaisesRegex(RuntimeError, "hash mismatch"):
+                verify_portable_scientific_resources(app_root.parent, repo_root)
 
 
 if __name__ == "__main__":
