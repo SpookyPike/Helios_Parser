@@ -27,6 +27,12 @@ def _finite_array(values: object, name: str) -> np.ndarray:
 def validate_shock_result(result: object) -> None:
     """Reject shock tracks with non-finite or superluminal-scale speeds."""
 
+    # No activation is a normal no-detection result. Keep the per-snapshot
+    # analyses available and let callers surface the detector warning instead
+    # of turning absence of a front into a failed shared analysis.
+    if getattr(result, "activation_snapshot_index", None) is None:
+        return
+
     position = np.asarray(getattr(result, "position_cm"), dtype=np.float64)
     speed = np.asarray(getattr(result, "speed_magnitude_cm_s"), dtype=np.float64)
     finite_position = position[np.isfinite(position)]

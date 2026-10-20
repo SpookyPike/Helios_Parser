@@ -10,7 +10,7 @@ import numpy as np
 
 from helios.cache import get_session_raw_data_cache, run_identity_for_path
 from helios.instrumentation import increment_counter, timed_block
-from helios.runtime import RunContext
+from helios.runtime import RunContext, RunRevision
 from helios.services.derived.models import (
     DerivedFieldCapabilities,
     DerivedFieldConsistency,
@@ -33,7 +33,8 @@ _OPTIONAL_FIELD_DTYPES: dict[str, object] = {
     "pressure_i": np.float64,
     "pressure_e": np.float64,
     "pressure_radiation": np.float64,
-    "pressure": np.float64,
+    "plasma_pressure_j_cm3": np.float64,
+    "total_pressure_j_cm3": np.float64,
     "artificial_viscosity": np.float64,
     "ion_energy": np.float64,
     "electron_energy": np.float64,
@@ -48,13 +49,48 @@ _OPTIONAL_FIELD_DTYPES: dict[str, object] = {
     "laser_source": np.float64,
     "laser_deposition": np.float64,
 }
+OPTIONAL_DERIVED_FIELD_NAMES = frozenset(_OPTIONAL_FIELD_DTYPES)
+
+
+def validate_derived_run_shapes(dataset: DerivedRunData) -> None:
+    """Reject inconsistent shared grids before any analysis indexes them."""
+
+    n_snapshots = int(np.asarray(dataset.time_s).size)
+    n_zones = int(dataset.summary.get("n_zones", np.asarray(dataset.static_x_cm).size))
+    expected = (n_snapshots, n_zones)
+    for name in (
+        "zone_width_cm",
+        "density_g_cm3",
+        "velocity_cm_s",
+        "temperature_e_ev",
+        "temperature_i_ev",
+        "electron_density_cm3",
+        "mean_charge",
+    ):
+        values = getattr(dataset, name)
+        if values is None or np.asarray(values).shape != expected:
+            actual = None if values is None else np.asarray(values).shape
+            raise ValueError(f"Derived run field {name} has shape {actual}; expected {expected}.")
+    for name, values, expected_shape in (
+        ("static_x_cm", dataset.static_x_cm, (n_zones,)),
+        ("static_x_edge_cm", dataset.static_x_edge_cm, (n_zones + 1,)),
+        ("zone_region_id", dataset.zone_region_id, (n_zones,)),
+        ("zone_material_index", dataset.zone_material_index, (n_zones,)),
+    ):
+        if np.asarray(values).shape != expected_shape:
+            raise ValueError(f"Derived run grid {name} has shape {np.asarray(values).shape}; expected {expected_shape}.")
+    for name in _OPTIONAL_FIELD_ATTRS.values():
+        values = getattr(dataset, name, None)
+        if values is not None and np.asarray(values).shape != expected:
+            raise ValueError(f"Optional derived field {name} has shape {np.asarray(values).shape}; expected {expected}.")
 
 _OPTIONAL_FIELD_ATTRS: dict[str, str] = {
     "temperature_radiation": "temperature_radiation_ev",
     "pressure_i": "pressure_i_j_cm3",
     "pressure_e": "pressure_e_j_cm3",
     "pressure_radiation": "pressure_radiation_j_cm3",
-    "pressure": "pressure_total_j_cm3",
+    "plasma_pressure_j_cm3": "pressure_plasma_j_cm3",
+    "total_pressure_j_cm3": "pressure_total_j_cm3",
     "artificial_viscosity": "artificial_viscosity_j_cm3",
     "ion_energy": "ion_energy_j_g",
     "electron_energy": "electron_energy_j_g",
@@ -66,7 +102,7 @@ _OPTIONAL_FIELD_ATTRS: dict[str, str] = {
     "radiation_cooling": "radiation_cooling_j_g_s",
     "radiation_sink": "radiation_sink_j_g_s",
     "radiation_net_heating": "radiation_net_heating_j_g_s",
-    "laser_source": "laser_source_j_g_s",
+    "laser_source": "laser_source_j_g",
     "laser_deposition": "laser_deposition_j_g_s",
 }
 
@@ -119,6 +155,7 @@ def shared_raw_cache_stats() -> dict[str, object]:
 def publish_open_run_payload(
     path: str | Path,
     *,
+    revision: RunRevision | None = None,
     summary: dict[str, object],
     metadata: dict[str, object],
     regions: dict[str, object],
@@ -136,7 +173,7 @@ def publish_open_run_payload(
 ) -> tuple[object, ...]:
     """Publish lightweight run-open data into the shared session cache."""
 
-    run_key = run_identity_for_path(path)
+    run_key = revision.cache_key if revision is not None else run_identity_for_path(path)
     _share_meta(run_key, "summary", dict(summary))
     _share_meta(run_key, "metadata", dict(metadata))
     _share_meta(run_key, "regions", dict(regions))
@@ -159,13 +196,14 @@ def publish_open_run_payload(
 def publish_field_payload(
     path: str | Path,
     *,
+    revision: RunRevision | None = None,
     field_name: str,
     data: np.ndarray,
     edge_data: np.ndarray | None = None,
 ) -> tuple[object, ...]:
     """Publish a viewer-loaded field into the shared session cache."""
 
-    run_key = run_identity_for_path(path)
+    run_key = revision.cache_key if revision is not None else run_identity_for_path(path)
     _share_array(run_key, f"field:{field_name}", data, np.float64)
     if edge_data is not None:
         _share_array(run_key, f"field:{field_name}:edge", edge_data, np.float64)
@@ -194,9 +232,12 @@ def _build_field_capabilities(
     run_status: dict[str, object] | None,
     visar_support_metadata: dict[str, object] | None,
     velocity: np.ndarray,
+    available_material_properties: tuple[str, ...] = (),
+    not_loaded_optional_fields: tuple[str, ...] = (),
 ) -> DerivedFieldCapabilities:
     optional_available = tuple(sorted(name for name, values in optional_field_values.items() if values is not None))
-    missing_optional = tuple(sorted(name for name, values in optional_field_values.items() if values is None))
+    not_loaded = tuple(sorted(str(name) for name in not_loaded_optional_fields))
+    missing_optional = tuple(sorted(name for name, values in optional_field_values.items() if values is None and name not in not_loaded))
     notes: list[str] = []
     total_pressure_matches: bool | None = None
     radiation_net_matches: bool | None = None
@@ -205,7 +246,11 @@ def _build_field_capabilities(
     pressure_i = optional_field_values.get("pressure_i")
     pressure_e = optional_field_values.get("pressure_e")
     pressure_radiation = optional_field_values.get("pressure_radiation")
-    pressure_total = optional_field_values.get("pressure")
+    pressure_total = optional_field_values.get("total_pressure_j_cm3")
+    if "pressure" in available_fields and pressure_total is None and not (
+        pressure_i is not None and pressure_e is not None and pressure_radiation is not None
+    ):
+        notes.append("An ambiguous legacy pressure field was not treated as total pressure; required components are unavailable.")
     if pressure_i is not None and pressure_e is not None and pressure_radiation is not None and pressure_total is not None:
         total_pressure_matches = _finite_allclose(
             pressure_total,
@@ -254,21 +299,29 @@ def _build_field_capabilities(
         available_fields=tuple(str(name) for name in available_fields),
         optional_available_fields=optional_available,
         missing_optional_fields=missing_optional,
+        not_loaded_optional_fields=not_loaded,
         dynamic_radius_available=bool(has_dynamic_radius),
         run_status_available=run_status is not None,
         visar_support_available=visar_support_metadata is not None,
         pressure_components_available=all(optional_field_values.get(name) is not None for name in ("pressure_i", "pressure_e", "pressure_radiation")),
-        total_pressure_available=optional_field_values.get("pressure") is not None,
+        plasma_pressure_available=optional_field_values.get("plasma_pressure_j_cm3") is not None,
+        total_pressure_available=optional_field_values.get("total_pressure_j_cm3") is not None,
         radiation_components_available=all(optional_field_values.get(name) is not None for name in ("radiation_heating", "radiation_cooling")),
         radiation_net_heating_available=optional_field_values.get("radiation_net_heating") is not None,
         kinetic_energy_available=optional_field_values.get("kinetic_energy") is not None,
+        available_material_properties=tuple(available_material_properties),
         consistency=consistency,
     )
 
 
 def _build_wave_physics_capabilities(field_capabilities: DerivedFieldCapabilities) -> WavePhysicsCapabilities:
     notes: list[str] = []
-    pressure_support_level = "components" if field_capabilities.pressure_components_available else ("total_only" if field_capabilities.total_pressure_available else "unavailable")
+    pressure_support_level = (
+        "components" if field_capabilities.pressure_components_available
+        else "total_only" if field_capabilities.total_pressure_available
+        else "plasma_only" if field_capabilities.plasma_pressure_available
+        else "unavailable"
+    )
     viscosity_support_level = "available" if "artificial_viscosity" in field_capabilities.optional_available_fields else "unavailable"
     if field_capabilities.radiation_components_available and field_capabilities.radiation_net_heating_available:
         radiation_support_level = "components+net"
@@ -280,6 +333,8 @@ def _build_wave_physics_capabilities(field_capabilities: DerivedFieldCapabilitie
         radiation_support_level = "unavailable"
     if pressure_support_level == "unavailable":
         notes.append("Total-pressure wave evidence will have to degrade because no pressure fields are available.")
+    elif pressure_support_level == "plasma_only":
+        notes.append("Only plasma pressure is available; total-pressure wave evidence is disabled because radiation pressure is missing.")
     if viscosity_support_level == "unavailable":
         notes.append("Shock-like evidence can only use pressure/density/velocity hooks until artificial viscosity is available.")
     if not field_capabilities.dynamic_radius_available:
@@ -314,26 +369,52 @@ def _build_wave_physics_capabilities(field_capabilities: DerivedFieldCapabilitie
     )
 
 
-def load_run_data(path: str | Path) -> DerivedRunData:
+def _optional_zone_material_property(regions: dict[str, object], name: str, n_zones: int) -> np.ndarray | None:
+    values = regions.get(name)
+    if values is None:
+        return None
+    return build_zone_property_from_regions(regions, np.asarray(values, dtype=np.float64), n_zones)
+
+
+def load_run_data(
+    path: str | Path,
+    *,
+    revision: RunRevision | None = None,
+    requested_fields: Iterable[str] | None = None,
+) -> DerivedRunData:
     """Load the field subset needed by the current Derived mode.
 
-    This preserves the current lightweight load path for existing modules while
-    also promoting richer optional hydro fields, run-status metadata, and
-    VISAR-readiness support into one capability-driven payload for future
-    modules.
+    ``requested_fields=None`` preserves the legacy cold-open behavior. Internal
+    callers can pass an explicit optional-field set; uncached optional fields
+    outside that set remain absent and are reported separately from fields not
+    present in the source. A later request builds a new immutable dataset view
+    over the shared arrays already in the session cache.
     """
 
     source = Path(path)
-    run_key = run_identity_for_path(source)
+    requested_optional = set(_OPTIONAL_FIELD_DTYPES) if requested_fields is None else {
+        str(name) for name in requested_fields if str(name) in _OPTIONAL_FIELD_DTYPES
+    }
+    # Direct callers retain fingerprint-based refresh behavior. UI callers pass
+    # the token created at explicit open, so same-path replacements cannot
+    # collide even when size and mtime are restored.
+    run_key = revision.cache_key if revision is not None else run_identity_for_path(source)
     with timed_block("hdf5.read.derived_run_data", logger=LOGGER):
         summary = _cached_meta(run_key, "summary")
         metadata = _cached_meta(run_key, "metadata")
         regions = _cached_meta(run_key, "regions")
         materials = _cached_meta(run_key, "materials")
         fields = _cached_meta(run_key, "fields")
+        missing_core_fields = set(_cached_meta(run_key, "missing_core_fields") or ())
+        if fields is not None:
+            missing_core_fields.update({"density", "velocity", "temperature_e", "temperature_i", "electron_density", "mean_charge"} - set(fields))
+            if missing_core_fields:
+                _share_meta(run_key, "missing_core_fields", tuple(sorted(missing_core_fields)))
         run_status = _cached_meta(run_key, "run_status")
         visar_support_metadata = _cached_meta(run_key, "visar_support_metadata")
         has_dynamic_radius = _cached_meta(run_key, "has_dynamic_radius")
+        dynamic_center_present = _cached_meta(run_key, "dynamic_center_present")
+        dynamic_edge_present = _cached_meta(run_key, "dynamic_edge_present")
         time_s = _cached_array(run_key, "time_s")
         static_x = _cached_array(run_key, "static_x_center_cm")
         static_x_edges = _cached_array(run_key, "static_x_edge_cm")
@@ -364,14 +445,20 @@ def load_run_data(path: str | Path) -> DerivedRunData:
             or time_s is None
             or static_x is None
             or static_x_edges is None
+            or zone_width is None
+            or (dynamic_center_present is True and radius is None)
+            or (dynamic_edge_present is True and radius_edges is None)
             or zone_region_id is None
             or zone_material_index is None
-            or density is None
-            or velocity is None
-            or temperature_e is None
-            or temperature_i is None
-            or electron_density is None
-            or mean_charge is None
+            or (density is None and "density" not in missing_core_fields)
+            or (velocity is None and "velocity" not in missing_core_fields)
+            or (temperature_e is None and "temperature_e" not in missing_core_fields)
+            or (temperature_i is None and "temperature_i" not in missing_core_fields)
+            or (electron_density is None and "electron_density" not in missing_core_fields)
+            or (mean_charge is None and "mean_charge" not in missing_core_fields)
+            or (
+                any(optional_fields[name] is None and (fields is None or name in fields) for name in requested_optional)
+            )
         )
         if needs_open:
             increment_counter("shared_raw_cache.run.miss")
@@ -388,6 +475,17 @@ def load_run_data(path: str | Path) -> DerivedRunData:
                     fields = _share_meta(run_key, "fields", tuple(run.list_fields()))
                 if has_dynamic_radius is None:
                     has_dynamic_radius = _share_meta(run_key, "has_dynamic_radius", bool(run.has_dynamic_coordinate()))
+                if dynamic_center_present is None or dynamic_edge_present is None:
+                    coordinate_model = run.get_metadata().get("coordinate_model", {})
+                    center_name = str(coordinate_model.get("dynamic_center_dataset", "dynamic_coordinate_center"))
+                    edge_name = str(coordinate_model.get("dynamic_edge_dataset", "dynamic_coordinate_edge"))
+                    legacy_radius = "radius" in run._field_datasets
+                    dynamic_center_present = _share_meta(
+                        run_key, "dynamic_center_present", bool(legacy_radius or center_name in run._grid_datasets)
+                    )
+                    dynamic_edge_present = _share_meta(
+                        run_key, "dynamic_edge_present", bool(legacy_radius or edge_name in run._grid_datasets)
+                    )
                 if run_status is None:
                     run_status = _share_meta(run_key, "run_status", run.get_run_status())
                 if visar_support_metadata is None:
@@ -418,24 +516,20 @@ def load_run_data(path: str | Path) -> DerivedRunData:
                     zone_material_index = _share_array(run_key, "zone_material_index", run.get_grid("zone_material_index"), np.int32)
 
                 field_names = set(str(name) for name in fields)
-                if density is None:
+                missing_core_fields.update({"density", "velocity", "temperature_e", "temperature_i", "electron_density", "mean_charge"} - field_names)
+                if missing_core_fields:
+                    _share_meta(run_key, "missing_core_fields", tuple(sorted(missing_core_fields)))
+                if density is None and "density" in field_names:
                     density = _share_array(run_key, "field:density", run.get_field("density"), np.float64)
-                if velocity is None:
+                if velocity is None and "velocity" in field_names:
                     velocity = _share_array(run_key, "field:velocity", run.get_field("velocity"), np.float64)
-                if temperature_e is None:
+                if temperature_e is None and "temperature_e" in field_names:
                     temperature_e = _share_array(run_key, "field:temperature_e", run.get_field("temperature_e"), np.float64)
-                if temperature_i is None:
+                if temperature_i is None and "temperature_i" in field_names:
                     temperature_i = _share_array(run_key, "field:temperature_i", run.get_field("temperature_i"), np.float64)
-                if temperature_r is None and "temperature_radiation" in field_names:
-                    temperature_r = _share_array(
-                        run_key,
-                        "field:temperature_radiation",
-                        run.get_field("temperature_radiation"),
-                        np.float64,
-                    )
-                if electron_density is None:
+                if electron_density is None and "electron_density" in field_names:
                     electron_density = _share_array(run_key, "field:electron_density", run.get_field("electron_density"), np.float64)
-                if mean_charge is None:
+                if mean_charge is None and "mean_charge" in field_names:
                     mean_charge = _share_array(run_key, "field:mean_charge", run.get_field("mean_charge"), np.float64)
                 if zone_width is None:
                     if "zone_width" in field_names:
@@ -457,15 +551,57 @@ def load_run_data(path: str | Path) -> DerivedRunData:
                     if dynamic_edge is not None:
                         radius_edges = _share_array(run_key, "field:radius:edge", dynamic_edge, np.float64)
                 for field_name, dtype in _OPTIONAL_FIELD_DTYPES.items():
-                    if optional_fields[field_name] is None and field_name in field_names:
+                    if field_name in requested_optional and optional_fields[field_name] is None and field_name in field_names:
                         optional_fields[field_name] = _share_array(
                             run_key,
                             f"field:{field_name}",
                             run.get_field(field_name),
                             dtype,
                         )
+                temperature_r = optional_fields["temperature_radiation"]
         else:
             increment_counter("shared_raw_cache.run.hit")
+
+        # Keep the dataset grid-shaped so modules can return typed
+        # unavailable results. Capability metadata below distinguishes these
+        # NaN placeholders from fields actually present in the source.
+        expected_core_shape = (int(time_s.size), int(summary["n_zones"]))
+        core_arrays = {
+            "density": density,
+            "velocity": velocity,
+            "temperature_e": temperature_e,
+            "temperature_i": temperature_i,
+            "electron_density": electron_density,
+            "mean_charge": mean_charge,
+        }
+        for field_name, values in core_arrays.items():
+            if values is None:
+                placeholder = np.full(expected_core_shape, np.nan, dtype=np.float64)
+                core_arrays[field_name] = placeholder
+        density = core_arrays["density"]
+        velocity = core_arrays["velocity"]
+        temperature_e = core_arrays["temperature_e"]
+        temperature_i = core_arrays["temperature_i"]
+        electron_density = core_arrays["electron_density"]
+        mean_charge = core_arrays["mean_charge"]
+
+        if optional_fields["plasma_pressure_j_cm3"] is None:
+            if optional_fields["pressure_i"] is not None and optional_fields["pressure_e"] is not None:
+                optional_fields["plasma_pressure_j_cm3"] = _share_array(
+                    run_key,
+                    "field:plasma_pressure_j_cm3",
+                    np.asarray(optional_fields["pressure_i"]) + np.asarray(optional_fields["pressure_e"]),
+                    np.float64,
+                )
+        if optional_fields["total_pressure_j_cm3"] is None and all(
+            optional_fields[name] is not None for name in ("pressure_i", "pressure_e", "pressure_radiation")
+        ):
+            optional_fields["total_pressure_j_cm3"] = _share_array(
+                run_key,
+                "field:total_pressure_j_cm3",
+                np.asarray(optional_fields["pressure_i"]) + np.asarray(optional_fields["pressure_e"]) + np.asarray(optional_fields["pressure_radiation"]),
+                np.float64,
+            )
 
         assert summary is not None and metadata is not None and regions is not None and materials is not None
         if run_status is None and isinstance(summary, dict):
@@ -474,25 +610,11 @@ def load_run_data(path: str | Path) -> DerivedRunData:
                 run_status = dict(summary_status)
         assert time_s is not None and static_x is not None and static_x_edges is not None
         assert zone_region_id is not None and zone_material_index is not None
-        assert density is not None and velocity is not None and temperature_e is not None and temperature_i is not None
-        assert electron_density is not None and mean_charge is not None
         available_fields = tuple(str(name) for name in fields)
         n_zones = int(summary["n_zones"])
-        zone_atomic_weight = build_zone_property_from_regions(
-            regions,
-            np.asarray(regions["atomic_weight"], dtype=np.float64),
-            n_zones,
-        )
-        zone_initial_density = build_zone_property_from_regions(
-            regions,
-            np.asarray(regions["initial_mass_density"], dtype=np.float64),
-            n_zones,
-        )
-        zone_initial_temperature = build_zone_property_from_regions(
-            regions,
-            np.asarray(regions["initial_temperature"], dtype=np.float64),
-            n_zones,
-        )
+        zone_atomic_weight = _optional_zone_material_property(regions, "atomic_weight", n_zones)
+        zone_initial_density = _optional_zone_material_property(regions, "initial_mass_density", n_zones)
+        zone_initial_temperature = _optional_zone_material_property(regions, "initial_temperature", n_zones)
         laser_entry = infer_laser_entry(
             metadata=metadata,
             n_zones=n_zones,
@@ -506,6 +628,17 @@ def load_run_data(path: str | Path) -> DerivedRunData:
             run_status=None if run_status is None else dict(run_status),
             visar_support_metadata=None if visar_support_metadata is None else dict(visar_support_metadata),
             velocity=velocity,
+            available_material_properties=tuple(
+                name for name, values in (
+                    ("atomic_weight", zone_atomic_weight),
+                    ("initial_mass_density", zone_initial_density),
+                    ("initial_temperature", zone_initial_temperature),
+                ) if values is not None
+            ),
+            not_loaded_optional_fields=tuple(
+                name for name, values in optional_fields.items()
+                if values is None and name in available_fields
+            ),
         )
         wave_physics_capabilities = _build_wave_physics_capabilities(capability_summary)
     return DerivedRunData(
@@ -528,7 +661,8 @@ def load_run_data(path: str | Path) -> DerivedRunData:
         pressure_i_j_cm3=optional_fields["pressure_i"],
         pressure_e_j_cm3=optional_fields["pressure_e"],
         pressure_radiation_j_cm3=optional_fields["pressure_radiation"],
-        pressure_total_j_cm3=optional_fields["pressure"],
+        pressure_plasma_j_cm3=optional_fields["plasma_pressure_j_cm3"],
+        pressure_total_j_cm3=optional_fields["total_pressure_j_cm3"],
         artificial_viscosity_j_cm3=optional_fields["artificial_viscosity"],
         ion_energy_j_g=optional_fields["ion_energy"],
         electron_energy_j_g=optional_fields["electron_energy"],
@@ -540,7 +674,7 @@ def load_run_data(path: str | Path) -> DerivedRunData:
         radiation_cooling_j_g_s=optional_fields["radiation_cooling"],
         radiation_sink_j_g_s=optional_fields["radiation_sink"],
         radiation_net_heating_j_g_s=optional_fields["radiation_net_heating"],
-        laser_source_j_g_s=optional_fields["laser_source"],
+        laser_source_j_g=optional_fields["laser_source"],
         laser_deposition_j_g_s=optional_fields["laser_deposition"],
         radius_cm=radius,
         radius_edge_cm=radius_edges,
@@ -554,6 +688,7 @@ def load_run_data(path: str | Path) -> DerivedRunData:
         visar_support_metadata=None if visar_support_metadata is None else dict(visar_support_metadata),
         field_capabilities=capability_summary,
         wave_physics_capabilities=wave_physics_capabilities,
+        revision=revision,
     )
 
 
@@ -603,6 +738,7 @@ def field_capability_summary(dataset: DerivedRunData) -> dict[str, object]:
         "run_status_available": bool(capabilities.run_status_available),
         "visar_support_available": bool(capabilities.visar_support_available),
         "pressure_components_available": bool(capabilities.pressure_components_available),
+        "plasma_pressure_available": bool(capabilities.plasma_pressure_available),
         "total_pressure_available": bool(capabilities.total_pressure_available),
         "radiation_components_available": bool(capabilities.radiation_components_available),
         "radiation_net_heating_available": bool(capabilities.radiation_net_heating_available),

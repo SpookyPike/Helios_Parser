@@ -218,8 +218,8 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         return MODE_PARSER
 
     def _build_actions(self) -> None:
-        self.open_log_action = QtGui.QAction("Open Log...", self)
-        self.open_log_action.triggered.connect(self.open_log_dialog)
+        self.open_log_action = QtGui.QAction("Open HELIOS Input...", self)
+        self.open_log_action.triggered.connect(self.open_input_dialog)
         self.open_hdf5_action = QtGui.QAction("Open HDF5...", self)
         self.open_hdf5_action.triggered.connect(self.open_hdf5_dialog)
         self.export_action = QtGui.QAction("Export", self)
@@ -347,9 +347,14 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QHBoxLayout(widget)
         layout.setContentsMargins(10, 8, 10, 8)
         layout.setSpacing(8)
-        layout.addWidget(QtWidgets.QLabel("Active snapshot"))
+        snapshot_label = QtWidgets.QLabel("Active snapshot")
+        layout.addWidget(snapshot_label)
 
         self.global_snapshot_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.global_snapshot_slider.setAccessibleName("Active snapshot")
+        self.global_snapshot_slider.setAccessibleDescription(
+            "Choose the snapshot displayed by the active run."
+        )
         self.global_snapshot_slider.setMinimumHeight(24)
         apply_absolute_click_slider_behavior(self.global_snapshot_slider)
         self.global_snapshot_slider.setTracking(False)
@@ -360,12 +365,20 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.global_snapshot_slider, 1)
 
         self.global_snapshot_spin = QtWidgets.QSpinBox()
+        self.global_snapshot_spin.setAccessibleName("Snapshot index")
+        self.global_snapshot_spin.setAccessibleDescription(
+            "Select the zero-based snapshot index for the active run."
+        )
         self.global_snapshot_spin.setMinimumHeight(24)
         self.global_snapshot_spin.setKeyboardTracking(False)
         self.global_snapshot_spin.valueChanged.connect(self._on_global_snapshot_spin_changed)
         layout.addWidget(self.global_snapshot_spin)
 
         self.global_time_spin = QtWidgets.QDoubleSpinBox()
+        self.global_time_spin.setAccessibleName("Snapshot time")
+        self.global_time_spin.setAccessibleDescription(
+            "Select the active snapshot by simulation time."
+        )
         self.global_time_spin.setMinimumHeight(24)
         self.global_time_spin.setDecimals(6)
         self.global_time_spin.setRange(-1.0e18, 1.0e18)
@@ -375,6 +388,7 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.global_time_spin)
 
         self.jump_breakout_button = QtWidgets.QPushButton("Jump breakout")
+        self.jump_breakout_button.setAccessibleName("Jump to breakout snapshot")
         set_button_icon(self.jump_breakout_button, "jump")
         self.jump_breakout_button.clicked.connect(self._jump_to_breakout_snapshot)
         self.jump_breakout_button.setEnabled(False)
@@ -382,6 +396,7 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.jump_breakout_button)
 
         self.global_snapshot_label = QtWidgets.QLabel("No active run")
+        self.global_snapshot_label.setAccessibleName("Active snapshot details")
         layout.addWidget(self.global_snapshot_label)
         self.global_snapshot_widget = widget
         self._set_global_snapshot_controls_visible(False)
@@ -402,7 +417,7 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.setSpacing(8)
 
-        self.log_file_label = QtWidgets.QLabel("Open a HELIOS .log file to preview its structure.")
+        self.log_file_label = QtWidgets.QLabel("Open a HELIOS .log or .bpf file to preview its structure.")
         self.log_file_label.setWordWrap(True)
         self.log_file_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
         left_layout.addWidget(self.log_file_label)
@@ -437,6 +452,10 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         options_group = QtWidgets.QGroupBox("Parse Options")
         options_layout = QtWidgets.QFormLayout(options_group)
         self.output_path_edit = QtWidgets.QLineEdit()
+        self.output_path_edit.setAccessibleName("Output HDF5 path")
+        self.output_path_edit.setAccessibleDescription(
+            "Choose where the converted HDF5 file will be written."
+        )
         browse_output_button = QtWidgets.QPushButton("Browse...")
         set_button_icon(browse_output_button, "folder")
         browse_output_button.clicked.connect(self._browse_output_path)
@@ -751,14 +770,21 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
             f"HELIOS Parse / View {RELEASE_VERSION}\n"
             f"Release date: {RELEASE_DATE}\n"
             f"Code developed by {AUTHOR_NAME} at {AUTHOR_AFFILIATION}.\n\n"
-            "Parser Mode previews and converts HELIOS .log files to stabilized HDF5.\n"
+            "Parser Mode previews and converts HELIOS .log and .bpf files to stabilized HDF5.\n"
             "Viewer Mode opens stabilized HDF5 files with the production scientific viewer.\n"
             "Derived / Analysis adds quick-look Shock diagnostics plus lazy advanced WaveFront, interface-event, and Preheat analysis.",
         )
 
     def open_log_dialog(self) -> None:
+        """Backward-compatible action handler for opening HELIOS inputs."""
+        self.open_input_dialog()
+
+    def open_input_dialog(self) -> None:
         start_dir = self.session_state.last_log_directory or str(Path.cwd())
-        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open HELIOS Log", start_dir, "HELIOS Log (*.log)")
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Open HELIOS Input", start_dir,
+            "HELIOS Inputs (*.log *.bpf);;HELIOS Log (*.log);;HELIOS BPF (*.bpf)",
+        )
         if path:
             self._open_path(Path(path))
 
@@ -772,17 +798,17 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         """Route a file to Parser Mode or Viewer Mode from its extension."""
         resolved = Path(path)
         suffix = resolved.suffix.lower()
-        if suffix == ".log":
-            self._open_log_preview(resolved)
+        if suffix in {".log", ".bpf"}:
+            self._open_input_preview(resolved)
             return
         if suffix in {".h5", ".hdf5"}:
             self._open_hdf5(resolved)
             return
         QtWidgets.QMessageBox.warning(self, "Unsupported File", f"Unsupported file type: {resolved.suffix}")
 
-    def _open_log_preview(self, path: Path) -> None:
-        """Open a HELIOS log in Parser Mode and request a fast preview."""
-        LOGGER.info("Routing log %s to Parser Mode", path)
+    def _open_input_preview(self, path: Path) -> None:
+        """Open a HELIOS LOG/BPF input in Parser Mode for preview and conversion."""
+        LOGGER.info("Routing HELIOS input %s to Parser Mode", path)
         self.session_state.current_file = str(path)
         self.session_state.last_log_directory = str(path.parent)
         add_recent_file(self.session_state, path)
@@ -790,7 +816,7 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         self._rebuild_recent_files_menu()
         self._set_mode(MODE_PARSER)
         self.log_file_label.setText(str(path))
-        self.preview_summary.setPlainText("Previewing log structure...")
+        self.preview_summary.setPlainText("Previewing HELIOS input...")
         self.preview_snapshot.clear()
         self.preview_field_list.clear()
         self.current_preview = None
@@ -798,6 +824,10 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         self.open_viewer_button.setEnabled(False)
         self.parse_button.setEnabled(False)
         self.parser_controller.preview_log(path)
+
+    def _open_log_preview(self, path: Path) -> None:
+        """Compatibility wrapper for callers that explicitly open LOG files."""
+        self._open_input_preview(path)
 
     def _open_hdf5(self, path: Path) -> None:
         """Open an existing stabilized HDF5 file in Viewer Mode."""
@@ -831,15 +861,15 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
     def _refresh_current_preview(self) -> None:
         if self.current_preview is None:
             current_file = self.session_state.current_file
-            if current_file and Path(current_file).suffix.lower() == ".log":
-                self._open_log_preview(Path(current_file))
+            if current_file and Path(current_file).suffix.lower() in {".log", ".bpf"}:
+                self._open_input_preview(Path(current_file))
             return
-        self._open_log_preview(self.current_preview.source)
+        self._open_input_preview(self.current_preview.source)
 
     def _start_parse_from_controls(self) -> None:
         """Launch a parse job from the current Parser Mode controls."""
         if self.current_preview is None:
-            QtWidgets.QMessageBox.information(self, "No Preview", "Open a HELIOS .log file and wait for the preview before parsing.")
+            QtWidgets.QMessageBox.information(self, "No Preview", "Open a HELIOS .log or .bpf file and wait for its preview before parsing.")
             return
         output_path = Path(self.output_path_edit.text().strip())
         if not output_path:
@@ -1043,6 +1073,10 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         self.parse_progress.setValue(1000)
         self.parse_progress.setFormat(f"100% | complete in {payload.elapsed_s:.2f} s")
         self.parse_log.appendPlainText(f"Parse finished in {payload.elapsed_s:.2f} s\nOutput: {payload.output}")
+        for warning in (payload.warnings or []):
+            self.parse_log.appendPlainText(f"Warning: {warning}")
+        if payload.warnings:
+            self.parse_status_label.setText(f"Parse complete with {len(payload.warnings)} warning(s)")
         self.parse_button.setEnabled(True)
         self.open_viewer_button.setEnabled(True)
         self._update_action_state()
@@ -1074,29 +1108,38 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
             self.status_label.setText(message)
 
     def _format_preview_summary(self, payload: ParsePreviewPayload) -> str:
+        source_label = "BPF input" if payload.input_format == "bpf" else "LOG input"
         lines = [
-            f"Log file: {payload.source.name}",
+            f"{source_label}: {payload.source.name}",
+            f"Conversion primary: {(payload.primary_source or payload.source).name}",
+            f"Companion: {payload.companion_source.name if payload.companion_source else 'None'}",
+            f"Companion alignment: {payload.companion_status}",
             f"Simulation: {payload.simulation_name}",
-            f"Geometry: {payload.geometry or '-'}",
+            f"Geometry: {payload.geometry or 'Unknown'}",
             f"HELIOS version: {payload.code_version or '-'}",
             f"Calculated: {payload.calculation_datetime or '-'}",
             "",
             f"Snapshots: {payload.n_snapshots}",
             f"Zones: {payload.n_zones}",
-            f"Regions: {payload.n_regions}",
-            f"Materials: {payload.n_materials}",
+            f"Regions: {payload.n_regions if payload.n_regions is not None else 'Unknown'}",
+            f"Materials: {payload.n_materials if payload.n_materials is not None else 'Unknown'}",
             f"Detected fields: {len(payload.fields)}",
             f"Detected field families: {', '.join(payload.field_families) or '-'}",
             f"Approx core numeric size: {_human_bytes(payload.approx_numeric_bytes)}",
+            f"Validation: {payload.validation_scope}",
             "",
             "Header sections:",
         ]
         lines.extend(f"  - {section}" for section in payload.header_sections)
+        lines.extend(("", "Warnings:"))
+        lines.extend(f"  - {warning}" for warning in (payload.warnings or []))
+        if not payload.warnings:
+            lines.append("  - None")
         return "\n".join(lines)
 
     def _format_preview_snapshot(self, payload: ParsePreviewPayload) -> str:
         lines = [
-            "Fast preview:",
+            "Fast preview (indexed frames are not all validated):",
             f"  first cycle: {payload.first_cycle if payload.first_cycle is not None else '-'}",
             f"  first time: {payload.first_time:.4e} s" if payload.first_time is not None else "  first time: -",
             f"  first dt: {payload.first_time_step:.4e} s" if payload.first_time_step is not None else "  first dt: -",

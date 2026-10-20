@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import shutil
+import re
+import struct
 import tempfile
 import unittest
+import logging
+from decimal import Decimal
+from unittest import mock
 from pathlib import Path
 
 import h5py
@@ -11,7 +16,9 @@ import numpy as np
 import _test_bootstrap  # noqa: F401
 from helios_parser import HeliosRun, write_hdf5
 from helios_parser.bpf import BpfFile
+from helios_parser.hdf5 import _stage_aligned_log_companion
 from helios_parser.parser import HeliosParser
+from helios.services.derived.common import load_run_data
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +44,7 @@ class BpfPipelineTests(unittest.TestCase):
             self.assertEqual(layout.n_nodes, 501)
             self.assertEqual(layout.n_freq_bins, 200)
             self.assertEqual(layout.n_snapshots, 8)
+            self.assertTrue(layout.recognized_zero_trailer)
             snapshot = bpf.extract_snapshot(0)
             self.assertEqual(snapshot.fields["mass_density_g_cm3"].shape, (500,))
             self.assertEqual(snapshot.fields["radiation_net_flux_rmin_j_s_cm2_eV"].shape, (200,))
@@ -55,6 +63,189 @@ class BpfPipelineTests(unittest.TestCase):
                 atol=1.0e-8,
             )
             del snapshot
+
+
+
+
+
+    def test_valid_one_frame_bpf_with_documented_trailer_is_complete(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            first_trailer = 2 + source.layout.block_records
+            first_trailer_start = source._payload_offsets[first_trailer] - 4
+            last_trailer_start = source._payload_offsets[-1] - 4
+            original = BPF_SAMPLE.read_bytes()
+            raw = original[:first_trailer_start] + original[last_trailer_start:]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            one_frame = Path(tmpdir) / "one_frame.bpf"
+            one_frame.write_bytes(raw)
+            with BpfFile(one_frame) as parsed:
+                self.assertEqual(parsed.layout.n_snapshots, 1)
+                self.assertTrue(parsed.layout.recognized_zero_trailer)
+            output = Path(tmpdir) / "one_frame.h5"
+            write_hdf5(one_frame, output)
+            with HeliosRun(output) as run:
+                self.assertEqual(run.n_snapshots, 1)
+                self.assertEqual(run.get_run_status()["state"], "complete")
+
+    def test_truncated_first_bpf_snapshot_is_not_recovered(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            record_index = BpfFile.snapshot_start(0, source.layout.block_records) + 5
+            cut_at = source._payload_offsets[record_index] - 4
+            raw = BPF_SAMPLE.read_bytes()[:cut_at]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            truncated = Path(tmpdir) / "truncated_first.bpf"
+            truncated.write_bytes(raw)
+            with self.assertRaisesRegex(ValueError, "complete BPF snapshot block"):
+                BpfFile(truncated)
+
+    def test_corrupt_partial_record_after_valid_prefix_is_fatal(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            second_snapshot = BpfFile.snapshot_start(1, source.layout.block_records)
+            tail_start = source._payload_offsets[second_snapshot + 1] - 4
+            raw = BPF_SAMPLE.read_bytes()[:tail_start] + struct.pack("<i", 1234567) + b"garbage"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            corrupted = Path(tmpdir) / "corrupt_partial_tail.bpf"
+            corrupted.write_bytes(raw)
+            with self.assertRaisesRegex(ValueError, "corrupt partial BPF data"):
+                BpfFile(corrupted)
+            output = Path(tmpdir) / "existing.h5"
+            output.write_bytes(b"sentinel")
+            with self.assertRaisesRegex(ValueError, "corrupt partial BPF data"):
+                write_hdf5(corrupted, output, overwrite=True)
+            self.assertEqual(b"sentinel", output.read_bytes())
+
+    def test_partial_record_marker_prefixes_are_checked_for_corruption(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            record = BpfFile.snapshot_start(1, source.layout.block_records) + 5
+            raw = BPF_SAMPLE.read_bytes()
+            marker_start = source._payload_offsets[record] - 4
+            payload_end = source._payload_offsets[record] + source._payload_lengths[record]
+            marker_value = struct.pack("<i", source._payload_lengths[record])
+            cases = []
+            for size in (1, 2, 3):
+                cases.append((f"open-{size}", marker_start + size, marker_value[:size]))
+                cases.append((f"close-{size}", payload_end + size, marker_value + b"x" * source._payload_lengths[record] + marker_value[:size]))
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for name, cut_at, _ in cases:
+                with self.subTest(case=name):
+                    valid = Path(tmpdir) / f"valid-{name}.bpf"
+                    valid.write_bytes(raw[:cut_at])
+                    with BpfFile(valid) as parsed:
+                        self.assertEqual(parsed.layout.n_snapshots, 1)
+                    corrupted_bytes = bytearray(raw[:cut_at])
+                    corrupted_bytes[-1] ^= 0x01
+                    corrupt = Path(tmpdir) / f"corrupt-{name}.bpf"
+                    corrupt.write_bytes(corrupted_bytes)
+                    with self.assertRaisesRegex(ValueError, "corrupt partial BPF data"):
+                        BpfFile(corrupt)
+
+    def test_corruption_in_complete_middle_record_is_fatal(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            record_index = BpfFile.snapshot_start(3, source.layout.block_records) + 5
+            payload_end = source._payload_offsets[record_index] + source._payload_lengths[record_index]
+            raw = bytearray(BPF_SAMPLE.read_bytes())
+        closing = struct.unpack_from("<i", raw, payload_end)[0]
+        struct.pack_into("<i", raw, payload_end, closing + 4)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            corrupted = Path(tmpdir) / "corrupted_middle.bpf"
+            corrupted.write_bytes(raw)
+            with self.assertRaisesRegex(ValueError, "marker mismatch"):
+                BpfFile(corrupted)
+
+    def test_negative_bpf_density_is_rejected(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            record_index = BpfFile.snapshot_start(0, source.layout.block_records) + 8
+            payload_start = source._payload_offsets[record_index]
+            raw = bytearray(BPF_SAMPLE.read_bytes())
+        struct.pack_into("<d", raw, payload_start, -1.0)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            corrupted = Path(tmpdir) / "negative_density.bpf"
+            corrupted.write_bytes(raw)
+            with BpfFile(corrupted) as bpf:
+                with self.assertRaisesRegex(ValueError, "negative mass density"):
+                    next(bpf.iter_snapshots())
+
+    def test_partial_final_bpf_snapshot_is_dropped_and_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            truncated = Path(tmpdir) / "truncated.bpf"
+            with BpfFile(BPF_SAMPLE) as source:
+                record_index = BpfFile.snapshot_start(7, source.layout.block_records) + 5
+                record_start = source._payload_offsets[record_index] - 4
+                payload_length = source._payload_lengths[record_index]
+                cut_at = record_start + 4 + max(1, payload_length // 2)
+                raw = BPF_SAMPLE.read_bytes()[:cut_at]
+            truncated.write_bytes(raw)
+            with BpfFile(truncated) as bpf:
+                self.assertEqual(bpf.layout.n_snapshots, 7)
+                self.assertTrue(bpf.layout.incomplete_final_snapshot)
+                self.assertGreater(bpf.layout.partial_final_record_bytes, 0)
+            output = Path(tmpdir) / "truncated.h5"
+            complete_output = Path(tmpdir) / "complete.h5"
+            write_hdf5(truncated, output)
+            write_hdf5(BPF_SAMPLE, complete_output)
+            with HeliosRun(output) as run, HeliosRun(complete_output) as complete_run:
+                status = run.get_run_status()
+                self.assertEqual(status["state"], "truncated")
+                self.assertEqual(status["valid_snapshot_count"], 7)
+                self.assertTrue(status["dropped_partial_final_block"])
+                self.assertEqual(run.n_snapshots, 7)
+                for field_name in run.list_fields():
+                    np.testing.assert_array_equal(run.get_field(field_name), complete_run.get_field(field_name)[:7])
+
+    def test_partial_ionization_fraction_records_recover_complete_prefix(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            start = BpfFile.snapshot_start(1, source.layout.block_records)
+            records = (70, 72)
+            raw = BPF_SAMPLE.read_bytes()
+            cuts = []
+            for relative in records:
+                index = start + relative
+                payload_start = source._payload_offsets[index]
+                payload_length = source._payload_lengths[index]
+                cuts.append(raw[: payload_start + payload_length // 2])
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for relative, truncated_bytes in zip(records, cuts):
+                with self.subTest(relative_record=relative):
+                    truncated = Path(tmpdir) / f"fraction-{relative}.bpf"
+                    truncated.write_bytes(truncated_bytes)
+                    with BpfFile(truncated) as parsed:
+                        self.assertEqual(1, parsed.layout.n_snapshots)
+                        self.assertTrue(parsed.layout.incomplete_final_snapshot)
+
+    def test_explicit_log_companion_domain_error_is_not_fallback(self) -> None:
+        parser = HeliosParser()
+        with parser.open_document(LOG_BPF_SAMPLE) as document:
+            block = document.index.snapshot_blocks[-1]
+            original_block = document.buffer.slice(block.span)
+            lines = original_block.splitlines()
+            header_index = next(i for i, line in enumerate(lines) if re.match(r"^\s*Cycle\s+Time\s+\(s\)", line))
+            tokens = lines[header_index + 1].split()
+            tokens[0] = "1.5"
+            lines[header_index + 1] = " ".join(tokens)
+            original = LOG_BPF_SAMPLE.read_bytes()
+            modified = original.replace(original_block.encode(), "\n".join(lines).encode(), 1)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            invalid_log = Path(tmpdir) / "invalid-final.log"
+            invalid_log.write_bytes(modified)
+            with self.assertRaisesRegex(ValueError, "cycle must be a finite integer"):
+                _stage_aligned_log_companion(
+                    invalid_log,
+                    LOG_BPF_COMPANION,
+                    invalid_log,
+                    Path(tmpdir) / "stage.h5",
+                    parser=parser,
+                    logger=logging.getLogger(__name__),
+                )
+
+    def test_nonzero_bpf_trailer_is_not_accepted_as_documented_trailer(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            corrupted = Path(tmpdir) / "corrupted_trailer.bpf"
+            payload = bytearray(BPF_SAMPLE.read_bytes())
+            trailer_start = len(payload) - (4 + 240 + 4)
+            payload[trailer_start + 4] = 1
+            corrupted.write_bytes(payload)
+            with self.assertRaisesRegex(ValueError, "unrecognized trailing BPF records"):
+                BpfFile(corrupted)
 
     def test_bpf_hdf5_schema_field_discovery_and_aliases(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -77,6 +268,17 @@ class BpfPipelineTests(unittest.TestCase):
                 self.assertIn("radiation_net_heating_j_g_s", fields)
                 self.assertIn("radiation_energy_density_j_cm3", fields)
                 self.assertIn("radiation_energy_j_g", fields)
+                self.assertIn("plasma_pressure_j_cm3", fields)
+                self.assertIn("total_pressure_j_cm3", fields)
+                self.assertIn("laser_source_bpf_sampled_j_g", fields)
+                plasma = run.get_field("pressure_j_cm3")
+                explicit_plasma = run.get_field("plasma_pressure_j_cm3")
+                total = run.get_field("total_pressure_j_cm3")
+                np.testing.assert_array_equal(explicit_plasma, plasma)
+                np.testing.assert_array_equal(run.get_field("pressure"), total)
+                np.testing.assert_array_equal(total, plasma + run.get_field("pressure_radiation"))
+                self.assertEqual(run.get_field_metadata("pressure").alias_of, "total_pressure_j_cm3")
+                self.assertEqual(run.get_field_metadata("pressure").quantity, "total_pressure")
 
                 density = run.get_field("density")
                 canonical_density = run.get_field("mass_density_g_cm3")
@@ -122,6 +324,9 @@ class BpfPipelineTests(unittest.TestCase):
 
                 ion = run.get_field("ionization_fractions_by_zone_charge")
                 np.testing.assert_allclose(ion.sum(axis=2), 1.0, rtol=1.0e-6, atol=1.0e-8)
+            derived = load_run_data(output)
+            self.assertIsNone(derived.zone_atomic_weight)
+            self.assertEqual(8, derived.time_s.size)
 
     def test_bpf_primary_log_input_cross_validates_overlapping_log_fields(self) -> None:
         log_simulation = HeliosParser().parse(LOG_BPF_SAMPLE)
@@ -150,12 +355,27 @@ class BpfPipelineTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as tmpdir:
             output = Path(tmpdir) / "cu_from_log.h5"
-            write_hdf5(LOG_BPF_SAMPLE, output, overwrite=True, compression="lzf")
+            with mock.patch.object(HeliosParser, "parse", side_effect=AssertionError("BPF-primary conversion must stream LOG snapshots")):
+                write_hdf5(LOG_BPF_SAMPLE, output, overwrite=True, compression="lzf")
             with HeliosRun(output) as run:
                 self.assertEqual(run.get_metadata()["source_precedence"], "bpf_primary_log_metadata_exo_optional")
                 for name in overlapping_fields:
                     with self.subTest(field=name):
-                        _assert_scale_close(self, run.get_field(name), log_simulation.fields[name], rtol=1.0e-3, atol=1.0e-10)
+                        if name == "pressure":
+                            np.testing.assert_allclose(
+                                run.get_field("total_pressure_j_cm3"),
+                                log_simulation.fields[name],
+                                rtol=1.0e-3,
+                                atol=1.0,
+                            )
+                        else:
+                            _assert_scale_close(self, run.get_field(name), log_simulation.fields[name], rtol=1.0e-3, atol=1.0e-10)
+                np.testing.assert_allclose(
+                    run.get_field("pressure_j_cm3"),
+                    log_simulation.fields["pressure_i"] + log_simulation.fields["pressure_e"],
+                    rtol=1.0e-3,
+                    atol=1.0,
+                )
 
     def test_input_routing_accepts_log_bpf_and_missing_companions(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -204,6 +424,47 @@ class BpfPipelineTests(unittest.TestCase):
                 self.assertEqual(run.get_metadata()["source_precedence"], "bpf_primary_log_metadata_exo_optional")
                 self.assertEqual(run.get_field_metadata("laser_source_j_g").source, "log")
                 np.testing.assert_allclose(run.get_field("laser_source"), log_simulation.fields["laser_source"])
+
+
+
+    def test_malformed_optional_log_falls_back_to_standalone_bpf(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            bpf_copy = tmp / BPF_SAMPLE.name
+            shutil.copyfile(BPF_SAMPLE, bpf_copy)
+            bpf_copy.with_suffix(".log").write_text("broken optional companion\n", encoding="utf-8")
+            output = tmp / "standalone.h5"
+            write_hdf5(bpf_copy, output)
+            with HeliosRun(output) as run:
+                metadata = run.get_metadata()
+                self.assertEqual(metadata["source_precedence"], "bpf_primary")
+                self.assertNotIn("log", metadata["source_files"])
+                self.assertEqual(run.get_field_metadata("laser_source_j_g").source, "derived")
+
+    def test_interior_time_misalignment_discards_companion_metadata_and_source(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            log_copy = tmp / LOG_BPF_SAMPLE.name
+            bpf_copy = tmp / LOG_BPF_COMPANION.name
+            shutil.copyfile(LOG_BPF_COMPANION, bpf_copy)
+            text = LOG_BPF_SAMPLE.read_text(encoding="utf-8", errors="replace")
+            lines = text.splitlines()
+            header_lines = [index for index, line in enumerate(lines) if re.match(r"^\s*Cycle\s+Time\s+\(s\)", line)]
+            time_row = header_lines[1] + 1
+            tokens = lines[time_row].split()
+            original = Decimal(tokens[1].replace("D", "E").replace("d", "E"))
+            quantum = Decimal(1).scaleb(original.as_tuple().exponent)
+            tokens[1] = str(original + quantum)
+            lines[time_row] = "  ".join(tokens)
+            log_copy.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            output = tmp / "misaligned.h5"
+            write_hdf5(log_copy, output)
+            with HeliosRun(output) as run:
+                metadata = run.get_metadata()
+                self.assertEqual(metadata["source_precedence"], "bpf_primary")
+                self.assertNotIn("log", metadata["source_files"])
+                self.assertEqual(run.get_field_metadata("laser_source_j_g").source, "derived")
+                self.assertIn("laser_source_bpf_sampled_j_g", run.list_fields())
 
     def test_legacy_sparse_file_still_opens_without_field_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -2,8 +2,9 @@
 
 The workspace is a presentation layer only. It owns controls, tables, and plots
 for the derived-analysis workflow, while the scientific calculations live in
-``helios.services.derived`` and the background orchestration lives in the
-controller.
+``helios.services.derived``. Analysis orchestration lives in the controller;
+the small Plasmon preset lookup runs in a cancellable, latest-request-wins
+workspace task so opening its defaults never reads HDF5 on the UI thread.
 """
 
 from __future__ import annotations
@@ -83,6 +84,59 @@ from helios.services.units.conversions import (
     photon_energy_kev_to_wavelength_angstrom,
     wavelength_shift_nm_to_energy_ev,
 )
+
+
+class _PresetTaskSignals(QtCore.QObject):
+    finished = QtCore.Signal(object, object)
+    failed = QtCore.Signal(object, str)
+
+
+class _PlasmonPresetTask(QtCore.QRunnable):
+    def __init__(self, request_key: tuple[object, ...], path: Path, revision, snapshot_index: int, preset: str) -> None:
+        super().__init__()
+        self.request_key = request_key
+        self.path = path
+        self.revision = revision
+        self.snapshot_index = int(snapshot_index)
+        self.preset = str(preset)
+        self.signals = _PresetTaskSignals()
+        self.setAutoDelete(True)
+
+    @QtCore.Slot()
+    def run(self) -> None:
+        try:
+            dataset = load_run_data(self.path, revision=self.revision, requested_fields=())
+            material_formulas = resolved_material_formula_map(dataset)
+            al_ids = sorted(int(material_id) for material_id, formula in material_formulas.items() if str(formula) == "Al")
+            if not al_ids:
+                raise ValueError("No Al material resolved from EOS/opacity metadata.")
+            al_material_id = al_ids[0]
+            if self.preset == PLASMON_BENCHMARK_PRESET_AL_DRIVEN_ARTICLE:
+                span = shocked_al_slab_summary(
+                    dataset,
+                    snapshot_index=self.snapshot_index,
+                    density_floor_g_cm3=3.75,
+                    material_id=al_material_id,
+                )
+                zone_lower = int(span["zone_index_lower"])
+                zone_upper = int(span["zone_index_upper"])
+                note = (
+                    f"Applied driven Al article preset at current snapshot {self.snapshot_index}. "
+                    "This preset expects the global snapshot near 6.3 ns for article-facing comparison."
+                )
+            else:
+                zone_material = np.abs(np.asarray(dataset.zone_material_index, dtype=np.int32))
+                indices = np.flatnonzero(zone_material == int(abs(al_material_id)))
+                if indices.size == 0:
+                    raise ValueError(f"No zones found for material {al_material_id}.")
+                zone_lower, zone_upper = int(indices[0] + 1), int(indices[-1] + 1)
+                note = "Applied ambient Al article preset. Use global snapshot 0 for the cold benchmark."
+            self.signals.finished.emit(
+                self.request_key,
+                {"material_id": al_material_id, "zone_lower": zone_lower, "zone_upper": zone_upper, "note": note},
+            )
+        except Exception as exc:
+            self.signals.failed.emit(self.request_key, str(exc))
 from helios_viewer.plots import CurvePlotWidget
 from helios_viewer.settings import ViewerSettings, default_viewer_settings
 from helios_viewer.slider import apply_absolute_click_slider_behavior
@@ -193,6 +247,24 @@ def _transmission_mode_label(value: str) -> str:
         "xcom": "XCOM",
     }
     return labels.get(str(value), str(value).replace("_", " ").title())
+
+
+def _weighting_label(value: str) -> str:
+    labels = {
+        "electron_column": "Electron column",
+        "electron_density": "Electron density",
+        "mass": "Mass",
+        "width": "Zone width",
+        "simple_mean": "Simple mean",
+    }
+    normalized = str(value or "").strip().lower()
+    return labels.get(normalized, normalized.replace("_", " ").title() or "Unspecified")
+
+
+def _execution_mode_label(value: str) -> str:
+    labels = {"quicklook": "Quick look", "benchmark": "Benchmark"}
+    normalized = str(value or "").strip().lower()
+    return labels.get(normalized, normalized.replace("_", " ").title() or "Unspecified")
 
 
 def _bundle_has_finite_data(bundle: DerivedPlotBundle) -> bool:
@@ -354,6 +426,14 @@ class DerivedPlotPanel(QtWidgets.QWidget):
         self.profile_combo = _PopupAwareComboBox()
         self.time_label = QtWidgets.QLabel("Time traces")
         self.profile_label = QtWidgets.QLabel("Snapshot profiles")
+        self.time_combo.setAccessibleName(self.time_label.text())
+        self.time_combo.setAccessibleDescription(
+            "Choose which time trace is shown in this panel."
+        )
+        self.profile_combo.setAccessibleName(self.profile_label.text())
+        self.profile_combo.setAccessibleDescription(
+            "Choose which snapshot profile is shown in this panel."
+        )
         controls_layout.addWidget(self.time_label, 0, 0)
         controls_layout.addWidget(self.time_combo, 0, 1)
         controls_layout.addWidget(self.profile_label, 1, 0)
@@ -469,6 +549,8 @@ class DerivedPlotPanel(QtWidgets.QWidget):
     def set_section_labels(self, primary_label: str, secondary_label: str) -> None:
         self.time_label.setText(str(primary_label))
         self.profile_label.setText(str(secondary_label))
+        self.time_combo.setAccessibleName(self.time_label.text())
+        self.profile_combo.setAccessibleName(self.profile_label.text())
 
     def set_expected_options(
         self,
@@ -557,7 +639,7 @@ class DerivedPlotPanel(QtWidgets.QWidget):
             expected_options=self._expected_profile_options,
             missing_reason=self._missing_profile_reason,
         )
-        if self.time_combo.count():
+        if self._time_bundles:
             self.time_combo.setEnabled(True)
             self.time_plot.setEnabled(True)
             self.reset_time_button.setEnabled(True)
@@ -573,7 +655,7 @@ class DerivedPlotPanel(QtWidgets.QWidget):
             self.time_plot.clear_cursor_marker()
             self.time_plot.setEnabled(False)
             self.reset_time_button.setEnabled(False)
-        if self.profile_combo.count():
+        if self._profile_bundles:
             self.profile_combo.setEnabled(True)
             self.profile_plot.setEnabled(True)
             self.reset_profile_button.setEnabled(True)
@@ -852,6 +934,39 @@ class DerivedPlotPanel(QtWidgets.QWidget):
             self.time_plot.clear_cursor_marker()
 
 
+class _ScrollableResultTabs(QtWidgets.QTabWidget):
+    """Scrollable pages that retain the original page-facing tab API."""
+
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._page_wrappers: dict[QtWidgets.QWidget, QtWidgets.QScrollArea] = {}
+
+    def add_scrollable_page(self, page: QtWidgets.QWidget, title: str) -> int:
+        scroll_area = QtWidgets.QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setWidget(page)
+        self._page_wrappers[page] = scroll_area
+        return super().addTab(scroll_area, title)
+
+    def indexOf(self, widget: QtWidgets.QWidget) -> int:  # noqa: N802
+        return super().indexOf(self._page_wrappers.get(widget, widget))
+
+    def setCurrentWidget(self, widget: QtWidgets.QWidget) -> None:  # noqa: N802
+        super().setCurrentWidget(self._page_wrappers.get(widget, widget))
+
+    def currentWidget(self) -> QtWidgets.QWidget | None:  # noqa: N802
+        current = super().currentWidget()
+        if current is None:
+            return None
+        return next(
+            (page for page, wrapper in self._page_wrappers.items() if wrapper is current),
+            current,
+        )
+
+
 class HeliosDerivedWorkspace(QtWidgets.QWidget):
     """Derived / Analysis results workspace for the unified shell."""
 
@@ -865,6 +980,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         super().__init__(parent)
         self._theme = LIGHT_THEME
         self._context = RunContext.empty()
+        self._preset_pool = QtCore.QThreadPool(self)
+        self._preset_pool.setMaxThreadCount(1)
+        self._preset_request_generation = 0
         self._current_result: DerivedAnalysisResult | None = None
         self._display_settings = default_viewer_settings()
         self._default_profile_coordinate_mode = "viewer_follow"
@@ -957,6 +1075,11 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.weighting_combo.addItem("Mass", "mass")
         self.weighting_combo.addItem("Width", "width")
         self.weighting_combo.addItem("Simple mean (debug)", "simple_mean")
+        self.weighting_combo.setToolTip(
+            "Auto lets each analysis module choose its documented default "
+            "weighting. The result summary and module details identify the "
+            "weighting each module applied."
+        )
         self.reuse_viewer_subset_checkbox = QtWidgets.QCheckBox("Reuse active Viewer subset")
         self.reuse_viewer_subset_checkbox.setChecked(True)
         geometry_layout.addRow("Observation side", self.observation_side_combo)
@@ -983,6 +1106,10 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.exclude_low_density_checkbox = QtWidgets.QCheckBox("Exclude low-density / blowoff-like zones")
         self.exclude_opposite_velocity_checkbox = QtWidgets.QCheckBox("Exclude opposite-flow zones")
         self.min_density_spin = QtWidgets.QDoubleSpinBox()
+        self.min_density_spin.setAccessibleName("Minimum density")
+        self.min_density_spin.setAccessibleDescription(
+            "Exclude zones below this density threshold, in grams per cubic centimetre."
+        )
         self.min_density_spin.setRange(0.0, 1.0e6)
         self.min_density_spin.setDecimals(4)
         self.min_density_spin.setSingleStep(0.1)
@@ -994,9 +1121,17 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         zone_clip_layout.setSpacing(6)
         self.zone_lower_spin = QtWidgets.QSpinBox()
         self.zone_upper_spin = QtWidgets.QSpinBox()
-        zone_clip_layout.addWidget(QtWidgets.QLabel("Zone"))
+        lower_zone_label = QtWidgets.QLabel("Zone from")
+        lower_zone_label.setBuddy(self.zone_lower_spin)
+        self.zone_lower_spin.setAccessibleName("First zone")
+        self.zone_lower_spin.setAccessibleDescription("First zone index included in the analysis.")
+        upper_zone_label = QtWidgets.QLabel("to")
+        upper_zone_label.setBuddy(self.zone_upper_spin)
+        self.zone_upper_spin.setAccessibleName("Last zone")
+        self.zone_upper_spin.setAccessibleDescription("Last zone index included in the analysis.")
+        zone_clip_layout.addWidget(lower_zone_label)
         zone_clip_layout.addWidget(self.zone_lower_spin)
-        zone_clip_layout.addWidget(QtWidgets.QLabel("to"))
+        zone_clip_layout.addWidget(upper_zone_label)
         zone_clip_layout.addWidget(self.zone_upper_spin)
         filter_layout.addWidget(self.exclude_entry_region_checkbox)
         filter_layout.addWidget(self.exclude_low_density_checkbox)
@@ -1005,7 +1140,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         density_row_layout = QtWidgets.QHBoxLayout(density_row)
         density_row_layout.setContentsMargins(0, 0, 0, 0)
         density_row_layout.setSpacing(6)
-        density_row_layout.addWidget(QtWidgets.QLabel("Min density"))
+        density_label = QtWidgets.QLabel("Min density")
+        density_label.setBuddy(self.min_density_spin)
+        density_row_layout.addWidget(density_label)
         density_row_layout.addWidget(self.min_density_spin, 1)
         filter_layout.addWidget(density_row)
         filter_layout.addWidget(zone_clip)
@@ -1257,9 +1394,6 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.plasmon_auto_recompute_checkbox.setToolTip("When disabled, heavy plasmon controls mark the study as stale until Recompute is pressed.")
         self.plasmon_recompute_button.setToolTip("Recompute the currently selected plasmon study for the active snapshot.")
         self.plasmon_export_button.setToolTip("Export the currently displayed plasmon spectrum arrays to CSV for external inspection.")
-        self._configure_plasmon_coordinate_spin(axis=PLASMON_AXIS_ANGLE_DEG, canonical_value=45.0)
-        self._configure_plasmon_scan_spins(axis=PLASMON_AXIS_ANGLE_DEG, start=10.0, stop=140.0)
-
         self.spectroscopy_controls_group = QtWidgets.QGroupBox("Spectroscopy Settings")
         spectroscopy_layout = QtWidgets.QFormLayout(self.spectroscopy_controls_group)
         self.spectroscopy_wavelength_spin = QtWidgets.QDoubleSpinBox()
@@ -1276,6 +1410,20 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.spectroscopy_line_label = QtWidgets.QLabel("Line wavelength")
         spectroscopy_layout.addRow(self.spectroscopy_line_label, self.spectroscopy_wavelength_spin)
         spectroscopy_layout.addRow("Shift display", self.spectroscopy_shift_unit_combo)
+
+        self._canonical_physical_values = {
+            "los_angle_deg": self._angle_display_to_deg(float(self.los_angle_spin.value()), unit="deg"),
+            "xrd_angle_deg": self._angle_display_to_deg(float(self.xrd_angle_spin.value()), unit="deg"),
+            "xrd_energy_kev": self._photon_display_to_kev(float(self.xrd_energy_spin.value()), unit="keV"),
+            "plasmon_energy_kev": self._photon_display_to_kev(float(self.plasmon_energy_spin.value()), unit="keV"),
+            "plasmon_coordinate": self._selected_plasmon_coordinate_value(),
+            "plasmon_scan_start": self._selected_plasmon_scan_start(),
+            "plasmon_scan_stop": self._selected_plasmon_scan_stop(),
+            "spectroscopy_line_nm": float(self._line_display_value_to_nm(float(self.spectroscopy_wavelength_spin.value()), unit="nm")),
+            "min_density_g_cm3": float(self.min_density_spin.value()),
+        }
+        self._configure_plasmon_coordinate_spin(axis=PLASMON_AXIS_ANGLE_DEG, canonical_value=45.0)
+        self._configure_plasmon_scan_spins(axis=PLASMON_AXIS_ANGLE_DEG, start=10.0, stop=140.0)
 
         button_row = QtWidgets.QHBoxLayout()
         self.refresh_button = QtWidgets.QPushButton("Recompute")
@@ -1340,6 +1488,23 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 widget.currentIndexChanged.connect(self._schedule_parameters_changed)
             elif isinstance(widget, QtWidgets.QCheckBox):
                 widget.toggled.connect(self._schedule_parameters_changed)
+        for spin, key, converter in (
+            (self.los_angle_spin, "los_angle_deg", lambda value: self._angle_display_to_deg(value)),
+            (self.xrd_angle_spin, "xrd_angle_deg", lambda value: self._angle_display_to_deg(value)),
+            (self.xrd_energy_spin, "xrd_energy_kev", lambda value: self._photon_display_to_kev(value, unit=self._photon_spin_unit(self.xrd_energy_spin))),
+            (self.plasmon_energy_spin, "plasmon_energy_kev", lambda value: self._photon_display_to_kev(value, unit=self._photon_spin_unit(self.plasmon_energy_spin))),
+            (self.spectroscopy_wavelength_spin, "spectroscopy_line_nm", lambda value: self._line_display_value_to_nm(value)),
+            (self.min_density_spin, "min_density_g_cm3", lambda value: self._density_display_to_g_cm3(value)),
+        ):
+            spin.valueChanged.connect(lambda value, name=key, convert=converter: self._remember_canonical_value(name, convert(float(value))))
+        self.plasmon_angle_spin.valueChanged.connect(
+            lambda value: self._remember_canonical_value(
+                "plasmon_coordinate",
+                float(value) if self._selected_plasmon_coordinate_axis() == PLASMON_AXIS_K_ANGSTROM_INV else self._angle_display_to_deg(float(value)),
+            )
+        )
+        self.plasmon_scan_start_spin.valueChanged.connect(lambda value: self._remember_scan_value("plasmon_scan_start", float(value)))
+        self.plasmon_scan_stop_spin.valueChanged.connect(lambda value: self._remember_scan_value("plasmon_scan_stop", float(value)))
         self.region_list.itemChanged.connect(lambda _item: self._schedule_parameters_changed())
         self.material_list.itemChanged.connect(lambda _item: self._schedule_parameters_changed())
         self.xrd_display_combo.currentIndexChanged.connect(self._refresh_display_only)
@@ -1449,7 +1614,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.performance_summary_label.setWordWrap(True)
         results_layout.addWidget(self.performance_summary_label)
 
-        self.result_tabs = QtWidgets.QTabWidget()
+        self.result_tabs = _ScrollableResultTabs()
         self.result_tabs.currentChanged.connect(self._handle_result_tab_changed)
         results_layout.addWidget(self.result_tabs, 1)
 
@@ -1507,7 +1672,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.shock_interface_table.horizontalHeader().setStretchLastSection(True)
         self.shock_interface_table.verticalHeader().setVisible(False)
         shock_layout.addWidget(self.shock_interface_table)
-        self.result_tabs.addTab(self.shock_tab, "Shock")
+        self._add_scrollable_result_tab(self.shock_tab, "Shock")
 
         self.wavefront_tab = QtWidgets.QWidget()
         wavefront_layout = QtWidgets.QVBoxLayout(self.wavefront_tab)
@@ -1646,7 +1811,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.wavefront_scope_combo.currentIndexChanged.connect(self._refresh_wavefront_view)
         self.wavefront_direction_combo.currentIndexChanged.connect(self._refresh_wavefront_view)
 
-        self.result_tabs.addTab(self.wavefront_tab, "WaveFront")
+        self._add_scrollable_result_tab(self.wavefront_tab, "WaveFront")
 
         self.preheat_tab = QtWidgets.QWidget()
         preheat_layout = QtWidgets.QVBoxLayout(self.preheat_tab)
@@ -1687,13 +1852,25 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         preheat_controls_layout.addWidget(self.preheat_offset_combo, 0, 5)
         preheat_controls_layout.addWidget(QtWidgets.QLabel("Snapshot"), 1, 0)
         self.preheat_snapshot_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.preheat_snapshot_slider.setAccessibleName("Preheat snapshot")
+        self.preheat_snapshot_slider.setAccessibleDescription(
+            "Choose the snapshot used for the Preheat analysis."
+        )
         apply_absolute_click_slider_behavior(self.preheat_snapshot_slider)
         self.preheat_snapshot_slider.setTracking(True)
         preheat_controls_layout.addWidget(self.preheat_snapshot_slider, 1, 1, 1, 3)
         self.preheat_snapshot_spin = QtWidgets.QSpinBox()
+        self.preheat_snapshot_spin.setAccessibleName("Preheat snapshot index")
+        self.preheat_snapshot_spin.setAccessibleDescription(
+            "Select the zero-based snapshot used for the Preheat analysis."
+        )
         self.preheat_snapshot_spin.setKeyboardTracking(False)
         preheat_controls_layout.addWidget(self.preheat_snapshot_spin, 1, 4)
         self.preheat_time_spin = QtWidgets.QDoubleSpinBox()
+        self.preheat_time_spin.setAccessibleName("Preheat snapshot time")
+        self.preheat_time_spin.setAccessibleDescription(
+            "Select the Preheat snapshot by simulation time."
+        )
         self.preheat_time_spin.setKeyboardTracking(False)
         self.preheat_time_spin.setDecimals(6)
         self.preheat_time_spin.setRange(-1.0e18, 1.0e18)
@@ -1789,7 +1966,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.preheat_snapshot_slider.valueChanged.connect(self._on_preheat_snapshot_slider_changed)
         self.preheat_snapshot_spin.valueChanged.connect(self._on_preheat_snapshot_spin_changed)
         self.preheat_time_spin.valueChanged.connect(self._on_preheat_time_spin_changed)
-        self.result_tabs.addTab(self.preheat_tab, "Preheat")
+        self._add_scrollable_result_tab(self.preheat_tab, "Preheat")
 
         self.xrd_tab = QtWidgets.QWidget()
         xrd_layout = QtWidgets.QVBoxLayout(self.xrd_tab)
@@ -1806,7 +1983,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.xrd_table.horizontalHeader().setStretchLastSection(True)
         self.xrd_table.verticalHeader().setVisible(False)
         xrd_layout.addWidget(self.xrd_table)
-        self._module_tab_names[self.result_tabs.addTab(self.xrd_tab, "XRD")] = "xrd"
+        self._module_tab_names[self._add_scrollable_result_tab(self.xrd_tab, "XRD")] = "xrd"
 
         self.plasmon_tab = QtWidgets.QWidget()
         plasmon_layout = QtWidgets.QVBoxLayout(self.plasmon_tab)
@@ -1849,7 +2026,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         plasmon_layout.addWidget(self.plasmon_splitter, 1)
         self._sync_plasmon_plot_capabilities()
         if production_feature_visible("plasmon"):
-            self._module_tab_names[self.result_tabs.addTab(self.plasmon_tab, "Plasmon")] = "plasmon"
+            self._module_tab_names[
+                self._add_scrollable_result_tab(self.plasmon_tab, "Plasmon")
+            ] = "plasmon"
 
         self.transmission_tab = QtWidgets.QWidget()
         transmission_layout = QtWidgets.QVBoxLayout(self.transmission_tab)
@@ -1933,7 +2112,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.transmission_table.verticalHeader().setVisible(False)
         transmission_layout.addWidget(self.transmission_table)
         if production_feature_visible("transmission"):
-            self._module_tab_names[self.result_tabs.addTab(self.transmission_tab, "Transmission")] = "transmission"
+            self._module_tab_names[
+                self._add_scrollable_result_tab(self.transmission_tab, "Transmission")
+            ] = "transmission"
         self._configure_transmission_energy_spin(energy_kev=8.0)
         self._on_transmission_controls_changed()
 
@@ -1950,7 +2131,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         spectroscopy_layout.addWidget(self.spectroscopy_metrics)
         self.spectroscopy_plot_panel = DerivedPlotPanel()
         spectroscopy_layout.addWidget(self.spectroscopy_plot_panel, 1)
-        self._module_tab_names[self.result_tabs.addTab(self.spectroscopy_tab, "Spectroscopy")] = "spectroscopy"
+        self._module_tab_names[
+            self._add_scrollable_result_tab(self.spectroscopy_tab, "Spectroscopy")
+        ] = "spectroscopy"
 
         self.warnings_tab = QtWidgets.QWidget()
         warnings_layout = QtWidgets.QVBoxLayout(self.warnings_tab)
@@ -1960,7 +2143,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.warnings_tree.setHeaderLabels(["Severity / Module", "Message"])
         self.warnings_tree.header().setStretchLastSection(True)
         warnings_layout.addWidget(self.warnings_tree, 1)
-        self.result_tabs.addTab(self.warnings_tab, "Warnings")
+        self._add_scrollable_result_tab(self.warnings_tab, "Warnings")
 
         splitter.addWidget(controls_scroll)
         splitter.addWidget(results)
@@ -1987,6 +2170,10 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         ):
             self._configure_readonly_text_panel(text_panel)
         self._install_wheel_guard()
+
+    def _add_scrollable_result_tab(self, page: QtWidgets.QWidget, title: str) -> int:
+        """Keep tall result pages usable in short desktop windows."""
+        return self.result_tabs.add_scrollable_page(page, title)
 
     def _checked_values(self, widget: QtWidgets.QListWidget) -> tuple[int, ...]:
         values: list[int] = []
@@ -2123,6 +2310,12 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         if module_name is None:
             return frozenset()
         return frozenset({module_name})
+
+    def requested_modules(self) -> frozenset[str]:
+        """Return the snapshot module requested by the active result tab."""
+
+        module_name = self._active_time_plot_module()
+        return frozenset() if module_name is None else frozenset({module_name})
 
     def transmission_requested(self) -> bool:
         return int(self.result_tabs.currentIndex()) == int(self.result_tabs.indexOf(self.transmission_tab))
@@ -2274,6 +2467,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             self.plasmon_compare_model_list.blockSignals(False)
 
     def _selected_plasmon_probe_energy_kev(self) -> float:
+        canonical = getattr(self, "_canonical_physical_values", {}).get("plasmon_energy_kev")
+        if canonical is not None:
+            return float(canonical)
         return float(self._photon_display_to_kev(float(self.plasmon_energy_spin.value()), unit=self._photon_spin_unit(self.plasmon_energy_spin)))
 
     def _plasmon_k_angstrom_inv_from_angle_deg(self, angle_deg: float, *, energy_kev: float | None = None) -> float:
@@ -2307,12 +2503,13 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 self.plasmon_angle_spin.setSuffix(" 1/A")
                 self.plasmon_angle_spin.setValue(float(canonical_value))
             else:
-                self.plasmon_angle_spin.setDecimals(3 if self._angle_unit() == "rad" else 2)
+                self.plasmon_angle_spin.setDecimals(6 if self._angle_unit() == "rad" else 2)
                 self.plasmon_angle_spin.setRange(0.1 if self._angle_unit() == "deg" else 0.001, 180.0 if self._angle_unit() == "deg" else math.pi)
                 self.plasmon_angle_spin.setSingleStep(1.0 if self._angle_unit() == "deg" else 0.05)
                 self.plasmon_angle_spin.setSuffix(f" {_angle_unit_label(self._angle_unit())}")
                 self.plasmon_angle_spin.setValue(float(self._display_angle_from_deg(float(canonical_value))))
             self.plasmon_angle_spin.setProperty("plasmon_axis", normalized_axis)
+            self._canonical_physical_values["plasmon_coordinate"] = float(canonical_value)
         finally:
             self.plasmon_angle_spin.blockSignals(False)
 
@@ -2334,7 +2531,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                     spin.setSuffix(" 1/A")
                     spin.setValue(float(value))
                 else:
-                    spin.setDecimals(3 if self._angle_unit() == "rad" else 2)
+                    spin.setDecimals(6 if self._angle_unit() == "rad" else 2)
                     spin.setRange(0.1 if self._angle_unit() == "deg" else 0.001, 180.0 if self._angle_unit() == "deg" else math.pi)
                     spin.setSingleStep(1.0 if self._angle_unit() == "deg" else 0.05)
                     spin.setSuffix(f" {_angle_unit_label(self._angle_unit())}")
@@ -2342,8 +2539,13 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 spin.setProperty("plasmon_axis", normalized_axis)
             finally:
                 spin.blockSignals(False)
+        self._canonical_physical_values["plasmon_scan_start"] = float(start)
+        self._canonical_physical_values["plasmon_scan_stop"] = float(stop)
 
     def _selected_plasmon_coordinate_value(self) -> float:
+        canonical = getattr(self, "_canonical_physical_values", {}).get("plasmon_coordinate")
+        if canonical is not None:
+            return float(canonical)
         axis = self._selected_plasmon_coordinate_axis()
         value = float(self.plasmon_angle_spin.value())
         if axis == PLASMON_AXIS_K_ANGSTROM_INV:
@@ -2358,6 +2560,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         return float(value)
 
     def _selected_plasmon_scan_start(self) -> float:
+        canonical = getattr(self, "_canonical_physical_values", {}).get("plasmon_scan_start")
+        if canonical is not None:
+            return float(canonical)
         axis = self._selected_plasmon_scan_axis()
         value = float(self.plasmon_scan_start_spin.value())
         if axis == PLASMON_AXIS_K_ANGSTROM_INV:
@@ -2365,6 +2570,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         return float(self._angle_display_to_deg(value))
 
     def _selected_plasmon_scan_stop(self) -> float:
+        canonical = getattr(self, "_canonical_physical_values", {}).get("plasmon_scan_stop")
+        if canonical is not None:
+            return float(canonical)
         axis = self._selected_plasmon_scan_axis()
         value = float(self.plasmon_scan_stop_spin.value())
         if axis == PLASMON_AXIS_K_ANGSTROM_INV:
@@ -2385,20 +2593,20 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         finally:
             widget.blockSignals(False)
 
-    def _al_material_ids_for_dataset(self, dataset) -> tuple[int, ...]:
-        mapping = resolved_material_formula_map(dataset)
-        return tuple(sorted(int(material_id) for material_id, formula in mapping.items() if str(formula) == "Al"))
+    def _remember_canonical_value(self, key: str, value: float) -> None:
+        self._canonical_physical_values[key] = float(value)
 
-    def _material_zone_span(self, dataset, *, material_id: int) -> tuple[int, int]:
-        zone_material = np.abs(np.asarray(dataset.zone_material_index, dtype=np.int32))
-        indices = np.flatnonzero(zone_material == int(abs(material_id)))
-        if indices.size == 0:
-            raise ValueError(f"No zones found for material {material_id}.")
-        return int(indices[0] + 1), int(indices[-1] + 1)
+    def _remember_scan_value(self, key: str, displayed_value: float) -> None:
+        value = float(displayed_value)
+        if self._selected_plasmon_scan_axis() != PLASMON_AXIS_K_ANGSTROM_INV:
+            value = self._angle_display_to_deg(value)
+        self._remember_canonical_value(key, value)
 
     def _apply_plasmon_benchmark_preset(self) -> None:
         preset = self._selected_plasmon_benchmark_preset()
         if preset == PLASMON_BENCHMARK_PRESET_NONE:
+            self._preset_request_generation += 1
+            self._preset_pool.clear()
             self.status_label.setText("Plasmon preset: no preset selected.")
             self.result_status_label.setText("Plasmon preset: no preset selected.")
             return
@@ -2406,32 +2614,63 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             self.status_label.setText("Plasmon preset: load a run before applying benchmark defaults.")
             self.result_status_label.setText("Plasmon preset: load a run before applying benchmark defaults.")
             return
-        try:
-            dataset = load_run_data(Path(self._context.path))
-            al_ids = self._al_material_ids_for_dataset(dataset)
-            if not al_ids:
-                raise ValueError("No Al material resolved from EOS/opacity metadata.")
-            al_material_id = int(al_ids[0])
-            if preset == PLASMON_BENCHMARK_PRESET_AL_DRIVEN_ARTICLE:
-                span = shocked_al_slab_summary(
-                    dataset,
-                    snapshot_index=int(self._context.snapshot_index),
-                    density_floor_g_cm3=3.75,
-                    material_id=al_material_id,
-                )
-                zone_lower = int(span["zone_index_lower"])
-                zone_upper = int(span["zone_index_upper"])
-                note = (
-                    f"Applied driven Al article preset at current snapshot {int(self._context.snapshot_index)}. "
-                    "This preset expects the global snapshot near 6.3 ns for article-facing comparison."
-                )
-            else:
-                zone_lower, zone_upper = self._material_zone_span(dataset, material_id=al_material_id)
-                note = "Applied ambient Al article preset. Use global snapshot 0 for the cold benchmark."
-        except Exception as exc:
-            self.status_label.setText(f"Plasmon preset failed: {exc}")
-            self.result_status_label.setText(f"Plasmon preset failed: {exc}")
+        self._preset_request_generation += 1
+        self._preset_pool.clear()
+        request_key = (
+            int(self._preset_request_generation),
+            preset,
+            self._context.context_key,
+            int(self._context.snapshot_index),
+        )
+        task = _PlasmonPresetTask(
+            request_key,
+            Path(self._context.path),
+            self._context.revision,
+            int(self._context.snapshot_index),
+            preset,
+        )
+        task.signals.finished.connect(self._on_plasmon_preset_ready)
+        task.signals.failed.connect(self._on_plasmon_preset_failed)
+        self.status_label.setText("Preparing Plasmon benchmark defaults…")
+        self.result_status_label.setText("Preparing Plasmon benchmark defaults…")
+        self._preset_pool.start(task)
+
+    @QtCore.Slot(object, object)
+    def _on_plasmon_preset_ready(self, request_key: tuple[object, ...], result: dict[str, object]) -> None:
+        if not self._is_current_plasmon_preset_request(request_key):
             return
+        self._apply_plasmon_benchmark_preset_values(
+            str(request_key[1]),
+            int(result["material_id"]),
+            int(result["zone_lower"]),
+            int(result["zone_upper"]),
+            str(result["note"]),
+        )
+
+    @QtCore.Slot(object, str)
+    def _on_plasmon_preset_failed(self, request_key: tuple[object, ...], message: str) -> None:
+        if not self._is_current_plasmon_preset_request(request_key):
+            return
+        self.status_label.setText(f"Plasmon preset failed: {message}")
+        self.result_status_label.setText(f"Plasmon preset failed: {message}")
+
+    def _is_current_plasmon_preset_request(self, request_key: tuple[object, ...]) -> bool:
+        return (
+            len(request_key) == 4
+            and int(request_key[0]) == int(self._preset_request_generation)
+            and str(request_key[1]) == self._selected_plasmon_benchmark_preset()
+            and request_key[2] == self._context.context_key
+            and int(request_key[3]) == int(self._context.snapshot_index)
+        )
+
+    def _apply_plasmon_benchmark_preset_values(
+        self,
+        preset: str,
+        al_material_id: int,
+        zone_lower: int,
+        zone_upper: int,
+        note: str,
+    ) -> None:
 
         self.plasmon_benchmark_preset_combo.blockSignals(True)
         self.plasmon_model_combo.blockSignals(True)
@@ -2471,6 +2710,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             self._set_checked_plasmon_compare_models(None)
             self.plasmon_compare_policies_checkbox.setChecked(False)
             self.plasmon_energy_spin.setValue(float(self._display_photon_energy_from_kev(8.307, unit=self._photon_spin_unit(self.plasmon_energy_spin))))
+            self._remember_canonical_value("plasmon_energy_kev", 8.307)
             self.plasmon_window_spin.setValue(45.0)
             self.plasmon_points_spin.setValue(1201)
             self.plasmon_fwhm_spin.setValue(3.5)
@@ -2650,6 +2890,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 if index >= 0:
                     combo.setCurrentIndex(index)
             self.plasmon_energy_spin.setValue(float(self._display_photon_energy_from_kev(float(plasmon.photon_energy_kev), unit=self._photon_spin_unit(self.plasmon_energy_spin))))
+            self._remember_canonical_value("plasmon_energy_kev", float(plasmon.photon_energy_kev))
             self._configure_plasmon_coordinate_spin(
                 axis=str(getattr(plasmon, "coordinate_axis", PLASMON_AXIS_ANGLE_DEG)),
                 canonical_value=float(getattr(plasmon, "coordinate_value", plasmon.scattering_angle_deg)),
@@ -2681,27 +2922,19 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
     def _plasmon_request_control_has_active_input(self) -> bool:
         for widget in getattr(self, "_plasmon_request_controls", ()):
             if isinstance(widget, QtWidgets.QAbstractSpinBox):
-                if widget.hasFocus():
-                    return True
                 line_edit = widget.lineEdit()
-                if line_edit is not None and line_edit.hasFocus():
+                if line_edit is not None and line_edit.hasFocus() and line_edit.isModified():
                     return True
             elif isinstance(widget, _PopupAwareComboBox):
-                if widget.hasFocus() or widget.is_popup_visible():
+                if widget.is_popup_visible():
                     return True
             elif isinstance(widget, QtWidgets.QComboBox):
-                if widget.hasFocus():
-                    return True
                 view = widget.view()
-                if view is not None and (view.isVisible() or view.window().isVisible()):
+                if view is not None and view.isVisible():
                     return True
             elif isinstance(widget, QtWidgets.QAbstractItemView):
-                if widget.hasFocus():
-                    return True
                 if widget.viewport() is not None and widget.viewport().hasFocus():
                     return True
-            elif isinstance(widget, QtWidgets.QWidget) and widget.hasFocus():
-                return True
         return False
 
     def _should_defer_plasmon_recompute(self, sender: object | None) -> bool:
@@ -2945,8 +3178,13 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         if time_axis_s.size == 0:
             return None, "No preheat time axis is available for the current result."
         if self._preheat_time_mode == "manual":
-            clamped = int(np.clip(int(self._context.snapshot_index), 0, time_axis_s.size - 1))
-            note = "Manual preheat view follows the global snapshot/time selector."
+            requested = (
+                int(self._context.snapshot_index)
+                if self._preheat_manual_snapshot_index is None
+                else int(self._preheat_manual_snapshot_index)
+            )
+            clamped = int(np.clip(requested, 0, time_axis_s.size - 1))
+            note = "Manual preheat view uses the selected snapshot."
             if preheat.target_entry_time_s is not None and math.isfinite(float(preheat.target_entry_time_s)):
                 if float(time_axis_s[clamped]) >= float(preheat.target_entry_time_s):
                     note += " The selected snapshot is at or after target shock entry, so the profile shows the actual target state rather than pre-entry-only conditions."
@@ -3006,9 +3244,10 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 self.preheat_time_spin.setValue(0.0)
             manual_mode = self._preheat_time_mode == "manual"
             self.preheat_offset_combo.setEnabled(not manual_mode and preheat.latest_pre_entry_snapshot_index is not None)
-            self.preheat_snapshot_slider.setEnabled(False)
-            self.preheat_snapshot_spin.setEnabled(False)
-            self.preheat_time_spin.setEnabled(False)
+            has_time_axis = bool(time_axis_s.size)
+            self.preheat_snapshot_slider.setEnabled(manual_mode and has_time_axis)
+            self.preheat_snapshot_spin.setEnabled(manual_mode and has_time_axis)
+            self.preheat_time_spin.setEnabled(manual_mode and has_time_axis)
             self.preheat_offset_combo.setToolTip(
                 "Choose how many snapshots earlier than target shock entry to inspect."
                 if self.preheat_offset_combo.isEnabled()
@@ -3220,7 +3459,10 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
     def _on_preheat_time_mode_changed(self) -> None:
         if self._preheat_syncing_controls:
             return
+        previous_mode = self._preheat_time_mode
         self._preheat_time_mode = str(self.preheat_time_mode_combo.currentData() or "shock_relative")
+        if self._preheat_time_mode == "manual" and previous_mode != "manual":
+            self._preheat_manual_snapshot_index = int(self._context.snapshot_index)
         if self._current_result is not None:
             self._refresh_preheat_snapshot_view(self._current_result.preheat)
 
@@ -3748,14 +3990,10 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         if value_s is None or not math.isfinite(float(value_s)):
             return "-"
         value = float(np.asarray(self._display_time_from_seconds(float(value_s)), dtype=np.float64).reshape(-1)[0])
+        unit = self._time_unit()
         if abs(value) >= 0.1 and abs(value) < 1.0e4:
-            return f"{value:.3f} {self._time_unit()}"
-        magnitude_s = abs(float(value_s))
-        for unit, factor in (("s", 1.0), ("ms", 1.0e3), ("us", 1.0e6), ("ns", 1.0e9), ("ps", 1.0e12), ("fs", 1.0e15)):
-            scaled = float(value_s) * factor
-            if magnitude_s == 0.0 or (abs(scaled) >= 0.1 and abs(scaled) < 1000.0):
-                return f"{scaled:.3f} {unit}"
-        return f"{float(value_s):.3e} s"
+            return f"{value:.3f} {unit}"
+        return f"{value:.3e} {unit}"
 
     def _format_length(self, value_cm: float | None) -> str:
         if value_cm is None or not math.isfinite(float(value_cm)):
@@ -3848,9 +4086,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         for spin, minimum_deg, maximum_deg, step_deg in (
             (self.los_angle_spin, 0.0, 89.0, 2.5),
             (self.xrd_angle_spin, 0.1, 89.9, 0.5),
-            (self.plasmon_angle_spin, 0.1, 180.0, 1.0),
         ):
-            native_value_deg = self._angle_display_to_deg(float(spin.value()), unit=str(previous.angle_unit))
+            canonical_key = "los_angle_deg" if spin is self.los_angle_spin else "xrd_angle_deg"
+            native_value_deg = float(self._canonical_physical_values[canonical_key])
             spin.blockSignals(True)
             try:
                 if angle_unit == "rad":
@@ -3870,9 +4108,8 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
 
         photon_unit = self._photon_unit()
         photon_suffix = f" {_photon_unit_label(photon_unit)}"
-        for spin in (self.xrd_energy_spin, self.plasmon_energy_spin):
-            previous_unit = _normalize_photon_unit(str(spin.property("photon_unit") or previous.photon_unit))
-            native_kev = self._photon_display_to_kev(float(spin.value()), unit=previous_unit)
+        for spin, canonical_key in ((self.xrd_energy_spin, "xrd_energy_kev"), (self.plasmon_energy_spin, "plasmon_energy_kev")):
+            native_kev = float(self._canonical_physical_values[canonical_key])
             spin.blockSignals(True)
             try:
                 spin.setDecimals(3 if photon_unit == "keV" else 4)
@@ -3891,7 +4128,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             finally:
                 spin.blockSignals(False)
 
-        native_density_g_cm3 = self._density_display_to_g_cm3(float(self.min_density_spin.value()), unit=str(previous.density_unit))
+        native_density_g_cm3 = float(self._canonical_physical_values["min_density_g_cm3"])
         self.min_density_spin.blockSignals(True)
         try:
             self.min_density_spin.setDecimals(4 if self._density_unit() == "g/cm3" else 1)
@@ -3905,7 +4142,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         finally:
             self.min_density_spin.blockSignals(False)
 
-        native_line_nm = self._line_display_value_to_nm(float(self.spectroscopy_wavelength_spin.value()), unit=str(previous.photon_unit))
+        native_line_nm = float(self._canonical_physical_values["spectroscopy_line_nm"])
         self.spectroscopy_wavelength_spin.blockSignals(True)
         try:
             if photon_unit == "nm":
@@ -3948,12 +4185,12 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 combo.setItemText(k_index, "k [1/A]")
         self._configure_plasmon_coordinate_spin(
             axis=self._selected_plasmon_coordinate_axis(),
-            canonical_value=self._selected_plasmon_coordinate_value(),
+            canonical_value=float(self._canonical_physical_values["plasmon_coordinate"]),
         )
         self._configure_plasmon_scan_spins(
             axis=self._selected_plasmon_scan_axis(),
-            start=self._selected_plasmon_scan_start(),
-            stop=self._selected_plasmon_scan_stop(),
+            start=float(self._canonical_physical_values["plasmon_scan_start"]),
+            stop=float(self._canonical_physical_values["plasmon_scan_stop"]),
         )
 
     def set_display_settings(self, settings: object) -> None:
@@ -3971,15 +4208,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         zone_upper = int(self.zone_upper_spin.value())
         preheat_target_region_id = self.preheat_target_combo.currentData()
         return DerivedAnalysisParameters(
-            xrd_photon_energy_kev=self._photon_display_to_kev(
-                float(self.xrd_energy_spin.value()),
-                unit=self._photon_spin_unit(self.xrd_energy_spin),
-            ),
-            xrd_initial_bragg_angle_deg=self._angle_display_to_deg(float(self.xrd_angle_spin.value())),
-            plasmon_photon_energy_kev=self._photon_display_to_kev(
-                float(self.plasmon_energy_spin.value()),
-                unit=self._photon_spin_unit(self.plasmon_energy_spin),
-            ),
+            xrd_photon_energy_kev=float(self._canonical_physical_values["xrd_energy_kev"]),
+            xrd_initial_bragg_angle_deg=float(self._canonical_physical_values["xrd_angle_deg"]),
+            plasmon_photon_energy_kev=float(self._canonical_physical_values["plasmon_energy_kev"]),
             plasmon_scattering_angle_deg=self._selected_plasmon_fixed_angle_deg(),
             plasmon_adiabatic_index=float(self.plasmon_gamma_spin.value()),
             plasmon_model=self._selected_plasmon_model(),
@@ -4009,18 +4240,18 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             plasmon_compare_models=bool(self.plasmon_compare_models_checkbox.isChecked()),
             plasmon_compare_model_names=self._checked_plasmon_compare_models(),
             plasmon_compare_policies=bool(self.plasmon_compare_policies_checkbox.isChecked()),
-            spectroscopy_line_wavelength_nm=self._line_display_value_to_nm(float(self.spectroscopy_wavelength_spin.value())),
+            spectroscopy_line_wavelength_nm=float(self._canonical_physical_values["spectroscopy_line_nm"]),
             transmission_mode=str(self.transmission_mode_combo.currentData()),
             transmission_photon_energy_kev=self._selected_transmission_energy_kev(),
             observation_side=str(self.observation_side_combo.currentData()),
-            line_of_sight_angle_deg=self._angle_display_to_deg(float(self.los_angle_spin.value())),
+            line_of_sight_angle_deg=float(self._canonical_physical_values["los_angle_deg"]),
             profile_coordinate_mode=str(self.profile_coordinate_combo.currentData()),
             reuse_viewer_subset=bool(self.reuse_viewer_subset_checkbox.isChecked()),
             derived_region_ids=self._checked_values_for_filter(self.region_list),
             derived_material_ids=self._checked_values_for_filter(self.material_list),
             exclude_entry_region=bool(self.exclude_entry_region_checkbox.isChecked()),
             exclude_low_density=bool(self.exclude_low_density_checkbox.isChecked() or self.min_density_spin.value() > 0.0),
-            min_density_g_cm3=self._density_display_to_g_cm3(float(self.min_density_spin.value())),
+            min_density_g_cm3=float(self._canonical_physical_values["min_density_g_cm3"]),
             exclude_opposite_velocity=bool(self.exclude_opposite_velocity_checkbox.isChecked()),
             zone_index_lower=(zone_lower if zone_lower > 1 else None),
             zone_index_upper=(zone_upper if zone_upper > 0 and zone_upper < max(1, self._context.n_zones) else None),
@@ -4156,9 +4387,15 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
     def set_context(self, context: RunContext) -> None:
         previous_context = self._context
         previous_context_key = previous_context.context_key if previous_context.has_run else None
+        previous_snapshot = int(previous_context.snapshot_index)
         self._context = context.copy()
         current_context_key = self._context.context_key if self._context.has_run else None
         run_changed = previous_context_key != current_context_key
+        if run_changed or previous_snapshot != int(self._context.snapshot_index):
+            self._preset_request_generation += 1
+            if self.status_label.text().startswith("Preparing Plasmon benchmark defaults"):
+                self.status_label.setText("Plasmon preset request superseded by a run or snapshot change.")
+                self.result_status_label.setText("Plasmon preset request superseded by a run or snapshot change.")
         if not self._context.has_run or self._context.path is None:
             self._reset_preheat_navigation_state()
             self._sync_context_summary()
@@ -4221,6 +4458,14 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 f"Snapshot {self._context.snapshot_index} @ {self._format_time(snapshot_time)} ready."
             )
         self._update_snapshot_markers(snapshot_time)
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        self._preset_request_generation += 1
+        self._parameter_change_timer.stop()
+        self._busy_elapsed_timer.stop()
+        self._preset_pool.clear()
+        self._preset_pool.waitForDone(5000)
+        super().closeEvent(event)
 
     def set_busy(self, busy: bool, message: str) -> None:
         self.refresh_button.setEnabled(not busy)
@@ -4341,11 +4586,31 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
     def set_result(self, result: DerivedAnalysisResult) -> None:
         self._current_result = result
         selected_preheat_region = None if result.preheat is None or str(result.preheat.target_selection_mode or "auto") != "user_selected" else result.preheat.target_region_id
+        requested_weighting = str(self.weighting_combo.currentData() or "auto")
+        weighting_summary = (
+            f"Weighting: {_weighting_label(result.selection.weighting_mode)}"
+        )
+        if requested_weighting == "auto":
+            module_weightings = []
+            for module_name, module_result in (
+                ("XRD", result.xrd),
+                ("Plasmon", result.plasmon),
+                ("Spectroscopy", result.spectroscopy),
+            ):
+                applied_mode = getattr(module_result, "weighting_mode", None)
+                if applied_mode:
+                    module_weightings.append(
+                        f"{module_name}: {_weighting_label(applied_mode)}"
+                    )
+            module_weighting_text = "; ".join(module_weightings)
+            weighting_summary = "Weighting: Auto resolves per module"
+            if module_weighting_text:
+                weighting_summary += f" ({module_weighting_text})"
         self._populate_preheat_target_combo(selected_region_id=selected_preheat_region, preheat=result.preheat)
         selection_notes = f" | filters: {'; '.join(result.selection.notes)}" if result.selection.notes else ""
         self.analysis_banner.setText(
             f"{result.dataset_path.name} | snapshot {result.snapshot_index} @ {self._format_time(result.snapshot_time_s)} | "
-            f"{result.selected_zone_count} selected zones | weighting={result.selection.weighting_mode} | "
+            f"{result.selected_zone_count} selected zones | {weighting_summary} | "
             f"{result.geometry.observation_side} side | LOS cos={result.geometry.line_of_sight_cosine:.3f}"
             f"{selection_notes}"
         )
@@ -4606,7 +4871,12 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         budget_rows: list[tuple[str, str, str, str]] = []
         for row in preheat.budget_rows:
             value_text = "-" if row.integrated_value is None else f"{_format_optional(row.integrated_value, '{:.4g}')} {row.unit}"
-            budget_rows.append((str(row.label), value_text, self._format_fraction(row.fraction_of_observed), " ".join(row.notes)))
+            notes = list(row.notes)
+            if row.coverage_fraction is not None:
+                notes.append(f"data coverage: {100.0 * float(row.coverage_fraction):.1f}%")
+            if not row.available and not notes:
+                notes.append("unavailable for selected interval")
+            budget_rows.append((str(row.label), value_text, self._format_fraction(row.fraction_of_observed), " ".join(notes)))
         self.preheat_budget_table.setRowCount(len(budget_rows))
         for row_index, row_values in enumerate(budget_rows):
             for column, text in enumerate(row_values):
@@ -5235,7 +5505,8 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             f"Effective isotropic-compression quick look | snapshot {xrd.snapshot_index} @ {self._format_time(self._current_result.snapshot_time_s if self._current_result is not None else None)} | "
             f"{len(xrd.layers)} active regions | probe={self._format_photon_value_from_kev(xrd.photon_energy_kev, '{:.4g}')} | "
             f"lambda={xrd.wavelength_angstrom * 0.1:.4f} nm | theta0={self._format_angle(xrd.initial_bragg_angle_deg, '{:.4g}')} | "
-            f"weighting={xrd.weighting_mode} | {xrd.geometry_summary} | display={display_label}"
+            f"Weighting: {_weighting_label(xrd.weighting_mode)} | "
+            f"{xrd.geometry_summary} | display={display_label}"
         )
         self.xrd_plot_panel.set_bundles(
             tuple(time_bundles),
@@ -5330,21 +5601,29 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         requested_note = ""
         if str(plasmon.requested_model_name) != str(plasmon.model_name):
             requested_note = f" | requested={plasmon.requested_model_name}"
-        mode_note = f" | exec={getattr(plasmon, 'execution_mode', 'quicklook')}"
+        execution_mode = getattr(plasmon, "execution_mode", "quicklook")
+        mode_note = f" | Execution: {_execution_mode_label(execution_mode)}"
         benchmark_note = ""
         if str(plasmon.benchmark_status or "not_applicable") != "not_applicable":
-            benchmark_note = f" | benchmark={plasmon.benchmark_status}"
+            benchmark_status = str(plasmon.benchmark_status).replace("_", " ").title()
+            benchmark_note = f" | Benchmark: {benchmark_status}"
             if not bool(plasmon.model_executed_fully):
-                benchmark_note += " | incomplete execution"
+                benchmark_note += " | Execution incomplete"
             if float(plasmon.fallback_fraction or 0.0) > 0.0:
                 benchmark_note += f" | fallback={100.0 * float(plasmon.fallback_fraction):.1f}%"
         preset_note = ""
         if str(getattr(plasmon, "benchmark_preset", PLASMON_BENCHMARK_PRESET_NONE)) != PLASMON_BENCHMARK_PRESET_NONE:
-            preset_note = f" | preset={getattr(plasmon, 'benchmark_preset', PLASMON_BENCHMARK_PRESET_NONE)}"
+            preset_value = str(
+                getattr(plasmon, "benchmark_preset", PLASMON_BENCHMARK_PRESET_NONE)
+            ).replace("_", " ").title()
+            preset_note = f" | Preset: {preset_value}"
         pending_note = " | pending recompute" if not request_matches and self._selected_plasmon_model() != PLASMON_MODEL_QUICKLOOK else ""
         self.plasmon_summary_label.setText(
             f"Snapshot {plasmon.snapshot_index} @ {self._format_time(self._current_result.snapshot_time_s if self._current_result is not None else None)} | "
-            f"{study_text} | Regime: {plasmon.regime_label} | weighting={plasmon.weighting_mode}{model_note}{requested_note}{mode_note}{benchmark_note}{preset_note}{pending_note} | "
+            f"{study_text} | Regime: {plasmon.regime_label} | "
+            f"Weighting: {_weighting_label(plasmon.weighting_mode)}"
+            f"{model_note}{requested_note}{mode_note}{benchmark_note}"
+            f"{preset_note}{pending_note} | "
             f"runtime={float(getattr(plasmon, 'total_runtime_s', 0.0)):.2f}s | {plasmon.geometry_summary}"
         )
         self._set_text_browser_text_preserving_scroll(
@@ -5632,7 +5911,8 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 transformed_profile_bundles.append(converted_bundle)
         self.spectroscopy_summary_label.setText(
             f"Snapshot {spectroscopy.snapshot_index} @ {self._format_time(self._current_result.snapshot_time_s if self._current_result is not None else None)} | "
-            f"LOS cos={spectroscopy.line_of_sight_cosine:.3f} | weighting={spectroscopy.weighting_mode} | "
+            f"LOS cos={spectroscopy.line_of_sight_cosine:.3f} | "
+            f"Weighting: {_weighting_label(spectroscopy.weighting_mode)} | "
             f"{spectroscopy.geometry_summary} | shift display={shift_label}"
         )
         self.spectroscopy_metrics.setPlainText(

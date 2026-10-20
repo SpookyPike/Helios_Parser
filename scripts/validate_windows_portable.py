@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import argparse
+import hashlib
 import os
 import shutil
 import subprocess
@@ -24,14 +26,54 @@ ZIP_PATH = ROOT / "outputs" / "distributables" / f"helios-parser-viewer-v{RELEAS
 ROOT_MARKERS = ("PYTHONPATH",)
 
 
+def verify_portable_scientific_resources(app_root: Path, source_root: Path = ROOT) -> None:
+    """Check that the portable bundle contains the authoritative JSON tables."""
+
+    source_package = source_root / "src" / "helios" / "services" / "derived"
+    resource_roots = (
+        source_package / "resources",
+        source_package / "reference_data" / "plasmon",
+    )
+    expected = {
+        path.relative_to(source_root / "src")
+        for root in resource_roots
+        for path in root.rglob("*.json")
+        if path.is_file()
+    }
+    if not expected:
+        raise RuntimeError("no authoritative packaged scientific JSON resources found")
+
+    for relative_path in sorted(expected):
+        source = source_root / "src" / relative_path
+        bundled_matches = [
+            path
+            for path in app_root.rglob(relative_path.name)
+            if path.is_file()
+            and path.as_posix().endswith(relative_path.as_posix())
+        ]
+        if len(bundled_matches) != 1:
+            raise RuntimeError(
+                f"expected one bundled resource {relative_path}, found {len(bundled_matches)}"
+            )
+        source_digest = hashlib.sha256(source.read_bytes()).digest()
+        bundled_digest = hashlib.sha256(bundled_matches[0].read_bytes()).digest()
+        if bundled_digest != source_digest:
+            raise RuntimeError(f"portable scientific resource hash mismatch: {relative_path}")
+
+
 def main() -> int:
-    if not ZIP_PATH.exists():
-        raise FileNotFoundError(ZIP_PATH)
+    parser = argparse.ArgumentParser(description="Smoke-test a built Windows portable bundle.")
+    parser.add_argument("--zip-path", type=Path, default=ZIP_PATH)
+    args = parser.parse_args()
+    zip_path = args.zip_path.resolve()
+    if not zip_path.exists():
+        raise FileNotFoundError(zip_path)
     with tempfile.TemporaryDirectory(prefix="helios_windows_portable_") as tmpdir:
         tmp = Path(tmpdir)
-        with zipfile.ZipFile(ZIP_PATH) as archive:
+        with zipfile.ZipFile(zip_path) as archive:
             archive.extractall(tmp)
         app_root = tmp / f"helios-parser-viewer-v{RELEASE_VERSION}-windows-portable"
+        verify_portable_scientific_resources(app_root)
         cli = app_root / "helios_to_hdf5.exe"
         gui = app_root / "HeliosParseView.exe"
         sample = app_root / "sample_data" / "5Fe+4.9TW+light.bpf"
@@ -51,7 +93,7 @@ def main() -> int:
         with h5py.File(output, "r") as handle:
             schema = handle.attrs.get("schema_version")
             field_count = len(handle["fields"].keys())
-        if str(schema) != "2.0" or field_count < 20:
+        if str(schema) != "2.1" or field_count < 20:
             raise RuntimeError(f"unexpected portable output schema={schema!r} fields={field_count}")
         env["QT_QPA_PLATFORM"] = "offscreen"
         process = subprocess.Popen([str(gui), str(output)], cwd=tmp, env=env)

@@ -1,0 +1,49 @@
+# Store source and documentation with stable LF endings across operating systems.
+* text=auto
+*.py text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.svg text eol=lf
+*.json text eol=lf
+*.csv text eol=lf
+*.toml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.sh text eol=lf
+*.ps1 text eol=lf
+
+# Windows command scripts retain their native line ending convention.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Scientific text inputs are byte-sensitive fixtures until their format contract
+# explicitly defines line-ending normalization.
+*.log -text
+*.rhc -text
+
+# Binary scientific data, images, fonts, documents, and archives.
+*.bpf -text
+*.h5 -text
+*.hdf5 -text
+*.npz -text
+*.npy -text
+*.bin -text
+*.png -text
+*.jpg -text
+*.jpeg -text
+*.gif -text
+*.ico -text
+*.tif -text
+*.tiff -text
+*.pdf -text
+*.ttf -text
+*.otf -text
+*.woff -text
+*.woff2 -text
+*.zip -text
+*.gz -text
+*.7z -text
+*.exe -text
+*.dll -text
+*.so -text
+*.dylib -text

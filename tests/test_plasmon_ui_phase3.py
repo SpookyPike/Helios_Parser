@@ -16,7 +16,7 @@ if QtWidgets is not None:
     from _viewer_test_utils import get_app, process_events, reset_test_settings
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
-from helios.services.derived.models import DerivedRunData
+from helios.services.derived.models import DerivedFieldCapabilities, DerivedRunData
 
 if QtWidgets is not None:
     from helios_analysis.workspace import HeliosDerivedWorkspace
@@ -70,6 +70,17 @@ def _synthetic_dataset() -> tuple[DerivedRunData, RunContext]:
         zone_initial_density_g_cm3=np.full(n_zones, 1.0, dtype=np.float64),
         zone_initial_temperature_ev=np.full(n_zones, 1.0, dtype=np.float64),
         laser_entry=None,
+        field_capabilities=DerivedFieldCapabilities(
+            available_fields=(
+                "density",
+                "zone_width",
+                "velocity",
+                "temperature_e",
+                "temperature_i",
+                "electron_density",
+                "mean_charge",
+            ),
+        ),
     )
     context = RunContext(
         path=Path("synthetic_plasmon.h5"),

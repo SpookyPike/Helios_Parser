@@ -2,18 +2,22 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
+import shutil
+import tempfile
 from unittest import mock
 import unittest
 
+import h5py
 import numpy as np
 
 import _test_bootstrap  # noqa: F401
 
 from _viewer_test_utils import HDF5_ROOT
 from helios.cache import clear_session_raw_data_cache
-from helios.runtime import RunContext
-from helios.services.derived.analysis import DerivedAnalysisParameters
-from helios.services.derived.common import field_capability_summary, load_run_data, publish_field_payload, publish_open_run_payload
+from helios.runtime import RunContext, RunRevision
+from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
+from helios.services.derived.common import _OPTIONAL_FIELD_DTYPES, _build_field_capabilities, field_capability_summary, load_run_data, publish_field_payload, publish_open_run_payload
+from helios.services.derived import common
 from helios.services.derived.transmission import evaluate_transmission
 from helios.services.derived.selection import (
     AnalysisStateCache,
@@ -195,6 +199,8 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
     def test_load_run_data_reuses_viewer_published_raw_arrays(self) -> None:
         clear_session_raw_data_cache(reason="preload_viewer_fields")
         path = HDF5_ROOT / "Cu_0166_stabilized.h5"
+        revision = RunRevision.create(path)
+        published_fields: dict[str, np.ndarray] = {}
         with HeliosRun(path) as run:
             fields = run.list_fields()
             summary = run.summary()
@@ -203,6 +209,7 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
             materials = run.get_materials()
             publish_open_run_payload(
                 path,
+                revision=revision,
                 summary=summary,
                 metadata=metadata,
                 regions=regions,
@@ -242,16 +249,63 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
                     continue
                 data = run.get_dynamic_coordinate(location="center") if field_name == "radius" and run.has_dynamic_coordinate() else run.get_field(field_name)
                 edge_data = run.get_dynamic_coordinate(location="edge") if field_name == "radius" and run.has_dynamic_coordinate() else None
-                publish_field_payload(path, field_name=field_name, data=data, edge_data=edge_data)
+                published_fields[field_name] = data
+                publish_field_payload(path, revision=revision, field_name=field_name, data=data, edge_data=edge_data)
 
         with mock.patch("helios.services.derived.common.HeliosRun", side_effect=AssertionError("shared cache should avoid HDF5 reopen")):
-            dataset = load_run_data(path)
+            dataset = load_run_data(path, revision=revision, requested_fields=())
         self.assertEqual(dataset.density_g_cm3.shape[0], int(dataset.summary["n_snapshots"]))
+        self.assertTrue(np.shares_memory(dataset.density_g_cm3, published_fields["density"]))
         self.assertEqual(dataset.static_x_cm.shape[0], int(dataset.summary["n_zones"]))
         self.assertIsInstance(dataset.run_status, dict)
         self.assertIsInstance(dataset.visar_support_metadata, dict)
         self.assertTrue(bool(dataset.field_capabilities.run_status_available))
         self.assertTrue(bool(dataset.field_capabilities.visar_support_available))
+
+    def test_evicted_geometry_array_is_refilled_from_reader(self) -> None:
+        path = HDF5_ROOT / "Cu_0166_stabilized.h5"
+        for cache_name, dataset_name in (
+            ("field:zone_width", "zone_width_cm"),
+            ("field:radius", "radius_cm"),
+            ("field:radius:edge", "radius_edge_cm"),
+        ):
+            with self.subTest(cache_name=cache_name):
+                clear_session_raw_data_cache(reason="geometry-eviction-test")
+                initial = load_run_data(path, requested_fields=())
+                key = (common.run_identity_for_path(path), cache_name)
+                coordinator = common._RUN_ARRAY_BUCKET.coordinator
+                for bucket in (common._RUN_META_BUCKET, common._RUN_ARRAY_BUCKET):
+                    for candidate in bucket:
+                        if candidate != key:
+                            bucket.get(candidate)
+                original_limit = coordinator.max_bytes
+                try:
+                    coordinator.set_limit(coordinator.stats().bytes_used - 1)
+                    self.assertNotIn(key, common._RUN_ARRAY_BUCKET)
+                finally:
+                    coordinator.set_limit(original_limit)
+                recovered = load_run_data(path, requested_fields=())
+                initial_array = getattr(initial, dataset_name)
+                recovered_array = getattr(recovered, dataset_name)
+                self.assertIsNotNone(initial_array)
+                self.assertEqual(initial_array.shape, recovered_array.shape)
+                np.testing.assert_array_equal(initial_array, recovered_array)
+
+
+    def test_ambiguous_legacy_pressure_does_not_create_total_pressure_capability(self) -> None:
+        optional = {name: None for name in _OPTIONAL_FIELD_DTYPES}
+        optional["pressure_i"] = np.asarray([1.0])
+        optional["pressure_e"] = np.asarray([2.0])
+        capabilities = _build_field_capabilities(
+            available_fields=("pressure", "pressure_i", "pressure_e"),
+            optional_field_values=optional,
+            has_dynamic_radius=False,
+            run_status=None,
+            visar_support_metadata=None,
+            velocity=np.asarray([0.0]),
+        )
+        self.assertFalse(capabilities.total_pressure_available)
+        self.assertTrue(any("ambiguous legacy pressure" in note for note in capabilities.consistency.notes))
 
     def test_load_run_data_promotes_optional_fields_and_capabilities(self) -> None:
         path = _resolve_existing_path(
@@ -264,6 +318,7 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
         self.assertIsNotNone(dataset.pressure_i_j_cm3)
         self.assertIsNotNone(dataset.pressure_e_j_cm3)
         self.assertIsNotNone(dataset.pressure_radiation_j_cm3)
+        self.assertIsNotNone(dataset.pressure_plasma_j_cm3)
         self.assertIsNotNone(dataset.pressure_total_j_cm3)
         self.assertIsNotNone(dataset.artificial_viscosity_j_cm3)
         self.assertIsNotNone(dataset.ion_energy_j_g)
@@ -275,13 +330,14 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
         self.assertIsNotNone(dataset.radiation_heating_j_g_s)
         self.assertIsNotNone(dataset.radiation_cooling_j_g_s)
         self.assertIsNotNone(dataset.radiation_net_heating_j_g_s)
-        self.assertIsNotNone(dataset.laser_source_j_g_s)
+        self.assertIsNotNone(dataset.laser_source_j_g)
         self.assertIsNotNone(dataset.laser_deposition_j_g_s)
         self.assertEqual("completed", dataset.run_status["state"] if dataset.run_status is not None else None)
         self.assertEqual("velocity", dataset.visar_support_metadata.get("velocity_field_name") if dataset.visar_support_metadata is not None else None)
         self.assertTrue(summary["run_status_available"])
         self.assertTrue(summary["visar_support_available"])
         self.assertTrue(summary["pressure_components_available"])
+        self.assertTrue(summary["plasma_pressure_available"])
         self.assertTrue(summary["total_pressure_available"])
         self.assertTrue(summary["radiation_components_available"])
         self.assertTrue(summary["radiation_net_heating_available"])
@@ -291,6 +347,166 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
         self.assertIsNotNone(summary["total_pressure_matches_components"])
         self.assertIsNotNone(summary["radiation_net_heating_matches_components"])
         self.assertIsNotNone(summary["kinetic_energy_matches_velocity"])
+
+    def test_requested_optional_field_reads_are_demand_driven_and_reused(self) -> None:
+        path = _resolve_existing_path(
+            HDF5_ROOT / "Cu1e17_cyl_stabilized.h5",
+            Path(__file__).resolve().parents[1] / "Cu1e17_cyl_stabilized.h5",
+        )
+        clear_session_raw_data_cache(reason="demand-driven-test")
+        original_get_field = HeliosRun.get_field
+        calls: list[str] = []
+
+        def counted_get_field(run, name, *args, **kwargs):
+            calls.append(str(name))
+            return original_get_field(run, name, *args, **kwargs)
+
+        with mock.patch.object(HeliosRun, "get_field", new=counted_get_field):
+            initial = load_run_data(path, requested_fields=())
+            self.assertIsNone(initial.pressure_i_j_cm3)
+            self.assertIn("pressure_i", initial.field_capabilities.not_loaded_optional_fields)
+            self.assertNotIn("pressure_i", initial.field_capabilities.missing_optional_fields)
+            self.assertFalse(set(calls) & set(_OPTIONAL_FIELD_DTYPES))
+
+            calls.clear()
+            promoted = load_run_data(path, requested_fields=("pressure_i",))
+            self.assertIsNotNone(promoted.pressure_i_j_cm3)
+            self.assertIn("pressure_i", calls)
+
+            calls.clear()
+            repeated = load_run_data(path, requested_fields=("pressure_i",))
+            self.assertIsNotNone(repeated.pressure_i_j_cm3)
+            self.assertEqual([], calls)
+
+    def test_eager_default_upgrades_a_partially_warm_cache(self) -> None:
+        path = HDF5_ROOT / "Cu_0166_stabilized.h5"
+        clear_session_raw_data_cache(reason="warm-cache-upgrade-test")
+        original_get_field = HeliosRun.get_field
+        calls: list[str] = []
+
+        def counted_get_field(run, name, *args, **kwargs):
+            calls.append(str(name))
+            return original_get_field(run, name, *args, **kwargs)
+
+        with mock.patch.object(HeliosRun, "get_field", new=counted_get_field):
+            partial = load_run_data(path, requested_fields=())
+            self.assertIsNone(partial.laser_source_j_g)
+            calls.clear()
+            upgraded = load_run_data(path)
+            self.assertIsNotNone(upgraded.laser_source_j_g)
+            self.assertIsNotNone(upgraded.pressure_total_j_cm3)
+            self.assertNotIn("density", calls)
+            self.assertIn("laser_source", calls)
+            self.assertTrue(any(name.startswith("pressure") for name in calls))
+
+            clear_session_raw_data_cache(reason="cold-default-parity")
+            calls.clear()
+            cold = load_run_data(path)
+
+        np.testing.assert_allclose(upgraded.density_g_cm3, cold.density_g_cm3)
+        np.testing.assert_allclose(upgraded.laser_source_j_g, cold.laser_source_j_g)
+        np.testing.assert_allclose(upgraded.pressure_total_j_cm3, cold.pressure_total_j_cm3)
+
+    def test_missing_electron_density_keeps_independent_modules_available(self) -> None:
+        source = HDF5_ROOT / "Cu_0166_stabilized.h5"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / source.name
+            shutil.copy2(source, path)
+            path.chmod(0o600)
+            with h5py.File(path, "r+") as handle:
+                del handle["fields/electron_density"]
+            clear_session_raw_data_cache(reason="missing-core-field-test")
+            dataset = load_run_data(path, requested_fields=())
+            with mock.patch("helios.services.derived.common.HeliosRun", side_effect=AssertionError("known missing field should stay cached")):
+                repeated = load_run_data(path, requested_fields=())
+            self.assertNotIn("electron_density", repeated.field_capabilities.available_fields)
+            context = _context_from_dataset(path, dataset)
+            result = compute_analysis_result(
+                dataset,
+                context,
+                parameters=DerivedAnalysisParameters(),
+                context_key=("missing-electron-density",),
+                requested_modules={"xrd", "spectroscopy", "plasmon", "transmission"},
+                include_wavefront=False,
+            )
+
+        self.assertNotIn("electron_density", dataset.field_capabilities.available_fields)
+        self.assertTrue(np.all(np.isnan(dataset.electron_density_cm3)))
+        availability = {item.module: item.available for item in result.module_availability}
+        self.assertTrue(availability["xrd"])
+        self.assertTrue(availability["spectroscopy"])
+        self.assertFalse(availability["plasmon"])
+        self.assertFalse(availability["transmission"])
+
+        weighted_result = compute_analysis_result(
+            dataset,
+            context,
+            parameters=DerivedAnalysisParameters(weighting_mode="electron_column"),
+            context_key=("missing-electron-density-weighted",),
+            requested_modules={"xrd", "spectroscopy"},
+            requested_time_plot_modules={"spectroscopy"},
+            include_wavefront=False,
+        )
+        weighted_availability = {item.module: item for item in weighted_result.module_availability}
+        self.assertFalse(weighted_availability["spectroscopy"].available)
+        self.assertIn("electron_density", weighted_availability["spectroscopy"].reason)
+        self.assertFalse(weighted_availability["xrd"].available)
+        self.assertIn("electron_density", weighted_availability["xrd"].reason)
+
+    def test_center_only_dynamic_coordinate_is_complete_warm_cache(self) -> None:
+        source = HDF5_ROOT / "Cu_0166_stabilized.h5"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / source.name
+            shutil.copy2(source, path)
+            path.chmod(0o600)
+            with h5py.File(path, "r+") as handle:
+                radius = np.asarray(handle["fields/radius"])
+                del handle["fields/radius"]
+                handle["grid"].create_dataset("dynamic_coordinate_center", data=radius)
+            clear_session_raw_data_cache(reason="center-only-dynamic-coordinate-test")
+            opens = 0
+            real_reader = HeliosRun
+
+            def counted_reader(*args, **kwargs):
+                nonlocal opens
+                opens += 1
+                return real_reader(*args, **kwargs)
+
+            with mock.patch.object(common, "HeliosRun", side_effect=counted_reader):
+                first = load_run_data(path, requested_fields=())
+                self.assertIsNotNone(first.radius_cm)
+                self.assertIsNone(first.radius_edge_cm)
+                initial_opens = opens
+                for _ in range(3):
+                    warm = load_run_data(path, requested_fields=())
+                    self.assertIsNotNone(warm.radius_cm)
+                    self.assertIsNone(warm.radius_edge_cm)
+            self.assertEqual(1, initial_opens)
+            self.assertEqual(initial_opens, opens)
+
+    def test_mass_weighted_spectroscopy_requires_density(self) -> None:
+        source = HDF5_ROOT / "Cu_0166_stabilized.h5"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / source.name
+            shutil.copy2(source, path)
+            path.chmod(0o600)
+            with h5py.File(path, "r+") as handle:
+                del handle["fields/density"]
+            clear_session_raw_data_cache(reason="missing-density-weighted-spectroscopy-test")
+            dataset = load_run_data(path, requested_fields=())
+            context = _context_from_dataset(path, dataset)
+            result = compute_analysis_result(
+                dataset,
+                context,
+                parameters=DerivedAnalysisParameters(),
+                context_key=("missing-density-spectroscopy",),
+                requested_modules={"spectroscopy"},
+                requested_time_plot_modules={"spectroscopy"},
+                include_wavefront=False,
+            )
+        availability = {item.module: item for item in result.module_availability}
+        self.assertFalse(availability["spectroscopy"].available)
+        self.assertIn("density", availability["spectroscopy"].reason)
 
     def test_weighted_means_matches_scalar_weighted_average(self) -> None:
         path = HDF5_ROOT / "Cu_0166_stabilized.h5"

@@ -77,7 +77,16 @@ NUMBER_DENSITY_FACTORS = {
 }
 
 
-PRESSURE_FIELDS = {"pressure", "pressure_e", "pressure_i", "pressure_radiation", "artificial_viscosity"}
+PRESSURE_FIELDS = {
+    "pressure",
+    "pressure_e",
+    "pressure_i",
+    "pressure_radiation",
+    "pressure_j_cm3",
+    "plasma_pressure_j_cm3",
+    "total_pressure_j_cm3",
+    "artificial_viscosity",
+}
 DENSITY_FIELDS = {"density"}
 TEMPERATURE_FIELDS = {"temperature_e", "temperature_i", "temperature_radiation"}
 LENGTH_FIELDS = {"radius", "zone_width"}
@@ -114,33 +123,65 @@ def convert_length_values(values: np.ndarray, unit: str) -> np.ndarray:
     return np.asarray(values, dtype=np.float64) * LENGTH_FACTORS.get(unit, 1.0)
 
 
-def _field_unit_family(field_name: str, native_unit: str) -> str:
-    if field_name in PRESSURE_FIELDS and native_unit == "J/cm3":
+QUANTITY_FAMILIES = {
+    "pressure": "pressure",
+    "plasma_pressure": "pressure",
+    "total_pressure": "pressure",
+    "radiation_pressure": "pressure",
+    "density": "density",
+    "temperature": "temperature",
+    "length": "length",
+    "velocity": "velocity",
+    "specific_energy": "specific_energy",
+    "cumulative_specific_energy": "specific_energy",
+    "rate": "rate",
+    "heat_capacity": "heat_capacity",
+    "number_density": "number_density",
+}
+FAMILY_NATIVE_UNITS = {
+    "pressure": "J/cm3", "density": "g/cm3", "temperature": "eV",
+    "length": "cm", "velocity": "cm/s", "specific_energy": "J/g",
+    "rate": "J/g/s", "heat_capacity": "J/g/eV", "number_density": "1/cm3",
+}
+
+
+def _field_unit_family(
+    field_name: str,
+    native_unit: str,
+    *,
+    quantity: str | None = None,
+    alias_of: str | None = None,
+) -> str:
+    if quantity:
+        family = QUANTITY_FAMILIES.get(str(quantity).strip().lower())
+        return family if family is not None and native_unit == FAMILY_NATIVE_UNITS[family] else "native"
+    canonical_name = str(alias_of or field_name)
+    if canonical_name in PRESSURE_FIELDS and native_unit == "J/cm3":
         return "pressure"
-    if field_name in DENSITY_FIELDS and native_unit == "g/cm3":
+    if canonical_name in DENSITY_FIELDS and native_unit == "g/cm3":
         return "density"
-    if field_name in TEMPERATURE_FIELDS and native_unit == "eV":
+    if canonical_name in TEMPERATURE_FIELDS and native_unit == "eV":
         return "temperature"
-    if field_name in LENGTH_FIELDS and native_unit == "cm":
+    if canonical_name in LENGTH_FIELDS and native_unit == "cm":
         return "length"
-    if field_name in VELOCITY_FIELDS and native_unit == "cm/s":
+    if canonical_name in VELOCITY_FIELDS and native_unit == "cm/s":
         return "velocity"
-    if field_name in SPECIFIC_ENERGY_FIELDS and native_unit == "J/g":
+    if canonical_name in SPECIFIC_ENERGY_FIELDS and native_unit == "J/g":
         return "specific_energy"
-    if field_name in RATE_FIELDS and native_unit == "J/g/s":
+    if canonical_name in RATE_FIELDS and native_unit == "J/g/s":
         return "rate"
-    if field_name in HEAT_CAPACITY_FIELDS and native_unit == "J/g/eV":
+    if canonical_name in HEAT_CAPACITY_FIELDS and native_unit == "J/g/eV":
         return "heat_capacity"
-    if field_name in NUMBER_DENSITY_FIELDS and native_unit == "1/cm3":
+    if canonical_name in NUMBER_DENSITY_FIELDS and native_unit == "1/cm3":
         return "number_density"
     if native_unit in {"", "rho/rho0"}:
         return "dimensionless"
     return "native"
 
 
-def unit_options_for_field(field_name: str, native_unit: str) -> tuple[str, ...]:
+def unit_options_for_field(field_name: str, native_unit: str, *, quantity: str | None = None, alias_of: str | None = None) -> tuple[str, ...]:
     """Return curated display-unit choices for a given field family."""
-    family = _field_unit_family(field_name, native_unit)
+    family = _field_unit_family(field_name, native_unit, quantity=quantity, alias_of=alias_of)
     if family == "pressure":
         return tuple(PRESSURE_FACTORS)
     if family == "density":
@@ -164,8 +205,15 @@ def unit_options_for_field(field_name: str, native_unit: str) -> tuple[str, ...]
     return ("",)
 
 
-def display_unit_for_field(field_name: str, native_unit: str, units: DisplayUnitChoices) -> str:
-    family = _field_unit_family(field_name, native_unit)
+def display_unit_for_field(
+    field_name: str,
+    native_unit: str,
+    units: DisplayUnitChoices,
+    *,
+    quantity: str | None = None,
+    alias_of: str | None = None,
+) -> str:
+    family = _field_unit_family(field_name, native_unit, quantity=quantity, alias_of=alias_of)
     if family == "pressure":
         return units.pressure_unit
     if family == "density":
@@ -187,10 +235,18 @@ def display_unit_for_field(field_name: str, native_unit: str, units: DisplayUnit
     return native_unit
 
 
-def convert_field_values(field_name: str, values: np.ndarray, native_unit: str, units: DisplayUnitChoices) -> tuple[np.ndarray, str]:
+def convert_field_values(
+    field_name: str,
+    values: np.ndarray,
+    native_unit: str,
+    units: DisplayUnitChoices,
+    *,
+    quantity: str | None = None,
+    alias_of: str | None = None,
+) -> tuple[np.ndarray, str]:
     """Convert field values to the current display unit, if supported."""
     array = np.asarray(values, dtype=np.float64)
-    family = _field_unit_family(field_name, native_unit)
+    family = _field_unit_family(field_name, native_unit, quantity=quantity, alias_of=alias_of)
     if family == "pressure":
         return array * PRESSURE_FACTORS.get(units.pressure_unit, 1.0), units.pressure_unit
     if family == "density":

@@ -109,7 +109,9 @@ def _region_metrics_for_snapshot(
     bragg_shift_deg = np.full(n_regions, np.nan, dtype=np.float64)
     bragg_shift_deg[valid_bragg] = shifted_theta_deg[valid_bragg] - float(initial_bragg_angle_deg)
     q_compressed = np.full(n_regions, np.nan, dtype=np.float64)
-    q_compressed[valid_bragg] = 4.0 * math.pi * np.sin(shifted_theta_rad[valid_bragg]) / wavelength_angstrom
+    # Reciprocal-space Q follows the spacing ratio and remains defined even
+    # when the requested Bragg angle is outside the arcsin domain.
+    q_compressed[valid_d_ratio] = q0 / d_over_d0[valid_d_ratio]
 
     if emit_warnings:
         invalid_density_regions = np.flatnonzero((zone_count > 0) & ~np.isfinite(current_density))

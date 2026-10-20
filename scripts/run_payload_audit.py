@@ -10,19 +10,16 @@ in the test suite while executing each test case in a fresh interpreter.
 import os
 import subprocess
 import sys
+import unittest
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests"))
+from test_viewer_payloads import ViewerPayloadTests
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
-TEST_NAMES = [
-    "test_dynamic_radius_mode_stays_disabled_until_radius_payload_is_loaded",
-    "test_2d_orientation_and_coordinate_payloads_match_reader",
-    "test_snapshot_lineouts_and_time_traces_match_reader",
-    "test_region_and_material_masks_apply_only_along_coordinate_dimension",
-    "test_boundary_overlays_and_scale_modes_match_expected_payloads",
-    "test_new_helios_format_field_and_diagnostic_loading_remain_consistent",
-]
+TEST_NAMES = unittest.defaultTestLoader.getTestCaseNames(ViewerPayloadTests)
 
 
 def build_env() -> dict[str, str]:
@@ -38,6 +35,7 @@ def build_env() -> dict[str, str]:
 
 def main() -> int:
     env = build_env()
+    outcomes = []
     for name in TEST_NAMES:
         command = [
             sys.executable,
@@ -47,9 +45,9 @@ def main() -> int:
         ]
         print(f"=== {name} ===", flush=True)
         completed = subprocess.run(command, cwd=str(ROOT), env=env)
-        if completed.returncode != 0:
-            return completed.returncode
-    return 0
+        outcomes.append((name, completed.returncode))
+        print(f"--- {name}: {'PASS' if completed.returncode == 0 else 'FAIL'} ({completed.returncode})", flush=True)
+    return 0 if all(code == 0 for _name, code in outcomes) else 1
 
 
 if __name__ == "__main__":

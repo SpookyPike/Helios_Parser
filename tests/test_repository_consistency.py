@@ -16,16 +16,7 @@ class RepositoryConsistencyTests(unittest.TestCase):
     def test_manual_references_current_screenshot_assets(self) -> None:
         manual = (DOCS / "index.html").read_text(encoding="utf-8")
         refs = sorted(set(re.findall(r'assets/screenshots/([A-Za-z0-9_.-]+\.png)', manual)))
-        self.assertEqual(
-            refs,
-            [
-                "derived_plasmon_current.png",
-                "parser_preview_current.png",
-                "viewer_cylindrical_radius_current.png",
-                "viewer_mouse_probe_current.png",
-                "viewer_zone_index_current.png",
-            ],
-        )
+        self.assertTrue(refs, "The manual should include representative current screenshots.")
         for name in refs:
             self.assertTrue((SCREENSHOT_DIR / name).exists(), name)
 

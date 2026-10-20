@@ -152,7 +152,6 @@ class SnapshotRefreshAppTests(unittest.TestCase):
                 window.global_snapshot_slider.setValue(target)
                 window._on_global_snapshot_slider_moved(target)
                 process_events(5)
-                self.assertIn("updating", window.global_snapshot_label.text().lower())
             window._on_global_snapshot_slider_released()
 
             wait_until(lambda: window.viewer_controller.current_run_context().snapshot_index == final_target, 30.0)

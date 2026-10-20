@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "bpf_primary_streamed_log_companion",
+      "fixtures": {
+        "bpf": {
+          "path": "/data/projects/playground/Helios_parser/new_data/25Cu+1.87TW/25Cu+1.87TW.bpf",
+          "sha256": "03522cd47d20ca0973e632864ee3504e0c04177c0f8b4b4c906e18d20d051dc0"
+        },
+        "log": {
+          "path": "/data/projects/playground/Helios_parser/new_data/25Cu+1.87TW/25Cu+1.87TW.log",
+          "sha256": "62271631b329a7089fe01f4bd91f7ad42b5ec5d8a69713d763543cb9aed651b2"
+        }
+      },
+      "command": [
+        "{python}",
+        "{runner}/bench_bpf_companion.py",
+        "--source",
+        "{fixture:bpf}",
+        "--output",
+        "{output}"
+      ],
+      "warmups": 1,
+      "samples": 5,
+      "metrics": {
+        "elapsed_s": "lower",
+        "time_to_first_write_s": "lower",
+        "peak_rss_delta_bytes": "lower"
+      },
+      "equivalent_metrics": {
+        "output_snapshots": {
+          "absolute_tolerance": 0,
+          "relative_tolerance": 0
+        },
+        "output_zones": {
+          "absolute_tolerance": 0,
+          "relative_tolerance": 0
+        },
+        "field_checksums.density": {
+          "absolute_tolerance": 1e-12,
+          "relative_tolerance": 1e-12
+        },
+        "field_checksums.laser_source": {
+          "absolute_tolerance": 1e-06,
+          "relative_tolerance": 1e-12
+        },
+        "field_checksums.laser_deposition": {
+          "absolute_tolerance": 1e-06,
+          "relative_tolerance": 1e-12
+        }
+      }
+    }
+  ]
+}

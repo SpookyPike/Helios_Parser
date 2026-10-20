@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import h5py
 import numpy as np
 
 import _test_bootstrap  # noqa: F401
@@ -83,6 +84,17 @@ class StreamingConversionTests(unittest.TestCase):
                 status = run.get_run_status()
                 self.assertEqual(status["state"], simulation.run_status.state if simulation.run_status is not None else "unknown")
                 self.assertEqual(run.n_snapshots, simulation.time["time"].size)
+                plasma = run.get_field("plasma_pressure_j_cm3")
+                total = run.get_field("total_pressure_j_cm3")
+                np.testing.assert_allclose(plasma, run.get_field("pressure_i") + run.get_field("pressure_e"))
+                np.testing.assert_allclose(total, plasma + run.get_field("pressure_radiation"))
+                np.testing.assert_array_equal(run.get_field("pressure"), total)
+                self.assertEqual(run.get_field_metadata("pressure").alias_of, "total_pressure_j_cm3")
+                self.assertEqual(run.get_field_metadata("pressure").quantity, "total_pressure")
+
+            with h5py.File(output, "r") as handle:
+                self.assertEqual(handle.attrs["schema_version"], "2.1")
+                self.assertEqual(handle["fields/pressure"].id, handle["fields/total_pressure_j_cm3"].id)
 
             self.assertTrue(any(stage == "snapshots" and current == 1 for stage, current, _ in progress_events))
             first_snapshot_event = next(index for index, event in enumerate(progress_events) if event[0] == "snapshots")

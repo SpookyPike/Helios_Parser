@@ -14,6 +14,7 @@ import numpy as np
 
 from helios.instrumentation import increment_counter
 from helios.runtime import RunContext
+from helios.services.derived.common import validate_derived_run_shapes
 from helios.services.derived.models import AnalysisGeometryMetadata, AnalysisSelectionMetadata, DerivedRunData, DerivedWarning
 from helios.services.geometry.coordinates import subset_mask
 
@@ -638,6 +639,7 @@ def build_analysis_geometry(
     line_of_sight_impact_parameter_cm: float = 0.0,
     profile_coordinate_mode: str,
 ) -> AnalysisGeometryMetadata:
+    validate_derived_run_shapes(dataset)
     propagation_direction, _ = infer_primary_propagation_direction(dataset, context)
     los_cosine = line_of_sight_cosine_from_angle(line_of_sight_angle_deg)
     observation_boundary = resolve_observation_boundary(

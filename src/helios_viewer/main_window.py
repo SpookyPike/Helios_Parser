@@ -49,6 +49,9 @@ FIELD_LABELS = {
     "laser_source": "Laser source",
     "mean_charge": "Mean charge",
     "pressure": "Total pressure",
+    "pressure_j_cm3": "Plasma pressure",
+    "plasma_pressure_j_cm3": "Plasma pressure",
+    "total_pressure_j_cm3": "Total pressure",
     "pressure_e": "Electron pressure",
     "pressure_i": "Ion pressure",
     "pressure_radiation": "Radiation pressure",
@@ -693,10 +696,18 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
 
         self.trace_reference_row_label = QtWidgets.QLabel("Reference zone")
         self.trace_zone_spin = QtWidgets.QSpinBox()
+        self.trace_zone_spin.setAccessibleName("Reference zone index")
+        self.trace_zone_spin.setAccessibleDescription(
+            "Select the zone index used as the reference for line plots."
+        )
         self.trace_zone_spin.setMinimum(1)
         self.trace_zone_spin.setKeyboardTracking(False)
         self.trace_zone_spin.valueChanged.connect(self._on_trace_reference_changed)
         self.trace_coordinate_spin = QtWidgets.QDoubleSpinBox()
+        self.trace_coordinate_spin.setAccessibleName("Reference coordinate")
+        self.trace_coordinate_spin.setAccessibleDescription(
+            "Select the coordinate used as the reference for line plots."
+        )
         self.trace_coordinate_spin.setDecimals(12)
         self.trace_coordinate_spin.setKeyboardTracking(False)
         self.trace_coordinate_spin.valueChanged.connect(self._on_trace_reference_changed)
@@ -740,12 +751,20 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         percentile_layout.setContentsMargins(0, 0, 0, 0)
         percentile_layout.setSpacing(4)
         self.percentile_low_spin = QtWidgets.QDoubleSpinBox()
+        self.percentile_low_spin.setAccessibleName("Lower percentile clip threshold")
+        self.percentile_low_spin.setAccessibleDescription(
+            "Set the lower percentile used to clip the displayed color range."
+        )
         self.percentile_low_spin.setRange(0.0, 49.0)
         self.percentile_low_spin.setDecimals(1)
         self.percentile_low_spin.setKeyboardTracking(False)
         self.percentile_low_spin.setValue(1.0)
         self.percentile_low_spin.valueChanged.connect(self._refresh_field_map_preserving_view)
         self.percentile_high_spin = QtWidgets.QDoubleSpinBox()
+        self.percentile_high_spin.setAccessibleName("Upper percentile clip threshold")
+        self.percentile_high_spin.setAccessibleDescription(
+            "Set the upper percentile used to clip the displayed color range."
+        )
         self.percentile_high_spin.setRange(51.0, 100.0)
         self.percentile_high_spin.setDecimals(1)
         self.percentile_high_spin.setKeyboardTracking(False)
@@ -760,8 +779,16 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         manual_layout.setContentsMargins(0, 0, 0, 0)
         manual_layout.setSpacing(4)
         self.level_min_edit = QtWidgets.QLineEdit()
+        self.level_min_edit.setAccessibleName("Manual color range minimum")
+        self.level_min_edit.setAccessibleDescription(
+            "Enter the lower value for the manual plot color range."
+        )
         self.level_min_edit.setPlaceholderText("min")
         self.level_max_edit = QtWidgets.QLineEdit()
+        self.level_max_edit.setAccessibleName("Manual color range maximum")
+        self.level_max_edit.setAccessibleDescription(
+            "Enter the upper value for the manual plot color range."
+        )
         self.level_max_edit.setPlaceholderText("max")
         self.apply_levels_button = QtWidgets.QPushButton("Apply")
         set_button_icon(self.apply_levels_button, "refresh")
@@ -886,15 +913,25 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         layout.setSpacing(8)
 
         self.snapshot_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.snapshot_slider.setAccessibleName("Snapshot")
+        self.snapshot_slider.setAccessibleDescription(
+            "Choose the snapshot displayed in the viewer."
+        )
         self.snapshot_slider.setMinimumHeight(24)
         apply_absolute_click_slider_behavior(self.snapshot_slider)
         self.snapshot_slider.valueChanged.connect(self._on_snapshot_changed)
         self.snapshot_spin = QtWidgets.QSpinBox()
+        self.snapshot_spin.setAccessibleName("Snapshot index")
+        self.snapshot_spin.setAccessibleDescription(
+            "Select the zero-based snapshot index displayed in the viewer."
+        )
         self.snapshot_spin.setMinimumHeight(24)
         self.snapshot_spin.valueChanged.connect(self._on_snapshot_changed)
         self.snapshot_time_label = QtWidgets.QLabel("time: -")
 
-        layout.addWidget(QtWidgets.QLabel("Snapshot"))
+        snapshot_label = QtWidgets.QLabel("Snapshot")
+        snapshot_label.setBuddy(self.snapshot_spin)
+        layout.addWidget(snapshot_label)
         layout.addWidget(self.snapshot_slider, 1)
         layout.addWidget(self.snapshot_spin)
         layout.addWidget(self.snapshot_time_label)
@@ -973,29 +1010,41 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         adjust_layout.setVerticalSpacing(4)
 
         self.mouse_time_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.mouse_time_slider.setAccessibleName("Probe time")
+        self.mouse_time_slider.setAccessibleDescription(
+            "Move the probe to a time in the simulation."
+        )
         self.mouse_time_slider.setMinimumHeight(24)
         self.mouse_time_slider.valueChanged.connect(self._on_mouse_time_slider_changed)
         self.mouse_time_spin = QtWidgets.QDoubleSpinBox()
+        self.mouse_time_spin.setAccessibleName("Probe time")
         self.mouse_time_spin.setDecimals(12)
         self.mouse_time_spin.setKeyboardTracking(False)
         self.mouse_time_spin.setMinimumHeight(24)
         self.mouse_time_spin.setMaximumWidth(170)
         self.mouse_time_spin.valueChanged.connect(self._on_mouse_time_spin_changed)
         self.mouse_time_row_label = QtWidgets.QLabel("Time")
+        self.mouse_time_row_label.setBuddy(self.mouse_time_spin)
         adjust_layout.addWidget(self.mouse_time_row_label, 0, 0)
         adjust_layout.addWidget(self.mouse_time_slider, 0, 1)
         adjust_layout.addWidget(self.mouse_time_spin, 0, 2)
 
         self.mouse_coordinate_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.mouse_coordinate_slider.setAccessibleName("Probe coordinate")
+        self.mouse_coordinate_slider.setAccessibleDescription(
+            "Move the probe to a coordinate in the simulation."
+        )
         self.mouse_coordinate_slider.setMinimumHeight(24)
         self.mouse_coordinate_slider.valueChanged.connect(self._on_mouse_coordinate_slider_changed)
         self.mouse_coordinate_spin = QtWidgets.QDoubleSpinBox()
+        self.mouse_coordinate_spin.setAccessibleName("Probe coordinate")
         self.mouse_coordinate_spin.setDecimals(12)
         self.mouse_coordinate_spin.setKeyboardTracking(False)
         self.mouse_coordinate_spin.setMinimumHeight(24)
         self.mouse_coordinate_spin.setMaximumWidth(190)
         self.mouse_coordinate_spin.valueChanged.connect(self._on_mouse_coordinate_spin_changed)
         self.mouse_coordinate_row_label = QtWidgets.QLabel("Coordinate")
+        self.mouse_coordinate_row_label.setBuddy(self.mouse_coordinate_spin)
         adjust_layout.addWidget(self.mouse_coordinate_row_label, 1, 0)
         adjust_layout.addWidget(self.mouse_coordinate_slider, 1, 1)
         adjust_layout.addWidget(self.mouse_coordinate_spin, 1, 2)
@@ -1167,10 +1216,15 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         return float(value) / scale
 
     def _display_field_data(self, field_name: str, unit: str, data: np.ndarray) -> tuple[np.ndarray, str]:
+        metadata = self._metadata_for_field(field_name)
+        quantity = str(metadata.get("quantity", "") or "")
+        alias_of = str(metadata.get("alias_of", "") or "")
         cache = self.cache_layers.view_cache.bucket("display_field", max_items=8)
         key = (
             field_name,
             unit,
+            quantity,
+            alias_of,
             id(data),
             self._viewer_settings.time_unit,
             self._viewer_settings.length_unit,
@@ -1188,14 +1242,22 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             self._display_field_cache_key = key
             self._display_field_cache_value = cached
             return cached
-        converted, display_unit = convert_field_values(field_name, data, unit, self._display_units())
+        converted, display_unit = convert_field_values(
+            field_name, data, unit, self._display_units(),
+            quantity=quantity or None, alias_of=alias_of or None,
+        )
         self._display_field_cache_key = key
         self._display_field_cache_value = (np.asarray(converted, dtype=np.float64), display_unit)
         cache[key] = self._display_field_cache_value
         return self._display_field_cache_value
 
     def _display_field_unit(self, field_name: str, native_unit: str) -> str:
-        return display_unit_for_field(field_name, native_unit, self._display_units())
+        metadata = self._metadata_for_field(field_name)
+        return display_unit_for_field(
+            field_name, native_unit, self._display_units(),
+            quantity=str(metadata.get("quantity", "") or "") or None,
+            alias_of=str(metadata.get("alias_of", "") or "") or None,
+        )
 
     def _display_radius_bundle(self) -> tuple[np.ndarray, str] | None:
         if self.radius_payload is None:
@@ -1442,10 +1504,10 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             empty = QtWidgets.QListWidgetItem("No fields match the current filters")
             empty.setFlags(QtCore.Qt.NoItemFlags)
             self.field_list.addItem(empty)
-        self.field_list.blockSignals(False)
         if selected_row is not None:
             self.field_list.setCurrentRow(selected_row)
-        elif select_fallback and first_field is not None:
+        self.field_list.blockSignals(False)
+        if selected_row is None and select_fallback and first_field is not None:
             self._select_list_item_by_data(self.field_list, first_field)
 
     def _on_field_filter_changed(self, *args) -> None:
@@ -1477,6 +1539,10 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self._theme = apply_theme(QtWidgets.QApplication.instance(), normalized)
         self._apply_theme_to_widgets()
         self._assign_command_icons()
+        self._refresh_field_browser(
+            preserve_selection=self.current_field_name,
+            select_fallback=False,
+        )
         if normalized in self.theme_actions and not self.theme_actions[normalized].isChecked():
             self.theme_actions[normalized].setChecked(True)
         if not self._suppress_preference_persist:
@@ -2003,6 +2069,8 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         return {
             "controller": self.controller.cache_stats(),
             "view_cache": self.cache_layers.view_cache.stats(),
+            "aggregate_memory": self.cache_layers.memory_stats(),
+            "active_task_and_external_arrays": "outside cache accounting",
         }
 
     def _on_run_opened(self, payload: OpenRunPayload) -> None:

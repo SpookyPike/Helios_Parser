@@ -4,9 +4,12 @@ import mmap
 import struct
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Iterator
 
 import numpy as np
+
+from .quantities import plasma_pressure, total_pressure
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,7 +37,10 @@ class BpfLayout:
     block_records: int
     n_snapshots: int
     trailing_records: int
-    trailer_lengths: tuple[int, ...]
+    trailing_record_lengths: tuple[int, ...]
+    recognized_zero_trailer: bool
+    incomplete_final_snapshot: bool
+    partial_final_record_bytes: int
     first_time_s: float
     last_time_s: float
     first_cycle: int
@@ -125,6 +131,7 @@ BPF_FIXED_RECORD_SPECS: tuple[BpfRecordSpec, ...] = (
 DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
     "zone_center_cm": {
         "unit": "cm",
+        "quantity": "length",
         "label": "Zone center position",
         "axes": ("zone",),
         "status": "derived",
@@ -132,6 +139,7 @@ DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
     },
     "zone_width_cm": {
         "unit": "cm",
+        "quantity": "length",
         "label": "Zone width",
         "axes": ("zone",),
         "status": "derived",
@@ -139,6 +147,7 @@ DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
     },
     "fluid_velocity_cm_s": {
         "unit": "cm/s",
+        "quantity": "velocity",
         "label": "Fluid velocity",
         "axes": ("zone",),
         "status": "derived",
@@ -146,6 +155,7 @@ DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
     },
     "zone_outer_velocity_cm_s": {
         "unit": "cm/s",
+        "quantity": "velocity",
         "label": "Zone outer interface velocity",
         "axes": ("zone",),
         "status": "derived",
@@ -156,7 +166,16 @@ DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
         "label": "Plasma pressure",
         "axes": ("zone",),
         "status": "derived",
-        "description": "Derived as ion pressure plus electron pressure; matches LOG plasma pressure within LOG text precision.",
+        "description": "Plasma pressure derived as ion pressure plus electron pressure. It excludes radiation pressure.",
+        "quantity": "plasma_pressure",
+    },
+    "total_pressure_j_cm3": {
+        "unit": "J/cm3",
+        "label": "Total pressure",
+        "axes": ("zone",),
+        "status": "derived",
+        "description": "Total pressure derived as ion plus electron plus radiation pressure.",
+        "quantity": "total_pressure",
     },
     "radiation_net_heating_j_g_s": {
         "unit": "J/g/s",
@@ -178,16 +197,27 @@ DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
         "axes": ("zone",),
         "status": "validated",
         "description": "Derived as one third of BPF radiation energy density; matches LOG radiation pressure.",
+        "quantity": "radiation_pressure",
     },
     "radiation_energy_j_g": {
         "unit": "J/g",
+        "quantity": "specific_energy",
         "label": "Radiation energy",
         "axes": ("zone",),
         "status": "validated",
         "description": "Derived as radiation energy density divided by mass density; matches LOG radiation energy within LOG text precision.",
     },
+    "laser_source_bpf_sampled_j_g": {
+        "unit": "J/g",
+        "label": "BPF sampled laser source",
+        "axes": ("zone",),
+        "status": "estimated",
+        "description": "Trapezoidal integration of exported BPF laser-deposition samples, accumulated from zero at the first exported snapshot; it cannot account for pre-export deposition or internal unsampled timesteps.",
+        "quantity": "cumulative_specific_energy",
+    },
     "laser_source_j_g": {
         "unit": "J/g",
+        "quantity": "cumulative_specific_energy",
         "label": "Laser source",
         "axes": ("zone",),
         "status": "derived",
@@ -242,20 +272,38 @@ LOG_COMPATIBLE_BPF_ALIASES: dict[str, str] = {
     "radiation_net_heating_j_g_s": "radiation_net_heating",
     "radiation_pressure_j_cm3": "pressure_radiation",
     "radiation_energy_j_g": "radiation_energy",
-    "pressure_j_cm3": "pressure",
+    "pressure_j_cm3": "plasma_pressure_j_cm3",
+    "total_pressure_j_cm3": "pressure",
     "laser_source_j_g": "laser_source",
     "laser_deposition_j_g_s": "laser_deposition",
 }
 
 
 _SPEC_BY_KEY = {spec.key: spec for spec in BPF_FIXED_RECORD_SPECS}
+BPF_QUANTITY_BY_KEY = {
+    "node_position_cm": "length",
+    "ion_temperature_eV": "temperature",
+    "radiation_temperature_eV": "temperature",
+    "mass_density_g_cm3": "density",
+    "ion_pressure_j_cm3": "pressure",
+    "radiation_cooling_j_g_s": "rate",
+    "radiation_heating_j_g_s": "rate",
+    "ion_energy_j_g": "specific_energy",
+    "interface_velocity_cm_s": "velocity",
+    "laser_deposition_j_g_s": "rate",
+    "artificial_viscosity_j_cm3": "pressure",
+    "ion_density_cm3": "number_density",
+    "electron_temperature_eV": "temperature",
+    "electron_pressure_j_cm3": "pressure",
+    "electron_density_cm3": "number_density",
+}
 _DTYPES = {"f64": np.dtype("<f8"), "i32": np.dtype("<i4")}
 
 
 def field_metadata_for_bpf_key(key: str) -> dict[str, Any]:
     spec = _SPEC_BY_KEY.get(key)
     if spec is not None:
-        return {
+        metadata = {
             "field_name": spec.key,
             "source": "bpf",
             "dimensions": ("time",) + spec.axes,
@@ -264,6 +312,10 @@ def field_metadata_for_bpf_key(key: str) -> dict[str, Any]:
             "status": spec.status,
             "description": spec.description,
         }
+        quantity = BPF_QUANTITY_BY_KEY.get(spec.key)
+        if quantity is not None:
+            metadata["quantity"] = quantity
+        return metadata
     metadata = dict(DERIVED_BPF_FIELD_METADATA.get(key, {}))
     if metadata:
         metadata.setdefault("field_name", key)
@@ -288,6 +340,14 @@ def alias_metadata(alias: str, canonical: str) -> dict[str, Any]:
     metadata["alias_of"] = canonical
     metadata["source"] = metadata.get("source", "bpf")
     return metadata
+
+
+def _header_integer(value: float, label: str, path: Path, snapshot_index: int | None = None) -> int:
+    numeric = float(value)
+    location = f" snapshot {snapshot_index}" if snapshot_index is not None else ""
+    if not np.isfinite(numeric) or not numeric.is_integer():
+        raise ValueError(f"{path}{location} has invalid {label}: {numeric!r}.")
+    return int(numeric)
 
 
 def _shape_width(shape: str, layout: BpfLayout) -> int:
@@ -317,8 +377,19 @@ class BpfFile:
         self._mmap = mmap.mmap(self._file.fileno(), 0, access=mmap.ACCESS_READ)
         self._payload_offsets: list[int] = []
         self._payload_lengths: list[int] = []
-        self._scan_records()
-        self.layout = self._infer_layout()
+        self._partial_tail = b""
+        try:
+            self._scan_records()
+            self.layout = self._infer_layout()
+        except Exception:
+            try:
+                self._mmap.close()
+            except BufferError:
+                # NumPy views may still be referenced by the active traceback;
+                # releasing this object after unwinding closes the mapping.
+                pass
+            self._file.close()
+            raise
 
     def close(self) -> None:
         self._mmap.close()
@@ -335,13 +406,17 @@ class BpfFile:
         index = 0
         size = len(self._mmap)
         while offset < size:
-            if offset + 8 > size:
-                raise ValueError(f"Short BPF Fortran record marker at byte {offset}.")
+            if offset + 4 > size:
+                self._partial_tail = self._mmap[offset:size]
+                break
             length = struct.unpack_from("<i", self._mmap, offset)[0]
             payload_start = offset + 4
             payload_end = payload_start + length
-            if length < 0 or payload_end + 4 > size:
+            if length < 0:
                 raise ValueError(f"Invalid BPF record length {length} at record {index}, byte {offset}.")
+            if payload_end + 4 > size:
+                self._partial_tail = self._mmap[offset:size]
+                break
             closing_length = struct.unpack_from("<i", self._mmap, payload_end)[0]
             if closing_length != length:
                 raise ValueError(f"BPF Fortran record marker mismatch at record {index}: {length} != {closing_length}.")
@@ -372,9 +447,9 @@ class BpfFile:
         header = self.array(2, "f64")
         if header.size < 7:
             raise ValueError(f"{self.path} first BPF snapshot header is too short.")
-        n_nodes = int(round(float(header[4])))
+        n_nodes = _header_integer(header[4], "node count", self.path)
         n_zones = n_nodes - 1
-        n_freq_bins = int(round(float(header[6])))
+        n_freq_bins = _header_integer(header[6], "frequency-bin count", self.path)
         if n_nodes <= 1 or n_freq_bins <= 0:
             raise ValueError(f"{self.path} has implausible BPF layout values: nodes={n_nodes}, freq_bins={n_freq_bins}.")
         block_records = 69 + 2 * n_zones
@@ -384,14 +459,31 @@ class BpfFile:
             current_header = self.array(next_record, "f64")
             if current_header.size < 7:
                 break
-            current_nodes = int(round(float(current_header[4])))
-            current_freq = int(round(float(current_header[6])))
+            current_nodes = _header_integer(current_header[4], "node count", self.path)
+            current_freq = _header_integer(current_header[6], "frequency-bin count", self.path)
             if current_nodes != n_nodes or current_freq != n_freq_bins:
                 break
             n_snapshots += 1
             next_record += block_records
         if n_snapshots == 0:
             raise ValueError(f"{self.path} does not contain a complete BPF snapshot block.")
+        trailing_count = self.record_count - next_record
+        trailer_lengths = tuple(self._payload_lengths[next_record:])
+        trailer_payloads = tuple(bytes(self.payload(index)) for index in range(next_record, self.record_count))
+        recognized_zero_trailer = trailer_lengths == (240,) and trailer_payloads == (bytes(240),) and not self._partial_tail
+        if trailer_lengths and not recognized_zero_trailer:
+            if trailing_count >= block_records or not self._valid_incomplete_snapshot_prefix(
+                next_record, n_nodes, n_zones, n_freq_bins, block_records
+            ):
+                raise ValueError(
+                    f"{self.path} has unrecognized trailing BPF records after {n_snapshots} complete snapshots: "
+                    f"lengths={trailer_lengths}."
+                )
+        if self._partial_tail and not self._valid_partial_final_record(
+            next_record, trailing_count, n_nodes, n_zones, n_freq_bins, block_records
+        ):
+            raise ValueError(f"{self.path} has corrupt partial BPF data after {n_snapshots} complete snapshots.")
+        incomplete_final_snapshot = bool((trailing_count or self._partial_tail) and not recognized_zero_trailer)
         first_header = self.array(2, "f64")
         last_header = self.array(self.snapshot_start(n_snapshots - 1, block_records), "f64")
         return BpfLayout(
@@ -405,12 +497,82 @@ class BpfFile:
             block_records=block_records,
             n_snapshots=n_snapshots,
             trailing_records=self.record_count - next_record,
-            trailer_lengths=tuple(self._payload_lengths[next_record:]),
+            trailing_record_lengths=trailer_lengths,
+            recognized_zero_trailer=recognized_zero_trailer,
+            incomplete_final_snapshot=incomplete_final_snapshot,
+            partial_final_record_bytes=len(self._partial_tail),
             first_time_s=float(first_header[1]),
             last_time_s=float(last_header[1]),
-            first_cycle=int(round(float(first_header[2]))),
-            last_cycle=int(round(float(last_header[2]))),
+            first_cycle=_header_integer(first_header[2], "cycle", self.path, 0),
+            last_cycle=_header_integer(last_header[2], "cycle", self.path, n_snapshots - 1),
         )
+
+    def _expected_record_bytes(self, relative_index: int, n_nodes: int, n_zones: int, n_freq_bins: int) -> int:
+        spec = next((item for item in BPF_FIXED_RECORD_SPECS if item.rel == relative_index), None)
+        if spec is not None:
+            layout = SimpleNamespace(n_nodes=n_nodes, n_zones=n_zones, n_freq_bins=n_freq_bins)
+            return _shape_width(spec.shape, layout) * _DTYPES[spec.dtype].itemsize
+        if relative_index >= 69:
+            ion_index = relative_index - 69
+            return 4 if ion_index % 2 == 0 else self._payload_lengths[69 + 1] if len(self._payload_lengths) > 70 else 0
+        return 0
+
+    def _valid_incomplete_snapshot_prefix(
+        self, start: int, n_nodes: int, n_zones: int, n_freq_bins: int, block_records: int
+    ) -> bool:
+        prefix_count = self.record_count - start
+        if prefix_count >= block_records:
+            return False
+        fraction_width = None
+        for relative in range(prefix_count):
+            record_index = start + relative
+            expected = self._expected_record_bytes(relative, n_nodes, n_zones, n_freq_bins)
+            if relative == 70:
+                fraction_width = self._payload_lengths[record_index]
+                expected = fraction_width
+            elif relative >= 69 and (relative - 69) % 2 == 1:
+                expected = fraction_width or 0
+            if expected <= 0 or self._payload_lengths[record_index] != expected:
+                return False
+            if relative == 0:
+                header = self.array(record_index, "f64")
+                try:
+                    if _header_integer(header[4], "node count", self.path) != n_nodes or _header_integer(header[6], "frequency-bin count", self.path) != n_freq_bins:
+                        return False
+                except (IndexError, ValueError):
+                    return False
+        return True
+
+    def _valid_partial_final_record(
+        self, start: int, prefix_count: int, n_nodes: int, n_zones: int, n_freq_bins: int, block_records: int
+    ) -> bool:
+        if prefix_count >= block_records or not self._valid_incomplete_snapshot_prefix(
+            start, n_nodes, n_zones, n_freq_bins, block_records
+        ):
+            return False
+        relative = prefix_count
+        expected = self._expected_record_bytes(relative, n_nodes, n_zones, n_freq_bins)
+        if relative >= 69 and (relative - 69) % 2 == 1:
+            fraction_relative = relative - 2 if relative > 70 else relative
+            fraction_index = start + fraction_relative
+            if fraction_index >= self.record_count and start >= block_records:
+                fraction_index -= block_records
+            expected = self._payload_lengths[fraction_index] if 0 <= fraction_index < self.record_count else 0
+        if expected <= 0:
+            return False
+        tail = self._partial_tail
+        marker = struct.pack("<i", expected)
+        if len(tail) < 4:
+            return tail == marker[: len(tail)]
+        declared = struct.unpack_from("<i", tail, 0)[0]
+        if declared != expected:
+            return False
+        closing_offset = expected + 4
+        if len(tail) > closing_offset:
+            closing_prefix = tail[closing_offset:]
+            if closing_prefix != marker[: len(closing_prefix)]:
+                return False
+        return len(tail) < expected + 8
 
     @staticmethod
     def snapshot_start(snapshot_index: int, block_records: int) -> int:
@@ -443,11 +605,14 @@ class BpfFile:
         interface_velocity = fields["interface_velocity_cm_s"]
         fields["fluid_velocity_cm_s"] = 0.5 * (interface_velocity[:-1] + interface_velocity[1:])
         fields["zone_outer_velocity_cm_s"] = interface_velocity[1:].copy()
-        fields["pressure_j_cm3"] = fields["ion_pressure_j_cm3"] + fields["electron_pressure_j_cm3"]
+        fields["pressure_j_cm3"] = plasma_pressure(fields["ion_pressure_j_cm3"], fields["electron_pressure_j_cm3"])
         fields["radiation_net_heating_j_g_s"] = fields["radiation_heating_j_g_s"] - fields["radiation_cooling_j_g_s"]
         radiation_energy_density = fields["bpf_record_14"][1:-1].copy()
         fields["radiation_energy_density_j_cm3"] = radiation_energy_density
         fields["radiation_pressure_j_cm3"] = radiation_energy_density / 3.0
+        fields["total_pressure_j_cm3"] = total_pressure(
+            fields["ion_pressure_j_cm3"], fields["electron_pressure_j_cm3"], fields["radiation_pressure_j_cm3"]
+        )
         fields["radiation_energy_j_g"] = radiation_energy_density / np.where(
             fields["mass_density_g_cm3"] != 0.0,
             fields["mass_density_g_cm3"],
@@ -481,10 +646,11 @@ class BpfFile:
         fields["dominant_charge_state"] = np.argmax(fractions, axis=1).astype(np.float64)
 
         header = fields["snapshot_header"]
+        cycle = _header_integer(header[2], "cycle", self.path, snapshot_index)
         return BpfSnapshot(
             index=snapshot_index,
             time_s=float(header[1]),
-            cycle=int(round(float(header[2]))),
+            cycle=cycle,
             fields=fields,
         )
 
@@ -506,6 +672,10 @@ class BpfFile:
             values = fields[key]
             if not np.all(np.isfinite(values)):
                 raise ValueError(f"{self.path} snapshot {snapshot_index} field {key} contains non-finite values.")
+        if not np.all(np.diff(fields["node_position_cm"]) > 0.0):
+            raise ValueError(f"{self.path} snapshot {snapshot_index} has non-positive cell widths.")
+        if np.any(fields["mass_density_g_cm3"] < 0.0):
+            raise ValueError(f"{self.path} snapshot {snapshot_index} has negative mass density.")
         if not np.all(np.isfinite(fractions)):
             raise ValueError(f"{self.path} snapshot {snapshot_index} contains non-finite ionization fractions.")
         if np.nanmin(fractions) < -1.0e-8:
@@ -517,13 +687,35 @@ class BpfFile:
                 f"(min={float(row_sums.min()):.6g}, max={float(row_sums.max()):.6g})."
             )
 
+    def iter_snapshot_headers(self) -> Iterator[tuple[float, int]]:
+        """Yield validated (time, cycle) pairs without decoding field records."""
+        previous_time = -np.inf
+        previous_cycle = -1
+        for index in range(self.layout.n_snapshots):
+            header = self.array(self.snapshot_start(index, self.layout.block_records), "f64")
+            if header.size < 3:
+                raise ValueError(f"{self.path} snapshot {index} has a short header.")
+            time_s = float(header[1])
+            if not np.isfinite(time_s):
+                raise ValueError(f"{self.path} snapshot {index} has non-finite time.")
+            cycle = _header_integer(header[2], "cycle", self.path, index)
+            if time_s < previous_time or cycle < previous_cycle:
+                raise ValueError(f"{self.path} snapshot {index} has decreasing time or cycle metadata.")
+            previous_time = time_s
+            previous_cycle = cycle
+            yield time_s, cycle
+
     def iter_snapshots(self) -> Iterator[BpfSnapshot]:
         previous_time = -np.inf
+        previous_cycle = -1
         for index in range(self.layout.n_snapshots):
             snapshot = self.extract_snapshot(index)
             if snapshot.time_s < previous_time:
                 raise ValueError(f"{self.path} BPF snapshot times are not nondecreasing at snapshot {index}.")
+            if snapshot.cycle < previous_cycle:
+                raise ValueError(f"{self.path} BPF cycles are not nondecreasing at snapshot {index}.")
             previous_time = snapshot.time_s
+            previous_cycle = snapshot.cycle
             yield snapshot
 
 

@@ -1,0 +1,137 @@
+{
+  "cases": {
+    "derived_empty_optional_fields_large_run": {
+      "equivalent_metrics": {
+        "required_checksums.density_g_cm3": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 2.5390627808755263e-06,
+          "passed": true
+        },
+        "required_checksums.electron_density_cm3": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 4401610751463862.0,
+          "passed": true
+        },
+        "required_checksums.mean_charge": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 2.910401597970324e-07,
+          "passed": true
+        },
+        "required_checksums.static_x_cm": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 3.4750387352454992e-12,
+          "passed": true
+        },
+        "required_checksums.static_x_edge_cm": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 3.4792887579689994e-12,
+          "passed": true
+        },
+        "required_checksums.temperature_e_ev": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 2.2666505531000002e-05,
+          "passed": true
+        },
+        "required_checksums.temperature_i_ev": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 1.494925549932e-05,
+          "passed": true
+        },
+        "required_checksums.time_s": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 1e-12,
+          "passed": true
+        },
+        "required_checksums.velocity_cm_s": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 2.946932008061981,
+          "passed": true
+        },
+        "required_checksums.zone_material_index": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 1.8e-09,
+          "passed": true
+        },
+        "required_checksums.zone_region_id": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 1.8e-09,
+          "passed": true
+        },
+        "required_checksums.zone_width_cm": {
+          "maximum_absolute_error": 0.0,
+          "maximum_tolerance": 3.10187845510715e-10,
+          "passed": true
+        }
+      },
+      "metrics": {
+        "array_count": {
+          "baseline_median": 34.0,
+          "candidate_median": 17.0,
+          "candidate_over_baseline_ratio": 0.5,
+          "direction": "lower",
+          "normalized_regression_ratio": 0.5,
+          "paired_median_ratio_bootstrap_95pct_ci": [
+            0.5,
+            0.5
+          ],
+          "verdict": "improved"
+        },
+        "elapsed_s": {
+          "baseline_median": 0.5458754769060761,
+          "candidate_median": 0.24733586213551462,
+          "candidate_over_baseline_ratio": 0.4530994202878828,
+          "direction": "lower",
+          "normalized_regression_ratio": 0.4530994202878828,
+          "paired_median_ratio_bootstrap_95pct_ci": [
+            0.3809731540241327,
+            0.492611666947412
+          ],
+          "verdict": "improved"
+        },
+        "optional_array_bytes": {
+          "baseline_median": 124966400.0,
+          "candidate_median": 0.0,
+          "candidate_over_baseline_ratio": 0.0,
+          "direction": "lower",
+          "normalized_regression_ratio": 0.0,
+          "paired_median_ratio_bootstrap_95pct_ci": [
+            0.0,
+            0.0
+          ],
+          "verdict": "improved"
+        },
+        "peak_rss_delta_bytes": {
+          "baseline_median": 472989696.0,
+          "candidate_median": 205533184.0,
+          "candidate_over_baseline_ratio": 0.4345405105822855,
+          "direction": "lower",
+          "normalized_regression_ratio": 0.4345405105822855,
+          "paired_median_ratio_bootstrap_95pct_ci": [
+            0.4322716408604385,
+            0.4346545630933407
+          ],
+          "verdict": "improved"
+        },
+        "retained_array_bytes": {
+          "baseline_median": 203146316.0,
+          "candidate_median": 70369516.0,
+          "candidate_over_baseline_ratio": 0.3463981891751362,
+          "direction": "lower",
+          "normalized_regression_ratio": 0.3463981891751362,
+          "paired_median_ratio_bootstrap_95pct_ci": [
+            0.3463981891751362,
+            0.3463981891751362
+          ],
+          "verdict": "improved"
+        }
+      },
+      "paired": true,
+      "samples": 5
+    }
+  },
+  "failures": [],
+  "minimum_samples": 5,
+  "paired": true,
+  "passed": true,
+  "schema_version": 1
+}

@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "paired": true,
+  "minimum_samples": 10,
+  "passed": true,
+  "failures": [],
+  "cases": {
+    "ui_responsiveness": {
+      "samples": 10,
+      "paired": true,
+      "metrics": {
+        "event_loop_gap_max_ms": {
+          "direction": "lower",
+          "baseline_median": 64.96053060982376,
+          "candidate_median": 67.71758350078017,
+          "candidate_over_baseline_ratio": 1.042441969994307,
+          "normalized_regression_ratio": 1.073670585171154,
+          "paired_median_ratio_bootstrap_95pct_ci": [
+            0.8543560351860051,
+            1.1501159040215432
+          ],
+          "verdict": "inconclusive"
+        },
+        "event_loop_gap_p50_ms": {
+          "direction": "lower",
+          "baseline_median": 19.69866023864597,
+          "candidate_median": 19.094535266049206,
+          "candidate_over_baseline_ratio": 0.9693316720387127,
+          "normalized_regression_ratio": 1.0028941523190475,
+          "paired_median_ratio_bootstrap_95pct_ci": [
+            0.9146585282487173,
+            1.039644305505588
+          ],
+          "verdict": "inconclusive"
+        },
+        "event_loop_gap_p95_ms": {
+          "direction": "lower",
+          "baseline_median": 53.00081695895642,
+          "candidate_median": 52.40760534070432,
+          "candidate_over_baseline_ratio": 0.988807500482276,
+          "normalized_regression_ratio": 0.987786171627062,
+          "paired_median_ratio_bootstrap_95pct_ci": [
+            0.8640728744226982,
+            1.0443411486012013
+          ],
+          "verdict": "inconclusive"
+        },
+        "settling_p50_ms": {
+          "direction": "lower",
+          "baseline_median": 26.230183721054345,
+          "candidate_median": 25.078733742702752,
+          "candidate_over_baseline_ratio": 0.95610210013789,
+          "normalized_regression_ratio": 0.976215922763626,
+          "paired_median_ratio_bootstrap_95pct_ci": [
+            0.888524395573967,
+            1.0318591778231279
+          ],
+          "verdict": "inconclusive"
+        },
+        "settling_p95_ms": {
+          "direction": "lower",
+          "baseline_median": 32.721496536396444,
+          "candidate_median": 32.08682907279581,
+          "candidate_over_baseline_ratio": 0.9806039597579319,
+          "normalized_regression_ratio": 1.0015633173445697,
+          "paired_median_ratio_bootstrap_95pct_ci": [
+            0.9155580940191976,
+            1.058825774837202
+          ],
+          "verdict": "inconclusive"
+        }
+      },
+      "equivalent_metrics": {}
+    }
+  },
+  "baseline_description": "origin/master source with src/helios_viewer/slider.py overlaid from c9a4372 to isolate the proven Qt proxy-style ownership shutdown fix",
+  "candidate_revision": "8fd325d8737d3066ea65fa92148352a9561e7050",
+  "pairs": 10,
+  "processes_per_side": 10,
+  "slider_bursts_per_side": 1000,
+  "slider_values_per_side": 8000,
+  "tab_switches_per_side": 1650,
+  "all_processes_exited_zero": true,
+  "all_latest_snapshot_renders_correct": true,
+  "interpretation": "Comparator passes the proposed 10% median slowdown review threshold for every metric. All paired bootstrap intervals include 1.0, so timing improvements remain inconclusive; no median regression above the threshold was detected."
+}

@@ -150,7 +150,8 @@ reader aliases:
 | Derived field | Alias | Evidence |
 | --- | --- | --- |
 | `zone_outer_velocity_cm_s` | `velocity` | Matches LOG `Velocity`; the centered `fluid_velocity_cm_s` remains EXO-compatible. |
-| `pressure_j_cm3` | `pressure` | `ion_pressure_j_cm3 + electron_pressure_j_cm3` matches LOG `Pressure` within LOG text precision. |
+| `pressure_j_cm3` | `plasma_pressure_j_cm3` | `ion_pressure_j_cm3 + electron_pressure_j_cm3` is plasma pressure and excludes radiation. |
+| `total_pressure_j_cm3` | `pressure` | Ion + electron + radiation pressure; the legacy alias now has this consistent total-pressure meaning (schema 2.1). |
 | `radiation_net_heating_j_g_s` | `radiation_net_heating` | `radiation_heating_j_g_s - radiation_cooling_j_g_s` matches LOG `RadNetHeat`. |
 | `radiation_pressure_j_cm3` | `pressure_radiation` | One third of BPF record 14 interior matches LOG radiation pressure. |
 | `radiation_energy_j_g` | `radiation_energy` | BPF record 14 interior divided by mass density matches LOG radiation energy. |

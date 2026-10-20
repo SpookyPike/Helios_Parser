@@ -67,7 +67,7 @@ class PlasmonUiPhase7Tests(unittest.TestCase):
         self.assertFalse(controller._busy)
         controller.shutdown()
 
-    def test_preheat_manual_navigation_follows_global_snapshot_and_disables_local_snapshot_controls(self) -> None:
+    def test_preheat_manual_navigation_starts_at_selected_snapshot(self) -> None:
         dataset, context = _synthetic_dataset()
         del dataset
         context = context.copy()
@@ -85,13 +85,13 @@ class PlasmonUiPhase7Tests(unittest.TestCase):
         )
         selected_snapshot_index, note = workspace._resolve_preheat_snapshot_index(preheat)
         self.assertEqual(selected_snapshot_index, 2)
-        self.assertIn("global snapshot", note.lower())
+        self.assertIn("selected snapshot", note.lower())
         workspace._sync_preheat_navigation_controls(preheat, selected_snapshot_index=selected_snapshot_index)
         self.assertEqual(workspace.preheat_snapshot_slider.value(), 2)
         self.assertEqual(workspace.preheat_snapshot_spin.value(), 2)
-        self.assertFalse(workspace.preheat_snapshot_slider.isEnabled())
-        self.assertFalse(workspace.preheat_snapshot_spin.isEnabled())
-        self.assertFalse(workspace.preheat_time_spin.isEnabled())
+        self.assertTrue(workspace.preheat_snapshot_slider.isEnabled())
+        self.assertTrue(workspace.preheat_snapshot_spin.isEnabled())
+        self.assertTrue(workspace.preheat_time_spin.isEnabled())
         workspace.close()
 
 

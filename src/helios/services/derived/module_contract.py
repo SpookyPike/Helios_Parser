@@ -23,12 +23,16 @@ class DerivedModuleContract(Generic[ResultT]):
     compute: Callable[..., ResultT]
     validate: Callable[[ResultT], None]
     required_capabilities: tuple[str, ...] = ()
+    required_material_properties: tuple[str, ...] = ()
     supports_lazy_time_plots: bool = True
 
-    def capabilities_met(self, dataset: object) -> bool:
+    def missing_requirements(self, dataset: object) -> tuple[str, ...]:
         field_capabilities = getattr(dataset, "field_capabilities", None)
+        if field_capabilities is None and self.required_capabilities:
+            return (*self.required_capabilities, *self.required_material_properties)
+        missing = [name for name in self.required_material_properties if getattr(dataset, name, None) is None]
         if field_capabilities is None:
-            return len(self.required_capabilities) == 0
+            return tuple(missing)
         available = set(getattr(field_capabilities, "available_fields", ()))
         optional_available = set(getattr(field_capabilities, "optional_available_fields", ()))
         flags = {
@@ -45,11 +49,14 @@ class DerivedModuleContract(Generic[ResultT]):
             normalized = str(capability)
             if normalized in flags:
                 if not flags[normalized]:
-                    return False
+                    missing.append(normalized)
                 continue
             if normalized not in available and normalized not in optional_available:
-                return False
-        return True
+                missing.append(normalized)
+        return tuple(missing)
+
+    def capabilities_met(self, dataset: object) -> bool:
+        return not self.missing_requirements(dataset)
 
     @staticmethod
     def time_plots_loaded(module_result: object) -> bool:

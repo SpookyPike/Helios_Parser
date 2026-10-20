@@ -34,6 +34,8 @@ class OpenRunPayload:
     run_status: dict[str, Any] | None = None
     visar_support_metadata: dict[str, Any] | None = None
     field_metadata: dict[str, Any] | None = None
+    revision: Any | None = None
+    request_key: tuple[Any, ...] | None = None
 
 
 @dataclass(slots=True)
@@ -45,6 +47,8 @@ class FieldPayload:
     # For coordinate fields such as HELIOS' dynamic Radius column, `data`
     # carries zone centers while `edge_data` carries the explicit edge grid.
     edge_data: np.ndarray | None = None
+    revision: Any | None = None
+    request_key: tuple[Any, ...] | None = None
 
 
 @dataclass(slots=True)
@@ -55,6 +59,8 @@ class SnapshotFieldPayload:
     unit: str
     data: np.ndarray
     edge_data: np.ndarray | None = None
+    revision: Any | None = None
+    request_key: tuple[Any, ...] | None = None
 
 
 @dataclass(slots=True)
@@ -64,6 +70,8 @@ class FieldTracePayload:
     zone_index: int
     unit: str
     data: np.ndarray
+    revision: Any | None = None
+    request_key: tuple[Any, ...] | None = None
 
 
 @dataclass(slots=True)
@@ -72,3 +80,5 @@ class DiagnosticPayload:
     path: str
     unit: str
     data: np.ndarray
+    revision: Any | None = None
+    request_key: tuple[Any, ...] | None = None

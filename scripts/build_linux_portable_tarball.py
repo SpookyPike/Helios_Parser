@@ -22,7 +22,12 @@ TARBALL_PATH = OUTPUT_ROOT / f"{BUNDLE_NAME}.tar.gz"
 
 
 def _ignore_runtime_junk(_: str, names: list[str]) -> set[str]:
-    return {name for name in names if name in {"__pycache__", ".pytest_cache"} or name.endswith((".pyc", ".pyo"))}
+    return {
+        name
+        for name in names
+        if name in {"__pycache__", ".pytest_cache"}
+        or name.endswith((".pyc", ".pyo", ".egg-info"))
+    }
 
 
 def _write_executable(path: Path, text: str) -> None:

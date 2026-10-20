@@ -19,7 +19,6 @@ LOGGER = logging.getLogger(__name__)
 pg.setConfigOptions(
     antialias=True,
     imageAxisOrder="row-major",
-    exitCleanup=False,
     background=LIGHT_THEME.plot_background,
     foreground=LIGHT_THEME.text_color,
 )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from pathlib import Path
 import unittest
 
@@ -9,7 +10,8 @@ import numpy as np
 import _test_bootstrap  # noqa: F401
 
 from helios.runtime import RunContext
-from helios.services.derived.models import DerivedRunData
+from helios.services.derived.models import DerivedFieldCapabilities, DerivedRunData
+from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result, refresh_analysis_result_for_snapshot
 from helios.services.derived.plasmon import electron_debye_length_cm, electron_plasma_frequency_rad_s
 from helios.services.derived.selection import (
     WEIGHTING_MASS,
@@ -21,6 +23,8 @@ from helios.services.derived.selection import (
 )
 from helios.services.derived.shock_tracking import _smooth_track, track_shock_front
 from helios.services.derived.spectroscopy import doppler_width_fraction, doppler_width_fraction_array
+from helios.services.derived.xrd import _region_metrics_for_snapshot, _zone_region_dense_index
+from helios.services.derived.plasmon_validation import uniform_al_dataset
 
 
 def _synthetic_dataset() -> tuple[DerivedRunData, RunContext]:
@@ -99,6 +103,95 @@ def _synthetic_dataset() -> tuple[DerivedRunData, RunContext]:
 
 
 class DerivedServicesPhase4Tests(unittest.TestCase):
+    def test_same_snapshot_activation_recomputes_unavailable_module_placeholder(self) -> None:
+        dataset, context = uniform_al_dataset(2.7, 10.0)
+        parameters = DerivedAnalysisParameters()
+        first = compute_analysis_result(
+            dataset,
+            context,
+            parameters=parameters,
+            context_key=("same-snapshot-xrd",),
+            requested_modules={"xrd"},
+            requested_time_plot_modules=(),
+            include_wavefront=False,
+        )
+        activated = refresh_analysis_result_for_snapshot(
+            dataset,
+            context,
+            parameters=parameters,
+            context_key=("same-snapshot-spectroscopy",),
+            base_result=first,
+            requested_modules={"spectroscopy"},
+        )
+        fresh = compute_analysis_result(
+            dataset,
+            context,
+            parameters=parameters,
+            context_key=("same-snapshot-fresh",),
+            requested_modules={"spectroscopy"},
+            requested_time_plot_modules=(),
+            include_wavefront=False,
+        )
+        availability = {item.module: item.available for item in activated.module_availability}
+        self.assertTrue(availability["spectroscopy"])
+        self.assertIsNot(activated.spectroscopy, first.spectroscopy)
+        self.assertAlmostEqual(fresh.spectroscopy.bulk_velocity_cm_s, activated.spectroscopy.bulk_velocity_cm_s)
+        self.assertEqual(len(fresh.spectroscopy.profile_plots), len(activated.spectroscopy.profile_plots))
+
+    def test_lazy_module_revisit_recomputes_snapshot_local_product(self) -> None:
+        dataset, context = uniform_al_dataset(2.7, 10.0)
+        dataset.summary["n_snapshots"] = 2
+        dataset.time_s = np.asarray([0.0, 1.0e-9])
+        for name in (
+            "zone_width_cm", "density_g_cm3", "velocity_cm_s", "temperature_e_ev",
+            "temperature_i_ev", "electron_density_cm3", "mean_charge",
+        ):
+            values = np.asarray(getattr(dataset, name))
+            stacked = np.repeat(values[:1], 2, axis=0)
+            setattr(dataset, name, stacked)
+        dataset.density_g_cm3[1] *= 2.0
+        context = replace(context, time_values=dataset.time_s.copy(), snapshot_index=0)
+        parameters = DerivedAnalysisParameters()
+        first = compute_analysis_result(
+            dataset,
+            context,
+            parameters=parameters,
+            context_key=("xrd", 0),
+            requested_modules={"xrd"},
+            include_wavefront=False,
+        )
+        next_context = replace(context, snapshot_index=1)
+        switched = refresh_analysis_result_for_snapshot(
+            dataset,
+            next_context,
+            parameters=parameters,
+            context_key=("spectroscopy", 1),
+            base_result=first,
+            requested_modules={"spectroscopy"},
+        )
+        revisited = refresh_analysis_result_for_snapshot(
+            dataset,
+            next_context,
+            parameters=parameters,
+            context_key=("xrd", 1),
+            base_result=switched,
+            requested_modules={"xrd"},
+        )
+        fresh = compute_analysis_result(
+            dataset,
+            next_context,
+            parameters=parameters,
+            context_key=("fresh-xrd", 1),
+            requested_modules={"xrd"},
+            include_wavefront=False,
+        )
+
+        self.assertEqual(0, first.xrd.snapshot_index)
+        self.assertEqual(1, revisited.snapshot_index)
+        self.assertEqual(1, revisited.xrd.snapshot_index)
+        self.assertTrue(fresh.xrd.layers)
+        self.assertAlmostEqual(fresh.xrd.layers[0].bragg_shift_deg, revisited.xrd.layers[0].bragg_shift_deg)
+
     def test_shock_track_smoothing_matches_previous_monotonic_enforcement(self) -> None:
         track = np.asarray([np.nan, np.nan, 8.0, 7.4, 7.8, 6.1, 6.3, 4.0], dtype=np.float64)
 
@@ -142,6 +235,126 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
         self.assertEqual(crossing.crossing_snapshot, 4)
         self.assertAlmostEqual(float(crossing.crossing_time_s), 4.0e-9, places=15)
 
+    def test_shock_tracking_reports_missing_initial_density_without_fallback(self) -> None:
+        dataset, context = _synthetic_dataset()
+        dataset.zone_initial_density_g_cm3 = None
+        dataset.field_capabilities = DerivedFieldCapabilities(
+            available_fields=("density", "velocity", "zone_width", "electron_density", "temperature_e", "temperature_i", "mean_charge")
+        )
+        dataset.field_capabilities = DerivedFieldCapabilities(
+            available_fields=("density", "velocity", "zone_width", "electron_density", "temperature_e", "temperature_i", "mean_charge")
+        )
+        result = track_shock_front(dataset, context)
+        self.assertEqual("unavailable: missing initial material density", result.method)
+        self.assertIsNone(result.activation_snapshot_index)
+        self.assertTrue(np.all(np.isnan(result.position_cm)))
+        self.assertIn("initial material density is missing", result.warnings[0].message)
+
+    def test_shock_tracker_rejects_inconsistent_shared_field_shapes_clearly(self) -> None:
+        dataset, context = _synthetic_dataset()
+        dataset.velocity_cm_s = dataset.velocity_cm_s[:, :-1]
+        with self.assertRaisesRegex(ValueError, r"velocity_cm_s has shape .* expected \(5, 10\)"):
+            track_shock_front(dataset, context)
+
+    def test_duplicate_time_snapshots_keep_positions_but_gate_velocity(self) -> None:
+        dataset, context = _synthetic_dataset()
+        dataset.time_s[2] = dataset.time_s[1]
+        context.time_values[2] = context.time_values[1]
+        result = track_shock_front(dataset, context)
+        self.assertTrue(np.isfinite(result.position_cm[1]))
+        self.assertTrue(np.isfinite(result.position_cm[2]))
+        self.assertTrue(np.isnan(result.velocity_cm_s[1]))
+        self.assertTrue(np.isnan(result.velocity_cm_s[2]))
+
+    def test_unreachable_bragg_angle_is_reported_and_not_clamped(self) -> None:
+        dataset, context = _synthetic_dataset()
+        geometry = build_analysis_geometry(
+            dataset,
+            context,
+            observation_side="front",
+            line_of_sight_angle_deg=0.0,
+            profile_coordinate_mode="viewer",
+        )
+        region_ids = np.asarray([1, 2], dtype=np.int32)
+        metrics, warnings = _region_metrics_for_snapshot(
+            dataset,
+            np.ones(dataset.zone_region_id.shape, dtype=bool),
+            4,
+            photon_energy_kev=8.0,
+            initial_bragg_angle_deg=85.0,
+            weighting_mode="simple_mean",
+            geometry=geometry,
+            selection_key=None,
+            region_ids=region_ids,
+            initial_densities=np.asarray([1.0, 1.0]),
+            zone_region_dense_index=_zone_region_dense_index(region_ids, dataset.zone_region_id),
+        )
+        self.assertTrue(np.isnan(metrics["bragg_shift_deg"][1]))
+        self.assertTrue(any("sin(theta') > 1" in warning.message for warning in warnings))
+
+    def test_unreachable_bragg_angle_keeps_finite_q_in_public_result(self) -> None:
+        dataset, context = _synthetic_dataset()
+        dataset.field_capabilities = DerivedFieldCapabilities(
+            available_fields=("density", "velocity", "zone_width", "temperature_e", "temperature_i", "electron_density", "mean_charge")
+        )
+        context = replace(context, snapshot_index=4)
+        result = compute_analysis_result(
+            dataset,
+            context,
+            parameters=DerivedAnalysisParameters(xrd_initial_bragg_angle_deg=85.0),
+            context_key=("unreachable-public-xrd",),
+            requested_modules=frozenset({"xrd"}),
+            requested_time_plot_modules=frozenset(),
+            include_wavefront=False,
+        )
+        self.assertTrue(result.xrd.layers)
+        unreachable = [layer for layer in result.xrd.layers if layer.compression_ratio > 1.0]
+        self.assertTrue(unreachable)
+        for layer in result.xrd.layers:
+            self.assertTrue(np.isfinite(layer.q_compressed_inv_angstrom))
+        for layer in unreachable:
+            self.assertIsNone(layer.shifted_bragg_angle_deg)
+            self.assertIsNone(layer.bragg_shift_deg)
+        self.assertTrue(any("sin(theta') > 1" in warning.message for warning in result.xrd.warnings))
+
+    def test_missing_material_properties_produce_module_availability_instead_of_key_error(self) -> None:
+        dataset, context = _synthetic_dataset()
+        dataset.zone_initial_density_g_cm3 = None
+        dataset.field_capabilities = DerivedFieldCapabilities(
+            available_fields=("density", "velocity", "zone_width", "electron_density", "temperature_e", "temperature_i", "mean_charge")
+        )
+        result = compute_analysis_result(
+            dataset,
+            context,
+            parameters=DerivedAnalysisParameters(),
+            context_key=("missing-material-properties",),
+            requested_time_plot_modules=frozenset(),
+            include_wavefront=False,
+        )
+        availability = {item.module: item for item in result.module_availability}
+        self.assertFalse(availability["xrd"].available)
+        self.assertTrue(availability["spectroscopy"].available)
+        self.assertEqual("unavailable: missing initial material density", result.shock.method)
+
+    def test_module_request_computes_only_the_requested_snapshot_analysis(self) -> None:
+        dataset, context = _synthetic_dataset()
+        dataset.field_capabilities = DerivedFieldCapabilities(
+            available_fields=("density", "velocity", "zone_width", "electron_density", "temperature_e", "temperature_i", "mean_charge")
+        )
+        result = compute_analysis_result(
+            dataset,
+            context,
+            parameters=DerivedAnalysisParameters(),
+            context_key=("requested-xrd-only",),
+            requested_time_plot_modules=frozenset(),
+            requested_modules=frozenset({"xrd"}),
+            include_wavefront=False,
+        )
+        availability = {item.module: item for item in result.module_availability}
+        self.assertTrue(availability["xrd"].available)
+        self.assertFalse(availability["spectroscopy"].available)
+        self.assertIn("not been loaded", availability["spectroscopy"].reason)
+
     def test_nrl_formula_helpers_return_dimensionally_sane_values(self) -> None:
         te_ev = 100.0
         ne_cm3 = 1.0e21
@@ -166,6 +379,13 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
         self.assertAlmostEqual(float(vector_width[0]), width_fraction)
         self.assertTrue(np.isnan(vector_width[1]))
         self.assertTrue(np.isnan(vector_width[2]))
+        self.assertEqual(0.0, doppler_width_fraction(0.0, ion_mass_mu))
+        zero_width = doppler_width_fraction_array(
+            np.asarray([0.0, -1.0], dtype=np.float64),
+            np.asarray([ion_mass_mu, ion_mass_mu], dtype=np.float64),
+        )
+        self.assertEqual(0.0, float(zero_width[0]))
+        self.assertTrue(np.isnan(zero_width[1]))
 
     def test_cylindrical_mass_weighting_uses_edge_based_shell_geometry(self) -> None:
         dataset, context = _synthetic_dataset()

@@ -124,6 +124,15 @@ def main() -> None:
 
     json_path = here / "xcom_fallback_1keV_12keV_extended.json"
     csv_path = here / "xcom_fallback_1keV_12keV_extended.csv"
+    package_json_path = (
+        here.parent
+        / "src"
+        / "helios"
+        / "services"
+        / "derived"
+        / "resources"
+        / json_path.name
+    )
 
     payload = {
         "metadata": {
@@ -136,6 +145,8 @@ def main() -> None:
         "materials": materials,
     }
     json_path.write_text(json.dumps(payload, indent=2))
+    package_json_path.parent.mkdir(parents=True, exist_ok=True)
+    package_json_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     with csv_path.open("w", newline="") as f:
         w = csv.writer(f)

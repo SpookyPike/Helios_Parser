@@ -7,6 +7,7 @@ from typing import Any
 
 import h5py
 import numpy as np
+from unittest.mock import patch
 
 import _test_bootstrap  # noqa: F401
 from helios_parser import HeliosRun
@@ -36,6 +37,72 @@ class _FakeDataset:
 
 
 class ReaderTests(unittest.TestCase):
+    def test_field_metadata_is_loaded_per_field_then_completed_on_inventory(self) -> None:
+        path = HDF5_ROOT / "5Fe+4.9TW+light_stabilized.h5"
+        with HeliosRun(path) as run:
+            original = run._metadata_from_attrs
+            parsed: list[str] = []
+
+            def count_parse(name: str, dataset):
+                parsed.append(name)
+                return original(name, dataset)
+
+            with patch.object(run, "_metadata_from_attrs", side_effect=count_parse):
+                first = run.get_field_metadata("density")
+                self.assertEqual(first.name, "density")
+                self.assertEqual(parsed, ["density"])
+                run.get_field_metadata("density")
+                self.assertEqual(parsed, ["density"])
+                inventory = run.list_field_metadata()
+                self.assertEqual(set(inventory), set(run.list_fields()))
+                self.assertEqual(len(parsed), len(run.list_fields()))
+                self.assertEqual(len(set(parsed)), len(parsed))
+
+    def test_metadata_fanout_scales_from_one_field_to_explicit_inventory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "metadata_fanout.h5"
+            with h5py.File(path, "w") as handle:
+                fields_group = handle.create_group("fields")
+                for index in range(1000):
+                    dataset = fields_group.create_dataset(f"field_{index:04d}", data=np.zeros((2, 3), dtype=np.float64))
+                    dataset.attrs["units"] = "arb"
+                grid = handle.create_group("grid")
+                grid.create_dataset("zone_id", data=np.arange(3, dtype=np.int32))
+                time_group = handle.create_group("time")
+                time_group.create_dataset("time", data=np.asarray([0.0, 1.0], dtype=np.float64))
+
+            with h5py.File(path, "r") as handle:
+                run = HeliosRun.__new__(HeliosRun)
+                run._field_datasets = dict(handle["fields"].items())
+                run._grid_datasets = {"zone_id": handle["grid"]["zone_id"]}
+                run._time_datasets = {"time": handle["time"]["time"]}
+                run._field_metadata_group = None
+                run._field_names = tuple(run._field_datasets)
+                all_names = run._field_names
+                all_field_datasets = dict(run._field_datasets)
+                for field_count in (10, 104, 1000):
+                    names = tuple(all_names[:field_count])
+                    run._field_datasets = {name: all_field_datasets[name] for name in names}
+                    run._field_names = names
+                    run._field_metadata_cache = {}
+                    parsed: list[str] = []
+                    original = run._metadata_from_attrs
+
+                    def count_parse(name: str, dataset):
+                        parsed.append(name)
+                        return original(name, dataset)
+
+                    with patch.object(run, "_metadata_from_attrs", side_effect=count_parse):
+                        run.get_field_metadata(names[0])
+                        self.assertEqual(parsed, [names[0]])
+                        run.get_field_metadata(names[0])
+                        self.assertEqual(parsed, [names[0]])
+                        inventory = run.list_field_metadata()
+
+                    self.assertEqual(set(inventory), set(names))
+                    self.assertEqual(len(parsed), field_count)
+                    self.assertEqual(len(set(parsed)), field_count)
+
     def test_summary_field_access_and_diagnostics(self) -> None:
         for name, expected in EXPECTED.items():
             with self.subTest(example=name):

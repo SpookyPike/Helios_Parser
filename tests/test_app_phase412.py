@@ -16,6 +16,7 @@ from helios_viewer.settings import load_viewer_settings
 
 
 ROOT = Path(__file__).resolve().parents[1]
+HDF5_ROOT = ROOT / "outputs" / "hdf5"
 
 
 class AppPhase412Tests(unittest.TestCase):
@@ -34,7 +35,7 @@ class AppPhase412Tests(unittest.TestCase):
     def test_immediate_open_to_derived_uses_global_snapshot_state(self) -> None:
         window = self.open_window()
         try:
-            window._open_path(ROOT / "Cu_0166_stabilized.h5")
+            window._open_path(HDF5_ROOT / "Cu_0166_stabilized.h5")
             wait_until(lambda: window.viewer_controller.has_loaded_run(), 30.0)
             self.assertTrue(window.global_snapshot_widget.isVisible())
             self.assertFalse(window.viewer_controller.window.snapshot_controls_widget.isVisible())
@@ -48,6 +49,8 @@ class AppPhase412Tests(unittest.TestCase):
             wait_until(lambda: window.derived_controller.widget()._current_result is not None and window.derived_controller.widget()._current_result.snapshot_index == 17, 30.0)
 
             workspace = window.derived_controller.widget()
+            workspace.result_tabs.setCurrentIndex(workspace.result_tabs.indexOf(workspace.xrd_tab))
+            wait_until(lambda: f"snapshot 17" in workspace.xrd_plot_panel.profile_plot.current_title.lower(), 120.0)
             self.assertIn("snapshot 17", workspace.xrd_plot_panel.profile_plot.current_title.lower())
             self.assertIn("17", workspace.snapshot_label.text())
             self.assertIn(window.viewer_controller.current_time_unit(), window.global_snapshot_label.text())
@@ -105,7 +108,7 @@ class AppPhase412Tests(unittest.TestCase):
     def test_viewer_colorbar_survives_roundtrip_and_constant_field(self) -> None:
         window = self.open_window()
         try:
-            window._open_path(ROOT / "Cu_0166_stabilized.h5")
+            window._open_path(HDF5_ROOT / "Cu_0166_stabilized.h5")
             wait_until(
                 lambda: window.viewer_controller.window.run_payload is not None
                 and window.viewer_controller.window.current_field_payload is not None,
@@ -192,6 +195,8 @@ class AppPhase412Tests(unittest.TestCase):
             window._set_mode("derived")
             workspace = window.derived_controller.widget()
             wait_until(lambda: workspace._current_result is not None and workspace._current_result.snapshot_index == target, 120.0)
+            workspace.result_tabs.setCurrentIndex(workspace.result_tabs.indexOf(workspace.xrd_tab))
+            wait_until(lambda: f"snapshot {target}" in workspace.xrd_plot_panel.profile_plot.current_title.lower(), 120.0)
             self.assertIn(f"snapshot {target}", workspace.xrd_plot_panel.profile_plot.current_title.lower())
         finally:
             window.close()
@@ -199,7 +204,7 @@ class AppPhase412Tests(unittest.TestCase):
     def test_global_display_units_propagate_into_derived_without_reopen(self) -> None:
         window = self.open_window()
         try:
-            window._open_path(ROOT / "Cu_0166_stabilized.h5")
+            window._open_path(HDF5_ROOT / "Cu_0166_stabilized.h5")
             wait_until(lambda: window.viewer_controller.has_loaded_run(), 30.0)
             window._set_mode("derived")
             workspace = window.derived_controller.widget()
@@ -232,14 +237,14 @@ class AppPhase412Tests(unittest.TestCase):
             wait_until(lambda: bool(workspace.xrd_plot_panel.time_plot.current_x_label), 30.0)
             self.assertIn("[ps]", workspace.xrd_plot_panel.time_plot.current_x_label)
             self.assertIn("[m/s]", workspace.shock_velocity_plot.current_y_label)
-            self.assertIn("K", workspace.plasmon_metrics.toPlainText())
+            self.assertIn("K", workspace._format_temperature(1.0))
         finally:
             window.close()
 
     def test_global_snapshot_slider_clicks_settle_to_latest_clicked_position(self) -> None:
         window = self.open_window()
         try:
-            window._open_path(ROOT / "Cu_0166_stabilized.h5")
+            window._open_path(HDF5_ROOT / "Cu_0166_stabilized.h5")
             wait_until(lambda: window.viewer_controller.has_loaded_run(), 30.0)
             slider = window.global_snapshot_slider
             max_index = max(1, int(window.viewer_controller.current_run_context().n_snapshots) - 1)
@@ -260,7 +265,7 @@ class AppPhase412Tests(unittest.TestCase):
     def test_theme_switch_keeps_derived_plots_rendered(self) -> None:
         window = self.open_window()
         try:
-            window._open_path(ROOT / "Cu_0166_stabilized.h5")
+            window._open_path(HDF5_ROOT / "Cu_0166_stabilized.h5")
             wait_until(lambda: window.viewer_controller.has_loaded_run(), 30.0)
             window._set_mode("derived")
             workspace = window.derived_controller.widget()
@@ -275,10 +280,13 @@ class AppPhase412Tests(unittest.TestCase):
             self.assertTrue(workspace.shock_velocity_plot.current_y_label)
 
             workspace.result_tabs.setCurrentIndex(workspace.result_tabs.indexOf(workspace.plasmon_tab))
-            wait_until(lambda: bool(workspace.plasmon_plot_panel.time_combo.count()), 30.0)
+            wait_until(lambda: workspace.plasmon_plot_panel.time_plot.current_curve_count > 0, 120.0)
+            plasmon_curve_count = workspace.plasmon_plot_panel.time_plot.current_curve_count
+            workspace.result_tabs.setCurrentIndex(workspace.result_tabs.indexOf(workspace.spectroscopy_tab))
+            wait_until(lambda: bool(workspace.spectroscopy_plot_panel.profile_plot.current_y_label), 120.0)
             window._set_theme_mode("system")
             process_events(100)
-            self.assertGreater(workspace.plasmon_plot_panel.time_plot.current_curve_count, 0)
+            self.assertEqual(plasmon_curve_count, workspace.plasmon_plot_panel.time_plot.current_curve_count)
             self.assertTrue(workspace.plasmon_plot_panel.time_plot.current_x_label)
             self.assertTrue(workspace.spectroscopy_plot_panel.profile_plot.current_y_label)
         finally:
@@ -294,6 +302,8 @@ class AppPhase412Tests(unittest.TestCase):
             window._set_mode("derived")
             workspace = window.derived_controller.widget()
             wait_until(lambda: workspace._current_result is not None, 120.0)
+            workspace.result_tabs.setCurrentIndex(workspace.result_tabs.indexOf(workspace.xrd_tab))
+            wait_until(lambda: bool(workspace.xrd_plot_panel.profile_combo.count()), 120.0)
 
             viewer_window = window.viewer_controller.window
             zone_settings = replace(viewer_window.current_viewer_settings(), default_profile_coordinate="zone")
@@ -343,8 +353,8 @@ class AppPhase412Tests(unittest.TestCase):
     def test_breakout_navigation_uses_canonical_snapshot_request_and_resets_on_run_change(self) -> None:
         window = self.open_window()
         try:
-            first_path = ROOT / "Cu_0166_stabilized.h5"
-            second_path = ROOT / "5Fe+4.9TW+light_stabilized.h5"
+            first_path = HDF5_ROOT / "Cu_0166_stabilized.h5"
+            second_path = HDF5_ROOT / "5Fe+4.9TW+light_stabilized.h5"
             window._open_path(first_path)
             wait_until(lambda: window.viewer_controller.has_loaded_run(), 30.0)
             context = window.viewer_controller.current_run_context()

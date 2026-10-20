@@ -83,7 +83,14 @@ class AppPhase3Tests(unittest.TestCase):
             )
             viewer = window.viewer_controller.window
             self.assertEqual(window.mode_stack.currentWidget(), window.viewer_page)
-            self.assertEqual(viewer.field_list.count(), 27)
+            available_fields = set(viewer.run_payload.fields)
+            self.assertTrue({"density", "velocity", "temperature_e", "temperature_i"}.issubset(available_fields))
+            displayed_fields = {
+                viewer.field_list.item(index).text().split(" [", 1)[0]
+                for index in range(viewer.field_list.count())
+                if viewer.field_list.item(index).text() != "Physics and mapped fields"
+            }
+            self.assertSetEqual(available_fields, displayed_fields)
             self.assertEqual(viewer.plot_tabs.count(), 3)
             window._set_mode("parser")
             process_events()

@@ -10,7 +10,7 @@ import numpy as np
 from .buffer import HeliosBuffer
 from .indexing import StructuralIndexer
 from .model import HeliosBlockIndex, HeliosHeader, HeliosPreview, RunStatusInfo, Simulation, Snapshot
-from .parser import HeaderSemanticParser, SnapshotBlockSemanticParser
+from .parser import HeaderSemanticParser, SnapshotBlockSemanticParser, SnapshotDomainError
 
 
 RUN_COMPLETED_RE = re.compile(r"#\s*Simulation completed on\s*:\s*(.+)", re.IGNORECASE)
@@ -292,6 +292,8 @@ class HeliosDocument:
         _run_status: RunStatusInfo | None = None
         _damaged_final_block_reason: str | None = None
         _finished: bool = False
+        _previous_time: float | None = None
+        _previous_cycle: int | None = None
 
         @property
         def run_status(self) -> RunStatusInfo | None:
@@ -307,6 +309,8 @@ class HeliosDocument:
                 self._position += 1
                 try:
                     snapshot = self.document.snapshot_parser.parse(self.document.buffer.slice(block.span), self.header)
+                except SnapshotDomainError:
+                    raise
                 except Exception as exc:
                     if block_offset == len(self._blocks) - 1 and self._valid_snapshot_count > 0:
                         self._damaged_final_block_reason = str(exc)
@@ -315,6 +319,21 @@ class HeliosDocument:
                     raise ValueError(
                         f"Failed to parse HELIOS snapshot block {int(block.index)} from {self.document.buffer.source}: {exc}"
                     ) from exc
+                snapshot_time = float(snapshot.time)
+                if not np.isfinite(snapshot_time):
+                    raise ValueError(f"Snapshot time must be finite, got {snapshot.time!r}.")
+                if self._previous_time is not None and snapshot_time < self._previous_time:
+                    raise SnapshotDomainError(
+                        f"Snapshot times must be nondecreasing; block {int(block.index)} has {snapshot_time} "
+                        f"after {self._previous_time}."
+                    )
+                if self._previous_cycle is not None and int(snapshot.cycle) < self._previous_cycle:
+                    raise SnapshotDomainError(
+                        f"Snapshot cycles must be nondecreasing; block {int(block.index)} has {snapshot.cycle} "
+                        f"after {self._previous_cycle}."
+                    )
+                self._previous_time = snapshot_time
+                self._previous_cycle = int(snapshot.cycle)
                 self._valid_snapshot_count += 1
                 self._last_valid_snapshot = snapshot
                 return snapshot

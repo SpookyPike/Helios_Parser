@@ -2,21 +2,23 @@ from __future__ import annotations
 
 from dataclasses import replace
 from pathlib import Path
+import threading
 import unittest
 from unittest import mock
 
 import numpy as np
 
 try:
-    from PySide6 import QtCore, QtWidgets  # type: ignore
+    from PySide6 import QtCore, QtTest, QtWidgets  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover - optional GUI dependency in CI/container
     QtCore = None  # type: ignore
+    QtTest = None  # type: ignore
     QtWidgets = None  # type: ignore
 
 import _test_bootstrap  # noqa: F401
 
 if QtWidgets is not None:
-    from _viewer_test_utils import get_app, process_events, reset_test_settings
+    from _viewer_test_utils import get_app, process_events, reset_test_settings, wait_until
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
 from helios.services.derived.plasmon_config import (
@@ -25,7 +27,7 @@ from helios.services.derived.plasmon_config import (
     PLASMON_OBSERVABLE_MODE_XRTS,
     PLASMON_OBSERVABLE_MODE_XRTS_ARTICLE_NATIVE,
 )
-from helios.services.derived.models import DerivedRunData, DerivedWarning
+from helios.services.derived.models import DerivedFieldCapabilities, DerivedRunData, DerivedWarning
 from helios.services.derived.plasmon_validation import q_to_angle_deg, uniform_al_dataset
 
 if QtWidgets is not None:
@@ -86,6 +88,17 @@ def _synthetic_dataset() -> tuple[DerivedRunData, RunContext]:
         zone_initial_density_g_cm3=np.full(n_zones, 1.0, dtype=np.float64),
         zone_initial_temperature_ev=np.full(n_zones, 1.0, dtype=np.float64),
         laser_entry=None,
+        field_capabilities=DerivedFieldCapabilities(
+            available_fields=(
+                "density",
+                "zone_width",
+                "velocity",
+                "temperature_e",
+                "temperature_i",
+                "electron_density",
+                "mean_charge",
+            ),
+        ),
     )
     context = RunContext(
         path=Path("synthetic_plasmon.h5"),
@@ -222,7 +235,7 @@ class PlasmonUiPhase2Tests(unittest.TestCase):
         self.assertGreater(workspace.plasmon_tab.width(), workspace.plasmon_sidebar.width())
         workspace.close()
 
-    def test_workspace_prefers_policy_comparison_plot_when_enabled(self) -> None:
+    def test_workspace_exposes_policy_comparison_when_enabled(self) -> None:
         dataset, context = uniform_al_dataset(2.7, 0.3)
         parameters = DerivedAnalysisParameters(
             plasmon_model="rpa",
@@ -248,6 +261,11 @@ class PlasmonUiPhase2Tests(unittest.TestCase):
         workspace.set_result(result)
         workspace.result_tabs.setCurrentWidget(workspace.plasmon_tab)
         process_events(50)
+        self.assertIn("spectrum_compare_policies", _combo_keys(workspace.plasmon_plot_panel.time_combo))
+        self.assertTrue(_combo_item_enabled(workspace.plasmon_plot_panel.time_combo, "spectrum_compare_policies"))
+        workspace.plasmon_plot_panel.time_combo.setCurrentIndex(
+            workspace.plasmon_plot_panel.time_combo.findData("spectrum_compare_policies")
+        )
         self.assertEqual(workspace.plasmon_plot_panel.time_combo.currentData(), "spectrum_compare_policies")
         workspace.close()
 
@@ -306,6 +324,7 @@ class PlasmonUiPhase2Tests(unittest.TestCase):
         workspace = HeliosDerivedWorkspace()
         workspace.set_context(context)
         workspace.show()
+        workspace.setFocus()
         workspace.set_result(result)
         workspace.result_tabs.setCurrentWidget(workspace.plasmon_tab)
         process_events(50)
@@ -374,7 +393,7 @@ class PlasmonUiPhase2Tests(unittest.TestCase):
         assert line_edit is not None
         original_text = line_edit.text()
         line_edit.selectAll()
-        line_edit.setText("9.5")
+        QtTest.QTest.keyClicks(line_edit, "9.5")
         process_events(20)
         workspace._populate_plasmon(result.plasmon)
         self.assertTrue(line_edit.hasFocus())
@@ -485,7 +504,7 @@ class PlasmonUiPhase2Tests(unittest.TestCase):
         workspace.plasmon_benchmark_preset_combo.setCurrentIndex(ambient_index)
         with mock.patch("helios_analysis.workspace.load_run_data", return_value=dataset):
             workspace._apply_plasmon_benchmark_preset()
-        process_events(50)
+            wait_until(lambda: "dispersion_compare_models" in _combo_keys(workspace.plasmon_plot_panel.time_combo), timeout_s=5.0)
         self.assertIn("dispersion_compare_models", _combo_keys(workspace.plasmon_plot_panel.time_combo))
         self.assertIn("dispersion_compare_width_models", _combo_keys(workspace.plasmon_plot_panel.profile_combo))
         self.assertEqual(workspace.plasmon_plot_panel.time_combo.currentData(), "dispersion_compare_models")
@@ -515,7 +534,7 @@ class PlasmonUiPhase2Tests(unittest.TestCase):
         with mock.patch("helios_analysis.workspace.load_run_data", return_value=dataset):
             workspace.plasmon_benchmark_preset_combo.setCurrentIndex(workspace.plasmon_benchmark_preset_combo.findData("al_ambient_article"))
             workspace._apply_plasmon_benchmark_preset()
-        process_events(50)
+            wait_until(lambda: "dispersion_compare_models" in _combo_keys(workspace.plasmon_plot_panel.time_combo), timeout_s=5.0)
         self.assertIn("dispersion_compare_models", _combo_keys(workspace.plasmon_plot_panel.time_combo))
         self.assertIn("dispersion_compare_width_models", _combo_keys(workspace.plasmon_plot_panel.profile_combo))
         self.assertIn("spectrum_observed", _combo_keys(workspace.plasmon_plot_panel.profile_combo))
@@ -544,7 +563,7 @@ class PlasmonUiPhase2Tests(unittest.TestCase):
         workspace.plasmon_benchmark_preset_combo.setCurrentIndex(ambient_index)
         with mock.patch("helios_analysis.workspace.load_run_data", return_value=dataset):
             workspace._apply_plasmon_benchmark_preset()
-        process_events(20)
+            wait_until(lambda: workspace.plasmon_execution_mode_combo.currentData() == "benchmark", timeout_s=5.0)
         self.assertEqual(workspace.plasmon_execution_mode_combo.currentData(), "benchmark")
         self.assertEqual(workspace.plasmon_study_mode_combo.currentData(), "dispersion")
         self.assertEqual(workspace.plasmon_electron_policy_combo.currentData(), "article_al_benchmark")
@@ -561,6 +580,75 @@ class PlasmonUiPhase2Tests(unittest.TestCase):
         self.assertEqual(selected_material_ids, (1,))
         workspace.close()
 
+    def test_benchmark_preset_data_loading_runs_off_the_ui_thread(self) -> None:
+        dataset, context = _synthetic_dataset()
+        workspace = HeliosDerivedWorkspace()
+        workspace.set_context(context)
+        workspace.show()
+        workspace.plasmon_benchmark_preset_combo.setCurrentIndex(
+            workspace.plasmon_benchmark_preset_combo.findData("al_ambient_article")
+        )
+        worker_started = threading.Event()
+        release_worker = threading.Event()
+        worker_thread_ids: list[int] = []
+
+        def slow_load(*args, **kwargs):
+            del args, kwargs
+            worker_thread_ids.append(threading.get_ident())
+            worker_started.set()
+            if not release_worker.wait(5.0):
+                raise TimeoutError("test did not release benchmark preset worker")
+            return dataset
+
+        try:
+            with mock.patch("helios_analysis.workspace.load_run_data", side_effect=slow_load):
+                workspace._apply_plasmon_benchmark_preset()
+                self.assertTrue(worker_started.wait(2.0))
+                self.assertTrue(workspace.status_label.text().startswith("Preparing Plasmon benchmark defaults"))
+                self.assertNotEqual(worker_thread_ids[0], threading.get_ident())
+                release_worker.set()
+                wait_until(lambda: workspace.plasmon_execution_mode_combo.currentData() == "benchmark", timeout_s=5.0)
+        finally:
+            release_worker.set()
+            workspace.close()
+
+    def test_benchmark_preset_result_is_discarded_after_snapshot_change(self) -> None:
+        dataset, context = _synthetic_dataset()
+        workspace = HeliosDerivedWorkspace()
+        workspace.set_context(context)
+        workspace.show()
+        workspace.plasmon_benchmark_preset_combo.setCurrentIndex(
+            workspace.plasmon_benchmark_preset_combo.findData("al_ambient_article")
+        )
+        initial_mode = workspace.plasmon_execution_mode_combo.currentData()
+        worker_started = threading.Event()
+        release_worker = threading.Event()
+        worker_finished = threading.Event()
+
+        def slow_load(*args, **kwargs):
+            del args, kwargs
+            worker_started.set()
+            if not release_worker.wait(5.0):
+                raise TimeoutError("test did not release benchmark preset worker")
+            worker_finished.set()
+            return dataset
+
+        try:
+            with mock.patch("helios_analysis.workspace.load_run_data", side_effect=slow_load):
+                workspace._apply_plasmon_benchmark_preset()
+                self.assertTrue(worker_started.wait(2.0))
+                changed_context = context.copy()
+                changed_context.snapshot_index = 0
+                workspace.set_context(changed_context)
+                release_worker.set()
+                wait_until(lambda: worker_finished.is_set(), timeout_s=5.0)
+                process_events(50)
+            self.assertEqual(workspace.plasmon_execution_mode_combo.currentData(), initial_mode)
+            self.assertIn("superseded", workspace.status_label.text())
+        finally:
+            release_worker.set()
+            workspace.close()
+
     def test_driven_benchmark_preset_uses_article_driven_increment_policy(self) -> None:
         dataset, context = uniform_al_dataset(4.2, 0.6)
         workspace = HeliosDerivedWorkspace()
@@ -571,7 +659,7 @@ class PlasmonUiPhase2Tests(unittest.TestCase):
         workspace.plasmon_benchmark_preset_combo.setCurrentIndex(driven_index)
         with mock.patch("helios_analysis.workspace.load_run_data", return_value=dataset):
             workspace._apply_plasmon_benchmark_preset()
-        process_events(20)
+            wait_until(lambda: workspace.plasmon_execution_mode_combo.currentData() == "benchmark", timeout_s=5.0)
         self.assertEqual(workspace.plasmon_execution_mode_combo.currentData(), "benchmark")
         self.assertEqual(workspace.plasmon_study_mode_combo.currentData(), "dispersion")
         self.assertEqual(workspace.plasmon_electron_policy_combo.currentData(), "article_al_driven_increment")

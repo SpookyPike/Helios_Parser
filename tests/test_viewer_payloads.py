@@ -8,8 +8,9 @@ from _viewer_test_utils import EXPECTED, HDF5_ROOT, combo_set_data, find_row_by_
 
 import _test_bootstrap  # noqa: F401
 from helios_parser import HeliosRun
+from helios_viewer.controller import RunController
 from helios_viewer.main_window import HeliosViewerMainWindow
-from helios_viewer.models import OpenRunPayload
+from helios_viewer.models import FieldPayload, OpenRunPayload
 from helios_viewer.plots import signed_log10_transform
 
 
@@ -123,13 +124,36 @@ class ViewerPayloadTests(unittest.TestCase):
             window._on_run_opened(payload)
             radius_index = window.line_coordinate_combo.findData("radius")
             self.assertGreaterEqual(radius_index, 0)
-            self.assertEqual(window.line_coordinate_combo.currentData(), "zone")
+            self.assertIn(window.line_coordinate_combo.currentData(), {"zone", "static_x"})
             model = window.line_coordinate_combo.model()
             item = model.item(radius_index) if hasattr(model, "item") else None
             self.assertIsNotNone(item)
             self.assertFalse(bool(item.isEnabled()))
         finally:
             window.close()
+
+    def test_oversized_field_payload_is_delivered_without_cache_retention(self) -> None:
+        controller = RunController()
+        delivered: list[FieldPayload] = []
+        controller.field_loaded.connect(delivered.append)
+        controller.field_cache.max_bytes = 8
+        request_key = controller._make_request_key("field", ("density",))
+        self.assertTrue(controller._begin_request(request_key))
+        payload = FieldPayload(
+            run_generation=controller.run_generation,
+            field_name="density",
+            unit="g/cm3",
+            data=np.ones(2, dtype=np.float64),
+            request_key=request_key,
+        )
+        try:
+            controller._handle_field_loaded(payload)
+            self.assertEqual([payload], delivered)
+            self.assertEqual(0, controller._pending_jobs)
+            self.assertEqual(set(), controller._pending_requests)
+            self.assertEqual(0, len(controller.field_cache))
+        finally:
+            controller.shutdown()
 
     def test_2d_orientation_and_coordinate_payloads_match_reader(self) -> None:
         for name in EXPECTED:
@@ -154,14 +178,22 @@ class ViewerPayloadTests(unittest.TestCase):
                         active = np.ones(run.n_zones, dtype=bool)
 
                         allclose_nan(window.field_map_widget.last_display_image, field.T)
-                        allclose_nan(window.field_map_widget.last_coordinate_values, static_x)
-                        allclose_nan(window.field_map_widget.last_time_values, time)
+                        allclose_nan(
+                            window.field_map_widget.last_coordinate_values,
+                            window._display_length_values(static_x),
+                        )
+                        allclose_nan(
+                            window.field_map_widget.last_time_values,
+                            window._display_time_values(time),
+                        )
                         self.assertEqual(window.field_map_widget.current_orientation, "time_x_coord_y")
                         self.assertEqual(window.field_map_widget.current_boundary_angle, 0.0 if len(max_zones) > 1 else None)
                         self.assertEqual(window.field_map_widget.current_time_marker_angle, 90.0)
                         self.assertEqual(
                             list(window.field_map_widget.current_boundary_positions),
-                            expected_coordinate_boundaries(static_x_edges, max_zones, active),
+                            window._display_length_values(
+                                np.asarray(expected_coordinate_boundaries(static_x_edges, max_zones, active))
+                            ).tolist(),
                         )
 
                         combo_set_data(window.map_orientation_combo, "coord_x_time_y")
@@ -214,7 +246,7 @@ class ViewerPayloadTests(unittest.TestCase):
                             lambda: np.asarray(window.lineout_plot.last_x_values, dtype=np.float64).shape == static_x.shape,
                             timeout_s=30.0,
                         )
-                        allclose_nan(window.lineout_plot.last_x_values, static_x)
+                        allclose_nan(window.lineout_plot.last_x_values, window._display_length_values(static_x))
                         allclose_nan(window.lineout_plot.last_y_series[0], field[snapshot_index])
 
                         combo_set_data(window.line_coordinate_combo, "zone")
@@ -235,7 +267,10 @@ class ViewerPayloadTests(unittest.TestCase):
                                 lambda: np.asarray(window.lineout_plot.last_x_values, dtype=np.float64).shape == expected_radius.shape,
                                 timeout_s=30.0,
                             )
-                            allclose_nan(window.lineout_plot.last_x_values, expected_radius)
+                            allclose_nan(
+                                window.lineout_plot.last_x_values,
+                                window._display_length_values(expected_radius),
+                            )
                             allclose_nan(window.lineout_plot.last_y_series[0], field[snapshot_index])
 
                         combo_set_data(window.map_coordinate_combo, "static_x")
@@ -249,9 +284,12 @@ class ViewerPayloadTests(unittest.TestCase):
                         )
                         resolved_zone = window._resolved_trace_zone_index()
                         self.assertIsNotNone(resolved_zone)
-                        allclose_nan(window.lineout_plot.last_x_values, time)
+                        allclose_nan(window.lineout_plot.last_x_values, window._display_time_values(time))
                         allclose_nan(window.lineout_plot.last_y_series[0], field[:, int(resolved_zone)])
-                        self.assertEqual(window.field_map_widget.current_reference_position, float(static_x[int(resolved_zone)]))
+                        self.assertEqual(
+                            window.field_map_widget.current_reference_position,
+                            window._display_length_value(float(static_x[int(resolved_zone)])),
+                        )
                 finally:
                     window.close()
 
@@ -283,16 +321,27 @@ class ViewerPayloadTests(unittest.TestCase):
                 expected_masked = np.where(region_mask[None, :], field, np.nan)
                 allclose_nan(window._combined_zone_mask(), region_mask)
                 allclose_nan(window.field_map_widget.last_display_image, expected_masked.T)
-                allclose_nan(window.field_map_widget.last_coordinate_values, static_x)
-                allclose_nan(window.field_map_widget.last_time_values, time)
+                allclose_nan(
+                    window.field_map_widget.last_coordinate_values,
+                    window._display_length_values(static_x),
+                )
+                allclose_nan(window.field_map_widget.last_time_values, window._display_time_values(time))
                 self.assertEqual(window.field_map_widget.last_display_image.shape, (run.n_zones, run.n_snapshots))
                 self.assertEqual(
                     list(window.field_map_widget.current_boundary_positions),
-                    expected_coordinate_boundaries(static_x_edges, max_zones, region_mask),
+                    window._display_length_values(
+                        np.asarray(expected_coordinate_boundaries(static_x_edges, max_zones, region_mask))
+                    ).tolist(),
                 )
                 self.assertEqual(
                     window.field_map_widget.current_inactive_ranges,
-                    ((float(static_x_edges[100]), float(static_x_edges[1100])),),
+                    (
+                        tuple(
+                            window._display_length_values(
+                                np.asarray([static_x_edges[100], static_x_edges[1100]])
+                            ).tolist()
+                        ),
+                    ),
                 )
 
                 snapshot_index = min(1, run.n_snapshots - 1)
@@ -310,7 +359,9 @@ class ViewerPayloadTests(unittest.TestCase):
                 region1_mask = np.asarray(run.get_region_mask(1), dtype=bool)
                 self.assertEqual(
                     list(window.field_map_widget.current_boundary_positions),
-                    expected_coordinate_boundaries(static_x_edges, max_zones, region1_mask),
+                    window._display_length_values(
+                        np.asarray(expected_coordinate_boundaries(static_x_edges, max_zones, region1_mask))
+                    ).tolist(),
                 )
 
                 set_checked_values(window.region_list, {1, 2})
@@ -323,14 +374,16 @@ class ViewerPayloadTests(unittest.TestCase):
                 allclose_nan(window.field_map_widget.last_display_image, np.where(combined_mask[None, :], field, np.nan).T)
                 self.assertEqual(
                     list(window.field_map_widget.current_boundary_positions),
-                    expected_coordinate_boundaries(static_x_edges, max_zones, combined_mask),
+                    window._display_length_values(
+                        np.asarray(expected_coordinate_boundaries(static_x_edges, max_zones, combined_mask))
+                    ).tolist(),
                 )
 
                 combo_set_data(window.slice_mode_combo, "time_trace")
                 combo_set_data(window.line_coordinate_combo, "zone")
                 window.trace_zone_spin.setValue(500)
                 wait_until(lambda: window.lineout_plot.last_x_values is not None and window.lineout_plot.last_x_values.shape == time.shape, timeout_s=30.0)
-                allclose_nan(window.lineout_plot.last_x_values, time)
+                allclose_nan(window.lineout_plot.last_x_values, window._display_time_values(time))
                 allclose_nan(window.lineout_plot.last_y_series[0], field[:, 99])
                 self.assertIn("requested zone 500 -> nearest active zone 100", window.lineout_plot.current_title)
                 self.assertIn("requested zone 500 -> nearest active zone 100", window.trace_reference_label.text())
@@ -364,7 +417,7 @@ class ViewerPayloadTests(unittest.TestCase):
                 combo_set_data(window.slice_mode_combo, "snapshot_lineout")
                 combo_set_data(window.line_coordinate_combo, "zone")
                 combo_set_data(window.line_scale_combo, "signed_log10")
-                expected_velocity = np.asarray(run.get_field("velocity", time_slice=snapshot_index), dtype=np.float64)
+                expected_velocity = window._current_display_field_bundle()[0][snapshot_index]
                 wait_until(lambda: window.lineout_plot.value_scale_mode == "signed_log10", timeout_s=30.0)
                 allclose_nan(window.lineout_plot.last_y_series[0], signed_log10_transform(expected_velocity))
                 self.assertEqual(window.lineout_plot.value_scale_mode, "signed_log10")

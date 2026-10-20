@@ -1,0 +1,211 @@
+{
+  "cases": {
+    "bpf_primary_streamed_log_companion": {
+      "fixtures": {
+        "bpf": {
+          "path": "/data/projects/playground/Helios_parser/new_data/25Cu+1.87TW/25Cu+1.87TW.bpf",
+          "sha256": "03522cd47d20ca0973e632864ee3504e0c04177c0f8b4b4c906e18d20d051dc0"
+        },
+        "log": {
+          "path": "/data/projects/playground/Helios_parser/new_data/25Cu+1.87TW/25Cu+1.87TW.log",
+          "sha256": "62271631b329a7089fe01f4bd91f7ad42b5ec5d8a69713d763543cb9aed651b2"
+        }
+      },
+      "samples": [
+        {
+          "index": 0,
+          "metrics": {
+            "elapsed_s": 6.742733467137441,
+            "peak_rss_delta_bytes": 112357376.0,
+            "time_to_first_write_s": 1.7100132161285728
+          },
+          "pair_order": [
+            "candidate",
+            "baseline"
+          ],
+          "process_elapsed_s": 7.166716221952811,
+          "stdout_json": {
+            "elapsed_s": 6.742733467137441,
+            "field_checksums": {
+              "density": 331869.0048536814,
+              "laser_deposition": 1.3613183368089053e+20,
+              "laser_source": 320743262234.53485
+            },
+            "output_snapshots": 901,
+            "output_zones": 50,
+            "peak_rss_delta_bytes": 112357376,
+            "source_bytes": 40375894,
+            "time_to_first_write_s": 1.7100132161285728
+          }
+        },
+        {
+          "index": 1,
+          "metrics": {
+            "elapsed_s": 7.427765761967748,
+            "peak_rss_delta_bytes": 112332800.0,
+            "time_to_first_write_s": 2.1500047580339015
+          },
+          "pair_order": [
+            "candidate",
+            "baseline"
+          ],
+          "process_elapsed_s": 7.839048537891358,
+          "stdout_json": {
+            "elapsed_s": 7.427765761967748,
+            "field_checksums": {
+              "density": 331869.0048536814,
+              "laser_deposition": 1.3613183368089053e+20,
+              "laser_source": 320743262234.53485
+            },
+            "output_snapshots": 901,
+            "output_zones": 50,
+            "peak_rss_delta_bytes": 112332800,
+            "source_bytes": 40375894,
+            "time_to_first_write_s": 2.1500047580339015
+          }
+        },
+        {
+          "index": 2,
+          "metrics": {
+            "elapsed_s": 6.184203696902841,
+            "peak_rss_delta_bytes": 112340992.0,
+            "time_to_first_write_s": 1.8939130948856473
+          },
+          "pair_order": [
+            "baseline",
+            "candidate"
+          ],
+          "process_elapsed_s": 6.484692785190418,
+          "stdout_json": {
+            "elapsed_s": 6.184203696902841,
+            "field_checksums": {
+              "density": 331869.0048536814,
+              "laser_deposition": 1.3613183368089053e+20,
+              "laser_source": 320743262234.53485
+            },
+            "output_snapshots": 901,
+            "output_zones": 50,
+            "peak_rss_delta_bytes": 112340992,
+            "source_bytes": 40375894,
+            "time_to_first_write_s": 1.8939130948856473
+          }
+        },
+        {
+          "index": 3,
+          "metrics": {
+            "elapsed_s": 6.14121585409157,
+            "peak_rss_delta_bytes": 112320512.0,
+            "time_to_first_write_s": 1.5042399829253554
+          },
+          "pair_order": [
+            "candidate",
+            "baseline"
+          ],
+          "process_elapsed_s": 6.423607143107802,
+          "stdout_json": {
+            "elapsed_s": 6.14121585409157,
+            "field_checksums": {
+              "density": 331869.0048536814,
+              "laser_deposition": 1.3613183368089053e+20,
+              "laser_source": 320743262234.53485
+            },
+            "output_snapshots": 901,
+            "output_zones": 50,
+            "peak_rss_delta_bytes": 112320512,
+            "source_bytes": 40375894,
+            "time_to_first_write_s": 1.5042399829253554
+          }
+        },
+        {
+          "index": 4,
+          "metrics": {
+            "elapsed_s": 5.5903927779290825,
+            "peak_rss_delta_bytes": 112279552.0,
+            "time_to_first_write_s": 1.4650929269846529
+          },
+          "pair_order": [
+            "baseline",
+            "candidate"
+          ],
+          "process_elapsed_s": 5.868721009930596,
+          "stdout_json": {
+            "elapsed_s": 5.5903927779290825,
+            "field_checksums": {
+              "density": 331869.0048536814,
+              "laser_deposition": 1.3613183368089053e+20,
+              "laser_source": 320743262234.53485
+            },
+            "output_snapshots": 901,
+            "output_zones": 50,
+            "peak_rss_delta_bytes": 112279552,
+            "source_bytes": 40375894,
+            "time_to_first_write_s": 1.4650929269846529
+          }
+        }
+      ],
+      "settings": {
+        "checks": [],
+        "command": [
+          "{python}",
+          "{runner}/bench_bpf_companion.py",
+          "--source",
+          "{fixture:bpf}",
+          "--output",
+          "{output}"
+        ],
+        "environment": {},
+        "equivalent_metrics": {
+          "field_checksums.density": {
+            "absolute_tolerance": 1e-12,
+            "relative_tolerance": 1e-12
+          },
+          "field_checksums.laser_deposition": {
+            "absolute_tolerance": 1e-06,
+            "relative_tolerance": 1e-12
+          },
+          "field_checksums.laser_source": {
+            "absolute_tolerance": 1e-06,
+            "relative_tolerance": 1e-12
+          },
+          "output_snapshots": {
+            "absolute_tolerance": 0,
+            "relative_tolerance": 0
+          },
+          "output_zones": {
+            "absolute_tolerance": 0,
+            "relative_tolerance": 0
+          }
+        },
+        "metrics": {
+          "elapsed_s": "lower",
+          "peak_rss_delta_bytes": "lower",
+          "time_to_first_write_s": "lower"
+        },
+        "samples": 5,
+        "warmups": 1
+      }
+    }
+  },
+  "created_at_utc": "2026-10-20T13:54:09Z",
+  "environment": {
+    "cpu_count": 20,
+    "h5py": "3.16.0",
+    "helios_environment": {},
+    "implementation": "CPython",
+    "machine": "x86_64",
+    "numpy": "2.5.4",
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "processor": "12th Gen Intel(R) Core(TM) i7-12700H",
+    "pyside6": "6.12.0",
+    "python": "3.12.13",
+    "ram_bytes": 65726492672
+  },
+  "pair_seed": 7219,
+  "paired": true,
+  "schema_version": 1,
+  "side": "candidate",
+  "source": {
+    "git_revision": "a319dca4709422a47d6e35261de0645f47f903c5",
+    "source_sha256": "c2d2e6d65de50abc691808f576ce2bcde8b87bf082b3499f1f5016ac012e399c"
+  }
+}

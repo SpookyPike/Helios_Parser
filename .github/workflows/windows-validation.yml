@@ -1,0 +1,65 @@
+name: Windows validation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-targeted-and-portable:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      HELIOS_ENABLE_EXPERIMENTAL: "1"
+      QT_QPA_PLATFORM: windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install desktop and packaging dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[desktop]" pyinstaller==6.22.3
+      - name: Smoke test the Windows PowerShell launcher
+        shell: pwsh
+        run: |
+          $launcherRoot = Join-Path $env:RUNNER_TEMP "helios-launcher-smoke"
+          New-Item -ItemType Directory -Path $launcherRoot -Force | Out-Null
+          Copy-Item "release_assets/Run_HELIOS_Analyzer.ps1" $launcherRoot
+          $launcher = Join-Path $launcherRoot "Run_HELIOS_Analyzer.ps1"
+          & $launcher -SkipInstall -NoLaunch
+          $python = Join-Path $launcherRoot ".venv/Scripts/python.exe"
+          if (-not (Test-Path $python)) { throw "PowerShell launcher did not create its Python environment" }
+      - name: Run focused Windows conversion and native UI checks
+        shell: pwsh
+        run: |
+          $report = Join-Path $env:RUNNER_TEMP "helios-windows-test-runs"
+          python scripts/run_test_suite.py --profile core `
+            --only test_conversion_atomicity.py `
+            --only test_run_revision.py `
+            --only test_qt_lifecycle.py `
+            --only test_accessibility_controls.py `
+            --only test_w11_layout.py `
+            --only test_w11_theme_copy.py `
+            --only test_packaged_scientific_resources.py `
+            --report-dir $report
+      - name: Upload focused test manifest and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-targeted-test-logs
+          path: ${{ runner.temp }}/helios-windows-test-runs
+          if-no-files-found: ignore
+      - name: Build portable bundle outside the checkout
+        shell: pwsh
+        run: |
+          $portable = Join-Path $env:RUNNER_TEMP "helios-portable"
+          $work = Join-Path $env:RUNNER_TEMP "helios-pyinstaller"
+          python scripts/build_windows_portable.py --output-root $portable --work-root $work
+          $zip = Get-ChildItem $portable -Filter "*-windows-portable.zip" | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $zip) { throw "Windows portable ZIP was not created" }
+          python scripts/validate_windows_portable.py --zip-path $zip

@@ -19,6 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import importlib
+from importlib import resources
 import json
 import math
 import os
@@ -118,8 +119,10 @@ def _source_archive_path() -> Path:
     return _repo_root() / "XCOM.tar.gz"
 
 
-def _fallback_table_path() -> Path:
-    return _repo_root() / "x-com_fallback" / "xcom_fallback_1keV_12keV_extended.json"
+def _fallback_table_resource() -> Any:
+    return resources.files("helios.services.derived").joinpath(
+        "resources", "xcom_fallback_1keV_12keV_extended.json"
+    )
 
 
 def _app_data_root() -> Path:
@@ -432,7 +435,7 @@ def _cache_file_path() -> Path:
 _CACHE_LOCK = threading.Lock()
 _XCOM_MODULE_LOCK = threading.Lock()
 _BACKEND_STATUS_LOCK = threading.Lock()
-_FALLBACK_TABLE_LOCK = threading.Lock()
+_FALLBACK_TABLE_LOCK = threading.RLock()
 _XCOM_MODULE: object | None = None
 _XCOM_BACKEND: "HeliosXcomBackend | None" = None
 _XCOM_TABLE_BACKEND: "PrecomputedColdTableBackend | None" = None
@@ -441,6 +444,7 @@ _XCOM_BACKEND_FULL_STATUS: "ColdAttenuationBackendStatus | None" = None
 _XCOM_BACKEND_STATUS_FINGERPRINT: str | None = None
 _PERSISTENT_CACHE: "PersistentColdAttenuationCache | None" = None
 _FALLBACK_TABLE_CACHE: dict[str, object] | None = None
+_FALLBACK_VECTOR_CACHE: dict[tuple[str, str], tuple[np.ndarray, np.ndarray]] = {}
 _FALLBACK_TABLE_DEFAULT_QUANTITY = "mu_rho_total_cm2_g"
 _FALLBACK_TABLE_MIN_KEV = 1.0
 _FALLBACK_TABLE_MAX_KEV = 12.0
@@ -576,21 +580,44 @@ def _load_fallback_table() -> dict[str, object]:
         cached = _FALLBACK_TABLE_CACHE
         if cached is not None:
             return cached
-        path = _fallback_table_path()
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        resource = _fallback_table_resource()
+        payload = json.loads(resource.read_text(encoding="utf-8"))
         _FALLBACK_TABLE_CACHE = payload
         return payload
 
 
+def _fallback_table_vectors(table_key: str, quantity: str) -> tuple[np.ndarray, np.ndarray]:
+    cache_key = (str(table_key), str(quantity))
+    cached = _FALLBACK_VECTOR_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+    with _FALLBACK_TABLE_LOCK:
+        cached = _FALLBACK_VECTOR_CACHE.get(cache_key)
+        if cached is not None:
+            return cached
+        table = _load_fallback_table()
+        rows = table.get("materials", {})[table_key]["rows"]
+        energies = np.asarray([float(row["energy_eV"]) for row in rows], dtype=np.float64)
+        values = np.asarray([float(row[quantity]) for row in rows], dtype=np.float64)
+        if energies.size == 0:
+            raise ValueError(f"Fallback XCOM table has no rows for {table_key}.")
+        energies.setflags(write=False)
+        values.setflags(write=False)
+        cached = (energies, values)
+        _FALLBACK_VECTOR_CACHE[cache_key] = cached
+        return cached
+
+
 def fallback_table_available() -> bool:
-    return _fallback_table_path().exists()
+    return _fallback_table_resource().is_file()
 
 
 def _fallback_table_fingerprint() -> str | None:
-    path = _fallback_table_path()
-    if not path.exists():
+    resource = _fallback_table_resource()
+    if not resource.is_file():
         return None
-    return f"precomputed_xcom_table:{_archive_fingerprint(path)}"
+    digest = hashlib.sha256(resource.read_bytes()).hexdigest()
+    return f"precomputed_xcom_table:{digest}"
 
 
 def _normalized_material_key_token(label: str | None) -> str:
@@ -650,17 +677,13 @@ def lookup_fallback_mu_rho(
     quantity: str = _FALLBACK_TABLE_DEFAULT_QUANTITY,
     allow_extrapolation: bool = True,
 ) -> ColdAttenuationTableLookup:
-    table = _load_fallback_table()
     original_label = None if material is None else str(material)
     normalized_label = _normalized_material_key_token(material)
     material_key = canonical_fallback_table_key(material)
     table_key = _CANONICAL_TO_FALLBACK_TABLE_KEY.get(material_key, material_key)
-    materials = table.get("materials", {})
-    rows = materials[table_key]["rows"]
     energy_ev = float(energy_kev) * 1.0e3
-    xs = [float(row["energy_eV"]) for row in rows]
-    ys = [float(row[quantity]) for row in rows]
-    if not xs:
+    xs, ys = _fallback_table_vectors(table_key, quantity)
+    if xs.size == 0:
         raise ValueError(f"Fallback XCOM table has no rows for {material_key}.")
     minimum_kev = float(xs[0]) * 1.0e-3
     maximum_kev = float(xs[-1]) * 1.0e-3
@@ -673,11 +696,9 @@ def lookup_fallback_mu_rho(
         )
     interpolation_kind = "exact"
     note = None
-    index = 0
-    while index < len(xs) and xs[index] < energy_ev:
-        index += 1
-    if index < len(xs) and xs[index] == energy_ev:
-        mu_rho = ys[index]
+    index = int(np.searchsorted(xs, energy_ev, side="left"))
+    if index < xs.size and xs[index] == energy_ev:
+        mu_rho = float(ys[index])
     elif index == 0:
         if not allow_extrapolation or len(xs) < 2:
             raise ValueError("Energy is below the fallback-table range.")
@@ -727,21 +748,23 @@ class PrecomputedColdTableBackend:
         energies_kev = np.asarray(request.photon_energies_kev, dtype=np.float64)
         if energies_kev.size == 0:
             raise ValueError("Cold attenuation request must include at least one photon energy.")
+        if energies_kev.ndim != 1 or not np.all(np.isfinite(energies_kev)) or np.any(energies_kev <= 0.0):
+            raise ValueError("Cold attenuation photon energies must be finite positive values.")
         total_tau = np.zeros(energies_kev.shape, dtype=np.float64)
         grouped_budgets: dict[str, dict[str, object]] = {}
         interpolation_kinds: set[str] = set()
         interpolation_notes: set[str] = set()
         for zone in request.zones:
+            density = float(zone.density_g_cm3)
+            path_length = float(zone.path_length_cm)
+            if not math.isfinite(density) or density < 0.0:
+                raise ValueError("Cold attenuation density must be finite and nonnegative.")
+            if not math.isfinite(path_length) or path_length < 0.0:
+                raise ValueError("Cold attenuation path length must be finite and nonnegative.")
             material_key = str(zone.material_canonical_key or canonical_fallback_table_key(zone.material_label))
-            areal_density = float(zone.density_g_cm3) * float(zone.path_length_cm)
-            zone_tau = np.zeros(energies_kev.shape, dtype=np.float64)
-            for energy_index, energy_kev in enumerate(energies_kev.tolist()):
-                lookup = lookup_fallback_mu_rho(material_key, float(energy_kev))
-                interpolation_kinds.add(str(lookup.interpolation_kind))
-                if lookup.note:
-                    interpolation_notes.add(str(lookup.note))
-                zone_tau[energy_index] = float(lookup.mu_rho_cm2_g) * areal_density
-            total_tau += zone_tau
+            areal_density = density * path_length
+            if not math.isfinite(areal_density):
+                raise ValueError("Cold attenuation areal density must be finite.")
             existing = grouped_budgets.get(
                 material_key,
                 {
@@ -751,9 +774,24 @@ class PrecomputedColdTableBackend:
                 },
             )
             existing["areal_density_g_cm2"] = float(existing["areal_density_g_cm2"]) + areal_density
-            for energy_index, value in enumerate(zone_tau.tolist()):
-                existing["optical_depth"][energy_index] = float(existing["optical_depth"][energy_index]) + float(value)
+            if not math.isfinite(float(existing["areal_density_g_cm2"])):
+                raise ValueError("Grouped cold attenuation areal density must be finite.")
             grouped_budgets[material_key] = existing
+        coefficient_cache: dict[tuple[str, float], ColdAttenuationTableLookup] = {}
+        for material_key, budget in grouped_budgets.items():
+            areal_density = float(budget["areal_density_g_cm2"])
+            for energy_index, energy_kev in enumerate(energies_kev.tolist()):
+                cache_key = (material_key, float(energy_kev))
+                lookup = coefficient_cache.get(cache_key)
+                if lookup is None:
+                    lookup = lookup_fallback_mu_rho(material_key, float(energy_kev))
+                    coefficient_cache[cache_key] = lookup
+                interpolation_kinds.add(str(lookup.interpolation_kind))
+                if lookup.note:
+                    interpolation_notes.add(str(lookup.note))
+                tau = float(lookup.mu_rho_cm2_g) * areal_density
+                total_tau[energy_index] += tau
+                budget["optical_depth"][energy_index] = tau
         transmission = np.exp(-np.clip(total_tau, a_min=None, a_max=700.0))
         interpolation_mode = "exact"
         if "extrapolated" in interpolation_kinds:

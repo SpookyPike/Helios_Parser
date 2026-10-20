@@ -17,7 +17,7 @@ import numpy as np
 
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters
-from helios.services.derived.models import DerivedRunData
+from helios.services.derived.models import DerivedFieldCapabilities, DerivedRunData
 from helios.services.derived.plasmon import evaluate_plasmon_regime
 from helios.services.derived.selection import build_analysis_geometry
 
@@ -107,6 +107,17 @@ def uniform_al_dataset(rho_g_cm3: float, te_ev: float, *, zones: int = 12) -> tu
         zone_initial_density_g_cm3=np.full(zones, rho_g_cm3, dtype=np.float64),
         zone_initial_temperature_ev=np.full(zones, te_ev, dtype=np.float64),
         laser_entry=None,
+        field_capabilities=DerivedFieldCapabilities(
+            available_fields=(
+                "density",
+                "zone_width",
+                "velocity",
+                "temperature_e",
+                "temperature_i",
+                "electron_density",
+                "mean_charge",
+            ),
+        ),
     )
     context = RunContext(
         path=Path("uniform_al.h5"),

@@ -22,11 +22,14 @@ from helios.services.derived.common import aggregate_warnings
 from helios.services.derived.module_contract import DerivedModuleContract
 from helios.services.derived.models import (
     DerivedAnalysisResult,
+    DerivedModuleAvailability,
     DerivedRunData,
     DerivedWarning,
     PlasmonResult,
     PreheatSummary,
+    SpectroscopyResult,
     TransmissionResult,
+    XrdResult,
 )
 from helios.services.derived.physical_sanity import (
     validate_shock_result,
@@ -47,7 +50,7 @@ from helios.services.derived.plasmon_config import (
 )
 from helios.services.derived.plasmon import evaluate_plasmon_regime
 from helios.services.derived.preheat import evaluate_preheat
-from helios.services.derived.selection import AnalysisStateCache, build_analysis_geometry, build_analysis_mask
+from helios.services.derived.selection import AnalysisStateCache, build_analysis_geometry, build_analysis_mask, resolve_weighting_mode
 from helios.services.derived.shock_tracking import (
     build_interface_events_from_wave_tracking,
     track_shock_front,
@@ -56,6 +59,7 @@ from helios.services.derived.shock_tracking import (
 from helios.services.derived.spectroscopy import evaluate_spectroscopy
 from helios.services.derived.transmission import evaluate_transmission
 from helios.services.derived.xrd import estimate_xrd
+from helios.services.units.conversions import photon_energy_kev_to_wavelength_angstrom
 
 LOGGER = logging.getLogger(__name__)
 TIME_PLOT_MODULES = frozenset({"xrd", "plasmon", "transmission", "spectroscopy"})
@@ -199,10 +203,10 @@ def _validate_spectroscopy_module_result(result: object) -> None:
 
 
 _MODULE_CONTRACTS: tuple[DerivedModuleContract[object], ...] = (
-    DerivedModuleContract(name="xrd", compute=estimate_xrd, validate=_validate_xrd_module_result),
-    DerivedModuleContract(name="plasmon", compute=evaluate_plasmon_regime, validate=_validate_module_result),
-    DerivedModuleContract(name="transmission", compute=evaluate_transmission, validate=_validate_module_result),
-    DerivedModuleContract(name="spectroscopy", compute=evaluate_spectroscopy, validate=_validate_spectroscopy_module_result),
+    DerivedModuleContract(name="xrd", compute=estimate_xrd, validate=_validate_xrd_module_result, required_capabilities=("density", "zone_width"), required_material_properties=("zone_initial_density_g_cm3",)),
+    DerivedModuleContract(name="plasmon", compute=evaluate_plasmon_regime, validate=_validate_module_result, required_capabilities=("electron_density", "temperature_e", "temperature_i", "mean_charge"), required_material_properties=("zone_atomic_weight",)),
+    DerivedModuleContract(name="transmission", compute=evaluate_transmission, validate=_validate_module_result, required_capabilities=("density", "electron_density")),
+    DerivedModuleContract(name="spectroscopy", compute=evaluate_spectroscopy, validate=_validate_spectroscopy_module_result, required_capabilities=("temperature_i", "velocity"), required_material_properties=("zone_atomic_weight",)),
 )
 _PREPARED_MODULE_CONTRACTS: tuple[DerivedModuleContract[object], ...] = (
     DerivedModuleContract(
@@ -330,6 +334,7 @@ def compute_analysis_result(
     parameters: DerivedAnalysisParameters,
     context_key: tuple[object, ...],
     requested_time_plot_modules: frozenset[str] | set[str] | tuple[str, ...] | list[str] | None = None,
+    requested_modules: frozenset[str] | set[str] | tuple[str, ...] | None = None,
     base_result: DerivedAnalysisResult | None = None,
     include_wavefront: bool = True,
     progress_check: Callable[[], None] | None = None,
@@ -337,7 +342,8 @@ def compute_analysis_result(
     """Run the current first-wave derived analyses for a context snapshot."""
 
     analysis_cache = AnalysisStateCache()
-    requested_modules = normalize_time_plot_modules(requested_time_plot_modules)
+    requested_time_modules = normalize_time_plot_modules(requested_time_plot_modules)
+    requested_analysis_modules = None if requested_modules is None else frozenset(str(name) for name in requested_modules)
     with timed_block("derived.compute.full", logger=LOGGER):
         if progress_check is not None:
             progress_check()
@@ -359,18 +365,25 @@ def compute_analysis_result(
                     analysis_cache=analysis_cache,
                     progress_check=progress_check,
                 )
-            if np.count_nonzero(zone_mask) > 0:
+            if np.count_nonzero(zone_mask) > 0 and not str(shock.method).startswith("unavailable:"):
                 validate_shock_result(shock)
-        xrd, plasmon, transmission, spectroscopy = _compute_module_results(
+        xrd, plasmon, transmission, spectroscopy, module_availability = _compute_module_results(
             dataset,
             context,
             parameters=parameters,
             snapshot_index=snapshot_index,
             geometry=geometry,
-            requested_time_plot_modules=requested_modules,
+            selected_zone_count=int(selection.selected_zone_count),
+            requested_time_plot_modules=requested_time_modules,
+            requested_modules=requested_analysis_modules,
             base_result=base_result,
             analysis_cache=analysis_cache,
             progress_check=progress_check,
+        )
+        availability_warnings = tuple(
+            DerivedWarning(item.module, item.reason, severity="warning")
+            for item in module_availability
+            if not item.available and item.reason
         )
         wave_tracking = None
         interface_events = None
@@ -421,6 +434,7 @@ def compute_analysis_result(
         warnings = aggregate_warnings(
             geometry_warnings,
             selection_warnings,
+            availability_warnings,
             shock.warnings,
             xrd.warnings,
             plasmon.warnings,
@@ -445,6 +459,7 @@ def compute_analysis_result(
             wave_tracking=wave_tracking,
             interface_events=interface_events,
             preheat=preheat,
+            module_availability=module_availability,
             warnings=warnings,
         )
     LOGGER.debug("Derived analysis cache stats: %s", analysis_cache.stats())
@@ -458,6 +473,7 @@ def refresh_analysis_result_for_snapshot(
     parameters: DerivedAnalysisParameters,
     context_key: tuple[object, ...],
     base_result: DerivedAnalysisResult,
+    requested_modules: frozenset[str] | set[str] | tuple[str, ...] | None = None,
     progress_check: Callable[[], None] | None = None,
 ) -> DerivedAnalysisResult:
     """Refresh only snapshot-local derived products while reusing full-run traces."""
@@ -472,20 +488,28 @@ def refresh_analysis_result_for_snapshot(
             parameters=parameters,
             analysis_cache=analysis_cache,
         )
-        xrd, plasmon, transmission, spectroscopy = _compute_module_results(
+        xrd, plasmon, transmission, spectroscopy, module_availability = _compute_module_results(
             dataset,
             context,
             parameters=parameters,
             snapshot_index=snapshot_index,
             geometry=geometry,
+            selected_zone_count=int(selection.selected_zone_count),
             requested_time_plot_modules=frozenset(),
+            requested_modules=None if requested_modules is None else frozenset(str(name) for name in requested_modules),
             base_result=base_result,
             analysis_cache=analysis_cache,
             progress_check=progress_check,
         )
+        availability_warnings = tuple(
+            DerivedWarning(item.module, item.reason, severity="warning")
+            for item in module_availability
+            if not item.available and item.reason
+        )
         warnings = aggregate_warnings(
             geometry_warnings,
             selection_warnings,
+            availability_warnings,
             base_result.shock.warnings,
             xrd.warnings,
             plasmon.warnings,
@@ -510,6 +534,7 @@ def refresh_analysis_result_for_snapshot(
             wave_tracking=base_result.wave_tracking,
             interface_events=base_result.interface_events,
             preheat=base_result.preheat,
+            module_availability=module_availability,
             warnings=warnings,
         )
     LOGGER.debug("Derived snapshot-refresh cache stats: %s", analysis_cache.stats())
@@ -523,12 +548,16 @@ def _compute_module_results(
     parameters: DerivedAnalysisParameters,
     snapshot_index: int,
     geometry,
+    selected_zone_count: int,
     requested_time_plot_modules: frozenset[str],
+    requested_modules: frozenset[str] | None,
     base_result: DerivedAnalysisResult | None,
     analysis_cache: AnalysisStateCache | None,
     progress_check: Callable[[], None] | None,
-) -> tuple[object, object, object, object]:
+) -> tuple[object, object, object, object, tuple[DerivedModuleAvailability, ...]]:
     computed: dict[str, object] = {}
+    availability: list[DerivedModuleAvailability] = []
+    base_availability = {} if base_result is None else {item.module: item for item in base_result.module_availability}
     for contract in _MODULE_CONTRACTS:
         if not production_feature_visible(contract.name):
             computed[contract.name] = _hidden_module_result(
@@ -537,10 +566,91 @@ def _compute_module_results(
                 parameters=parameters,
             )
             increment_counter(f"derived.compute.{contract.name}.hidden")
+            availability.append(DerivedModuleAvailability(contract.name, False, "Module is disabled in this build."))
             continue
+        if requested_modules is not None and contract.name not in requested_modules:
+            existing = None if base_result is None else getattr(base_result, contract.name)
+            if existing is not None:
+                computed[contract.name] = existing
+                availability.append(base_availability.get(contract.name, DerivedModuleAvailability(contract.name, True)))
+                continue
+            missing = ("not loaded for the active tab",)
+        elif int(selected_zone_count) <= 0:
+            missing = ("no zones remain after the active selection",)
+        else:
+            missing = contract.missing_requirements(dataset)
+            if contract.name in {"xrd", "spectroscopy"}:
+                weighting_mode = resolve_weighting_mode(parameters.weighting_mode, module_name=contract.name)
+                weighted_field = {
+                    "mass": "density",
+                    "electron_density": "electron_density",
+                    "electron_column": "electron_density",
+                }.get(weighting_mode)
+                capabilities = getattr(dataset, "field_capabilities", None)
+                available_fields = set(getattr(capabilities, "available_fields", ())) | set(
+                    getattr(capabilities, "optional_available_fields", ())
+                )
+                if capabilities is not None and weighted_field is not None and weighted_field not in available_fields:
+                    missing = tuple(dict.fromkeys((*missing, weighted_field)))
+                if capabilities is not None and (
+                    parameters.exclude_low_density or float(parameters.min_density_g_cm3) > 0.0
+                ) and "density" not in available_fields:
+                    missing = tuple(dict.fromkeys((*missing, "density")))
+        if missing:
+            reason = (
+                "This module has not been loaded for the active tab. Open its tab to request it."
+                if missing == ("not loaded for the active tab",)
+                else "Missing required inputs: " + ", ".join(missing) + "."
+            )
+            warning = DerivedWarning(contract.name, reason, severity="warning")
+            if contract.name == "xrd":
+                module_result = XrdResult(
+                    snapshot_index=snapshot_index,
+                    photon_energy_kev=float(parameters.xrd_photon_energy_kev),
+                    wavelength_angstrom=float(photon_energy_kev_to_wavelength_angstrom(parameters.xrd_photon_energy_kev)),
+                    initial_bragg_angle_deg=float(parameters.xrd_initial_bragg_angle_deg),
+                    weighting_mode=str(parameters.weighting_mode),
+                    geometry_summary=reason,
+                    profile_coordinate_label="unavailable",
+                    profile_coordinate_values=np.asarray([], dtype=np.float64),
+                    time_plots=(),
+                    profile_plots=(),
+                    layers=(),
+                    warnings=(warning,),
+                )
+            elif contract.name == "plasmon":
+                module_result = replace(_hidden_plasmon_result(snapshot_index=snapshot_index, parameters=parameters), geometry_summary=reason, warnings=(warning,))
+            elif contract.name == "transmission":
+                module_result = replace(_hidden_transmission_result(snapshot_index=snapshot_index, parameters=parameters), status_message=reason, warnings=(warning,))
+            else:
+                module_result = SpectroscopyResult(
+                    snapshot_index=snapshot_index,
+                    weighting_mode=str(parameters.weighting_mode),
+                    geometry_summary=reason,
+                    line_wavelength_nm=float(parameters.spectroscopy_line_wavelength_nm),
+                    line_of_sight_cosine=float("nan"),
+                    bulk_velocity_cm_s=float("nan"),
+                    los_velocity_cm_s=float("nan"),
+                    doppler_shift_nm=float("nan"),
+                    thermal_width_fraction=float("nan"),
+                    thermal_width_nm=float("nan"),
+                    ion_temperature_ev=float("nan"),
+                    ion_mass_mu=float("nan"),
+                    time_plots=(),
+                    profile_plots=(),
+                    warnings=(warning,),
+                )
+            computed[contract.name] = module_result
+            availability.append(DerivedModuleAvailability(contract.name, False, reason))
+            continue
+        availability.append(DerivedModuleAvailability(contract.name, True))
         existing = getattr(base_result, contract.name) if base_result is not None else None
         include_time_plots = contract.name in requested_time_plot_modules and not (existing is not None and contract.time_plots_loaded(existing))
-        if existing is not None and not include_time_plots and int(getattr(base_result, "snapshot_index", snapshot_index)) == int(snapshot_index):
+        # Snapshot-local products carry their own generation index. The
+        # enclosing result may already have advanced while this inactive
+        # module was retained, so its index is the only safe reuse check.
+        was_available = base_availability.get(contract.name, DerivedModuleAvailability(contract.name, False)).available
+        if existing is not None and was_available and not include_time_plots and int(getattr(existing, "snapshot_index", -1)) == int(snapshot_index):
             computed[contract.name] = existing
             continue
         if progress_check is not None:
@@ -605,6 +715,7 @@ def _compute_module_results(
         computed["plasmon"],
         computed["transmission"],
         computed["spectroscopy"],
+        tuple(availability),
     )
 
 
@@ -680,6 +791,7 @@ def _assemble_analysis_result(
     interface_events,
     preheat,
     warnings: tuple[DerivedWarning, ...],
+    module_availability=(),
 ) -> DerivedAnalysisResult:
     return DerivedAnalysisResult(
         context_key=context_key,
@@ -698,6 +810,7 @@ def _assemble_analysis_result(
         wave_tracking=wave_tracking,
         interface_events=interface_events,
         preheat=preheat,
+        module_availability=tuple(module_availability),
     )
 
 

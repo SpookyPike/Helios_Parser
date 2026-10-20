@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
+import threading
 import unittest
+from unittest import mock
 
 import numpy as np
 
@@ -9,6 +12,7 @@ import _test_bootstrap  # noqa: F401
 
 from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_settings, wait_until
 from helios_parser import HeliosRun
+from helios.runtime import RunRevision
 from helios_viewer.controller import RunController
 from helios_viewer.main_window import HeliosViewerMainWindow, _REFRESH_FIELD_MAP, _REFRESH_LINE
 from helios_viewer.models import DiagnosticPayload, FieldPayload, FieldTracePayload, OpenRunPayload, SnapshotFieldPayload
@@ -148,6 +152,142 @@ class ViewerWave2Tests(unittest.TestCase):
         finally:
             controller.shutdown()
 
+    def test_equivalent_pending_reads_coalesce_and_retry_after_error(self) -> None:
+        controller = RunController()
+        try:
+            controller.worker_thread.quit()
+            controller.worker_thread.wait(2000)
+            controller._run_generation = 7
+            controller._run_revision = RunRevision.create(HDF5_ROOT / "Cu_0166_stabilized.h5")
+            emitted: list[tuple[object, ...]] = []
+            controller._field_requested.connect(lambda *args: emitted.append(tuple(args)))
+
+            for _ in range(100):
+                controller.load_field("density")
+
+            self.assertEqual(len(emitted), 1)
+            self.assertEqual(controller._pending_jobs, 1)
+            self.assertEqual(len(controller._pending_requests), 1)
+            first_key = emitted[0][-1]
+
+            controller._handle_error("read failed", "temporary", 7, controller._run_revision, first_key)
+            self.assertEqual(controller._pending_jobs, 0)
+            self.assertFalse(controller._pending_requests)
+
+            controller.load_field("density")
+            self.assertEqual(len(emitted), 2)
+            self.assertEqual(controller._pending_jobs, 1)
+        finally:
+            controller.shutdown()
+
+    def test_distinct_pending_reads_have_independent_completion_identity(self) -> None:
+        controller = RunController()
+        try:
+            controller.worker_thread.quit()
+            controller.worker_thread.wait(2000)
+            controller._run_generation = 8
+            controller._run_revision = RunRevision.create(HDF5_ROOT / "Cu_0166_stabilized.h5")
+            emitted: list[tuple[object, ...]] = []
+            controller._field_requested.connect(lambda *args: emitted.append(tuple(args)))
+            busy_values: list[bool] = []
+            controller.busy_changed.connect(busy_values.append)
+
+            controller.load_field("density")
+            controller.load_field("velocity")
+            self.assertEqual(len(emitted), 2)
+            self.assertEqual(controller._pending_jobs, 2)
+
+            controller._handle_error("read failed", "density unavailable", 8, controller._run_revision, emitted[0][-1])
+            self.assertEqual(controller._pending_jobs, 1)
+            self.assertEqual(len(controller._pending_requests), 1)
+            self.assertEqual(busy_values, [True])
+        finally:
+            controller.shutdown()
+
+    def test_negative_and_positive_equivalent_selections_share_pending_reads(self) -> None:
+        controller = RunController()
+        try:
+            controller.worker_thread.quit()
+            controller.worker_thread.wait(2000)
+            controller._run_generation = 9
+            controller._run_revision = RunRevision.create(HDF5_ROOT / "Cu_0166_stabilized.h5")
+            controller.run_payload = SimpleNamespace(summary={"n_snapshots": 461, "n_zones": 300})
+            snapshots: list[tuple[object, ...]] = []
+            traces: list[tuple[object, ...]] = []
+            controller._snapshot_field_requested.connect(lambda *args: snapshots.append(tuple(args)))
+            controller._field_trace_requested.connect(lambda *args: traces.append(tuple(args)))
+
+            controller.load_snapshot_field("density", -1)
+            controller.load_snapshot_field("density", 460)
+            controller.load_field_trace("density", -1)
+            controller.load_field_trace("density", 299)
+
+            self.assertEqual(len(snapshots), 1)
+            self.assertEqual(snapshots[0][1], 460)
+            self.assertEqual(len(traces), 1)
+            self.assertEqual(traces[0][1], 299)
+            self.assertEqual(controller._pending_jobs, 2)
+        finally:
+            controller.shutdown()
+
+    def test_100_equivalent_requests_per_read_kind_make_one_reader_call(self) -> None:
+        controller = RunController()
+        try:
+            controller.open_file(HDF5_ROOT / "Cu_0166_stabilized.h5")
+            wait_until(lambda: controller.run_payload is not None, timeout_s=10.0)
+            cases = (
+                ("get_field", controller.load_field, ("density",), controller.field_loaded),
+                ("get_snapshot_field", controller.load_snapshot_field, ("density", 5), controller.snapshot_field_loaded),
+                ("get_time_trace", controller.load_field_trace, ("density", 7), controller.field_trace_loaded),
+                (
+                    "get_diagnostic",
+                    controller.load_diagnostic,
+                    ("energy_summary/current/ions",),
+                    controller.diagnostic_loaded,
+                ),
+            )
+            for method_name, submit_request, args, signal in cases:
+                with self.subTest(request_kind=method_name):
+                    completed: list[object] = []
+                    callback = completed.append
+                    signal.connect(callback)
+                    busy_events: list[bool] = []
+                    busy_callback = busy_events.append
+                    controller.busy_changed.connect(busy_callback)
+                    started = threading.Event()
+                    release = threading.Event()
+                    physical_calls: list[int] = []
+                    original = getattr(HeliosRun, method_name)
+
+                    def blocked_read(run, *read_args, **read_kwargs):
+                        physical_calls.append(1)
+                        started.set()
+                        if not release.wait(5.0):
+                            raise TimeoutError("test did not release blocked HDF5 read")
+                        return original(run, *read_args, **read_kwargs)
+
+                    try:
+                        with mock.patch.object(HeliosRun, method_name, new=blocked_read):
+                            submit_request(*args)
+                            self.assertTrue(started.wait(5.0))
+                            for _ in range(99):
+                                submit_request(*args)
+                            self.assertEqual(controller._pending_jobs, 1)
+                            self.assertEqual(len(controller._pending_requests), 1)
+                            self.assertEqual(busy_events, [True])
+                            release.set()
+                            wait_until(lambda: len(completed) == 1, timeout_s=10.0)
+                        self.assertEqual(len(physical_calls), 1)
+                        self.assertEqual(controller._pending_jobs, 0)
+                        self.assertFalse(controller._pending_requests)
+                        self.assertEqual(busy_events, [True, False])
+                    finally:
+                        release.set()
+                        signal.disconnect(callback)
+                        controller.busy_changed.disconnect(busy_callback)
+        finally:
+            controller.shutdown()
+
     def test_stale_controller_results_are_discarded_after_run_switch(self) -> None:
         controller = RunController()
         try:
@@ -199,10 +339,11 @@ class ViewerWave2Tests(unittest.TestCase):
             run_path = HDF5_ROOT / "Cu_0166_stabilized.h5"
             stale_generation = 1
             active_generation = 2
-            window.controller.worker_thread.quit()
-            window.controller.worker_thread.wait(2000)
             window.controller._run_generation = active_generation
             window._on_run_opened(_build_open_run_payload(run_path, active_generation))
+            window.run_payload.field_metadata = {
+                "density": {"dimensions": ("time", "zone")}
+            }
             window.current_field_name = "density"
 
             stale_payload = _build_field_payload(run_path, "density", stale_generation)

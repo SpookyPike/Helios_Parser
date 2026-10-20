@@ -23,5 +23,9 @@ class _AbsoluteClickSliderStyle(QtWidgets.QProxyStyle):
 def apply_absolute_click_slider_behavior(slider: QtWidgets.QSlider) -> None:
     """Keep standard drag behavior while making click-to-jump predictable."""
 
-    base_style = slider.style()
-    slider.setStyle(_AbsoluteClickSliderStyle(base_style))
+    # Qt's built-in Fusion style may report an empty name on some platforms;
+    # the desktop shell configures Fusion as its application style.
+    base_style_name = slider.style().name() or "Fusion"
+    proxy_style = _AbsoluteClickSliderStyle(base_style_name)
+    proxy_style.setParent(slider)
+    slider.setStyle(proxy_style)

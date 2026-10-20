@@ -16,7 +16,8 @@ import time
 import numpy as np
 from PySide6 import QtCore
 
-from helios.cache import AnalyzerCacheSet
+from helios.cache import AnalyzerCacheSet, retire_run_revision
+from helios.cache import run_identity_for_path
 from helios.cancellation import CancellationToken
 from helios.feature_flags import production_feature_visible
 from helios.instrumentation import increment_counter, snapshot_metrics
@@ -29,7 +30,7 @@ from helios.services.derived import (
     normalize_time_plot_modules,
     refresh_analysis_result_for_snapshot,
 )
-from helios.services.derived.common import aggregate_warnings
+from helios.services.derived.common import OPTIONAL_DERIVED_FIELD_NAMES, aggregate_warnings
 from helios.services.derived.models import DerivedAnalysisResult, DerivedPlotBundle
 from helios.services.derived.selection import build_analysis_geometry
 from helios.services.derived.transmission import apply_transmission_model, normalize_transmission_mode
@@ -40,6 +41,9 @@ from .workspace import HeliosDerivedWorkspace
 
 
 LOGGER = logging.getLogger(__name__)
+_BASE_DERIVED_OPTIONAL_FIELDS = frozenset(
+    {"pressure_i", "pressure_e", "pressure_radiation", "total_pressure_j_cm3", "artificial_viscosity"}
+)
 
 
 @dataclass(slots=True)
@@ -50,6 +54,7 @@ class _PendingAnalysisRequest:
     core_request_key: tuple[object, ...]
     request_key: tuple[object, ...]
     requested_time_plot_modules: frozenset[str]
+    requested_modules: frozenset[str]
     include_wavefront: bool
     update_kind: str
     generation: int
@@ -150,9 +155,35 @@ class DerivedController(QtCore.QObject):
             self._schedule_recompute()
 
     def set_run_context(self, context: RunContext) -> None:
+        previous_context_key = self._context.context_key
+        next_context_key = context.context_key
+        revision_changed = bool(self._context.has_run and context.has_run and previous_context_key != next_context_key)
+        previous_revision = self._context.revision
+        retire_previous_revision = bool(
+            self._context.has_run
+            and previous_revision is not None
+            and (not context.has_run or previous_revision != context.revision)
+        )
+        if revision_changed or retire_previous_revision:
+            self._recompute_timer.stop()
+            self._tasks.cancel(self._active_task_id)
+            self._active_task_id = None
+            self._active_task_request_key = None
+            self._active_task_token = None
+            self._active_request_key = None
+            self._active_reuse_request_key = None
+            self._pending_request = None
+            self._displayed_result_key = None
+            self._displayed_reuse_request_key = None
+            self._displayed_result = None
+        if retire_previous_revision:
+            removed = retire_run_revision(previous_revision)
+            LOGGER.debug("Retired %s cached entries for run revision %s", removed, previous_revision.canonical_path)
         self._context = context.copy()
         if self._workspace_alive:
             self._workspace.set_context(self._context)
+            if revision_changed:
+                self._workspace.clear_results("Run changed; recalculating derived results for the new revision.")
         if not self._context.has_run:
             self._tasks.cancel(self._active_task_id)
             self._active_request_key = None
@@ -179,7 +210,10 @@ class DerivedController(QtCore.QObject):
         return self._context
 
     def cache_stats(self) -> dict[str, object]:
-        return self._cache_layers.stats()
+        stats: dict[str, object] = self._cache_layers.stats()
+        stats["aggregate_memory"] = self._cache_layers.memory_stats()
+        stats["active_task_and_external_arrays"] = "outside cache accounting"
+        return stats
 
     def shutdown(self) -> None:
         self._shutting_down = True
@@ -209,8 +243,10 @@ class DerivedController(QtCore.QObject):
 
     def _build_request_key(self, parameters: DerivedAnalysisParameters) -> tuple[object, ...]:
         requested_time_plot_modules = normalize_time_plot_modules(self._workspace.requested_time_plot_modules())
+        requested_modules = self._requested_modules()
         return (
             *self._build_core_request_key(parameters),
+            tuple(sorted(requested_modules)),
             parameters.preheat_target_region_id,
             int(self._context.snapshot_index),
             tuple(sorted(requested_time_plot_modules)),
@@ -239,6 +275,8 @@ class DerivedController(QtCore.QObject):
             "derived-analysis-core",
             *self._build_reuse_request_key(parameters),
             int(self._context.snapshot_index),
+            "modules",
+            tuple(sorted(self._requested_modules())),
         )
 
     def _set_busy(self, busy: bool, message: str) -> None:
@@ -397,6 +435,11 @@ class DerivedController(QtCore.QObject):
             return frozenset()
         return normalize_time_plot_modules(self._workspace.requested_time_plot_modules())
 
+    def _requested_modules(self) -> frozenset[str]:
+        if not self._workspace_alive:
+            return frozenset()
+        return frozenset(str(name) for name in self._workspace.requested_modules())
+
     def _compatible_displayed_result(self, reuse_request_key: tuple[object, ...]) -> DerivedAnalysisResult | None:
         if self._displayed_result is None or self._displayed_reuse_request_key != reuse_request_key:
             return None
@@ -424,6 +467,7 @@ class DerivedController(QtCore.QObject):
             core_request_key=self._build_core_request_key(parameters),
             request_key=request_key,
             requested_time_plot_modules=self._requested_time_plot_modules(),
+            requested_modules=self._requested_modules(),
             include_wavefront=False,
             update_kind="transmission_model",
             generation=self._next_generation(),
@@ -490,11 +534,20 @@ class DerivedController(QtCore.QObject):
             path = Path(context_snapshot.path) if context_snapshot.path is not None else None
             if path is None:
                 raise RuntimeError("No active run is available for derived analysis.")
-            dataset = self._dataset_cache.get(path)
+            revision = context_snapshot.revision
+            revision_key = revision.cache_key if revision is not None else run_identity_for_path(path)
+            requested_fields = (
+                OPTIONAL_DERIVED_FIELD_NAMES
+                if request.include_wavefront
+                else _BASE_DERIVED_OPTIONAL_FIELDS
+            )
+            dataset_key = (revision_key, tuple(sorted(requested_fields)))
+            dataset = self._dataset_cache.get(dataset_key)
             if dataset is None:
                 started = time.perf_counter()
-                dataset = load_run_data(path)
-                self._dataset_cache[path] = dataset
+                dataset = load_run_data(path, revision=revision, requested_fields=requested_fields)
+                cancellation_token.check_cancelled()
+                self._dataset_cache[dataset_key] = dataset
                 LOGGER.info("Loaded derived dataset %s in %.3fs", path.name, time.perf_counter() - started)
             if request.update_kind == "snapshot":
                 base_result = displayed_base_result
@@ -508,6 +561,7 @@ class DerivedController(QtCore.QObject):
                             parameters=request.parameters,
                             context_key=request_key,
                             base_result=base_result,
+                            requested_modules=request.requested_modules,
                             progress_check=cancellation_token.check_cancelled,
                         ),
                         core_request_key=request.core_request_key,
@@ -530,6 +584,7 @@ class DerivedController(QtCore.QObject):
                         parameters=request.parameters,
                         context_key=request.request_key,
                         requested_time_plot_modules=request.requested_time_plot_modules,
+                        requested_modules=request.requested_modules,
                         include_wavefront=False,
                         progress_check=cancellation_token.check_cancelled,
                     )
@@ -586,6 +641,7 @@ class DerivedController(QtCore.QObject):
                     parameters=request.parameters,
                     context_key=request_key,
                     requested_time_plot_modules=request.requested_time_plot_modules,
+                    requested_modules=request.requested_modules,
                     base_result=(base_result if request.update_kind in {"time_plots", "wavefront", "preheat"} else None),
                     include_wavefront=bool(request.include_wavefront),
                     progress_check=cancellation_token.check_cancelled,
@@ -668,6 +724,7 @@ class DerivedController(QtCore.QObject):
                 else (*request_key, "transmission_model", transmission_mode, round(float(parameters.transmission_photon_energy_kev), 12))
             ),
             requested_time_plot_modules=requested_time_plot_modules,
+            requested_modules=self._requested_modules(),
             include_wavefront=include_wavefront,
             update_kind=update_kind,
             generation=self._next_generation(),

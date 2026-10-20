@@ -46,6 +46,11 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 helios_viewer = ["assets/fonts/*.ttf", "assets/*.png", "assets/*.ico", "assets/icons/*.svg"]
+"helios.services.derived" = [
+  "resources/*.json",
+  "resources/*.md",
+  "reference_data/plasmon/*.json",
+]
 
 [tool.black]
 line-length = 88

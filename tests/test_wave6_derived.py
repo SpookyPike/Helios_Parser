@@ -12,7 +12,7 @@ from PySide6 import QtCore, QtWidgets
 import _test_bootstrap  # noqa: F401
 
 from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_settings, wait_until
-from helios.runtime import RunContext
+from helios.runtime import RunContext, RunRevision
 from helios.services.derived.analysis import (
     DerivedAnalysisParameters,
     analysis_result_time_plot_modules,
@@ -390,6 +390,33 @@ class Wave6DerivedTests(unittest.TestCase):
 
     def setUp(self) -> None:
         reset_test_settings()
+
+    def test_controller_retires_revision_caches_when_run_closes(self) -> None:
+        path = HDF5_ROOT / "Cu_0166_stabilized.h5"
+        revision = RunRevision.create(path)
+        context = RunContext(
+            path=path,
+            revision=revision,
+            summary={"n_snapshots": 1, "n_zones": 1},
+            time_values=np.asarray([0.0], dtype=np.float64),
+            static_x_values=np.asarray([0.5], dtype=np.float64),
+            zone_region_id=np.asarray([1], dtype=np.int32),
+            zone_material_index=np.asarray([1], dtype=np.int32),
+        )
+        controller = DerivedController()
+        try:
+            controller.set_run_context(context)
+            dataset_key = (revision.cache_key, ())
+            analysis_key = (revision.cache_key, "analysis")
+            controller._dataset_cache[dataset_key] = np.arange(16, dtype=np.float64)
+            controller._analysis_cache[analysis_key] = object()
+            controller._analysis_core_cache[analysis_key] = object()
+            controller.set_run_context(RunContext.empty())
+            self.assertNotIn(dataset_key, controller._dataset_cache)
+            self.assertNotIn(analysis_key, controller._analysis_cache)
+            self.assertNotIn(analysis_key, controller._analysis_core_cache)
+        finally:
+            controller.shutdown()
 
     def test_lazy_time_plots_can_be_filled_incrementally(self) -> None:
         path = HDF5_ROOT / "Cu_0166_stabilized.h5"
@@ -1028,10 +1055,10 @@ class Wave6DerivedTests(unittest.TestCase):
             controller._context = context.copy()
             workspace.set_context(context)
             workspace.set_result(partial)
-            core_key = controller._build_core_request_key(workspace.parameters())
-            controller._analysis_core_cache[core_key] = partial
             workspace.result_tabs.setCurrentIndex(workspace.result_tabs.indexOf(workspace.xrd_tab))
             process_events(20)
+            core_key = controller._build_core_request_key(workspace.parameters())
+            controller._analysis_core_cache[core_key] = partial
 
             original_launch = controller._launch_request
 
@@ -1144,8 +1171,8 @@ class Wave6DerivedTests(unittest.TestCase):
             controller._context = context3.copy()
             key3 = controller._build_core_request_key(parameters)
             self.assertNotEqual(key0, key3)
-            self.assertEqual(0, key0[-1])
-            self.assertEqual(3, key3[-1])
+            self.assertEqual(0, key0[-3])
+            self.assertEqual(3, key3[-3])
         finally:
             controller.shutdown()
 
@@ -1344,7 +1371,8 @@ class Wave6DerivedTests(unittest.TestCase):
         workspace = HeliosDerivedWorkspace()
         try:
             formatted = workspace._format_time(2.5e-12)
-            self.assertIn("ps", formatted)
+            self.assertIn("ns", formatted)
+            self.assertIn("2.500e-03", formatted)
             self.assertNotEqual("0.000 s", formatted)
         finally:
             workspace.close()

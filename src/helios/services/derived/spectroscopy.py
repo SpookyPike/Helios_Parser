@@ -35,8 +35,10 @@ if TYPE_CHECKING:
 def doppler_width_fraction(temperature_ev: float, ion_mass_mu: float) -> float:
     """NRL 2023 p. 58 Eq. (25), fractional Doppler width ``Delta(lambda) / lambda``."""
 
-    if temperature_ev <= 0.0 or ion_mass_mu <= 0.0:
+    if not math.isfinite(float(temperature_ev)) or not math.isfinite(float(ion_mass_mu)) or temperature_ev < 0.0 or ion_mass_mu <= 0.0:
         return float("nan")
+    if temperature_ev == 0.0:
+        return 0.0
     return 7.7e-5 * math.sqrt(float(temperature_ev) / float(ion_mass_mu))
 
 
@@ -48,7 +50,7 @@ def doppler_width_fraction_array(temperature_ev: np.ndarray, ion_mass_mu: np.nda
     result = np.full(np.broadcast_shapes(temperature.shape, mass.shape), np.nan, dtype=np.float64)
     temperature_b = np.broadcast_to(temperature, result.shape)
     mass_b = np.broadcast_to(mass, result.shape)
-    valid = (temperature_b > 0.0) & (mass_b > 0.0) & np.isfinite(temperature_b) & np.isfinite(mass_b)
+    valid = (temperature_b >= 0.0) & (mass_b > 0.0) & np.isfinite(temperature_b) & np.isfinite(mass_b)
     result[valid] = 7.7e-5 * np.sqrt(temperature_b[valid] / mass_b[valid])
     return result
 

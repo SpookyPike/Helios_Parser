@@ -90,14 +90,17 @@ class DerivedFieldCapabilities:
     available_fields: tuple[str, ...] = ()
     optional_available_fields: tuple[str, ...] = ()
     missing_optional_fields: tuple[str, ...] = ()
+    not_loaded_optional_fields: tuple[str, ...] = ()
     dynamic_radius_available: bool = False
     run_status_available: bool = False
     visar_support_available: bool = False
     pressure_components_available: bool = False
+    plasma_pressure_available: bool = False
     total_pressure_available: bool = False
     radiation_components_available: bool = False
     radiation_net_heating_available: bool = False
     kinetic_energy_available: bool = False
+    available_material_properties: tuple[str, ...] = ()
     consistency: DerivedFieldConsistency = field(default_factory=DerivedFieldConsistency)
 
 
@@ -147,6 +150,7 @@ class DerivedRunData:
     pressure_i_j_cm3: np.ndarray | None = None
     pressure_e_j_cm3: np.ndarray | None = None
     pressure_radiation_j_cm3: np.ndarray | None = None
+    pressure_plasma_j_cm3: np.ndarray | None = None
     pressure_total_j_cm3: np.ndarray | None = None
     artificial_viscosity_j_cm3: np.ndarray | None = None
     ion_energy_j_g: np.ndarray | None = None
@@ -159,20 +163,21 @@ class DerivedRunData:
     radiation_cooling_j_g_s: np.ndarray | None = None
     radiation_sink_j_g_s: np.ndarray | None = None
     radiation_net_heating_j_g_s: np.ndarray | None = None
-    laser_source_j_g_s: np.ndarray | None = None
+    laser_source_j_g: np.ndarray | None = None
     laser_deposition_j_g_s: np.ndarray | None = None
     radius_cm: np.ndarray | None = None
     radius_edge_cm: np.ndarray | None = None
     zone_region_id: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=np.int32))
     zone_material_index: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=np.int32))
-    zone_atomic_weight: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=np.float64))
-    zone_initial_density_g_cm3: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=np.float64))
-    zone_initial_temperature_ev: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=np.float64))
+    zone_atomic_weight: np.ndarray | None = field(default_factory=lambda: np.empty(0, dtype=np.float64))
+    zone_initial_density_g_cm3: np.ndarray | None = field(default_factory=lambda: np.empty(0, dtype=np.float64))
+    zone_initial_temperature_ev: np.ndarray | None = field(default_factory=lambda: np.empty(0, dtype=np.float64))
     laser_entry: dict[str, Any] | None = None
     run_status: dict[str, Any] | None = None
     visar_support_metadata: dict[str, Any] | None = None
     field_capabilities: DerivedFieldCapabilities = field(default_factory=DerivedFieldCapabilities)
     wave_physics_capabilities: WavePhysicsCapabilities = field(default_factory=WavePhysicsCapabilities)
+    revision: Any | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -404,6 +409,7 @@ class PreheatBudgetRow:
     fraction_of_observed: float | None = None
     available: bool = True
     notes: tuple[str, ...] = ()
+    coverage_fraction: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -781,3 +787,11 @@ class DerivedAnalysisResult:
     wave_tracking: WaveTrackingResult | None = None
     interface_events: InterfaceEventsResult | None = None
     preheat: PreheatSummary | None = None
+    module_availability: tuple["DerivedModuleAvailability", ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class DerivedModuleAvailability:
+    module: str
+    available: bool
+    reason: str | None = None
