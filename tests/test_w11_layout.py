@@ -30,7 +30,19 @@ class W11LayoutTests(unittest.TestCase):
             for size in ((1024, 768), (1280, 800), (1860, 1120)):
                 with self.subTest(size=size):
                     window.resize(*size)
-                    wait_until(lambda: (window.width(), window.height()) == size, timeout_s=2.0)
+                    try:
+                        wait_until(lambda: (window.width(), window.height()) == size, timeout_s=2.0)
+                    except AssertionError as exc:
+                        screen = window.screen()
+                        available = screen.availableGeometry() if screen is not None else None
+                        self.fail(
+                            f"Requested client size {size}, got "
+                            f"{(window.width(), window.height())}; "
+                            f"minimumSize={window.minimumSize().width()}x{window.minimumSize().height()}, "
+                            f"minimumSizeHint={window.minimumSizeHint().width()}x{window.minimumSizeHint().height()}, "
+                            f"sizeHint={window.sizeHint().width()}x{window.sizeHint().height()}, "
+                            f"availableScreen={available}, mode={window.session_state.current_mode}: {exc}"
+                        )
                     self.assertEqual((window.width(), window.height()), size)
         finally:
             window.close()
