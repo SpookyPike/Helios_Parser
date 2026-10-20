@@ -1,0 +1,35 @@
+{
+  "path": "/data/projects/playground/Helios_parser/outputs/hdf5/10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+  "source_size_bytes": 225897264,
+  "source_sha256": "8d3242b8d48f302e5ad821f9fb42b3121c38b8b15563fdd01fdbe905b3fe1fc9",
+  "revision": [
+    "/data/projects/playground/Helios_parser/outputs/hdf5/10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+    225897264,
+    1773301883834462700,
+    null,
+    "e2f542f9546fb355c90165b0"
+  ],
+  "elapsed_seconds": 0.2266629410441965,
+  "rss_backend": "procfs",
+  "sample_interval_ms": 5,
+  "rss_before_bytes": 74543104,
+  "peak_task_rss_bytes": 288276480,
+  "peak_task_rss_delta_bytes": 213733376,
+  "rss_after_result_bytes": 289992704,
+  "result_retained_bytes": 44108,
+  "task_manager_stats": {
+    "submitted": 1,
+    "completed": 1,
+    "cancelled": 0,
+    "failed": 0,
+    "active": 0,
+    "max_thread_count": 1
+  },
+  "environment": {
+    "os": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "python": "3.12.13 (main, Aug  7 2026, 02:25:39) [Clang 22.1.3 ]",
+    "numpy": "2.5.4"
+  },
+  "scope": "real AnalysisTaskManager worker: HDF5 dataset load plus shock-only derived calculation; RSS includes interpreter, Qt, HDF5, NumPy and task working allocations; result bytes are reported separately.",
+  "rss_after_result_release_bytes": 289992704
+}
