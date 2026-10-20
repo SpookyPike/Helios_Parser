@@ -4,6 +4,7 @@ import mmap
 import struct
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Iterator
 
 import numpy as np
@@ -34,8 +35,10 @@ class BpfLayout:
     block_records: int
     n_snapshots: int
     trailing_records: int
-    trailer_lengths: tuple[int, ...]
+    trailing_record_lengths: tuple[int, ...]
     recognized_zero_trailer: bool
+    incomplete_final_snapshot: bool
+    partial_final_record_bytes: int
     first_time_s: float
     last_time_s: float
     first_cycle: int
@@ -326,6 +329,7 @@ class BpfFile:
         self._mmap = mmap.mmap(self._file.fileno(), 0, access=mmap.ACCESS_READ)
         self._payload_offsets: list[int] = []
         self._payload_lengths: list[int] = []
+        self._partial_tail = b""
         self._scan_records()
         self.layout = self._infer_layout()
 
@@ -344,13 +348,17 @@ class BpfFile:
         index = 0
         size = len(self._mmap)
         while offset < size:
-            if offset + 8 > size:
-                raise ValueError(f"Short BPF Fortran record marker at byte {offset}.")
+            if offset + 4 > size:
+                self._partial_tail = self._mmap[offset:size]
+                break
             length = struct.unpack_from("<i", self._mmap, offset)[0]
             payload_start = offset + 4
             payload_end = payload_start + length
-            if length < 0 or payload_end + 4 > size:
+            if length < 0:
                 raise ValueError(f"Invalid BPF record length {length} at record {index}, byte {offset}.")
+            if payload_end + 4 > size:
+                self._partial_tail = self._mmap[offset:size]
+                break
             closing_length = struct.unpack_from("<i", self._mmap, payload_end)[0]
             if closing_length != length:
                 raise ValueError(f"BPF Fortran record marker mismatch at record {index}: {length} != {closing_length}.")
@@ -401,17 +409,23 @@ class BpfFile:
             next_record += block_records
         if n_snapshots == 0:
             raise ValueError(f"{self.path} does not contain a complete BPF snapshot block.")
+        trailing_count = self.record_count - next_record
         trailer_lengths = tuple(self._payload_lengths[next_record:])
         trailer_payloads = tuple(bytes(self.payload(index)) for index in range(next_record, self.record_count))
-        recognized_zero_trailer = (
-            not trailer_lengths
-            or (trailer_lengths == (240,) and trailer_payloads == (bytes(240),))
-        )
-        if not recognized_zero_trailer:
-            raise ValueError(
-                f"{self.path} has unrecognized trailing BPF records after {n_snapshots} complete snapshots: "
-                f"lengths={trailer_lengths}."
-            )
+        recognized_zero_trailer = trailer_lengths == (240,) and trailer_payloads == (bytes(240),) and not self._partial_tail
+        if trailer_lengths and not recognized_zero_trailer:
+            if trailing_count >= block_records or not self._valid_incomplete_snapshot_prefix(
+                next_record, n_nodes, n_zones, n_freq_bins, block_records
+            ):
+                raise ValueError(
+                    f"{self.path} has unrecognized trailing BPF records after {n_snapshots} complete snapshots: "
+                    f"lengths={trailer_lengths}."
+                )
+        elif self._partial_tail and not self._valid_partial_final_record(
+            next_record, trailing_count, n_nodes, n_zones, n_freq_bins, block_records
+        ):
+            raise ValueError(f"{self.path} has corrupt partial BPF data after {n_snapshots} complete snapshots.")
+        incomplete_final_snapshot = bool((trailing_count or self._partial_tail) and not recognized_zero_trailer)
         first_header = self.array(2, "f64")
         last_header = self.array(self.snapshot_start(n_snapshots - 1, block_records), "f64")
         return BpfLayout(
@@ -425,13 +439,72 @@ class BpfFile:
             block_records=block_records,
             n_snapshots=n_snapshots,
             trailing_records=self.record_count - next_record,
-            trailer_lengths=trailer_lengths,
-            recognized_zero_trailer=bool(trailer_lengths),
+            trailing_record_lengths=trailer_lengths,
+            recognized_zero_trailer=recognized_zero_trailer,
+            incomplete_final_snapshot=incomplete_final_snapshot,
+            partial_final_record_bytes=len(self._partial_tail),
             first_time_s=float(first_header[1]),
             last_time_s=float(last_header[1]),
-            first_cycle=int(round(float(first_header[2]))),
-            last_cycle=int(round(float(last_header[2]))),
+            first_cycle=_header_integer(first_header[2], "cycle", self.path, 0),
+            last_cycle=_header_integer(last_header[2], "cycle", self.path, n_snapshots - 1),
         )
+
+    def _expected_record_bytes(self, relative_index: int, n_nodes: int, n_zones: int, n_freq_bins: int) -> int:
+        spec = next((item for item in BPF_FIXED_RECORD_SPECS if item.rel == relative_index), None)
+        if spec is not None:
+            layout = SimpleNamespace(n_nodes=n_nodes, n_zones=n_zones, n_freq_bins=n_freq_bins)
+            return _shape_width(spec.shape, layout) * _DTYPES[spec.dtype].itemsize
+        if relative_index >= 69:
+            ion_index = relative_index - 69
+            return 4 if ion_index % 2 == 0 else self._payload_lengths[69 + 1] if len(self._payload_lengths) > 70 else 0
+        return 0
+
+    def _valid_incomplete_snapshot_prefix(
+        self, start: int, n_nodes: int, n_zones: int, n_freq_bins: int, block_records: int
+    ) -> bool:
+        prefix_count = self.record_count - start
+        if prefix_count >= block_records:
+            return False
+        fraction_width = None
+        for relative in range(prefix_count):
+            record_index = start + relative
+            expected = self._expected_record_bytes(relative, n_nodes, n_zones, n_freq_bins)
+            if relative == 70:
+                fraction_width = self._payload_lengths[record_index]
+                expected = fraction_width
+            elif relative >= 69 and (relative - 69) % 2 == 1:
+                expected = fraction_width or 0
+            if expected <= 0 or self._payload_lengths[record_index] != expected:
+                return False
+            if relative == 0:
+                header = self.array(record_index, "f64")
+                try:
+                    if _header_integer(header[4], "node count", self.path) != n_nodes or _header_integer(header[6], "frequency-bin count", self.path) != n_freq_bins:
+                        return False
+                except (IndexError, ValueError):
+                    return False
+        return True
+
+    def _valid_partial_final_record(
+        self, start: int, prefix_count: int, n_nodes: int, n_zones: int, n_freq_bins: int, block_records: int
+    ) -> bool:
+        if prefix_count >= block_records or not self._valid_incomplete_snapshot_prefix(
+            start, n_nodes, n_zones, n_freq_bins, block_records
+        ):
+            return False
+        relative = prefix_count
+        expected = self._expected_record_bytes(relative, n_nodes, n_zones, n_freq_bins)
+        if relative >= 69 and (relative - 69) % 2 == 1:
+            expected = self._payload_lengths[start + relative - 1] if start + relative - 1 < self.record_count else 0
+        if expected <= 0:
+            return False
+        tail = self._partial_tail
+        if len(tail) < 4:
+            return True
+        declared = struct.unpack_from("<i", tail, 0)[0]
+        if declared != expected:
+            return False
+        return len(tail) < expected + 8
 
     @staticmethod
     def snapshot_start(snapshot_index: int, block_records: int) -> int:

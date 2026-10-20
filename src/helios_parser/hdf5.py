@@ -622,6 +622,8 @@ def _write_hdf5_from_bpf(
             _write_scalar_dataset(metadata_group, "bpf_record_count", layout.record_count, "")
             _write_scalar_dataset(metadata_group, "bpf_trailing_records", layout.trailing_records, "")
             _write_scalar_dataset(metadata_group, "bpf_recognized_zero_trailer", layout.recognized_zero_trailer, "")
+            _write_scalar_dataset(metadata_group, "bpf_incomplete_final_snapshot", layout.incomplete_final_snapshot, "")
+            _write_scalar_dataset(metadata_group, "bpf_partial_final_record_bytes", layout.partial_final_record_bytes, "")
 
             time_group = handle.create_group("time")
             time_dataset = _create_1d(time_group, "time", layout.n_snapshots, np.float64, "s", chunks=_time_chunk_shape(layout.n_snapshots))
@@ -738,16 +740,19 @@ def _write_hdf5_from_bpf(
             _set_unit_attrs(metadata_group["available_fields"], "")
             _write_scalar_dataset(metadata_group, "n_snapshots", layout.n_snapshots, "")
             run_status_group = _replace_group(metadata_group, "run_status")
+            bpf_status = "truncated" if layout.incomplete_final_snapshot else "complete"
             _write_nested_mapping(
                 run_status_group,
                 {
-                    "state": "complete",
-                    "source": "bpf",
-                    "indexed_snapshot_count": layout.n_snapshots,
+                    "state": bpf_status,
+                    "source": "bpf_partial_final_snapshot" if layout.incomplete_final_snapshot else "bpf",
+                    "indexed_snapshot_count": layout.n_snapshots + int(layout.incomplete_final_snapshot),
                     "valid_snapshot_count": layout.n_snapshots,
                     "last_valid_snapshot_time_s": layout.last_time_s,
-                    "dropped_partial_final_block": False,
-                    "notes": ("BPF primary parse",),
+                    "dropped_partial_final_block": layout.incomplete_final_snapshot,
+                    "notes": ("Incomplete final BPF snapshot dropped; complete snapshots retained.",)
+                    if layout.incomplete_final_snapshot
+                    else ("BPF primary parse",),
                 },
                 unit_resolver=lambda path: "s" if path[-1] == "last_valid_snapshot_time_s" else "",
             )

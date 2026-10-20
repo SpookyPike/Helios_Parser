@@ -59,6 +59,29 @@ class BpfPipelineTests(unittest.TestCase):
             del snapshot
 
 
+
+    def test_partial_final_bpf_snapshot_is_dropped_and_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            truncated = Path(tmpdir) / "truncated.bpf"
+            with BpfFile(BPF_SAMPLE) as source:
+                record_index = BpfFile.snapshot_start(7, source.layout.block_records) + 5
+                record_start = source._payload_offsets[record_index] - 4
+                payload_length = source._payload_lengths[record_index]
+                cut_at = record_start + 4 + max(1, payload_length // 2)
+                raw = BPF_SAMPLE.read_bytes()[:cut_at]
+            truncated.write_bytes(raw)
+            with BpfFile(truncated) as bpf:
+                self.assertEqual(bpf.layout.n_snapshots, 7)
+                self.assertTrue(bpf.layout.incomplete_final_snapshot)
+                self.assertGreater(bpf.layout.partial_final_record_bytes, 0)
+            output = Path(tmpdir) / "truncated.h5"
+            write_hdf5(truncated, output)
+            with HeliosRun(output) as run:
+                status = run.get_run_status()
+                self.assertEqual(status["state"], "truncated")
+                self.assertEqual(status["valid_snapshot_count"], 7)
+                self.assertTrue(status["dropped_partial_final_block"])
+
     def test_nonzero_bpf_trailer_is_not_accepted_as_documented_trailer(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             corrupted = Path(tmpdir) / "corrupted_trailer.bpf"
