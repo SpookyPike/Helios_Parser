@@ -1,0 +1,76 @@
+{
+  "status": "exploratory_only_not_acceptance",
+  "source_revision": "9810000",
+  "environment": {
+    "python": "3.12.13",
+    "numpy": "2.5.4",
+    "h5py": "3.16.0",
+    "platform": "Linux x86_64"
+  },
+  "fixture": {
+    "baseline_h5": "Cu_0166_stabilized.h5",
+    "baseline_sha256": "65825e5281600ccb7983ac9a8042e9b4bd088439b748e2cc4c7240a84b174723",
+    "source_log": "Cu_0166.log",
+    "source_log_sha256": "b3836b16a1420b6b328384f60afbed841c18bcaaf4e39f08bca261931d96cadf"
+  },
+  "method": "Existing bench_hdf5_access.py; 32 accesses per category; one process/run; candidate converted by current write_hdf5 implementation. No paired process samples or RSS measurement.",
+  "interpretation": "Candidate conversion layout is faster for snapshot reads and 64-snapshot scrub in this exploratory run, but zone trace median is about 2.10x slower. No general speed claim; no chunking change proposed.",
+  "results": {
+    "baseline": {
+      "path": "Cu_0166_stabilized.h5",
+      "shape": [
+        461,
+        300
+      ],
+      "dtype": "float64",
+      "chunks": [
+        64,
+        256
+      ],
+      "snapshot_access": {
+        "median_latency_ms": 0.007760478183627129,
+        "mean_latency_ms": 0.02071709604933858,
+        "throughput_mb_s": 110.47969048963662
+      },
+      "zone_access": {
+        "median_latency_ms": 0.01192337367683649,
+        "mean_latency_ms": 0.0287688453681767,
+        "throughput_mb_s": 122.25554532671043
+      },
+      "slider_scrub": {
+        "count": 64,
+        "median_total_ms": 0.4785689525306225,
+        "mean_total_ms": 0.5039531970396638,
+        "throughput_mb_s": 290.67059373863026
+      }
+    },
+    "candidate": {
+      "path": "/tmp/tmpc39yop0e/Cu_0166_chunked.h5",
+      "shape": [
+        461,
+        300
+      ],
+      "dtype": "float64",
+      "chunks": [
+        16,
+        300
+      ],
+      "snapshot_access": {
+        "median_latency_ms": 0.006768968887627125,
+        "mean_latency_ms": 0.013396049325820059,
+        "throughput_mb_s": 170.85771362183954
+      },
+      "zone_access": {
+        "median_latency_ms": 0.025028479285538197,
+        "mean_latency_ms": 0.046646338887512684,
+        "throughput_mb_s": 75.4003628749479
+      },
+      "slider_scrub": {
+        "count": 64,
+        "median_total_ms": 0.45440206304192543,
+        "mean_total_ms": 0.4564622649922967,
+        "throughput_mb_s": 320.9123431100533
+      }
+    }
+  }
+}

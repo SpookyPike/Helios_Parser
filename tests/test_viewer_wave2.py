@@ -339,10 +339,11 @@ class ViewerWave2Tests(unittest.TestCase):
             run_path = HDF5_ROOT / "Cu_0166_stabilized.h5"
             stale_generation = 1
             active_generation = 2
-            window.controller.worker_thread.quit()
-            window.controller.worker_thread.wait(2000)
             window.controller._run_generation = active_generation
             window._on_run_opened(_build_open_run_payload(run_path, active_generation))
+            window.run_payload.field_metadata = {
+                "density": {"dimensions": ("time", "zone")}
+            }
             window.current_field_name = "density"
 
             stale_payload = _build_field_payload(run_path, "density", stale_generation)
