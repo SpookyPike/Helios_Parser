@@ -30,8 +30,11 @@ def main() -> int:
     parser.add_argument("--run", type=Path, required=True)
     parser.add_argument("--samples", type=int, default=100)
     parser.add_argument("--warmup", type=int, default=10)
+    parser.add_argument("--burst-size", type=int, default=8)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    if args.samples < 1 or args.warmup < 0 or args.burst_size < 1:
+        parser.error("samples and burst-size must be positive; warmup must be nonnegative")
     root = args.code_root.resolve()
     sys.path.insert(0, str(root / "src"))
 
@@ -85,7 +88,8 @@ def main() -> int:
     start_render_count = int(window.lineout_plot.set_curves_call_count)
 
     for i in range(args.warmup + args.samples):
-        target = (i * 37 + 11) % (max_index + 1)
+        burst_targets = [((i * 37 + 11 + j * 13) % (max_index + 1)) for j in range(args.burst_size)]
+        target = burst_targets[-1]
         if i % 2 == 0:
             window.plot_tabs.setCurrentWidget(window.diagnostic_plot)
             tab_switches += 1
@@ -94,7 +98,8 @@ def main() -> int:
         tab_switches += 1
         app.processEvents(QtCore.QEventLoop.AllEvents, 20)
         started = time.perf_counter()
-        window.snapshot_slider.setValue(target)
+        for burst_target in burst_targets:
+            window.snapshot_slider.setValue(burst_target)
 
         def settled() -> bool:
             nonlocal max_pending_requests
@@ -136,6 +141,7 @@ def main() -> int:
         "display": {k: os.environ.get(k) for k in ("DISPLAY", "WAYLAND_DISPLAY", "XDG_SESSION_TYPE")},
         "samples": len(latencies),
         "warmup": args.warmup,
+        "burst_size": args.burst_size,
         "settling_latency_ms": {
             "p50": statistics.median(latencies),
             "p95_nearest_rank": percentile(latencies, 0.95),
