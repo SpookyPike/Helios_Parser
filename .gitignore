@@ -68,4 +68,5 @@ _tmp_plasmon_fourth_pass/
 /plasmon_*_report.md
 /plasmon_*_verification_report.md
 /outputs/screenshots/*/report.json
+/outputs/screenshots/*/*_report.json
 /outputs/wave*_retest.txt
