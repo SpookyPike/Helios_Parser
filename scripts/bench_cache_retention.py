@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import gc
 import json
 import os
@@ -48,6 +49,25 @@ def _rss_bytes() -> int | None:
         return None
 
 
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _total_memory_bytes() -> int | None:
+    if sys.platform.startswith("linux"):
+        try:
+            for line in Path("/proc/meminfo").read_text(encoding="ascii").splitlines():
+                if line.startswith("MemTotal:"):
+                    return int(line.split()[1]) * 1024
+        except (OSError, ValueError, IndexError):
+            return None
+    return None
+
+
 def benchmark(path: Path, cycles: int) -> dict[str, object]:
     if _rss_bytes() is None:
         raise RuntimeError("current RSS measurement is unavailable on this platform; install psutil for a supported backend")
@@ -69,35 +89,52 @@ def benchmark(path: Path, cycles: int) -> dict[str, object]:
         del dataset
         gc.collect()
         retired_rss = _rss_bytes()
-        aggregate_bytes = coordinator.stats().bytes_used
+        cache_stats = coordinator.stats()
+        aggregate_bytes = cache_stats.bytes_used
         samples.append(
             {
                 "load_seconds": elapsed,
                 "active_dataset_bytes": active_bytes,
                 "retained_dataset_cache_bytes": estimate_nbytes(tuple(dataset_cache.values())),
                 "loaded_rss_bytes": int(loaded_rss or 0),
-                "retired_rss_bytes": int(retired_rss or 0),
+                "post_load_rss_bytes": int(retired_rss or 0),
                 "aggregate_cache_bytes": int(aggregate_bytes),
+                "aggregate_evictions": int(cache_stats.evictions),
             }
         )
-    retired_values = [int(sample["retired_rss_bytes"]) for sample in samples]
-    tail_size = min(len(retired_values), max(5, len(retired_values) // 3))
-    retired_tail = retired_values[-tail_size:]
+    first_eviction = next(
+        (index for index, sample in enumerate(samples) if int(sample["aggregate_evictions"]) > 0),
+        None,
+    )
+    post_saturation = samples[first_eviction:] if first_eviction is not None else []
+    post_saturation_rss = [int(sample["post_load_rss_bytes"]) for sample in post_saturation]
     return {
         "path": str(path.resolve()),
         "source_size_bytes": path.stat().st_size,
+        "source_sha256": _sha256(path),
         "cycles": int(cycles),
-        "os": platform.platform(),
-        "python": sys.version,
+        "environment": {
+            "os": platform.platform(),
+            "machine": platform.machine(),
+            "processor": platform.processor(),
+            "cpu_count": os.cpu_count(),
+            "total_memory_bytes": _total_memory_bytes(),
+            "python": sys.version,
+        },
         "rss_backend": "procfs" if sys.platform.startswith("linux") else "ps",
         "rss_before_bytes": int(before or 0),
         "samples": samples,
         "median_load_seconds": statistics.median(float(sample["load_seconds"]) for sample in samples),
-        "retired_rss_tail_range_bytes": max(retired_tail) - min(retired_tail) if retired_tail else 0,
+        "first_eviction_cycle": None if first_eviction is None else first_eviction + 1,
+        "post_saturation_rss_range_bytes": max(post_saturation_rss) - min(post_saturation_rss) if post_saturation_rss else None,
         "aggregate_cache_limit_bytes": coordinator.max_bytes,
         "retained_dataset_cache_bytes_after_final_cycle": int(samples[-1]["retained_dataset_cache_bytes"]),
         "aggregate_cache_bytes_after_final_cycle": int(samples[-1]["aggregate_cache_bytes"]),
-        "interpretation": "Three dataset entries remain cached to match DerivedController; RSS can remain high because native allocators retain pages.",
+        "retirement_modeled": False,
+        "interpretation": (
+            "Distinct revisions are loaded and the newest three derived datasets remain cached; shared raw entries are subject to the aggregate LRU cap. "
+            "This measures bounded-cache saturation, not application run retirement. RSS can remain high because native allocators retain pages."
+        ),
     }
 
 
