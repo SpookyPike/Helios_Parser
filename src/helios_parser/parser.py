@@ -1053,6 +1053,30 @@ class SnapshotBlockSemanticParser:
         fields = {**primary_fields, **secondary_fields}
         field_units = {**primary_units, **secondary_units}
         raw_field_map.update(secondary_map)
+
+        coordinate_edge = primary_extras.get("coordinate_edge")
+        if coordinate_edge is not None:
+            edge = np.asarray(coordinate_edge, dtype=np.float64)
+            if not np.all(np.isfinite(edge)) or not np.all(np.diff(edge) > 0.0):
+                raise SnapshotDomainError(f"Snapshot at cycle {cycle} has non-finite or non-increasing node positions.")
+        zone_width = fields.get("zone_width")
+        if zone_width is not None:
+            widths = np.asarray(zone_width, dtype=np.float64)
+            if not np.all(np.isfinite(widths)) or not np.all(widths > 0.0):
+                raise SnapshotDomainError(f"Snapshot at cycle {cycle} has non-positive or non-finite cell widths.")
+        for density_key in ("density", "mass_density"):
+            density = fields.get(density_key)
+            if density is not None:
+                density_values = np.asarray(density, dtype=np.float64)
+                if not np.all(np.isfinite(density_values)) or np.any(density_values < 0.0):
+                    raise SnapshotDomainError(f"Snapshot at cycle {cycle} has invalid mass density.")
+                break
+        for temperature_key in ("temperature_i", "temperature_e", "temperature_radiation"):
+            temperature = fields.get(temperature_key)
+            if temperature is not None:
+                temperature_values = np.asarray(temperature, dtype=np.float64)
+                if not np.all(np.isfinite(temperature_values)) or np.any(temperature_values < 0.0):
+                    raise SnapshotDomainError(f"Snapshot at cycle {cycle} has invalid {temperature_key} values.")
         if all(name in fields for name in ("pressure_i", "pressure_e", "pressure_radiation")):
             fields["pressure"] = fields["pressure_i"] + fields["pressure_e"] + fields["pressure_radiation"]
             field_units["pressure"] = field_units["pressure_i"]
