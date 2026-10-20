@@ -105,13 +105,19 @@ class ViewerPhase2bTests(unittest.TestCase):
                 resolved_zone = window._resolved_trace_zone_index()
                 self.assertIsNotNone(resolved_zone)
                 expected_trace = density[:, int(resolved_zone)]
-                allclose_nan(window.lineout_plot.last_x_values, time)
+                allclose_nan(window.lineout_plot.last_x_values, window._display_time_values(time))
                 allclose_nan(window.lineout_plot.last_y_series[0], expected_trace)
                 self.assertTrue(window.lineout_plot.current_cursor_visible)
-                self.assertAlmostEqual(window.lineout_plot.current_cursor_position, float(time[0]))
+                self.assertAlmostEqual(
+                    window.lineout_plot.current_cursor_position,
+                    float(window._display_time_value(time[0])),
+                )
                 self.assertTrue(window.field_map_widget.current_time_marker_visible)
                 self.assertTrue(window.field_map_widget.current_reference_visible)
-                self.assertAlmostEqual(window.field_map_widget.current_reference_position, float(static_x[int(resolved_zone)]))
+                self.assertAlmostEqual(
+                    window.field_map_widget.current_reference_position,
+                    window._display_length_value(float(static_x[int(resolved_zone)])),
+                )
                 self.assertIn("full history", window.lineout_plot.current_title.lower())
                 self.assertIn("current-time cursor", window.lineout_plot.current_title.lower())
                 self.assertIn("slider controls current-time cursor", window.active_analysis_label.text())
@@ -120,7 +126,10 @@ class ViewerPhase2bTests(unittest.TestCase):
                 window.snapshot_slider.setValue(70)
                 process_events()
                 allclose_nan(window.lineout_plot.last_y_series[0], baseline_trace)
-                self.assertAlmostEqual(window.lineout_plot.current_cursor_position, float(time[70]))
+                self.assertAlmostEqual(
+                    window.lineout_plot.current_cursor_position,
+                    window._display_time_value(float(time[70])),
+                )
                 self.assertIn("current time:", window.snapshot_time_label.text().lower())
 
                 window.plot_tabs.setCurrentWidget(window.mouse_tab)
@@ -143,7 +152,10 @@ class ViewerPhase2bTests(unittest.TestCase):
                 process_events()
                 self.assertTrue(window.field_map_widget.current_time_marker_visible)
                 self.assertTrue(window.field_map_widget.current_reference_visible)
-                self.assertAlmostEqual(window.lineout_plot.current_cursor_position, float(time[70]))
+                self.assertAlmostEqual(
+                    window.lineout_plot.current_cursor_position,
+                    window._display_time_value(float(time[70])),
+                )
         finally:
             window.close()
 

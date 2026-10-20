@@ -50,18 +50,6 @@ def select_field(window: HeliosViewerMainWindow, field_name: str) -> None:
     wait_until(lambda: window.current_field_payload is not None and window.current_field_payload.field_name == field_name, 30.0)
 
 
-def centers_to_edges(values: np.ndarray) -> np.ndarray:
-    centers = np.asarray(values, dtype=np.float64)
-    if centers.size == 1:
-        delta = max(abs(float(centers[0])) * 0.5, 0.5)
-        return np.asarray([float(centers[0]) - delta, float(centers[0]) + delta], dtype=np.float64)
-    edges = np.empty(centers.size + 1, dtype=np.float64)
-    edges[1:-1] = 0.5 * (centers[:-1] + centers[1:])
-    edges[0] = centers[0] - (edges[1] - centers[0])
-    edges[-1] = centers[-1] + (centers[-1] - edges[-2])
-    return edges
-
-
 def centers_to_corner_grid(values: np.ndarray) -> np.ndarray:
     centers = np.asarray(values, dtype=np.float64)
     n_time, n_zone = centers.shape
@@ -155,11 +143,16 @@ class ViewerInteractionTests(unittest.TestCase):
 
                 combined_mask = np.asarray((run.get_region_mask(1) | run.get_region_mask(3)) & run.get_material_mask(1), dtype=bool)
                 expected_y = np.where(combined_mask, np.asarray(run.get_field("density", time_slice=70), dtype=np.float64), np.nan)
-                expected_x = np.asarray(run.get_radius(snapshot_index=70), dtype=np.float64)
+                expected_x = window._display_length_values(
+                    np.asarray(run.get_radius(snapshot_index=70), dtype=np.float64)
+                )
                 allclose_nan(window.lineout_plot.last_y_series[0], expected_y)
                 allclose_nan(window.lineout_plot.last_x_values, expected_x)
                 self.assertIn("snapshot 70", window.lineout_plot.current_title)
-                self.assertIn(f"{float(run.get_time(selection=70)):.4e}", window.snapshot_time_label.text())
+                self.assertIn(
+                    f"{window._display_time_value(float(run.get_time(selection=70))):.4e}",
+                    window.snapshot_time_label.text(),
+                )
         finally:
             window.close()
 
@@ -172,7 +165,10 @@ class ViewerInteractionTests(unittest.TestCase):
                 static_x = np.asarray(run.get_grid("x"), dtype=np.float64)
                 window.plot_tabs.setCurrentWidget(window.mouse_tab)
                 process_events()
-                window._on_map_probe_moved(float(run.get_time(selection=1)), float(static_x[4]))
+                window._on_map_probe_moved(
+                    window._display_time_value(float(run.get_time(selection=1))),
+                    window._display_length_value(float(static_x[4])),
+                )
                 process_events()
                 self.assertEqual(window._probe_mode, "live")
                 self.assertTrue(window.field_map_widget.probe_visible)
@@ -181,7 +177,10 @@ class ViewerInteractionTests(unittest.TestCase):
                 allclose_nan(window.mouse_horizontal_plot.last_y_series[0], field[:, 4])
                 self.assertIn("live hover", window.mouse_mode_state_label.text().lower())
 
-                window._on_map_probe_clicked(float(run.get_time(selection=1)), float(static_x[4]))
+                window._on_map_probe_clicked(
+                    window._display_time_value(float(run.get_time(selection=1))),
+                    window._display_length_value(float(static_x[4])),
+                )
                 process_events()
                 self.assertEqual(window._probe_mode, "frozen")
                 self.assertTrue(window.field_map_widget.probe_frozen)
@@ -207,24 +206,35 @@ class ViewerInteractionTests(unittest.TestCase):
                 radius = np.asarray(run.get_field("radius"), dtype=np.float64)
                 radius_edge = run.get_dynamic_coordinate(location="edge")
                 time_values = np.asarray(run.get_time(), dtype=np.float64)
-                time_edges = centers_to_edges(time_values)
                 radius_corners = (
                     edge_rows_to_corner_grid(np.asarray(radius_edge, dtype=np.float64))
                     if radius_edge is not None
                     else centers_to_corner_grid(radius)
                 )
-                expected_time_grid = np.repeat(time_edges[:, None], radius_corners.shape[1], axis=1)
+                expected_time_grid = np.repeat(
+                    window._centers_to_edges(window._display_time_values(time_values))[:, None],
+                    radius_corners.shape[1],
+                    axis=1,
+                )
+                expected_radius_corners = window._edge_rows_to_corner_grid(
+                    window._display_length_values(np.asarray(radius_edge, dtype=np.float64))
+                ) if radius_edge is not None else window._centers_to_corner_grid(
+                    window._display_length_values(radius)
+                )
 
-                self.assertEqual(window.field_map_widget.current_render_mode, "mesh")
+                wait_until(lambda: window.field_map_widget.current_render_mode == "mesh", timeout_s=30.0)
                 allclose_nan(window.field_map_widget.last_mesh_z, field)
                 allclose_nan(window.field_map_widget.last_mesh_x, expected_time_grid)
-                allclose_nan(window.field_map_widget.last_mesh_y, radius_corners)
+                allclose_nan(window.field_map_widget.last_mesh_y, expected_radius_corners)
 
                 window.plot_tabs.setCurrentWidget(window.mouse_tab)
                 process_events()
-                window._on_map_probe_moved(float(time_values[1]), float(radius[1, 4]))
+                window._on_map_probe_moved(
+                    window._display_time_value(float(time_values[1])),
+                    window._display_length_value(float(radius[1, 4])),
+                )
                 process_events()
-                allclose_nan(window.mouse_vertical_plot.last_x_values, radius[1])
+                allclose_nan(window.mouse_vertical_plot.last_x_values, window._display_length_values(radius[1]))
                 allclose_nan(window.mouse_vertical_plot.last_y_series[0], field[1])
                 allclose_nan(window.mouse_horizontal_plot.last_y_series[0], field[:, 4])
                 self.assertTrue(

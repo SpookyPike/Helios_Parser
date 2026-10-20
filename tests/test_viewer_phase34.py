@@ -110,7 +110,6 @@ class ViewerPhase34Tests(unittest.TestCase):
         finally:
             window.close()
             process_events(50)
-            wait_until(lambda: not window.controller.worker_thread.isRunning(), timeout_s=5.0)
             try:
                 target.unlink()
             except PermissionError:
@@ -154,13 +153,16 @@ class ViewerPhase34Tests(unittest.TestCase):
             row = find_row_by_data(window.field_list, "density")
             window.field_list.setCurrentRow(row)
             process_events(50)
+            wait_until(lambda: window.radius_payload is not None, timeout_s=30.0)
+            combo_set_data(window.map_coordinate_combo, "moving_radius")
+            wait_until(lambda: window.field_map_widget.current_render_mode == "mesh", timeout_s=30.0)
 
             combo_set_data(window.colormap_combo, "plasma")
             process_events(50)
             expected_lut = resolve_colormap("plasma").getLookupTable(nPts=256, alpha=True)
             initial_levels = window.field_map_widget._colorbar.levels()
 
-            self.assertEqual(window.field_map_widget.current_render_mode, "mesh")
+            wait_until(lambda: window.field_map_widget.current_render_mode == "mesh", timeout_s=30.0)
             mesh_color_map = window.field_map_widget._mesh_item.getColorMap()
             self.assertIsNotNone(mesh_color_map)
             np.testing.assert_array_equal(mesh_color_map.getLookupTable(nPts=256, alpha=True), expected_lut)

@@ -77,7 +77,7 @@ class ViewerPhase2Tests(unittest.TestCase):
             self.assertEqual(window.field_map_widget.current_laser_entry_curve.shape[1], 2)
             expected_curve = np.column_stack(
                 [
-                    np.asarray(window.run_payload.time, dtype=np.float64),
+                    window._display_time_values(np.asarray(window.run_payload.time, dtype=np.float64)),
                     np.asarray(window.field_map_widget.last_mesh_y[:-1, -1], dtype=np.float64),
                 ]
             )
@@ -104,7 +104,10 @@ class ViewerPhase2Tests(unittest.TestCase):
             for step in range(40):
                 snapshot_index = step % time_values.size
                 zone_index = (step * 29) % radius.shape[1]
-                window._on_map_probe_moved(float(time_values[snapshot_index]), float(radius[snapshot_index, zone_index]))
+                window._on_map_probe_moved(
+                    window._display_time_value(float(time_values[snapshot_index])),
+                    window._display_length_value(float(radius[snapshot_index, zone_index])),
+                )
                 process_events(15)
 
             self.assertEqual(window.field_map_widget.render_call_count, render_count)
@@ -175,7 +178,7 @@ class ViewerPhase2Tests(unittest.TestCase):
             dialog.theme_combo.setCurrentIndex(dialog.theme_combo.findData("dark"))
             dialog.hover_interval_spin.setValue(40)
             dialog._reset_defaults()
-            self.assertEqual(dialog.theme_combo.currentData(), "light")
+            self.assertEqual(dialog.theme_combo.currentData(), "system")
             self.assertEqual(dialog.hover_interval_spin.value(), default_viewer_settings().hover_interval_ms)
         finally:
             dialog.close()
