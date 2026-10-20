@@ -334,6 +334,7 @@ def compute_analysis_result(
     parameters: DerivedAnalysisParameters,
     context_key: tuple[object, ...],
     requested_time_plot_modules: frozenset[str] | set[str] | tuple[str, ...] | list[str] | None = None,
+    requested_modules: frozenset[str] | set[str] | tuple[str, ...] | None = None,
     base_result: DerivedAnalysisResult | None = None,
     include_wavefront: bool = True,
     progress_check: Callable[[], None] | None = None,
@@ -341,7 +342,8 @@ def compute_analysis_result(
     """Run the current first-wave derived analyses for a context snapshot."""
 
     analysis_cache = AnalysisStateCache()
-    requested_modules = normalize_time_plot_modules(requested_time_plot_modules)
+    requested_time_modules = normalize_time_plot_modules(requested_time_plot_modules)
+    requested_analysis_modules = None if requested_modules is None else frozenset(str(name) for name in requested_modules)
     with timed_block("derived.compute.full", logger=LOGGER):
         if progress_check is not None:
             progress_check()
@@ -371,7 +373,8 @@ def compute_analysis_result(
             parameters=parameters,
             snapshot_index=snapshot_index,
             geometry=geometry,
-            requested_time_plot_modules=requested_modules,
+            requested_time_plot_modules=requested_time_modules,
+            requested_modules=requested_analysis_modules,
             base_result=base_result,
             analysis_cache=analysis_cache,
             progress_check=progress_check,
@@ -469,6 +472,7 @@ def refresh_analysis_result_for_snapshot(
     parameters: DerivedAnalysisParameters,
     context_key: tuple[object, ...],
     base_result: DerivedAnalysisResult,
+    requested_modules: frozenset[str] | set[str] | tuple[str, ...] | None = None,
     progress_check: Callable[[], None] | None = None,
 ) -> DerivedAnalysisResult:
     """Refresh only snapshot-local derived products while reusing full-run traces."""
@@ -490,6 +494,7 @@ def refresh_analysis_result_for_snapshot(
             snapshot_index=snapshot_index,
             geometry=geometry,
             requested_time_plot_modules=frozenset(),
+            requested_modules=None if requested_modules is None else frozenset(str(name) for name in requested_modules),
             base_result=base_result,
             analysis_cache=analysis_cache,
             progress_check=progress_check,
@@ -542,12 +547,14 @@ def _compute_module_results(
     snapshot_index: int,
     geometry,
     requested_time_plot_modules: frozenset[str],
+    requested_modules: frozenset[str] | None,
     base_result: DerivedAnalysisResult | None,
     analysis_cache: AnalysisStateCache | None,
     progress_check: Callable[[], None] | None,
 ) -> tuple[object, object, object, object, tuple[DerivedModuleAvailability, ...]]:
     computed: dict[str, object] = {}
     availability: list[DerivedModuleAvailability] = []
+    base_availability = {} if base_result is None else {item.module: item for item in base_result.module_availability}
     for contract in _MODULE_CONTRACTS:
         if not production_feature_visible(contract.name):
             computed[contract.name] = _hidden_module_result(
@@ -558,9 +565,21 @@ def _compute_module_results(
             increment_counter(f"derived.compute.{contract.name}.hidden")
             availability.append(DerivedModuleAvailability(contract.name, False, "Module is disabled in this build."))
             continue
-        missing = contract.missing_requirements(dataset)
+        if requested_modules is not None and contract.name not in requested_modules:
+            existing = None if base_result is None else getattr(base_result, contract.name)
+            if existing is not None:
+                computed[contract.name] = existing
+                availability.append(base_availability.get(contract.name, DerivedModuleAvailability(contract.name, True)))
+                continue
+            missing = ("not loaded for the active tab",)
+        else:
+            missing = contract.missing_requirements(dataset)
         if missing:
-            reason = "Missing required inputs: " + ", ".join(missing) + "."
+            reason = (
+                "This module has not been loaded for the active tab. Open its tab to request it."
+                if missing == ("not loaded for the active tab",)
+                else "Missing required inputs: " + ", ".join(missing) + "."
+            )
             warning = DerivedWarning(contract.name, reason, severity="warning")
             if contract.name == "xrd":
                 module_result = XrdResult(

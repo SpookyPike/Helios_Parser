@@ -220,6 +220,25 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
         self.assertTrue(availability["spectroscopy"].available)
         self.assertEqual("unavailable: missing initial material density", result.shock.method)
 
+    def test_module_request_computes_only_the_requested_snapshot_analysis(self) -> None:
+        dataset, context = _synthetic_dataset()
+        dataset.field_capabilities = DerivedFieldCapabilities(
+            available_fields=("density", "velocity", "zone_width", "electron_density", "temperature_e", "temperature_i", "mean_charge")
+        )
+        result = compute_analysis_result(
+            dataset,
+            context,
+            parameters=DerivedAnalysisParameters(),
+            context_key=("requested-xrd-only",),
+            requested_time_plot_modules=frozenset(),
+            requested_modules=frozenset({"xrd"}),
+            include_wavefront=False,
+        )
+        availability = {item.module: item for item in result.module_availability}
+        self.assertTrue(availability["xrd"].available)
+        self.assertFalse(availability["spectroscopy"].available)
+        self.assertIn("not been loaded", availability["spectroscopy"].reason)
+
     def test_nrl_formula_helpers_return_dimensionally_sane_values(self) -> None:
         te_ev = 100.0
         ne_cm3 = 1.0e21

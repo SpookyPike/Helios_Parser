@@ -2124,6 +2124,12 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             return frozenset()
         return frozenset({module_name})
 
+    def requested_modules(self) -> frozenset[str]:
+        """Return the snapshot module requested by the active result tab."""
+
+        module_name = self._active_time_plot_module()
+        return frozenset() if module_name is None else frozenset({module_name})
+
     def transmission_requested(self) -> bool:
         return int(self.result_tabs.currentIndex()) == int(self.result_tabs.indexOf(self.transmission_tab))
 

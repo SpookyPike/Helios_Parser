@@ -49,6 +49,7 @@ _OPTIONAL_FIELD_DTYPES: dict[str, object] = {
     "laser_source": np.float64,
     "laser_deposition": np.float64,
 }
+OPTIONAL_DERIVED_FIELD_NAMES = frozenset(_OPTIONAL_FIELD_DTYPES)
 
 
 def validate_derived_run_shapes(dataset: DerivedRunData) -> None:
