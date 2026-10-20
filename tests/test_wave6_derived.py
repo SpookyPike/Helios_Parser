@@ -1028,10 +1028,10 @@ class Wave6DerivedTests(unittest.TestCase):
             controller._context = context.copy()
             workspace.set_context(context)
             workspace.set_result(partial)
-            core_key = controller._build_core_request_key(workspace.parameters())
-            controller._analysis_core_cache[core_key] = partial
             workspace.result_tabs.setCurrentIndex(workspace.result_tabs.indexOf(workspace.xrd_tab))
             process_events(20)
+            core_key = controller._build_core_request_key(workspace.parameters())
+            controller._analysis_core_cache[core_key] = partial
 
             original_launch = controller._launch_request
 
@@ -1144,8 +1144,8 @@ class Wave6DerivedTests(unittest.TestCase):
             controller._context = context3.copy()
             key3 = controller._build_core_request_key(parameters)
             self.assertNotEqual(key0, key3)
-            self.assertEqual(0, key0[-1])
-            self.assertEqual(3, key3[-1])
+            self.assertEqual(0, key0[-3])
+            self.assertEqual(3, key3[-3])
         finally:
             controller.shutdown()
 

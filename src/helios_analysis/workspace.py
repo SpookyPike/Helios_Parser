@@ -3186,8 +3186,13 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         if time_axis_s.size == 0:
             return None, "No preheat time axis is available for the current result."
         if self._preheat_time_mode == "manual":
-            clamped = int(np.clip(int(self._context.snapshot_index), 0, time_axis_s.size - 1))
-            note = "Manual preheat view follows the global snapshot/time selector."
+            requested = (
+                int(self._context.snapshot_index)
+                if self._preheat_manual_snapshot_index is None
+                else int(self._preheat_manual_snapshot_index)
+            )
+            clamped = int(np.clip(requested, 0, time_axis_s.size - 1))
+            note = "Manual preheat view uses the selected snapshot."
             if preheat.target_entry_time_s is not None and math.isfinite(float(preheat.target_entry_time_s)):
                 if float(time_axis_s[clamped]) >= float(preheat.target_entry_time_s):
                     note += " The selected snapshot is at or after target shock entry, so the profile shows the actual target state rather than pre-entry-only conditions."
@@ -3247,9 +3252,10 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 self.preheat_time_spin.setValue(0.0)
             manual_mode = self._preheat_time_mode == "manual"
             self.preheat_offset_combo.setEnabled(not manual_mode and preheat.latest_pre_entry_snapshot_index is not None)
-            self.preheat_snapshot_slider.setEnabled(False)
-            self.preheat_snapshot_spin.setEnabled(False)
-            self.preheat_time_spin.setEnabled(False)
+            has_time_axis = bool(time_axis_s.size)
+            self.preheat_snapshot_slider.setEnabled(manual_mode and has_time_axis)
+            self.preheat_snapshot_spin.setEnabled(manual_mode and has_time_axis)
+            self.preheat_time_spin.setEnabled(manual_mode and has_time_axis)
             self.preheat_offset_combo.setToolTip(
                 "Choose how many snapshots earlier than target shock entry to inspect."
                 if self.preheat_offset_combo.isEnabled()
@@ -3461,7 +3467,10 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
     def _on_preheat_time_mode_changed(self) -> None:
         if self._preheat_syncing_controls:
             return
+        previous_mode = self._preheat_time_mode
         self._preheat_time_mode = str(self.preheat_time_mode_combo.currentData() or "shock_relative")
+        if self._preheat_time_mode == "manual" and previous_mode != "manual":
+            self._preheat_manual_snapshot_index = int(self._context.snapshot_index)
         if self._current_result is not None:
             self._refresh_preheat_snapshot_view(self._current_result.preheat)
 
