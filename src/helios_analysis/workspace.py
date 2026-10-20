@@ -2,8 +2,9 @@
 
 The workspace is a presentation layer only. It owns controls, tables, and plots
 for the derived-analysis workflow, while the scientific calculations live in
-``helios.services.derived`` and the background orchestration lives in the
-controller.
+``helios.services.derived``. Analysis orchestration lives in the controller;
+the small Plasmon preset lookup runs in a cancellable, latest-request-wins
+workspace task so opening its defaults never reads HDF5 on the UI thread.
 """
 
 from __future__ import annotations
@@ -83,6 +84,59 @@ from helios.services.units.conversions import (
     photon_energy_kev_to_wavelength_angstrom,
     wavelength_shift_nm_to_energy_ev,
 )
+
+
+class _PresetTaskSignals(QtCore.QObject):
+    finished = QtCore.Signal(object, object)
+    failed = QtCore.Signal(object, str)
+
+
+class _PlasmonPresetTask(QtCore.QRunnable):
+    def __init__(self, request_key: tuple[object, ...], path: Path, revision, snapshot_index: int, preset: str) -> None:
+        super().__init__()
+        self.request_key = request_key
+        self.path = path
+        self.revision = revision
+        self.snapshot_index = int(snapshot_index)
+        self.preset = str(preset)
+        self.signals = _PresetTaskSignals()
+        self.setAutoDelete(True)
+
+    @QtCore.Slot()
+    def run(self) -> None:
+        try:
+            dataset = load_run_data(self.path, revision=self.revision, requested_fields=())
+            material_formulas = resolved_material_formula_map(dataset)
+            al_ids = sorted(int(material_id) for material_id, formula in material_formulas.items() if str(formula) == "Al")
+            if not al_ids:
+                raise ValueError("No Al material resolved from EOS/opacity metadata.")
+            al_material_id = al_ids[0]
+            if self.preset == PLASMON_BENCHMARK_PRESET_AL_DRIVEN_ARTICLE:
+                span = shocked_al_slab_summary(
+                    dataset,
+                    snapshot_index=self.snapshot_index,
+                    density_floor_g_cm3=3.75,
+                    material_id=al_material_id,
+                )
+                zone_lower = int(span["zone_index_lower"])
+                zone_upper = int(span["zone_index_upper"])
+                note = (
+                    f"Applied driven Al article preset at current snapshot {self.snapshot_index}. "
+                    "This preset expects the global snapshot near 6.3 ns for article-facing comparison."
+                )
+            else:
+                zone_material = np.abs(np.asarray(dataset.zone_material_index, dtype=np.int32))
+                indices = np.flatnonzero(zone_material == int(abs(al_material_id)))
+                if indices.size == 0:
+                    raise ValueError(f"No zones found for material {al_material_id}.")
+                zone_lower, zone_upper = int(indices[0] + 1), int(indices[-1] + 1)
+                note = "Applied ambient Al article preset. Use global snapshot 0 for the cold benchmark."
+            self.signals.finished.emit(
+                self.request_key,
+                {"material_id": al_material_id, "zone_lower": zone_lower, "zone_upper": zone_upper, "note": note},
+            )
+        except Exception as exc:
+            self.signals.failed.emit(self.request_key, str(exc))
 from helios_viewer.plots import CurvePlotWidget
 from helios_viewer.settings import ViewerSettings, default_viewer_settings
 from helios_viewer.slider import apply_absolute_click_slider_behavior
@@ -865,6 +919,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         super().__init__(parent)
         self._theme = LIGHT_THEME
         self._context = RunContext.empty()
+        self._preset_pool = QtCore.QThreadPool(self)
+        self._preset_pool.setMaxThreadCount(1)
+        self._preset_request_generation = 0
         self._current_result: DerivedAnalysisResult | None = None
         self._display_settings = default_viewer_settings()
         self._default_profile_coordinate_mode = "viewer_follow"
@@ -2391,20 +2448,11 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         finally:
             widget.blockSignals(False)
 
-    def _al_material_ids_for_dataset(self, dataset) -> tuple[int, ...]:
-        mapping = resolved_material_formula_map(dataset)
-        return tuple(sorted(int(material_id) for material_id, formula in mapping.items() if str(formula) == "Al"))
-
-    def _material_zone_span(self, dataset, *, material_id: int) -> tuple[int, int]:
-        zone_material = np.abs(np.asarray(dataset.zone_material_index, dtype=np.int32))
-        indices = np.flatnonzero(zone_material == int(abs(material_id)))
-        if indices.size == 0:
-            raise ValueError(f"No zones found for material {material_id}.")
-        return int(indices[0] + 1), int(indices[-1] + 1)
-
     def _apply_plasmon_benchmark_preset(self) -> None:
         preset = self._selected_plasmon_benchmark_preset()
         if preset == PLASMON_BENCHMARK_PRESET_NONE:
+            self._preset_request_generation += 1
+            self._preset_pool.clear()
             self.status_label.setText("Plasmon preset: no preset selected.")
             self.result_status_label.setText("Plasmon preset: no preset selected.")
             return
@@ -2412,41 +2460,63 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             self.status_label.setText("Plasmon preset: load a run before applying benchmark defaults.")
             self.result_status_label.setText("Plasmon preset: load a run before applying benchmark defaults.")
             return
-        try:
-            # Benchmark presets only need material/region layout and, for the
-            # driven preset, the density profile. Use the active open revision
-            # and avoid loading every optional diagnostic history just to
-            # choose zone bounds. The shared raw cache reuses arrays already
-            # loaded by the controller.
-            dataset = load_run_data(
-                Path(self._context.path),
-                revision=self._context.revision,
-                requested_fields=(),
-            )
-            al_ids = self._al_material_ids_for_dataset(dataset)
-            if not al_ids:
-                raise ValueError("No Al material resolved from EOS/opacity metadata.")
-            al_material_id = int(al_ids[0])
-            if preset == PLASMON_BENCHMARK_PRESET_AL_DRIVEN_ARTICLE:
-                span = shocked_al_slab_summary(
-                    dataset,
-                    snapshot_index=int(self._context.snapshot_index),
-                    density_floor_g_cm3=3.75,
-                    material_id=al_material_id,
-                )
-                zone_lower = int(span["zone_index_lower"])
-                zone_upper = int(span["zone_index_upper"])
-                note = (
-                    f"Applied driven Al article preset at current snapshot {int(self._context.snapshot_index)}. "
-                    "This preset expects the global snapshot near 6.3 ns for article-facing comparison."
-                )
-            else:
-                zone_lower, zone_upper = self._material_zone_span(dataset, material_id=al_material_id)
-                note = "Applied ambient Al article preset. Use global snapshot 0 for the cold benchmark."
-        except Exception as exc:
-            self.status_label.setText(f"Plasmon preset failed: {exc}")
-            self.result_status_label.setText(f"Plasmon preset failed: {exc}")
+        self._preset_request_generation += 1
+        self._preset_pool.clear()
+        request_key = (
+            int(self._preset_request_generation),
+            preset,
+            self._context.context_key,
+            int(self._context.snapshot_index),
+        )
+        task = _PlasmonPresetTask(
+            request_key,
+            Path(self._context.path),
+            self._context.revision,
+            int(self._context.snapshot_index),
+            preset,
+        )
+        task.signals.finished.connect(self._on_plasmon_preset_ready)
+        task.signals.failed.connect(self._on_plasmon_preset_failed)
+        self.status_label.setText("Preparing Plasmon benchmark defaults…")
+        self.result_status_label.setText("Preparing Plasmon benchmark defaults…")
+        self._preset_pool.start(task)
+
+    @QtCore.Slot(object, object)
+    def _on_plasmon_preset_ready(self, request_key: tuple[object, ...], result: dict[str, object]) -> None:
+        if not self._is_current_plasmon_preset_request(request_key):
             return
+        self._apply_plasmon_benchmark_preset_values(
+            str(request_key[1]),
+            int(result["material_id"]),
+            int(result["zone_lower"]),
+            int(result["zone_upper"]),
+            str(result["note"]),
+        )
+
+    @QtCore.Slot(object, str)
+    def _on_plasmon_preset_failed(self, request_key: tuple[object, ...], message: str) -> None:
+        if not self._is_current_plasmon_preset_request(request_key):
+            return
+        self.status_label.setText(f"Plasmon preset failed: {message}")
+        self.result_status_label.setText(f"Plasmon preset failed: {message}")
+
+    def _is_current_plasmon_preset_request(self, request_key: tuple[object, ...]) -> bool:
+        return (
+            len(request_key) == 4
+            and int(request_key[0]) == int(self._preset_request_generation)
+            and str(request_key[1]) == self._selected_plasmon_benchmark_preset()
+            and request_key[2] == self._context.context_key
+            and int(request_key[3]) == int(self._context.snapshot_index)
+        )
+
+    def _apply_plasmon_benchmark_preset_values(
+        self,
+        preset: str,
+        al_material_id: int,
+        zone_lower: int,
+        zone_upper: int,
+        note: str,
+    ) -> None:
 
         self.plasmon_benchmark_preset_combo.blockSignals(True)
         self.plasmon_model_combo.blockSignals(True)
@@ -4171,9 +4241,15 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
     def set_context(self, context: RunContext) -> None:
         previous_context = self._context
         previous_context_key = previous_context.context_key if previous_context.has_run else None
+        previous_snapshot = int(previous_context.snapshot_index)
         self._context = context.copy()
         current_context_key = self._context.context_key if self._context.has_run else None
         run_changed = previous_context_key != current_context_key
+        if run_changed or previous_snapshot != int(self._context.snapshot_index):
+            self._preset_request_generation += 1
+            if self.status_label.text().startswith("Preparing Plasmon benchmark defaults"):
+                self.status_label.setText("Plasmon preset request superseded by a run or snapshot change.")
+                self.result_status_label.setText("Plasmon preset request superseded by a run or snapshot change.")
         if not self._context.has_run or self._context.path is None:
             self._reset_preheat_navigation_state()
             self._sync_context_summary()
@@ -4236,6 +4312,12 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 f"Snapshot {self._context.snapshot_index} @ {self._format_time(snapshot_time)} ready."
             )
         self._update_snapshot_markers(snapshot_time)
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        self._preset_request_generation += 1
+        self._preset_pool.clear()
+        self._preset_pool.waitForDone(5000)
+        super().closeEvent(event)
 
     def set_busy(self, busy: bool, message: str) -> None:
         self.refresh_button.setEnabled(not busy)
