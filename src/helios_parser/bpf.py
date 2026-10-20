@@ -131,6 +131,7 @@ BPF_FIXED_RECORD_SPECS: tuple[BpfRecordSpec, ...] = (
 DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
     "zone_center_cm": {
         "unit": "cm",
+        "quantity": "length",
         "label": "Zone center position",
         "axes": ("zone",),
         "status": "derived",
@@ -138,6 +139,7 @@ DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
     },
     "zone_width_cm": {
         "unit": "cm",
+        "quantity": "length",
         "label": "Zone width",
         "axes": ("zone",),
         "status": "derived",
@@ -145,6 +147,7 @@ DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
     },
     "fluid_velocity_cm_s": {
         "unit": "cm/s",
+        "quantity": "velocity",
         "label": "Fluid velocity",
         "axes": ("zone",),
         "status": "derived",
@@ -152,6 +155,7 @@ DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
     },
     "zone_outer_velocity_cm_s": {
         "unit": "cm/s",
+        "quantity": "velocity",
         "label": "Zone outer interface velocity",
         "axes": ("zone",),
         "status": "derived",
@@ -197,6 +201,7 @@ DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
     },
     "radiation_energy_j_g": {
         "unit": "J/g",
+        "quantity": "specific_energy",
         "label": "Radiation energy",
         "axes": ("zone",),
         "status": "validated",
@@ -212,6 +217,7 @@ DERIVED_BPF_FIELD_METADATA: dict[str, dict[str, Any]] = {
     },
     "laser_source_j_g": {
         "unit": "J/g",
+        "quantity": "cumulative_specific_energy",
         "label": "Laser source",
         "axes": ("zone",),
         "status": "derived",
@@ -274,13 +280,30 @@ LOG_COMPATIBLE_BPF_ALIASES: dict[str, str] = {
 
 
 _SPEC_BY_KEY = {spec.key: spec for spec in BPF_FIXED_RECORD_SPECS}
+BPF_QUANTITY_BY_KEY = {
+    "node_position_cm": "length",
+    "ion_temperature_eV": "temperature",
+    "radiation_temperature_eV": "temperature",
+    "mass_density_g_cm3": "density",
+    "ion_pressure_j_cm3": "pressure",
+    "radiation_cooling_j_g_s": "rate",
+    "radiation_heating_j_g_s": "rate",
+    "ion_energy_j_g": "specific_energy",
+    "interface_velocity_cm_s": "velocity",
+    "laser_deposition_j_g_s": "rate",
+    "artificial_viscosity_j_cm3": "pressure",
+    "ion_density_cm3": "number_density",
+    "electron_temperature_eV": "temperature",
+    "electron_pressure_j_cm3": "pressure",
+    "electron_density_cm3": "number_density",
+}
 _DTYPES = {"f64": np.dtype("<f8"), "i32": np.dtype("<i4")}
 
 
 def field_metadata_for_bpf_key(key: str) -> dict[str, Any]:
     spec = _SPEC_BY_KEY.get(key)
     if spec is not None:
-        return {
+        metadata = {
             "field_name": spec.key,
             "source": "bpf",
             "dimensions": ("time",) + spec.axes,
@@ -289,6 +312,10 @@ def field_metadata_for_bpf_key(key: str) -> dict[str, Any]:
             "status": spec.status,
             "description": spec.description,
         }
+        quantity = BPF_QUANTITY_BY_KEY.get(spec.key)
+        if quantity is not None:
+            metadata["quantity"] = quantity
+        return metadata
     metadata = dict(DERIVED_BPF_FIELD_METADATA.get(key, {}))
     if metadata:
         metadata.setdefault("field_name", key)

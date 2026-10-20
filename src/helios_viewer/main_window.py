@@ -1170,10 +1170,15 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         return float(value) / scale
 
     def _display_field_data(self, field_name: str, unit: str, data: np.ndarray) -> tuple[np.ndarray, str]:
+        metadata = self._metadata_for_field(field_name)
+        quantity = str(metadata.get("quantity", "") or "")
+        alias_of = str(metadata.get("alias_of", "") or "")
         cache = self.cache_layers.view_cache.bucket("display_field", max_items=8)
         key = (
             field_name,
             unit,
+            quantity,
+            alias_of,
             id(data),
             self._viewer_settings.time_unit,
             self._viewer_settings.length_unit,
@@ -1191,14 +1196,22 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             self._display_field_cache_key = key
             self._display_field_cache_value = cached
             return cached
-        converted, display_unit = convert_field_values(field_name, data, unit, self._display_units())
+        converted, display_unit = convert_field_values(
+            field_name, data, unit, self._display_units(),
+            quantity=quantity or None, alias_of=alias_of or None,
+        )
         self._display_field_cache_key = key
         self._display_field_cache_value = (np.asarray(converted, dtype=np.float64), display_unit)
         cache[key] = self._display_field_cache_value
         return self._display_field_cache_value
 
     def _display_field_unit(self, field_name: str, native_unit: str) -> str:
-        return display_unit_for_field(field_name, native_unit, self._display_units())
+        metadata = self._metadata_for_field(field_name)
+        return display_unit_for_field(
+            field_name, native_unit, self._display_units(),
+            quantity=str(metadata.get("quantity", "") or "") or None,
+            alias_of=str(metadata.get("alias_of", "") or "") or None,
+        )
 
     def _display_radius_bundle(self) -> tuple[np.ndarray, str] | None:
         if self.radius_payload is None:
