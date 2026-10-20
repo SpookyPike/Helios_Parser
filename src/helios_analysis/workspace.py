@@ -906,6 +906,39 @@ class DerivedPlotPanel(QtWidgets.QWidget):
             self.time_plot.clear_cursor_marker()
 
 
+class _ScrollableResultTabs(QtWidgets.QTabWidget):
+    """Scrollable pages that retain the original page-facing tab API."""
+
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._page_wrappers: dict[QtWidgets.QWidget, QtWidgets.QScrollArea] = {}
+
+    def add_scrollable_page(self, page: QtWidgets.QWidget, title: str) -> int:
+        scroll_area = QtWidgets.QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setWidget(page)
+        self._page_wrappers[page] = scroll_area
+        return super().addTab(scroll_area, title)
+
+    def indexOf(self, widget: QtWidgets.QWidget) -> int:  # noqa: N802
+        return super().indexOf(self._page_wrappers.get(widget, widget))
+
+    def setCurrentWidget(self, widget: QtWidgets.QWidget) -> None:  # noqa: N802
+        super().setCurrentWidget(self._page_wrappers.get(widget, widget))
+
+    def currentWidget(self) -> QtWidgets.QWidget | None:  # noqa: N802
+        current = super().currentWidget()
+        if current is None:
+            return None
+        return next(
+            (page for page, wrapper in self._page_wrappers.items() if wrapper is current),
+            current,
+        )
+
+
 class HeliosDerivedWorkspace(QtWidgets.QWidget):
     """Derived / Analysis results workspace for the unified shell."""
 
@@ -1548,7 +1581,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.performance_summary_label.setWordWrap(True)
         results_layout.addWidget(self.performance_summary_label)
 
-        self.result_tabs = QtWidgets.QTabWidget()
+        self.result_tabs = _ScrollableResultTabs()
         self.result_tabs.currentChanged.connect(self._handle_result_tab_changed)
         results_layout.addWidget(self.result_tabs, 1)
 
@@ -1606,7 +1639,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.shock_interface_table.horizontalHeader().setStretchLastSection(True)
         self.shock_interface_table.verticalHeader().setVisible(False)
         shock_layout.addWidget(self.shock_interface_table)
-        self.result_tabs.addTab(self.shock_tab, "Shock")
+        self._add_scrollable_result_tab(self.shock_tab, "Shock")
 
         self.wavefront_tab = QtWidgets.QWidget()
         wavefront_layout = QtWidgets.QVBoxLayout(self.wavefront_tab)
@@ -1745,7 +1778,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.wavefront_scope_combo.currentIndexChanged.connect(self._refresh_wavefront_view)
         self.wavefront_direction_combo.currentIndexChanged.connect(self._refresh_wavefront_view)
 
-        self.result_tabs.addTab(self.wavefront_tab, "WaveFront")
+        self._add_scrollable_result_tab(self.wavefront_tab, "WaveFront")
 
         self.preheat_tab = QtWidgets.QWidget()
         preheat_layout = QtWidgets.QVBoxLayout(self.preheat_tab)
@@ -1888,7 +1921,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.preheat_snapshot_slider.valueChanged.connect(self._on_preheat_snapshot_slider_changed)
         self.preheat_snapshot_spin.valueChanged.connect(self._on_preheat_snapshot_spin_changed)
         self.preheat_time_spin.valueChanged.connect(self._on_preheat_time_spin_changed)
-        self.result_tabs.addTab(self.preheat_tab, "Preheat")
+        self._add_scrollable_result_tab(self.preheat_tab, "Preheat")
 
         self.xrd_tab = QtWidgets.QWidget()
         xrd_layout = QtWidgets.QVBoxLayout(self.xrd_tab)
@@ -1905,7 +1938,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.xrd_table.horizontalHeader().setStretchLastSection(True)
         self.xrd_table.verticalHeader().setVisible(False)
         xrd_layout.addWidget(self.xrd_table)
-        self._module_tab_names[self.result_tabs.addTab(self.xrd_tab, "XRD")] = "xrd"
+        self._module_tab_names[self._add_scrollable_result_tab(self.xrd_tab, "XRD")] = "xrd"
 
         self.plasmon_tab = QtWidgets.QWidget()
         plasmon_layout = QtWidgets.QVBoxLayout(self.plasmon_tab)
@@ -1948,7 +1981,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         plasmon_layout.addWidget(self.plasmon_splitter, 1)
         self._sync_plasmon_plot_capabilities()
         if production_feature_visible("plasmon"):
-            self._module_tab_names[self.result_tabs.addTab(self.plasmon_tab, "Plasmon")] = "plasmon"
+            self._module_tab_names[
+                self._add_scrollable_result_tab(self.plasmon_tab, "Plasmon")
+            ] = "plasmon"
 
         self.transmission_tab = QtWidgets.QWidget()
         transmission_layout = QtWidgets.QVBoxLayout(self.transmission_tab)
@@ -2032,7 +2067,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.transmission_table.verticalHeader().setVisible(False)
         transmission_layout.addWidget(self.transmission_table)
         if production_feature_visible("transmission"):
-            self._module_tab_names[self.result_tabs.addTab(self.transmission_tab, "Transmission")] = "transmission"
+            self._module_tab_names[
+                self._add_scrollable_result_tab(self.transmission_tab, "Transmission")
+            ] = "transmission"
         self._configure_transmission_energy_spin(energy_kev=8.0)
         self._on_transmission_controls_changed()
 
@@ -2049,7 +2086,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         spectroscopy_layout.addWidget(self.spectroscopy_metrics)
         self.spectroscopy_plot_panel = DerivedPlotPanel()
         spectroscopy_layout.addWidget(self.spectroscopy_plot_panel, 1)
-        self._module_tab_names[self.result_tabs.addTab(self.spectroscopy_tab, "Spectroscopy")] = "spectroscopy"
+        self._module_tab_names[
+            self._add_scrollable_result_tab(self.spectroscopy_tab, "Spectroscopy")
+        ] = "spectroscopy"
 
         self.warnings_tab = QtWidgets.QWidget()
         warnings_layout = QtWidgets.QVBoxLayout(self.warnings_tab)
@@ -2059,7 +2098,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.warnings_tree.setHeaderLabels(["Severity / Module", "Message"])
         self.warnings_tree.header().setStretchLastSection(True)
         warnings_layout.addWidget(self.warnings_tree, 1)
-        self.result_tabs.addTab(self.warnings_tab, "Warnings")
+        self._add_scrollable_result_tab(self.warnings_tab, "Warnings")
 
         splitter.addWidget(controls_scroll)
         splitter.addWidget(results)
@@ -2086,6 +2125,10 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         ):
             self._configure_readonly_text_panel(text_panel)
         self._install_wheel_guard()
+
+    def _add_scrollable_result_tab(self, page: QtWidgets.QWidget, title: str) -> int:
+        """Keep tall result pages usable in short desktop windows."""
+        return self.result_tabs.add_scrollable_page(page, title)
 
     def _checked_values(self, widget: QtWidgets.QListWidget) -> tuple[int, ...]:
         values: list[int] = []
