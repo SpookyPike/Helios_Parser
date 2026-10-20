@@ -19,6 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import importlib
+from importlib import resources
 import json
 import math
 import os
@@ -118,8 +119,10 @@ def _source_archive_path() -> Path:
     return _repo_root() / "XCOM.tar.gz"
 
 
-def _fallback_table_path() -> Path:
-    return _repo_root() / "x-com_fallback" / "xcom_fallback_1keV_12keV_extended.json"
+def _fallback_table_resource() -> Any:
+    return resources.files("helios.services.derived").joinpath(
+        "resources", "xcom_fallback_1keV_12keV_extended.json"
+    )
 
 
 def _app_data_root() -> Path:
@@ -577,8 +580,8 @@ def _load_fallback_table() -> dict[str, object]:
         cached = _FALLBACK_TABLE_CACHE
         if cached is not None:
             return cached
-        path = _fallback_table_path()
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        resource = _fallback_table_resource()
+        payload = json.loads(resource.read_text(encoding="utf-8"))
         _FALLBACK_TABLE_CACHE = payload
         return payload
 
@@ -606,14 +609,15 @@ def _fallback_table_vectors(table_key: str, quantity: str) -> tuple[np.ndarray, 
 
 
 def fallback_table_available() -> bool:
-    return _fallback_table_path().exists()
+    return _fallback_table_resource().is_file()
 
 
 def _fallback_table_fingerprint() -> str | None:
-    path = _fallback_table_path()
-    if not path.exists():
+    resource = _fallback_table_resource()
+    if not resource.is_file():
         return None
-    return f"precomputed_xcom_table:{_archive_fingerprint(path)}"
+    digest = hashlib.sha256(resource.read_bytes()).hexdigest()
+    return f"precomputed_xcom_table:{digest}"
 
 
 def _normalized_material_key_token(label: str | None) -> str:

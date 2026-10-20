@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 import json
 import math
+from importlib import resources
 from pathlib import Path
 import re
 from typing import Any
@@ -227,21 +228,18 @@ def _stem_token(value: object) -> str:
     return _normalized_token(Path(text).stem)
 
 
-def _baseline_table_path() -> Path | None:
-    current = Path(__file__).resolve()
-    for parent in (current.parent, *current.parents):
-        candidate = parent / _BASELINE_JSON_NAME
-        if candidate.is_file():
-            return candidate
-    return None
+def _baseline_table_resource() -> Any:
+    return resources.files("helios.services.derived").joinpath(
+        "resources", _BASELINE_JSON_NAME
+    )
 
 
 @lru_cache(maxsize=1)
 def _baseline_table_bundle() -> tuple[dict[str, Any], str]:
-    path = _baseline_table_path()
-    if path is None:
+    resource = _baseline_table_resource()
+    if not resource.is_file():
         return {}, f"{_BASELINE_JSON_NAME} (missing)"
-    return json.loads(path.read_text(encoding="utf-8")), str(path)
+    return json.loads(resource.read_text(encoding="utf-8")), str(resource)
 
 
 def _baseline_table_source() -> str:
