@@ -50,6 +50,39 @@ _OPTIONAL_FIELD_DTYPES: dict[str, object] = {
     "laser_deposition": np.float64,
 }
 
+
+def validate_derived_run_shapes(dataset: DerivedRunData) -> None:
+    """Reject inconsistent shared grids before any analysis indexes them."""
+
+    n_snapshots = int(np.asarray(dataset.time_s).size)
+    n_zones = int(dataset.summary.get("n_zones", np.asarray(dataset.static_x_cm).size))
+    expected = (n_snapshots, n_zones)
+    for name in (
+        "zone_width_cm",
+        "density_g_cm3",
+        "velocity_cm_s",
+        "temperature_e_ev",
+        "temperature_i_ev",
+        "electron_density_cm3",
+        "mean_charge",
+    ):
+        values = getattr(dataset, name)
+        if values is None or np.asarray(values).shape != expected:
+            actual = None if values is None else np.asarray(values).shape
+            raise ValueError(f"Derived run field {name} has shape {actual}; expected {expected}.")
+    for name, values, expected_shape in (
+        ("static_x_cm", dataset.static_x_cm, (n_zones,)),
+        ("static_x_edge_cm", dataset.static_x_edge_cm, (n_zones + 1,)),
+        ("zone_region_id", dataset.zone_region_id, (n_zones,)),
+        ("zone_material_index", dataset.zone_material_index, (n_zones,)),
+    ):
+        if np.asarray(values).shape != expected_shape:
+            raise ValueError(f"Derived run grid {name} has shape {np.asarray(values).shape}; expected {expected_shape}.")
+    for name in _OPTIONAL_FIELD_ATTRS.values():
+        values = getattr(dataset, name, None)
+        if values is not None and np.asarray(values).shape != expected:
+            raise ValueError(f"Optional derived field {name} has shape {np.asarray(values).shape}; expected {expected}.")
+
 _OPTIONAL_FIELD_ATTRS: dict[str, str] = {
     "temperature_radiation": "temperature_radiation_ev",
     "pressure_i": "pressure_i_j_cm3",

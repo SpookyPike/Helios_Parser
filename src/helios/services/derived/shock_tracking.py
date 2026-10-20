@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Callable
 import numpy as np
 
 from helios.runtime import RunContext
+from helios.services.derived.common import validate_derived_run_shapes
 from helios.services.derived.models import (
     AnalysisGeometryMetadata,
     DerivedRunData,
@@ -2120,6 +2121,8 @@ def track_shock_front(
     progress_check: Callable[[], None] | None = None,
 ) -> ShockTrackingResult:
     """Track the primary shock front through time using continuity constraints."""
+
+    validate_derived_run_shapes(dataset)
 
     if parameters is None:
         from helios.services.derived.analysis import DerivedAnalysisParameters as _DerivedAnalysisParameters

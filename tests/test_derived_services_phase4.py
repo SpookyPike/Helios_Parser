@@ -152,6 +152,12 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
         self.assertTrue(np.all(np.isnan(result.position_cm)))
         self.assertIn("initial material density is missing", result.warnings[0].message)
 
+    def test_shock_tracker_rejects_inconsistent_shared_field_shapes_clearly(self) -> None:
+        dataset, context = _synthetic_dataset()
+        dataset.velocity_cm_s = dataset.velocity_cm_s[:, :-1]
+        with self.assertRaisesRegex(ValueError, r"velocity_cm_s has shape .* expected \(5, 10\)"):
+            track_shock_front(dataset, context)
+
     def test_missing_material_properties_produce_module_availability_instead_of_key_error(self) -> None:
         dataset, context = _synthetic_dataset()
         dataset.zone_atomic_weight = None
