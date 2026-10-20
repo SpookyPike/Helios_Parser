@@ -893,7 +893,13 @@ def evaluate_preheat(
     internal_coverage = min(electron_coverage, ion_coverage, radiation_energy_coverage)
 
     accounted_laser = laser_dep_budget if laser_dep_budget is not None else laser_source_budget
-    residual_budget = None if observed_internal_delta is None else observed_internal_delta - float((accounted_laser or 0.0) + (radiation_budget or 0.0))
+    accounted_laser_coverage = laser_dep_coverage if laser_dep_budget is not None else laser_source_coverage
+    residual_available = observed_internal_delta is not None and accounted_laser is not None and radiation_budget is not None
+    residual_budget = (
+        observed_internal_delta - float(accounted_laser + radiation_budget)
+        if residual_available
+        else None
+    )
     contributor_strength = {
         "laser deposition": abs(float(accounted_laser)) if accounted_laser is not None else -1.0,
         "net radiation heating": abs(float(radiation_budget)) if radiation_budget is not None else -1.0,
@@ -985,8 +991,15 @@ def evaluate_preheat(
             integrated_value=_finite_or_none(residual_budget),
             fraction_of_observed=(None if observed_reference in (None, 0.0) or residual_budget is None else float(residual_budget / observed_reference)),
             available=residual_budget is not None,
+            coverage_fraction=(
+                min(float(internal_coverage), float(accounted_laser_coverage), float(radiation_coverage))
+                if residual_budget is not None
+                and accounted_laser_coverage is not None
+                and radiation_coverage is not None
+                else None
+            ),
             notes=(
-                "Residual captures pdV work, advection, conduction-like effects, and any model components not separately exposed in the stored fields.",
+                "Residual requires measured laser and net-radiation budgets; absent channels make it unavailable. When available, it captures pdV work, advection, conduction-like effects, and other model components not separately exposed in the stored fields.",
             ),
         ),
     )
