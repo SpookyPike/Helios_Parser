@@ -68,9 +68,11 @@ def lookup_mu_rho(
     energy_eV: float,
     quantity: Quantity = "mu_rho_total_cm2_g",
     *,
-    allow_extrapolation: bool = True,
+    allow_extrapolation: bool = False,
     path: str | Path = TABLE_PATH,
 ) -> float:
+    if not math.isfinite(energy_eV) or energy_eV <= 0:
+        raise ValueError("energy must be finite and positive")
     table = load_table(path)
     key = canonical_material_key(material, path=path)
     data = table["materials"][key]["rows"]
@@ -96,7 +98,7 @@ def transmission_from_areal_density(
     areal_density_g_cm2: float,
     quantity: Quantity = "mu_rho_total_cm2_g",
     *,
-    allow_extrapolation: bool = True,
+    allow_extrapolation: bool = False,
     path: str | Path = TABLE_PATH,
 ) -> float:
     mu_rho = lookup_mu_rho(material, energy_eV, quantity, allow_extrapolation=allow_extrapolation, path=path)
@@ -111,7 +113,7 @@ def transmission_from_density_and_thickness(
     thickness_um: float,
     quantity: Quantity = "mu_rho_total_cm2_g",
     *,
-    allow_extrapolation: bool = True,
+    allow_extrapolation: bool = False,
     path: str | Path = TABLE_PATH,
 ) -> float:
     areal_density_g_cm2 = density_g_cm3 * thickness_um * 1.0e-4

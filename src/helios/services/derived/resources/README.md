@@ -15,3 +15,10 @@ regeneration cannot silently leave the shipped data stale.
 The XCOM lookup intentionally keeps the tabulated order and repeated energy
 rows. Exact-energy lookup selects the first matching row; energy-edge handling
 must preserve that convention.
+
+The v1.2.1 XCOM table uses binary64 calculations, adaptive log-log sampling, and
+explicit below/above-edge pairs over 1–12 keV. Exact-edge queries retain the first
+(below-edge) row convention. Extrapolation is disabled by default. The table
+metadata records archive and patched-source hashes, compiler flags, and native
+holdout errors. These quantify numerical interpolation, not physical accuracy.
+See `docs/xcom-tables.md` in the source tree for regeneration instructions.

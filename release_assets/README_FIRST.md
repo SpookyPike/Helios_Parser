@@ -1,4 +1,4 @@
-# HELIOS Parse / View 1.2.0
+# HELIOS Parse / View 1.2.1
 
 Code developed by Dmitrii Bespalov at European XFEL.
 Release date: 2026-10-20.
