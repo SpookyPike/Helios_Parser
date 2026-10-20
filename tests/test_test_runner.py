@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -137,6 +138,38 @@ class TestSuiteRunnerTests(unittest.TestCase):
         self.assertTrue(result["timed_out"])
         self.assertEqual(result["return_code"], 124)
         self.assertIn("TIMEOUT", log)
+
+    def test_runner_timeout_terminates_wrapper_descendants_before_continuing(self) -> None:
+        original = run_test_suite.TIMEOUT_OVERRIDES.get("wrapper-child.py")
+        run_test_suite.TIMEOUT_OVERRIDES["wrapper-child.py"] = 0.1
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                report = root / "reports"
+                report.mkdir()
+                marker = root / "late-child-write.txt"
+                child_code = f"import time; time.sleep(0.4); open({str(marker)!r}, 'w').write('late')"
+                wrapper_code = (
+                    "import subprocess, sys; "
+                    f"child = subprocess.Popen([sys.executable, '-c', {child_code!r}]); child.wait()"
+                )
+                wrapper = run_test_suite.TestEntry(
+                    "wrapper-child.py", (sys.executable, "-c", wrapper_code), "test"
+                )
+                result = run_test_suite.run_entry(wrapper, report, root=root)
+                next_entry = run_test_suite.TestEntry(
+                    "after-timeout.py", (sys.executable, "-c", "print('next entry ran')"), "test"
+                )
+                next_result = run_test_suite.run_entry(next_entry, report, root=root)
+                time.sleep(0.5)
+                self.assertTrue(result["timed_out"])
+                self.assertFalse(marker.exists(), "descendant wrote after timeout cleanup")
+                self.assertEqual(0, next_result["return_code"])
+        finally:
+            if original is None:
+                run_test_suite.TIMEOUT_OVERRIDES.pop("wrapper-child.py", None)
+            else:
+                run_test_suite.TIMEOUT_OVERRIDES["wrapper-child.py"] = original
 
 
 if __name__ == "__main__":

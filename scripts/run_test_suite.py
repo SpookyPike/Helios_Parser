@@ -9,6 +9,7 @@ import os
 import platform
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -251,26 +252,60 @@ def run_entry(entry: TestEntry, report_dir: Path, root: Path = ROOT) -> dict[str
         command = list(entry.command)
         if command[0] == sys.executable:
             command[0] = sys.executable
+        popen_options: dict[str, Any] = {}
+        if os.name == "posix":
+            popen_options["start_new_session"] = True
+        elif os.name == "nt":
+            popen_options["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+        process = subprocess.Popen(
+            command,
+            cwd=root,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            errors="replace",
+            **popen_options,
+        )
         try:
-            completed = subprocess.run(
-                command,
-                cwd=root,
-                env=env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                errors="replace",
-                timeout=timeout,
-            )
-            output = completed.stdout
-            returncode = completed.returncode
+            output, _ = process.communicate(timeout=timeout)
+            returncode = process.returncode
         except subprocess.TimeoutExpired as exc:
             timed_out = True
-            output = exc.stdout or ""
-            if isinstance(output, bytes):
-                output = output.decode(errors="replace")
+            partial_output = exc.output or ""
+            if isinstance(partial_output, bytes):
+                partial_output = partial_output.decode(errors="replace")
+            if os.name == "posix":
+                try:
+                    os.killpg(process.pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+                try:
+                    tail, _ = process.communicate(timeout=1.0)
+                except subprocess.TimeoutExpired:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    tail, _ = process.communicate()
+            elif os.name == "nt":
+                subprocess.run(
+                    ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    check=False,
+                )
+                tail, _ = process.communicate()
+            else:
+                process.kill()
+                tail, _ = process.communicate()
+            if isinstance(tail, bytes):
+                tail = tail.decode(errors="replace")
+            output = partial_output
+            if tail and tail not in output:
+                output += tail
             returncode = 124
-            output += f"\nTIMEOUT after {timeout} seconds\n"
+            output += f"\nTIMEOUT after {timeout} seconds; terminated process tree\n"
         elapsed = time.perf_counter() - started
     log_path.write_text(output, encoding="utf-8")
     match = SKIP_PATTERN.search(output)
