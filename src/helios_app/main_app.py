@@ -347,9 +347,14 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QHBoxLayout(widget)
         layout.setContentsMargins(10, 8, 10, 8)
         layout.setSpacing(8)
-        layout.addWidget(QtWidgets.QLabel("Active snapshot"))
+        snapshot_label = QtWidgets.QLabel("Active snapshot")
+        layout.addWidget(snapshot_label)
 
         self.global_snapshot_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.global_snapshot_slider.setAccessibleName("Active snapshot")
+        self.global_snapshot_slider.setAccessibleDescription(
+            "Choose the snapshot displayed by the active run."
+        )
         self.global_snapshot_slider.setMinimumHeight(24)
         apply_absolute_click_slider_behavior(self.global_snapshot_slider)
         self.global_snapshot_slider.setTracking(False)
@@ -360,12 +365,20 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.global_snapshot_slider, 1)
 
         self.global_snapshot_spin = QtWidgets.QSpinBox()
+        self.global_snapshot_spin.setAccessibleName("Snapshot index")
+        self.global_snapshot_spin.setAccessibleDescription(
+            "Select the zero-based snapshot index for the active run."
+        )
         self.global_snapshot_spin.setMinimumHeight(24)
         self.global_snapshot_spin.setKeyboardTracking(False)
         self.global_snapshot_spin.valueChanged.connect(self._on_global_snapshot_spin_changed)
         layout.addWidget(self.global_snapshot_spin)
 
         self.global_time_spin = QtWidgets.QDoubleSpinBox()
+        self.global_time_spin.setAccessibleName("Snapshot time")
+        self.global_time_spin.setAccessibleDescription(
+            "Select the active snapshot by simulation time."
+        )
         self.global_time_spin.setMinimumHeight(24)
         self.global_time_spin.setDecimals(6)
         self.global_time_spin.setRange(-1.0e18, 1.0e18)
@@ -375,6 +388,7 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.global_time_spin)
 
         self.jump_breakout_button = QtWidgets.QPushButton("Jump breakout")
+        self.jump_breakout_button.setAccessibleName("Jump to breakout snapshot")
         set_button_icon(self.jump_breakout_button, "jump")
         self.jump_breakout_button.clicked.connect(self._jump_to_breakout_snapshot)
         self.jump_breakout_button.setEnabled(False)
@@ -382,6 +396,7 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.jump_breakout_button)
 
         self.global_snapshot_label = QtWidgets.QLabel("No active run")
+        self.global_snapshot_label.setAccessibleName("Active snapshot details")
         layout.addWidget(self.global_snapshot_label)
         self.global_snapshot_widget = widget
         self._set_global_snapshot_controls_visible(False)
