@@ -159,6 +159,16 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"velocity_cm_s has shape .* expected \(5, 10\)"):
             track_shock_front(dataset, context)
 
+    def test_duplicate_time_snapshots_keep_positions_but_gate_velocity(self) -> None:
+        dataset, context = _synthetic_dataset()
+        dataset.time_s[2] = dataset.time_s[1]
+        context.time_values[2] = context.time_values[1]
+        result = track_shock_front(dataset, context)
+        self.assertTrue(np.isfinite(result.position_cm[1]))
+        self.assertTrue(np.isfinite(result.position_cm[2]))
+        self.assertTrue(np.isnan(result.velocity_cm_s[1]))
+        self.assertTrue(np.isnan(result.velocity_cm_s[2]))
+
     def test_unreachable_bragg_angle_is_reported_and_not_clamped(self) -> None:
         dataset, context = _synthetic_dataset()
         geometry = build_analysis_geometry(

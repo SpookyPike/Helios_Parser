@@ -16,6 +16,7 @@ import _test_bootstrap  # noqa: F401
 from helios_parser import HeliosRun, write_hdf5
 from helios_parser.bpf import BpfFile
 from helios_parser.parser import HeliosParser
+from helios.services.derived.common import load_run_data
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -182,7 +183,6 @@ class BpfPipelineTests(unittest.TestCase):
                 self.assertIn("plasma_pressure_j_cm3", fields)
                 self.assertIn("total_pressure_j_cm3", fields)
                 self.assertIn("laser_source_bpf_sampled_j_g", fields)
-
                 plasma = run.get_field("pressure_j_cm3")
                 explicit_plasma = run.get_field("plasma_pressure_j_cm3")
                 total = run.get_field("total_pressure_j_cm3")
@@ -236,6 +236,9 @@ class BpfPipelineTests(unittest.TestCase):
 
                 ion = run.get_field("ionization_fractions_by_zone_charge")
                 np.testing.assert_allclose(ion.sum(axis=2), 1.0, rtol=1.0e-6, atol=1.0e-8)
+            derived = load_run_data(output)
+            self.assertIsNone(derived.zone_atomic_weight)
+            self.assertEqual(8, derived.time_s.size)
 
     def test_bpf_primary_log_input_cross_validates_overlapping_log_fields(self) -> None:
         log_simulation = HeliosParser().parse(LOG_BPF_SAMPLE)
