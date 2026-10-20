@@ -7,6 +7,7 @@ from typing import Any
 
 import h5py
 import numpy as np
+from unittest.mock import patch
 
 import _test_bootstrap  # noqa: F401
 from helios_parser import HeliosRun
@@ -36,6 +37,27 @@ class _FakeDataset:
 
 
 class ReaderTests(unittest.TestCase):
+    def test_field_metadata_is_loaded_per_field_then_completed_on_inventory(self) -> None:
+        path = HDF5_ROOT / "5Fe+4.9TW+light_stabilized.h5"
+        with HeliosRun(path) as run:
+            original = run._metadata_from_attrs
+            parsed: list[str] = []
+
+            def count_parse(name: str, dataset):
+                parsed.append(name)
+                return original(name, dataset)
+
+            with patch.object(run, "_metadata_from_attrs", side_effect=count_parse):
+                first = run.get_field_metadata("density")
+                self.assertEqual(first.name, "density")
+                self.assertEqual(parsed, ["density"])
+                run.get_field_metadata("density")
+                self.assertEqual(parsed, ["density"])
+                inventory = run.list_field_metadata()
+                self.assertEqual(set(inventory), set(run.list_fields()))
+                self.assertEqual(len(parsed), len(run.list_fields()))
+                self.assertEqual(len(set(parsed)), len(parsed))
+
     def test_summary_field_access_and_diagnostics(self) -> None:
         for name, expected in EXPECTED.items():
             with self.subTest(example=name):

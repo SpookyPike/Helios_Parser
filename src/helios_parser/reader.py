@@ -154,7 +154,10 @@ class HeliosRun:
         self._zone_region_ids: np.ndarray | None = None
         self._zone_material_ids: np.ndarray | None = None
         self._field_names = self._load_field_names()
-        self._field_metadata_cache: dict[str, FieldMetadata] | None = None
+        # Populate this per field. A single-field viewer request should not
+        # walk every field's HDF5 attributes; list_field_metadata() remains
+        # the explicit operation that fills the full inventory.
+        self._field_metadata_cache: dict[str, FieldMetadata] = {}
 
     def _index_diagnostics(self, group: h5py.Group) -> dict[str, h5py.Dataset]:
         datasets: dict[str, h5py.Dataset] = {}
@@ -209,12 +212,14 @@ class HeliosRun:
             quantity=str(attr_source.get("quantity", "") or ""),
         )
 
-    def _load_field_metadata(self) -> dict[str, FieldMetadata]:
-        if getattr(self, "_field_metadata_cache", None) is None:
-            self._field_metadata_cache = {
-                name: self._metadata_from_attrs(name, dataset)
-                for name, dataset in self._field_datasets.items()
-            }
+    def _load_field_metadata(self, name: str | None = None) -> dict[str, FieldMetadata]:
+        if name is None:
+            for field_name, dataset in self._field_datasets.items():
+                if field_name not in self._field_metadata_cache:
+                    self._field_metadata_cache[field_name] = self._metadata_from_attrs(field_name, dataset)
+        elif name not in self._field_metadata_cache:
+            dataset = self._get_field_dataset(name)
+            self._field_metadata_cache[name] = self._metadata_from_attrs(name, dataset)
         return self._field_metadata_cache
 
     def _coordinate_model(self) -> dict[str, Any]:
@@ -677,11 +682,11 @@ class HeliosRun:
         return list(self._field_names)
 
     def list_field_metadata(self) -> dict[str, FieldMetadata]:
-        return {name: self._load_field_metadata()[name] for name in self._field_names if name in self._load_field_metadata()}
+        metadata = self._load_field_metadata()
+        return {name: metadata[name] for name in self._field_names if name in metadata}
 
     def get_field_metadata(self, field_name: str) -> FieldMetadata:
-        self._get_field_dataset(field_name)
-        return self._load_field_metadata()[field_name]
+        return self._load_field_metadata(field_name)[field_name]
 
     def has_field(self, field_name: str) -> bool:
         return field_name in self._field_datasets
