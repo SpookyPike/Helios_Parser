@@ -3,8 +3,8 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `1.1.3`
-- Release date: `2026-05-11`
+- Release: `1.2.0`
+- Release date: `2026-10-20`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
 Top-level application modes:
@@ -85,7 +85,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parser-viewer-v1.1.3.zip`
+- `outputs/release/helios-parser-viewer-v1.2.0.zip`
 
 The bundle includes:
 
@@ -115,9 +115,19 @@ python scripts\build_linux_portable_tarball.py
 
 Expected artifact names:
 
-- `outputs/distributables/helios-parser-viewer-v1.1.3-windows-portable.zip`
-- `outputs/distributables/helios-parser-viewer_1.1.3_all.deb`
-- `outputs/distributables/helios-parser-viewer-v1.1.3-linux-portable.tar.gz`
+- `outputs/distributables/helios-parser-viewer-v1.2.0-windows-portable.zip`
+- `outputs/distributables/helios-parser-viewer_1.2.0_all.deb`
+- `outputs/distributables/helios-parser-viewer-v1.2.0-linux-portable.tar.gz`
+
+## Changelog 1.2.0
+
+- hardened LOG/BPF parsing, partial-record recovery, and atomic HDF5 conversion
+- introduced explicit run status, pressure semantics, and source-energy accounting
+- improved cache revision safety, bounded memory retention, and demand-driven derived loading
+- added independent module availability with clearer missing-input explanations
+- improved desktop accessibility, layout, theme handling, and BPF workflows
+- added performance regression tooling and reproducible benchmark evidence
+- refreshed Linux and Windows packaging, launchers, and scientific resources
 
 ## Changelog 1.1.3
 

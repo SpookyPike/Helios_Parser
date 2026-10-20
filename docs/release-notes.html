@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HELIOS Parse / View Release Notes 1.1.3</title>
+  <title>HELIOS Parse / View Release Notes 1.2.0</title>
   <link rel="stylesheet" href="assets/manual.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>Release Notes</h1>
         <p>
-          HELIOS Parse / View 1.1.3, released 2026-05-12.
+          HELIOS Parse / View 1.2.0, released 2026-10-20.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
       </div>
@@ -28,24 +28,39 @@
 
   <main>
     <section>
-      <h2>Why 1.1.3</h2>
+      <h2>Why 1.2.0</h2>
       <p>
-        This patch corrects viewer field-browser presentation for normal legacy-schema HDF5 files and refreshes the
-        Windows portable executable bundle so users no longer see internal fallback metadata or low-contrast field text.
+        This release brings the parser, HDF5 conversion, analysis services, desktop interface, and packaging through a broad
+        reliability and usability update. It also documents the performance checks used to evaluate the changes.
       </p>
     </section>
 
     <section>
       <h2>Highlights in this release</h2>
       <ul>
-        <li>normal legacy-schema HDF5 fields no longer display <code>[legacy unknown]</code> in the field browser</li>
-        <li>dark-mode field-list colors are theme-aware and brighter for unselected fields</li>
-        <li>Windows portable executable bundle was rebuilt and smoke-tested from extraction</li>
+        <li>safer LOG/BPF conversion with atomic output publication and clearer corruption versus truncation handling</li>
+        <li>versioned H5D schema 2.1 pressure semantics, explicit run status, and corrected cumulative source-energy accounting</li>
+        <li>revision-aware cache retirement, bounded cache ownership, and demand-driven derived data loading</li>
+        <li>independent analysis-module availability with specific missing-input explanations</li>
+        <li>improved BPF workflows, accessibility names, window layouts, theme updates, and packaged scientific resources</li>
+        <li>targeted performance regression tests and reproducible before/after benchmark tooling</li>
       </ul>
     </section>
 
     <section>
       <h2>Changelog</h2>
+      <h3>1.2.0</h3>
+      <ul>
+        <li>made conversion publication atomic and strengthened LOG/BPF numeric, marker, partial-record, and companion validation</li>
+        <li>recorded structural run completeness separately from simulation completion evidence</li>
+        <li>defined plasma versus total pressure aliases in H5D schema 2.1 and corrected cumulative-source units and budget coverage</li>
+        <li>added stable run revisions, stale-task rejection, retired-cache protection, geometry refill, and byte-budgeted cache retention</li>
+        <li>made derived modules report independent availability and selected-weighting prerequisites</li>
+        <li>improved reader metadata fan-out, viewer request coalescing, and demand-driven optional fields</li>
+        <li>added BPF-aware desktop routing, clearer accessibility and layout behavior, live theme updates, and bundled scientific resources</li>
+        <li>added repeatable performance tests and benchmark comparison evidence; timing results are documented without overstating inconclusive speedups</li>
+        <li>updated Windows, Debian, Linux portable, and source-bundle release metadata</li>
+      </ul>
       <h3>1.1.3</h3>
       <ul>
         <li>changed field-browser metadata labels to suppress internal legacy/unknown fallbacks for ordinary HDF5 files</li>
@@ -121,7 +136,7 @@
         <li>selected demo HDF5 examples under <code>examples/</code></li>
       </ul>
       <p>
-        The 1.1.3 bundle intentionally omits tests, reports, old release outputs, and legacy shadow source files. Experimental Transmission/XCOM support remains in source behind development flags.
+        The 1.2.0 bundle intentionally omits tests, internal audit and validation reports, old release outputs, and legacy shadow source files. Experimental Transmission/XCOM support remains in source behind development flags.
       </p>
     </section>
 
@@ -134,8 +149,8 @@
       <ul>
         <li>Author: Dmitrii Bespalov</li>
         <li>Organization: European XFEL</li>
-        <li>Release: 1.1.3</li>
-        <li>Date: 2026-05-12</li>
+        <li>Release: 1.2.0</li>
+        <li>Date: 2026-10-20</li>
       </ul>
     </section>
   </main>
