@@ -35,3 +35,23 @@ plasmon_step10_valence/
 plasmon_step11_lindhard/
 plasmon_step7_overlay/
 _tmp_plasmon_fourth_pass/
+
+# Internal planning, audit, review, and generated validation material
+/docs/HELIOS_AUDIT_*.md
+/docs/HELIOS_FIX_*.md
+/docs/HELIOS_PR*_REVIEW*.md
+/docs/HELIOS_PERFORMANCE_*.json
+/docs/performance/
+/docs/v1_code_health_audit.md
+/docs/*[Aa][Uu][Dd][Ii][Tt]*.md
+/docs/*[Pp][Ll][Aa][Nn]*.md
+/docs/*[Rr][Ee][Vv][Ii][Ee][Ww]*.md
+/docs/*[Vv][Aa][Ll][Ii][Dd][Aa][Tt][Ii][Oo][Nn]*.md
+/docs/*[Bb][Uu][Gg]*[Rr][Ee][Pp][Oo][Rr][Tt]*.md
+/coordinate_model_final_validation_report.md
+/outputs/reports/
+/outputs/validation_outputs/
+/outputs/release/helios-parser-viewer-v*.zip
+/outputs/distributables/helios-parser-viewer_*.deb
+/outputs/distributables/helios-parser-viewer-v*-windows-portable.zip
+/outputs/distributables/helios-parser-viewer-v*-linux-portable.tar.gz
