@@ -561,11 +561,17 @@ class BpfFile:
         if expected <= 0:
             return False
         tail = self._partial_tail
+        marker = struct.pack("<i", expected)
         if len(tail) < 4:
-            return True
+            return tail == marker[: len(tail)]
         declared = struct.unpack_from("<i", tail, 0)[0]
         if declared != expected:
             return False
+        closing_offset = expected + 4
+        if len(tail) > closing_offset:
+            closing_prefix = tail[closing_offset:]
+            if closing_prefix != marker[: len(closing_prefix)]:
+                return False
         return len(tail) < expected + 8
 
     @staticmethod

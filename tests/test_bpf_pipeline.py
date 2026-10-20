@@ -114,6 +114,31 @@ class BpfPipelineTests(unittest.TestCase):
                 write_hdf5(corrupted, output, overwrite=True)
             self.assertEqual(b"sentinel", output.read_bytes())
 
+    def test_partial_record_marker_prefixes_are_checked_for_corruption(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            record = BpfFile.snapshot_start(1, source.layout.block_records) + 5
+            raw = BPF_SAMPLE.read_bytes()
+            marker_start = source._payload_offsets[record] - 4
+            payload_end = source._payload_offsets[record] + source._payload_lengths[record]
+            marker_value = struct.pack("<i", source._payload_lengths[record])
+            cases = []
+            for size in (1, 2, 3):
+                cases.append((f"open-{size}", marker_start + size, marker_value[:size]))
+                cases.append((f"close-{size}", payload_end + size, marker_value + b"x" * source._payload_lengths[record] + marker_value[:size]))
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for name, cut_at, _ in cases:
+                with self.subTest(case=name):
+                    valid = Path(tmpdir) / f"valid-{name}.bpf"
+                    valid.write_bytes(raw[:cut_at])
+                    with BpfFile(valid) as parsed:
+                        self.assertEqual(parsed.layout.n_snapshots, 1)
+                    corrupted_bytes = bytearray(raw[:cut_at])
+                    corrupted_bytes[-1] ^= 0x01
+                    corrupt = Path(tmpdir) / f"corrupt-{name}.bpf"
+                    corrupt.write_bytes(corrupted_bytes)
+                    with self.assertRaisesRegex(ValueError, "corrupt partial BPF data"):
+                        BpfFile(corrupt)
+
     def test_corruption_in_complete_middle_record_is_fatal(self) -> None:
         with BpfFile(BPF_SAMPLE) as source:
             record_index = BpfFile.snapshot_start(3, source.layout.block_records) + 5
