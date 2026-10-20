@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shutil
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -37,6 +38,7 @@ class BpfPipelineTests(unittest.TestCase):
             self.assertEqual(layout.n_nodes, 501)
             self.assertEqual(layout.n_freq_bins, 200)
             self.assertEqual(layout.n_snapshots, 8)
+            self.assertTrue(layout.recognized_zero_trailer)
             snapshot = bpf.extract_snapshot(0)
             self.assertEqual(snapshot.fields["mass_density_g_cm3"].shape, (500,))
             self.assertEqual(snapshot.fields["radiation_net_flux_rmin_j_s_cm2_eV"].shape, (200,))
@@ -55,6 +57,17 @@ class BpfPipelineTests(unittest.TestCase):
                 atol=1.0e-8,
             )
             del snapshot
+
+
+    def test_nonzero_bpf_trailer_is_not_accepted_as_documented_trailer(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            corrupted = Path(tmpdir) / "corrupted_trailer.bpf"
+            payload = bytearray(BPF_SAMPLE.read_bytes())
+            trailer_start = len(payload) - (4 + 240 + 4)
+            payload[trailer_start + 4] = 1
+            corrupted.write_bytes(payload)
+            with self.assertRaisesRegex(ValueError, "unrecognized trailing BPF records"):
+                BpfFile(corrupted)
 
     def test_bpf_hdf5_schema_field_discovery_and_aliases(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

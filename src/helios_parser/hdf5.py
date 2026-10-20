@@ -621,6 +621,7 @@ def _write_hdf5_from_bpf(
             _write_scalar_dataset(metadata_group, "bpf_run_clock", layout.run_clock, "")
             _write_scalar_dataset(metadata_group, "bpf_record_count", layout.record_count, "")
             _write_scalar_dataset(metadata_group, "bpf_trailing_records", layout.trailing_records, "")
+            _write_scalar_dataset(metadata_group, "bpf_recognized_zero_trailer", layout.recognized_zero_trailer, "")
 
             time_group = handle.create_group("time")
             time_dataset = _create_1d(time_group, "time", layout.n_snapshots, np.float64, "s", chunks=_time_chunk_shape(layout.n_snapshots))

@@ -35,6 +35,7 @@ class BpfLayout:
     n_snapshots: int
     trailing_records: int
     trailer_lengths: tuple[int, ...]
+    recognized_zero_trailer: bool
     first_time_s: float
     last_time_s: float
     first_cycle: int
@@ -400,6 +401,17 @@ class BpfFile:
             next_record += block_records
         if n_snapshots == 0:
             raise ValueError(f"{self.path} does not contain a complete BPF snapshot block.")
+        trailer_lengths = tuple(self._payload_lengths[next_record:])
+        trailer_payloads = tuple(bytes(self.payload(index)) for index in range(next_record, self.record_count))
+        recognized_zero_trailer = (
+            not trailer_lengths
+            or (trailer_lengths == (240,) and trailer_payloads == (bytes(240),))
+        )
+        if not recognized_zero_trailer:
+            raise ValueError(
+                f"{self.path} has unrecognized trailing BPF records after {n_snapshots} complete snapshots: "
+                f"lengths={trailer_lengths}."
+            )
         first_header = self.array(2, "f64")
         last_header = self.array(self.snapshot_start(n_snapshots - 1, block_records), "f64")
         return BpfLayout(
@@ -413,7 +425,8 @@ class BpfFile:
             block_records=block_records,
             n_snapshots=n_snapshots,
             trailing_records=self.record_count - next_record,
-            trailer_lengths=tuple(self._payload_lengths[next_record:]),
+            trailer_lengths=trailer_lengths,
+            recognized_zero_trailer=bool(trailer_lengths),
             first_time_s=float(first_header[1]),
             last_time_s=float(last_header[1]),
             first_cycle=int(round(float(first_header[2]))),
@@ -532,11 +545,15 @@ class BpfFile:
 
     def iter_snapshots(self) -> Iterator[BpfSnapshot]:
         previous_time = -np.inf
+        previous_cycle = -1
         for index in range(self.layout.n_snapshots):
             snapshot = self.extract_snapshot(index)
             if snapshot.time_s < previous_time:
                 raise ValueError(f"{self.path} BPF snapshot times are not nondecreasing at snapshot {index}.")
+            if snapshot.cycle < previous_cycle:
+                raise ValueError(f"{self.path} BPF cycles are not nondecreasing at snapshot {index}.")
             previous_time = snapshot.time_s
+            previous_cycle = snapshot.cycle
             yield snapshot
 
 
