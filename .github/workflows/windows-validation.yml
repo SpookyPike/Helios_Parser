@@ -24,6 +24,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[desktop]" pyinstaller==6.22.3
+      - name: Set native UI test display geometry
+        shell: pwsh
+        run: Set-DisplayResolution -Width 1920 -Height 1200 -Force
       - name: Run focused Windows conversion and native UI checks
         shell: pwsh
         run: |
