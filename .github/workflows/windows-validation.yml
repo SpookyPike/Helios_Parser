@@ -63,3 +63,9 @@ jobs:
           $zip = Get-ChildItem $portable -Filter "*-windows-portable.zip" | Select-Object -First 1 -ExpandProperty FullName
           if (-not $zip) { throw "Windows portable ZIP was not created" }
           python scripts/validate_windows_portable.py --zip-path $zip
+      - name: Upload Windows portable release asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: helios-windows-portable
+          path: ${{ runner.temp }}/helios-portable/*-windows-portable.zip
+          if-no-files-found: error
