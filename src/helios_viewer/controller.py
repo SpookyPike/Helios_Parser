@@ -7,6 +7,7 @@ import numpy as np
 from PySide6 import QtCore
 
 from helios.cache import AnalyzerCacheSet, CacheBucketStats
+from helios.runtime import RunRevision
 from helios.services.derived.common import publish_field_payload, publish_open_run_payload
 from .models import DiagnosticPayload, FieldPayload, FieldTracePayload, OpenRunPayload, SnapshotFieldPayload
 from .workers import RunWorker
@@ -24,7 +25,7 @@ class RunController(QtCore.QObject):
     error_occurred = QtCore.Signal(str, str)
     busy_changed = QtCore.Signal(bool)
 
-    _open_requested = QtCore.Signal(str, int)
+    _open_requested = QtCore.Signal(str, int, object)
     _field_requested = QtCore.Signal(str, int)
     _snapshot_field_requested = QtCore.Signal(str, int, int)
     _field_trace_requested = QtCore.Signal(str, int, int)
@@ -52,7 +53,7 @@ class RunController(QtCore.QObject):
         self._worker.snapshot_field_loaded.connect(self._handle_snapshot_field_loaded)
         self._worker.field_trace_loaded.connect(self._handle_field_trace_loaded)
         self._worker.diagnostic_loaded.connect(self._handle_diagnostic_loaded)
-        self._worker.status.connect(self.status_changed)
+        self._worker.status.connect(self._handle_status)
         self._worker.error.connect(self._handle_error)
 
         self.run_payload: OpenRunPayload | None = None
@@ -63,6 +64,7 @@ class RunController(QtCore.QObject):
         self.diagnostic_cache = self._cache_layers.raw_data_cache.bucket("viewer_diagnostics", max_items=12)
         self._pending_jobs = 0
         self._run_generation = 0
+        self._run_revision: RunRevision | None = None
         self._shutdown_started = False
 
     @property
@@ -83,13 +85,14 @@ class RunController(QtCore.QObject):
 
     def open_file(self, path: str | Path) -> None:
         self._run_generation += 1
+        self._run_revision = RunRevision.create(path)
         self.run_payload = None
         self.field_cache.clear(reason=f"open_file:generation:{self._run_generation}")
         self.snapshot_field_cache.clear(reason=f"open_file:generation:{self._run_generation}")
         self.field_trace_cache.clear(reason=f"open_file:generation:{self._run_generation}")
         self.diagnostic_cache.clear(reason=f"open_file:generation:{self._run_generation}")
         self._begin_job()
-        self._open_requested.emit(str(Path(path)), self._run_generation)
+        self._open_requested.emit(str(Path(path)), self._run_generation, self._run_revision)
 
     def load_field(self, field_name: str) -> None:
         cached = self.field_cache.get(field_name)
@@ -168,7 +171,7 @@ class RunController(QtCore.QObject):
             (self._worker.snapshot_field_loaded, self._handle_snapshot_field_loaded),
             (self._worker.field_trace_loaded, self._handle_field_trace_loaded),
             (self._worker.diagnostic_loaded, self._handle_diagnostic_loaded),
-            (self._worker.status, self.status_changed),
+            (self._worker.status, self._handle_status),
             (self._worker.error, self._handle_error),
         ):
             try:
@@ -192,7 +195,7 @@ class RunController(QtCore.QObject):
 
     @QtCore.Slot(object)
     def _handle_run_opened(self, payload: OpenRunPayload) -> None:
-        if int(payload.run_generation) != self._run_generation:
+        if int(payload.run_generation) != self._run_generation or (payload.revision is not None and payload.revision != self._run_revision):
             LOGGER.debug(
                 "Discarding stale run payload for generation %s; current generation is %s.",
                 payload.run_generation,
@@ -230,7 +233,7 @@ class RunController(QtCore.QObject):
 
     @QtCore.Slot(object)
     def _handle_field_loaded(self, payload: FieldPayload) -> None:
-        if int(payload.run_generation) != self._run_generation:
+        if int(payload.run_generation) != self._run_generation or (payload.revision is not None and payload.revision != self._run_revision):
             LOGGER.debug(
                 "Discarding stale field payload %s for generation %s; current generation is %s.",
                 payload.field_name,
@@ -255,7 +258,7 @@ class RunController(QtCore.QObject):
 
     @QtCore.Slot(object)
     def _handle_snapshot_field_loaded(self, payload: SnapshotFieldPayload) -> None:
-        if int(payload.run_generation) != self._run_generation:
+        if int(payload.run_generation) != self._run_generation or (payload.revision is not None and payload.revision != self._run_revision):
             LOGGER.debug(
                 "Discarding stale snapshot field payload %s[%s] for generation %s; current generation is %s.",
                 payload.field_name,
@@ -274,7 +277,7 @@ class RunController(QtCore.QObject):
 
     @QtCore.Slot(object)
     def _handle_field_trace_loaded(self, payload: FieldTracePayload) -> None:
-        if int(payload.run_generation) != self._run_generation:
+        if int(payload.run_generation) != self._run_generation or (payload.revision is not None and payload.revision != self._run_revision):
             LOGGER.debug(
                 "Discarding stale field trace payload %s[:,%s] for generation %s; current generation is %s.",
                 payload.field_name,
@@ -293,7 +296,7 @@ class RunController(QtCore.QObject):
 
     @QtCore.Slot(object)
     def _handle_diagnostic_loaded(self, payload: DiagnosticPayload) -> None:
-        if int(payload.run_generation) != self._run_generation:
+        if int(payload.run_generation) != self._run_generation or (payload.revision is not None and payload.revision != self._run_revision):
             LOGGER.debug(
                 "Discarding stale diagnostic payload %s for generation %s; current generation is %s.",
                 payload.path,
@@ -309,7 +312,16 @@ class RunController(QtCore.QObject):
         self._end_job()
         self.diagnostic_loaded.emit(payload)
 
-    @QtCore.Slot(str, str)
-    def _handle_error(self, message: str, details: str) -> None:
+    @QtCore.Slot(str, str, int, object)
+    def _handle_error(self, message: str, details: str, generation: int, revision: RunRevision | None) -> None:
         self._end_job()
+        if int(generation) != self._run_generation or (revision is not None and revision != self._run_revision):
+            LOGGER.debug("Discarding stale viewer error for generation %s.", generation)
+            return
         self.error_occurred.emit(message, details)
+
+    @QtCore.Slot(str, int, object)
+    def _handle_status(self, message: str, generation: int, revision: RunRevision | None) -> None:
+        if int(generation) != self._run_generation or (revision is not None and revision != self._run_revision):
+            return
+        self.status_changed.emit(str(message))

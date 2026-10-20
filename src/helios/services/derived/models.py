@@ -175,6 +175,7 @@ class DerivedRunData:
     visar_support_metadata: dict[str, Any] | None = None
     field_capabilities: DerivedFieldCapabilities = field(default_factory=DerivedFieldCapabilities)
     wave_physics_capabilities: WavePhysicsCapabilities = field(default_factory=WavePhysicsCapabilities)
+    revision: Any | None = None
 
 
 @dataclass(frozen=True, slots=True)

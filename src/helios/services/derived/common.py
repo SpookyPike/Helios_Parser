@@ -10,7 +10,7 @@ import numpy as np
 
 from helios.cache import get_session_raw_data_cache, run_identity_for_path
 from helios.instrumentation import increment_counter, timed_block
-from helios.runtime import RunContext
+from helios.runtime import RunContext, RunRevision
 from helios.services.derived.models import (
     DerivedFieldCapabilities,
     DerivedFieldConsistency,
@@ -328,7 +328,7 @@ def _build_wave_physics_capabilities(field_capabilities: DerivedFieldCapabilitie
     )
 
 
-def load_run_data(path: str | Path) -> DerivedRunData:
+def load_run_data(path: str | Path, *, revision: RunRevision | None = None) -> DerivedRunData:
     """Load the field subset needed by the current Derived mode.
 
     This preserves the current lightweight load path for existing modules while
@@ -338,7 +338,10 @@ def load_run_data(path: str | Path) -> DerivedRunData:
     """
 
     source = Path(path)
-    run_key = run_identity_for_path(source)
+    # Direct callers retain fingerprint-based refresh behavior. UI callers pass
+    # the token created at explicit open, so same-path replacements cannot
+    # collide even when size and mtime are restored.
+    run_key = revision.cache_key if revision is not None else run_identity_for_path(source)
     with timed_block("hdf5.read.derived_run_data", logger=LOGGER):
         summary = _cached_meta(run_key, "summary")
         metadata = _cached_meta(run_key, "metadata")
@@ -587,6 +590,7 @@ def load_run_data(path: str | Path) -> DerivedRunData:
         visar_support_metadata=None if visar_support_metadata is None else dict(visar_support_metadata),
         field_capabilities=capability_summary,
         wave_physics_capabilities=wave_physics_capabilities,
+        revision=revision,
     )
 
 

@@ -10,6 +10,7 @@ import numpy as np
 from PySide6 import QtCore
 
 from helios_parser import HeliosRun
+from helios.runtime import RunRevision
 
 from .models import DiagnosticPayload, FieldPayload, FieldTracePayload, OpenRunPayload, SnapshotFieldPayload
 
@@ -23,19 +24,27 @@ class RunWorker(QtCore.QObject):
     snapshot_field_loaded = QtCore.Signal(object)
     field_trace_loaded = QtCore.Signal(object)
     diagnostic_loaded = QtCore.Signal(object)
-    status = QtCore.Signal(str)
-    error = QtCore.Signal(str, str)
+    status = QtCore.Signal(str, int, object)
+    error = QtCore.Signal(str, str, int, object)
 
     def __init__(self) -> None:
         super().__init__()
         self._run: HeliosRun | None = None
+        self._revision: RunRevision | None = None
 
-    @QtCore.Slot(str, int)
-    def open_run(self, path_text: str, generation: int) -> None:
+    def _emit_status(self, message: str, generation: int) -> None:
+        self.status.emit(str(message), int(generation), self._revision)
+
+    def _emit_error(self, exc: Exception, generation: int) -> None:
+        self.error.emit(str(exc), traceback.format_exc(), int(generation), self._revision)
+
+    @QtCore.Slot(str, int, object)
+    def open_run(self, path_text: str, generation: int, revision: RunRevision) -> None:
         try:
             self._close_current_run()
+            self._revision = revision
             path = Path(path_text)
-            self.status.emit(f"Opening {path.name}...")
+            self._emit_status(f"Opening {path.name}...", generation)
             started = time.perf_counter()
             run = HeliosRun(path)
             self._run = run
@@ -64,21 +73,22 @@ class RunWorker(QtCore.QObject):
                 radius_unit=run.get_field_unit("radius") if "radius" in fields else "",
                 run_status=run.get_run_status(),
                 visar_support_metadata=asdict(run.get_visar_support_metadata()),
+                revision=revision,
             )
             self.run_opened.emit(payload)
             LOGGER.info("Opened %s in %.3f s", path.name, time.perf_counter() - started)
-            self.status.emit(f"Opened {path.name}")
+            self._emit_status(f"Opened {path.name}", generation)
         except Exception as exc:
-            self.error.emit(str(exc), traceback.format_exc())
+            self._emit_error(exc, generation)
 
     @QtCore.Slot(str, int)
     def load_field(self, field_name: str, generation: int) -> None:
         try:
             if self._run is None:
                 LOGGER.debug("Ignoring field load %s for generation %s because no run is open.", field_name, generation)
-                self.status.emit(f"Ignored stale field request: {field_name}")
+                self._emit_status(f"Ignored stale field request: {field_name}", generation)
                 return
-            self.status.emit(f"Loading field: {field_name}")
+            self._emit_status(f"Loading field: {field_name}", generation)
             started = time.perf_counter()
             edge_data: np.ndarray | None = None
             if field_name == "radius":
@@ -97,12 +107,13 @@ class RunWorker(QtCore.QObject):
                 unit=self._run.get_field_unit(field_name),
                 data=data,
                 edge_data=edge_data,
+                revision=self._revision,
             )
             self.field_loaded.emit(payload)
             LOGGER.info("Loaded field %s in %.3f s", field_name, time.perf_counter() - started)
-            self.status.emit(f"Loaded field: {field_name}")
+            self._emit_status(f"Loaded field: {field_name}", generation)
         except Exception as exc:
-            self.error.emit(str(exc), traceback.format_exc())
+            self._emit_error(exc, generation)
 
     @QtCore.Slot(str, int, int)
     def load_snapshot_field(self, field_name: str, snapshot_index: int, generation: int) -> None:
@@ -114,10 +125,10 @@ class RunWorker(QtCore.QObject):
                     snapshot_index,
                     generation,
                 )
-                self.status.emit(f"Ignored stale snapshot field request: {field_name}")
+                self._emit_status(f"Ignored stale snapshot field request: {field_name}", generation)
                 return
             normalized_snapshot = self._run._normalize_snapshot_index(int(snapshot_index))
-            self.status.emit(f"Loading snapshot field: {field_name}[{normalized_snapshot}]")
+            self._emit_status(f"Loading snapshot field: {field_name}[{normalized_snapshot}]", generation)
             started = time.perf_counter()
             edge_data: np.ndarray | None = None
             if field_name == "radius":
@@ -137,21 +148,22 @@ class RunWorker(QtCore.QObject):
                 unit=self._run.get_field_unit(field_name),
                 data=data,
                 edge_data=edge_data,
+                revision=self._revision,
             )
             self.snapshot_field_loaded.emit(payload)
             LOGGER.info("Loaded snapshot field %s[%s] in %.3f s", field_name, normalized_snapshot, time.perf_counter() - started)
-            self.status.emit(f"Loaded snapshot field: {field_name}[{normalized_snapshot}]")
+            self._emit_status(f"Loaded snapshot field: {field_name}[{normalized_snapshot}]", generation)
         except Exception as exc:
-            self.error.emit(str(exc), traceback.format_exc())
+            self._emit_error(exc, generation)
 
     @QtCore.Slot(str, int, int)
     def load_field_trace(self, field_name: str, zone_index: int, generation: int) -> None:
         try:
             if self._run is None:
                 LOGGER.debug("Ignoring field trace load %s[:,%s] for generation %s because no run is open.", field_name, zone_index, generation)
-                self.status.emit(f"Ignored stale field trace request: {field_name}")
+                self._emit_status(f"Ignored stale field trace request: {field_name}", generation)
                 return
-            self.status.emit(f"Loading field trace: {field_name} zone {int(zone_index) + 1}")
+            self._emit_status(f"Loading field trace: {field_name} zone {int(zone_index) + 1}", generation)
             started = time.perf_counter()
             data = np.asarray(self._run.get_time_trace(field_name, int(zone_index)), dtype=np.float64)
             payload = FieldTracePayload(
@@ -160,33 +172,35 @@ class RunWorker(QtCore.QObject):
                 zone_index=int(zone_index),
                 unit=self._run.get_field_unit(field_name),
                 data=data,
+                revision=self._revision,
             )
             self.field_trace_loaded.emit(payload)
             LOGGER.info("Loaded field trace %s[:,%s] in %.3f s", field_name, zone_index, time.perf_counter() - started)
-            self.status.emit(f"Loaded field trace: {field_name} zone {int(zone_index) + 1}")
+            self._emit_status(f"Loaded field trace: {field_name} zone {int(zone_index) + 1}", generation)
         except Exception as exc:
-            self.error.emit(str(exc), traceback.format_exc())
+            self._emit_error(exc, generation)
 
     @QtCore.Slot(str, int)
     def load_diagnostic(self, path: str, generation: int) -> None:
         try:
             if self._run is None:
                 LOGGER.debug("Ignoring diagnostic load %s for generation %s because no run is open.", path, generation)
-                self.status.emit(f"Ignored stale diagnostic request: {path}")
+                self._emit_status(f"Ignored stale diagnostic request: {path}", generation)
                 return
-            self.status.emit(f"Loading diagnostic: {path}")
+            self._emit_status(f"Loading diagnostic: {path}", generation)
             started = time.perf_counter()
             payload = DiagnosticPayload(
                 run_generation=int(generation),
                 path=path,
                 unit=self._run.get_diagnostic_unit(path),
                 data=np.asarray(self._run.get_diagnostic(path)),
+                revision=self._revision,
             )
             self.diagnostic_loaded.emit(payload)
             LOGGER.info("Loaded diagnostic %s in %.3f s", path, time.perf_counter() - started)
-            self.status.emit(f"Loaded diagnostic: {path}")
+            self._emit_status(f"Loaded diagnostic: {path}", generation)
         except Exception as exc:
-            self.error.emit(str(exc), traceback.format_exc())
+            self._emit_error(exc, generation)
 
     @QtCore.Slot()
     def close_run(self) -> None:
@@ -196,3 +210,4 @@ class RunWorker(QtCore.QObject):
         if self._run is not None:
             self._run.close()
             self._run = None
+            self._revision = None

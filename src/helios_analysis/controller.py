@@ -17,6 +17,7 @@ import numpy as np
 from PySide6 import QtCore
 
 from helios.cache import AnalyzerCacheSet
+from helios.cache import run_identity_for_path
 from helios.cancellation import CancellationToken
 from helios.feature_flags import production_feature_visible
 from helios.instrumentation import increment_counter, snapshot_metrics
@@ -490,11 +491,13 @@ class DerivedController(QtCore.QObject):
             path = Path(context_snapshot.path) if context_snapshot.path is not None else None
             if path is None:
                 raise RuntimeError("No active run is available for derived analysis.")
-            dataset = self._dataset_cache.get(path)
+            revision = context_snapshot.revision
+            dataset_key = revision.cache_key if revision is not None else run_identity_for_path(path)
+            dataset = self._dataset_cache.get(dataset_key)
             if dataset is None:
                 started = time.perf_counter()
-                dataset = load_run_data(path)
-                self._dataset_cache[path] = dataset
+                dataset = load_run_data(path, revision=revision)
+                self._dataset_cache[dataset_key] = dataset
                 LOGGER.info("Loaded derived dataset %s in %.3fs", path.name, time.perf_counter() - started)
             if request.update_kind == "snapshot":
                 base_result = displayed_base_result
