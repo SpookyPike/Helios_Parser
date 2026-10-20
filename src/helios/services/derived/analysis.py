@@ -376,6 +376,11 @@ def compute_analysis_result(
             analysis_cache=analysis_cache,
             progress_check=progress_check,
         )
+        availability_warnings = tuple(
+            DerivedWarning(item.module, item.reason, severity="warning")
+            for item in module_availability
+            if not item.available and item.reason
+        )
         wave_tracking = None
         interface_events = None
         preheat = None
@@ -425,6 +430,7 @@ def compute_analysis_result(
         warnings = aggregate_warnings(
             geometry_warnings,
             selection_warnings,
+            availability_warnings,
             shock.warnings,
             xrd.warnings,
             plasmon.warnings,
@@ -488,9 +494,15 @@ def refresh_analysis_result_for_snapshot(
             analysis_cache=analysis_cache,
             progress_check=progress_check,
         )
+        availability_warnings = tuple(
+            DerivedWarning(item.module, item.reason, severity="warning")
+            for item in module_availability
+            if not item.available and item.reason
+        )
         warnings = aggregate_warnings(
             geometry_warnings,
             selection_warnings,
+            availability_warnings,
             base_result.shock.warnings,
             xrd.warnings,
             plasmon.warnings,
