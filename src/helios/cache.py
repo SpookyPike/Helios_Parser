@@ -18,6 +18,8 @@ from collections.abc import Iterator, MutableMapping
 from pathlib import Path
 from typing import Any
 import weakref
+import threading
+from contextlib import nullcontext
 
 import numpy as np
 
@@ -69,30 +71,37 @@ class CacheCoordinator:
         self._bytes_used = 0
         self._clock = 0
         self._evictions = 0
+        # One lock protects the allocation ledger and every bucket registered
+        # with this coordinator. Bucket operations acquire this lock before
+        # touching their OrderedDict, so global eviction cannot race a writer.
+        self._lock = threading.RLock()
 
     def register(self, bucket: BoundedCacheBucket) -> None:
-        bucket_id = id(bucket)
-        if bucket_id in self._buckets:
-            return
-        self._buckets[id(bucket)] = bucket
-        self._bucket_refs[bucket_id] = weakref.ref(bucket, lambda _ref, key=bucket_id: self._discard_bucket_id(key))
-        self._entry_allocations[bucket_id] = {}
-        for key, value in tuple(bucket._items.items()):
-            self.entry_updated(bucket, key, value)
+        with self._lock:
+            bucket_id = id(bucket)
+            if bucket_id in self._buckets:
+                return
+            self._buckets[id(bucket)] = bucket
+            self._bucket_refs[bucket_id] = weakref.ref(bucket, lambda _ref, key=bucket_id: self._discard_bucket_id(key))
+            self._entry_allocations[bucket_id] = {}
+            for key, value in tuple(bucket._items.items()):
+                self.entry_updated(bucket, key, value)
 
     def unregister(self, bucket: BoundedCacheBucket) -> None:
-        self._discard_bucket_id(id(bucket))
+        with self._lock:
+            self._discard_bucket_id(id(bucket))
 
     def _discard_bucket_id(self, bucket_id: int) -> None:
-        if bucket_id not in self._buckets:
-            if bucket_id not in self._entry_allocations:
-                self._bucket_refs.pop(bucket_id, None)
-                return
-        entries = self._entry_allocations.pop(bucket_id, {})
-        for allocations in entries.values():
-            self._release_allocations(allocations)
-        self._bucket_refs.pop(bucket_id, None)
-        self._buckets.pop(bucket_id, None)
+        with self._lock:
+            if bucket_id not in self._buckets:
+                if bucket_id not in self._entry_allocations:
+                    self._bucket_refs.pop(bucket_id, None)
+                    return
+            entries = self._entry_allocations.pop(bucket_id, {})
+            for allocations in entries.values():
+                self._release_allocations(allocations)
+            self._bucket_refs.pop(bucket_id, None)
+            self._buckets.pop(bucket_id, None)
 
     def _release_allocations(self, allocations: dict[int, int]) -> None:
         for allocation_id in allocations:
@@ -104,25 +113,28 @@ class CacheCoordinator:
                 self._allocation_refs[allocation_id] = refs
 
     def entry_updated(self, bucket: BoundedCacheBucket, key: Any, value: Any) -> None:
-        self.entry_removed(bucket, key)
-        allocations = _array_allocation_sizes(value)
-        self._entry_allocations.setdefault(id(bucket), {})[key] = allocations
-        for allocation_id, size in allocations.items():
-            refs = self._allocation_refs.get(allocation_id, 0)
-            if refs == 0:
-                self._allocation_sizes[allocation_id] = size
-                self._bytes_used += size
-            self._allocation_refs[allocation_id] = refs + 1
+        with self._lock:
+            self.entry_removed(bucket, key)
+            allocations = _array_allocation_sizes(value)
+            self._entry_allocations.setdefault(id(bucket), {})[key] = allocations
+            for allocation_id, size in allocations.items():
+                refs = self._allocation_refs.get(allocation_id, 0)
+                if refs == 0:
+                    self._allocation_sizes[allocation_id] = size
+                    self._bytes_used += size
+                self._allocation_refs[allocation_id] = refs + 1
 
     def entry_removed(self, bucket: BoundedCacheBucket, key: Any) -> None:
-        allocations = self._entry_allocations.get(id(bucket), {}).pop(key, None)
-        if allocations is None:
-            return
-        self._release_allocations(allocations)
+        with self._lock:
+            allocations = self._entry_allocations.get(id(bucket), {}).pop(key, None)
+            if allocations is None:
+                return
+            self._release_allocations(allocations)
 
     def clear_bucket(self, bucket: BoundedCacheBucket) -> None:
-        for key in tuple(self._entry_allocations.get(id(bucket), {})):
-            self.entry_removed(bucket, key)
+        with self._lock:
+            for key in tuple(self._entry_allocations.get(id(bucket), {})):
+                self.entry_removed(bucket, key)
 
     def retire_revision(self, revision: Any) -> int:
         """Remove cache entries owned by one explicitly opened run revision.
@@ -133,51 +145,57 @@ class CacheCoordinator:
         all registered cache owners without clearing data for another open run.
         """
 
-        revision_key = getattr(revision, "cache_key", revision)
-        removed = 0
-        for bucket in tuple(self._buckets.values()):
-            for key, value in tuple(bucket._items.items()):
-                if _contains_revision(key, revision_key) or _value_uses_revision(value, revision):
-                    del bucket[key]
-                    removed += 1
-        return removed
+        with self._lock:
+            revision_key = getattr(revision, "cache_key", revision)
+            removed = 0
+            for bucket in tuple(self._buckets.values()):
+                for key, value in tuple(bucket._items.items()):
+                    if _contains_revision(key, revision_key) or _value_uses_revision(value, revision):
+                        del bucket[key]
+                        removed += 1
+            return removed
 
     def touch(self, bucket: BoundedCacheBucket, key: Any) -> None:
-        self._clock += 1
-        bucket._entry_age[key] = self._clock
+        with self._lock:
+            self._clock += 1
+            bucket._entry_age[key] = self._clock
 
     def set_limit(self, max_bytes: int | None) -> None:
-        self.max_bytes = None if max_bytes is None else max(0, int(max_bytes))
-        self.enforce()
+        with self._lock:
+            self.max_bytes = None if max_bytes is None else max(0, int(max_bytes))
+            self.enforce()
 
     def bytes_used(self) -> int:
-        return int(self._bytes_used)
+        with self._lock:
+            return int(self._bytes_used)
 
     def stats(self) -> CacheCoordinatorStats:
-        return CacheCoordinatorStats(
-            registered_buckets=len(self._buckets),
-            bytes_used=self.bytes_used(),
-            byte_capacity=self.max_bytes,
-            evictions=int(self._evictions),
-        )
+        with self._lock:
+            return CacheCoordinatorStats(
+                registered_buckets=len(self._buckets),
+                bytes_used=self._bytes_used,
+                byte_capacity=self.max_bytes,
+                evictions=int(self._evictions),
+            )
 
     def enforce(self) -> None:
-        if self.max_bytes is None or self.max_bytes <= 0:
-            return
-        while self._buckets and self.bytes_used() > self.max_bytes:
-            oldest: tuple[int, BoundedCacheBucket, Any] | None = None
-            for bucket in tuple(self._buckets.values()):
-                if not bucket._items:
-                    continue
-                key = next(iter(bucket._items))
-                age = bucket._entry_age.get(key, 0)
-                if oldest is None or age < oldest[0]:
-                    oldest = (age, bucket, key)
-            if oldest is None:
+        with self._lock:
+            if self.max_bytes is None or self.max_bytes <= 0:
                 return
-            _, bucket, key = oldest
-            bucket._evict_key(key)
-            self._evictions += 1
+            while self._buckets and self.bytes_used() > self.max_bytes:
+                oldest: tuple[int, BoundedCacheBucket, Any] | None = None
+                for bucket in tuple(self._buckets.values()):
+                    if not bucket._items:
+                        continue
+                    key = next(iter(bucket._items))
+                    age = bucket._entry_age.get(key, 0)
+                    if oldest is None or age < oldest[0]:
+                        oldest = (age, bucket, key)
+                if oldest is None:
+                    return
+                _, bucket, key = oldest
+                bucket._evict_key(key)
+                self._evictions += 1
 
 
 DEFAULT_AGGREGATE_CACHE_BYTE_LIMIT = 512 * 1024 * 1024
@@ -205,78 +223,90 @@ class BoundedCacheBucket(MutableMapping[Any, Any]):
     _clears: int = 0
     _last_clear_reason: str | None = None
 
+    def _guard(self):
+        return self.coordinator._lock if self.coordinator is not None else nullcontext()
+
     def __getitem__(self, key: Any) -> Any:
-        value = self._items[key]
-        self._hits += 1
-        self._items.move_to_end(key)
-        if self.coordinator is not None:
-            self.coordinator.touch(self, key)
-        return value
-
-    def __setitem__(self, key: Any, value: Any) -> None:
-        if self.max_bytes is not None and int(self.max_bytes) > 0 and estimate_nbytes(value) > int(self.max_bytes):
-            raise ValueError(f"Cache entry requires {estimate_nbytes(value)} bytes; bucket limit is {int(self.max_bytes)}.")
-        if self.coordinator is not None and self.coordinator.max_bytes is not None and self.coordinator.max_bytes > 0:
-            size = estimate_nbytes(value)
-            if size > self.coordinator.max_bytes:
-                raise ValueError(f"Cache entry requires {size} bytes; aggregate limit is {self.coordinator.max_bytes}.")
-        if self.coordinator is not None:
-            self.coordinator.register(self)
-        self._items[key] = value
-        self._items.move_to_end(key)
-        if self.coordinator is not None:
-            self.coordinator.entry_updated(self, key, value)
-            self.coordinator.touch(self, key)
-        self._evict_if_needed()
-        if self.coordinator is not None:
-            self.coordinator.enforce()
-
-    def __delitem__(self, key: Any) -> None:
-        if self.coordinator is not None:
-            self.coordinator.entry_removed(self, key)
-        del self._items[key]
-        self._entry_age.pop(key, None)
-
-    def __iter__(self) -> Iterator[Any]:
-        # Mapping views (for example ``values()``) call ``__getitem__`` while
-        # iterating. Reads update LRU order, so iterate over a stable key
-        # snapshot rather than the mutable OrderedDict view.
-        return iter(tuple(self._items))
-
-    def __len__(self) -> int:
-        return len(self._items)
-
-    def get(self, key: Any, default: Any = None) -> Any:
-        if key in self._items:
+        with self._guard():
             value = self._items[key]
             self._hits += 1
             self._items.move_to_end(key)
             if self.coordinator is not None:
                 self.coordinator.touch(self, key)
             return value
-        self._misses += 1
-        return default
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        with self._guard():
+            size = estimate_nbytes(value)
+            if self.max_bytes is not None and int(self.max_bytes) > 0 and size > int(self.max_bytes):
+                self.pop(key, None)
+                return
+            if self.coordinator is not None and self.coordinator.max_bytes is not None and self.coordinator.max_bytes > 0 and size > self.coordinator.max_bytes:
+                self.pop(key, None)
+                return
+            if self.coordinator is not None:
+                self.coordinator.register(self)
+            self._items[key] = value
+            self._items.move_to_end(key)
+            if self.coordinator is not None:
+                self.coordinator.entry_updated(self, key, value)
+                self.coordinator.touch(self, key)
+            self._evict_if_needed()
+            if self.coordinator is not None:
+                self.coordinator.enforce()
+
+    def __delitem__(self, key: Any) -> None:
+        with self._guard():
+            if self.coordinator is not None:
+                self.coordinator.entry_removed(self, key)
+            del self._items[key]
+            self._entry_age.pop(key, None)
+
+    def __iter__(self) -> Iterator[Any]:
+        # Mapping views (for example ``values()``) call ``__getitem__`` while
+        # iterating. Reads update LRU order, so iterate over a stable key
+        # snapshot rather than the mutable OrderedDict view.
+        with self._guard():
+            return iter(tuple(self._items))
+
+    def __len__(self) -> int:
+        with self._guard():
+            return len(self._items)
+
+    def get(self, key: Any, default: Any = None) -> Any:
+        with self._guard():
+            if key in self._items:
+                value = self._items[key]
+                self._hits += 1
+                self._items.move_to_end(key)
+                if self.coordinator is not None:
+                    self.coordinator.touch(self, key)
+                return value
+            self._misses += 1
+            return default
 
     def clear(self, *, reason: str | None = None) -> None:
-        if self.coordinator is not None:
-            self.coordinator.clear_bucket(self)
-        self._items.clear()
-        self._entry_age.clear()
-        self._clears += 1
-        self._last_clear_reason = None if reason is None else str(reason)
+        with self._guard():
+            if self.coordinator is not None:
+                self.coordinator.clear_bucket(self)
+            self._items.clear()
+            self._entry_age.clear()
+            self._clears += 1
+            self._last_clear_reason = None if reason is None else str(reason)
 
     def stats(self) -> CacheBucketStats:
-        return CacheBucketStats(
-            size=len(self._items),
-            capacity=None if self.max_items is None else int(self.max_items),
-            hits=int(self._hits),
-            misses=int(self._misses),
-            evictions=int(self._evictions),
-            clears=int(self._clears),
-            last_clear_reason=self._last_clear_reason,
-            bytes_used=estimate_nbytes(tuple(self._items.values())),
-            byte_capacity=None if self.max_bytes is None else int(self.max_bytes),
-        )
+        with self._guard():
+            return CacheBucketStats(
+                size=len(self._items),
+                capacity=None if self.max_items is None else int(self.max_items),
+                hits=int(self._hits),
+                misses=int(self._misses),
+                evictions=int(self._evictions),
+                clears=int(self._clears),
+                last_clear_reason=self._last_clear_reason,
+                bytes_used=estimate_nbytes(tuple(self._items.values())),
+                byte_capacity=None if self.max_bytes is None else int(self.max_bytes),
+            )
 
     def _evict_if_needed(self) -> None:
         while self._items and (

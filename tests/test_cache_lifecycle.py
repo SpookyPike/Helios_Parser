@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 import gc
+import threading
 from dataclasses import dataclass
 
 import numpy as np
@@ -62,12 +63,13 @@ class CacheLifecycleTests(unittest.TestCase):
         self.assertLessEqual(bucket.stats().bytes_used, 64)
         self.assertEqual(64, bucket.stats().byte_capacity)
 
-    def test_individually_oversized_cache_values_are_rejected(self) -> None:
+    def test_individually_oversized_cache_values_are_returnable_without_retention(self) -> None:
         bucket = CacheLayer().bucket("small", max_bytes=16)
-        with self.assertRaisesRegex(ValueError, "bucket limit is 16"):
-            bucket["too-large"] = np.arange(3, dtype=np.float64)
+        value = np.arange(3, dtype=np.float64)
+        bucket["too-large"] = value
         self.assertEqual(0, len(bucket))
-        self.assertEqual(24, estimate_nbytes(np.arange(3, dtype=np.float64)))
+        self.assertEqual(24, estimate_nbytes(value))
+        self.assertIs(value[0:1].base, value)
 
     def test_cache_set_accepts_injected_per_layer_budgets(self) -> None:
         cache_set = AnalyzerCacheSet(raw_bucket_byte_limit=32, derived_bucket_byte_limit=48)
@@ -159,6 +161,37 @@ class CacheLifecycleTests(unittest.TestCase):
         self.assertNotIn("old", viewer_bucket)
         self.assertIn("new", derived_bucket)
         self.assertLessEqual(viewer.memory_stats().bytes_used, 12)
+
+    def test_concurrent_bucket_mutation_and_global_eviction_is_atomic(self) -> None:
+        coordinator = CacheCoordinator(max_bytes=1024)
+        buckets = [CacheLayer(coordinator=coordinator).bucket(f"owner-{i}") for i in range(4)]
+        errors: list[BaseException] = []
+        barrier = threading.Barrier(len(buckets))
+
+        def mutate(bucket, worker_id: int) -> None:
+            try:
+                barrier.wait()
+                for index in range(3000):
+                    bucket[(worker_id, index % 96)] = np.full(32, index % 256, dtype=np.uint8)
+                    bucket.get((worker_id, (index + 1) % 96))
+                    if index % 23 == 0:
+                        bucket.clear(reason="threaded-test")
+            except BaseException as exc:  # capture worker errors for the test thread
+                errors.append(exc)
+
+        workers = [threading.Thread(target=mutate, args=(bucket, index)) for index, bucket in enumerate(buckets)]
+        for worker in workers:
+            worker.start()
+        for worker in workers:
+            worker.join(timeout=10)
+
+        self.assertTrue(all(not worker.is_alive() for worker in workers), "cache workers did not finish")
+        self.assertEqual([], errors)
+        self.assertLessEqual(coordinator.stats().bytes_used, 1024)
+        self.assertEqual(
+            coordinator.stats().bytes_used,
+            sum(bucket.stats().bytes_used for bucket in buckets),
+        )
 
 
 if __name__ == "__main__":
