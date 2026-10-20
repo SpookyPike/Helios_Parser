@@ -2,10 +2,18 @@ from __future__ import annotations
 
 import unittest
 import gc
+from dataclasses import dataclass
 
 import numpy as np
 
 from helios.cache import AnalyzerCacheSet, CacheCoordinator, CacheLayer, estimate_nbytes
+from helios.runtime import RunRevision
+
+
+@dataclass(frozen=True)
+class _RevisionPayload:
+    revision: RunRevision
+    data: np.ndarray
 
 
 class CacheLifecycleTests(unittest.TestCase):
@@ -106,6 +114,28 @@ class CacheLifecycleTests(unittest.TestCase):
 
         self.assertEqual(0, coordinator.stats().bytes_used)
         self.assertEqual(0, coordinator.stats().registered_buckets)
+
+    def test_retire_revision_clears_matching_keys_and_payloads_across_owners(self) -> None:
+        coordinator = CacheCoordinator(max_bytes=1024)
+        raw = CacheLayer(coordinator=coordinator).bucket("raw")
+        derived = CacheLayer(coordinator=coordinator).bucket("derived")
+        viewer = CacheLayer(coordinator=coordinator).bucket("viewer")
+        retired = RunRevision.create("retired-run.h5")
+        current = RunRevision.create("current-run.h5")
+
+        raw[(retired.cache_key, "field:density")] = np.arange(8, dtype=np.float64)
+        raw[(current.cache_key, "field:density")] = np.arange(8, dtype=np.float64)
+        derived[((retired.cache_key, ("temperature_e",)), "analysis")] = np.arange(4, dtype=np.float64)
+        viewer[("density", 0)] = _RevisionPayload(retired, np.arange(2, dtype=np.float64))
+        viewer[("density", 1)] = _RevisionPayload(current, np.arange(2, dtype=np.float64))
+
+        removed = coordinator.retire_revision(retired)
+
+        self.assertEqual(3, removed)
+        self.assertEqual([(current.cache_key, "field:density")], list(raw))
+        self.assertEqual([], list(derived))
+        self.assertEqual([("density", 1)], list(viewer))
+        self.assertEqual(80, coordinator.stats().bytes_used)
 
     def test_analyzer_cache_sets_share_the_session_coordinator(self) -> None:
         viewer = AnalyzerCacheSet()

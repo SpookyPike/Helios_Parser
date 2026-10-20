@@ -124,6 +124,24 @@ class CacheCoordinator:
         for key in tuple(self._entry_allocations.get(id(bucket), {})):
             self.entry_removed(bucket, key)
 
+    def retire_revision(self, revision: Any) -> int:
+        """Remove cache entries owned by one explicitly opened run revision.
+
+        Revision-scoped keys are used by shared reader and derived caches;
+        viewer payload caches carry the revision on the payload value. Scanning
+        those small bounded indexes lets the application retire a run across
+        all registered cache owners without clearing data for another open run.
+        """
+
+        revision_key = getattr(revision, "cache_key", revision)
+        removed = 0
+        for bucket in tuple(self._buckets.values()):
+            for key, value in tuple(bucket._items.items()):
+                if _contains_revision(key, revision_key) or _value_uses_revision(value, revision):
+                    del bucket[key]
+                    removed += 1
+        return removed
+
     def touch(self, bucket: BoundedCacheBucket, key: Any) -> None:
         self._clock += 1
         bucket._entry_age[key] = self._clock
@@ -313,6 +331,28 @@ def _array_allocation_sizes(value: Any) -> dict[int, int]:
     return arrays
 
 
+def _contains_revision(value: Any, revision_key: Any) -> bool:
+    if value is revision_key:
+        return True
+    if isinstance(value, tuple):
+        if value == revision_key:
+            return True
+        return any(_contains_revision(item, revision_key) for item in value)
+    if isinstance(value, list):
+        return any(_contains_revision(item, revision_key) for item in value)
+    if isinstance(value, dict):
+        return any(
+            _contains_revision(key, revision_key) or _contains_revision(item, revision_key)
+            for key, item in value.items()
+        )
+    return False
+
+
+def _value_uses_revision(value: Any, revision: Any) -> bool:
+    value_revision = getattr(value, "revision", None)
+    return value_revision is not None and value_revision == revision
+
+
 def estimate_nbytes(value: Any) -> int:
     """Estimate retained NumPy/object bytes, deduplicating shared array bases."""
 
@@ -478,6 +518,15 @@ def get_session_raw_data_cache() -> CacheLayer:
 
 def clear_session_raw_data_cache(*, reason: str | None = None) -> None:
     get_session_raw_data_cache().clear(reason=reason or "session_raw_cache_cleared")
+
+
+def retire_run_revision(revision: Any) -> int:
+    """Release cache-owned references for a retired ``RunRevision``."""
+
+    coordinator = get_session_raw_data_cache().coordinator
+    if coordinator is None:
+        return 0
+    return coordinator.retire_revision(revision)
 
 
 def run_identity_for_path(path: str | Path) -> tuple[object, ...]:

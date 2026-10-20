@@ -16,7 +16,7 @@ import time
 import numpy as np
 from PySide6 import QtCore
 
-from helios.cache import AnalyzerCacheSet
+from helios.cache import AnalyzerCacheSet, retire_run_revision
 from helios.cache import run_identity_for_path
 from helios.cancellation import CancellationToken
 from helios.feature_flags import production_feature_visible
@@ -158,7 +158,13 @@ class DerivedController(QtCore.QObject):
         previous_context_key = self._context.context_key
         next_context_key = context.context_key
         revision_changed = bool(self._context.has_run and context.has_run and previous_context_key != next_context_key)
-        if revision_changed:
+        previous_revision = self._context.revision
+        retire_previous_revision = bool(
+            self._context.has_run
+            and previous_revision is not None
+            and (not context.has_run or previous_revision != context.revision)
+        )
+        if revision_changed or retire_previous_revision:
             self._recompute_timer.stop()
             self._tasks.cancel(self._active_task_id)
             self._active_task_id = None
@@ -170,6 +176,9 @@ class DerivedController(QtCore.QObject):
             self._displayed_result_key = None
             self._displayed_reuse_request_key = None
             self._displayed_result = None
+        if retire_previous_revision:
+            removed = retire_run_revision(previous_revision)
+            LOGGER.debug("Retired %s cached entries for run revision %s", removed, previous_revision.canonical_path)
         self._context = context.copy()
         if self._workspace_alive:
             self._workspace.set_context(self._context)
@@ -537,6 +546,7 @@ class DerivedController(QtCore.QObject):
             if dataset is None:
                 started = time.perf_counter()
                 dataset = load_run_data(path, revision=revision, requested_fields=requested_fields)
+                cancellation_token.check_cancelled()
                 self._dataset_cache[dataset_key] = dataset
                 LOGGER.info("Loaded derived dataset %s in %.3fs", path.name, time.perf_counter() - started)
             if request.update_kind == "snapshot":
