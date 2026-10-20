@@ -1314,9 +1314,6 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.plasmon_auto_recompute_checkbox.setToolTip("When disabled, heavy plasmon controls mark the study as stale until Recompute is pressed.")
         self.plasmon_recompute_button.setToolTip("Recompute the currently selected plasmon study for the active snapshot.")
         self.plasmon_export_button.setToolTip("Export the currently displayed plasmon spectrum arrays to CSV for external inspection.")
-        self._configure_plasmon_coordinate_spin(axis=PLASMON_AXIS_ANGLE_DEG, canonical_value=45.0)
-        self._configure_plasmon_scan_spins(axis=PLASMON_AXIS_ANGLE_DEG, start=10.0, stop=140.0)
-
         self.spectroscopy_controls_group = QtWidgets.QGroupBox("Spectroscopy Settings")
         spectroscopy_layout = QtWidgets.QFormLayout(self.spectroscopy_controls_group)
         self.spectroscopy_wavelength_spin = QtWidgets.QDoubleSpinBox()
@@ -1333,6 +1330,20 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.spectroscopy_line_label = QtWidgets.QLabel("Line wavelength")
         spectroscopy_layout.addRow(self.spectroscopy_line_label, self.spectroscopy_wavelength_spin)
         spectroscopy_layout.addRow("Shift display", self.spectroscopy_shift_unit_combo)
+
+        self._canonical_physical_values = {
+            "los_angle_deg": self._angle_display_to_deg(float(self.los_angle_spin.value()), unit="deg"),
+            "xrd_angle_deg": self._angle_display_to_deg(float(self.xrd_angle_spin.value()), unit="deg"),
+            "xrd_energy_kev": self._photon_display_to_kev(float(self.xrd_energy_spin.value()), unit="keV"),
+            "plasmon_energy_kev": self._photon_display_to_kev(float(self.plasmon_energy_spin.value()), unit="keV"),
+            "plasmon_coordinate": self._selected_plasmon_coordinate_value(),
+            "plasmon_scan_start": self._selected_plasmon_scan_start(),
+            "plasmon_scan_stop": self._selected_plasmon_scan_stop(),
+            "spectroscopy_line_nm": float(self._line_display_value_to_nm(float(self.spectroscopy_wavelength_spin.value()), unit="nm")),
+            "min_density_g_cm3": float(self.min_density_spin.value()),
+        }
+        self._configure_plasmon_coordinate_spin(axis=PLASMON_AXIS_ANGLE_DEG, canonical_value=45.0)
+        self._configure_plasmon_scan_spins(axis=PLASMON_AXIS_ANGLE_DEG, start=10.0, stop=140.0)
 
         button_row = QtWidgets.QHBoxLayout()
         self.refresh_button = QtWidgets.QPushButton("Recompute")
@@ -1397,6 +1408,23 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 widget.currentIndexChanged.connect(self._schedule_parameters_changed)
             elif isinstance(widget, QtWidgets.QCheckBox):
                 widget.toggled.connect(self._schedule_parameters_changed)
+        for spin, key, converter in (
+            (self.los_angle_spin, "los_angle_deg", lambda value: self._angle_display_to_deg(value)),
+            (self.xrd_angle_spin, "xrd_angle_deg", lambda value: self._angle_display_to_deg(value)),
+            (self.xrd_energy_spin, "xrd_energy_kev", lambda value: self._photon_display_to_kev(value, unit=self._photon_spin_unit(self.xrd_energy_spin))),
+            (self.plasmon_energy_spin, "plasmon_energy_kev", lambda value: self._photon_display_to_kev(value, unit=self._photon_spin_unit(self.plasmon_energy_spin))),
+            (self.spectroscopy_wavelength_spin, "spectroscopy_line_nm", lambda value: self._line_display_value_to_nm(value)),
+            (self.min_density_spin, "min_density_g_cm3", lambda value: self._density_display_to_g_cm3(value)),
+        ):
+            spin.valueChanged.connect(lambda value, name=key, convert=converter: self._remember_canonical_value(name, convert(float(value))))
+        self.plasmon_angle_spin.valueChanged.connect(
+            lambda value: self._remember_canonical_value(
+                "plasmon_coordinate",
+                float(value) if self._selected_plasmon_coordinate_axis() == PLASMON_AXIS_K_ANGSTROM_INV else self._angle_display_to_deg(float(value)),
+            )
+        )
+        self.plasmon_scan_start_spin.valueChanged.connect(lambda value: self._remember_scan_value("plasmon_scan_start", float(value)))
+        self.plasmon_scan_stop_spin.valueChanged.connect(lambda value: self._remember_scan_value("plasmon_scan_stop", float(value)))
         self.region_list.itemChanged.connect(lambda _item: self._schedule_parameters_changed())
         self.material_list.itemChanged.connect(lambda _item: self._schedule_parameters_changed())
         self.xrd_display_combo.currentIndexChanged.connect(self._refresh_display_only)
@@ -2370,12 +2398,13 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 self.plasmon_angle_spin.setSuffix(" 1/A")
                 self.plasmon_angle_spin.setValue(float(canonical_value))
             else:
-                self.plasmon_angle_spin.setDecimals(3 if self._angle_unit() == "rad" else 2)
+                self.plasmon_angle_spin.setDecimals(6 if self._angle_unit() == "rad" else 2)
                 self.plasmon_angle_spin.setRange(0.1 if self._angle_unit() == "deg" else 0.001, 180.0 if self._angle_unit() == "deg" else math.pi)
                 self.plasmon_angle_spin.setSingleStep(1.0 if self._angle_unit() == "deg" else 0.05)
                 self.plasmon_angle_spin.setSuffix(f" {_angle_unit_label(self._angle_unit())}")
                 self.plasmon_angle_spin.setValue(float(self._display_angle_from_deg(float(canonical_value))))
             self.plasmon_angle_spin.setProperty("plasmon_axis", normalized_axis)
+            self._canonical_physical_values["plasmon_coordinate"] = float(canonical_value)
         finally:
             self.plasmon_angle_spin.blockSignals(False)
 
@@ -2397,7 +2426,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                     spin.setSuffix(" 1/A")
                     spin.setValue(float(value))
                 else:
-                    spin.setDecimals(3 if self._angle_unit() == "rad" else 2)
+                    spin.setDecimals(6 if self._angle_unit() == "rad" else 2)
                     spin.setRange(0.1 if self._angle_unit() == "deg" else 0.001, 180.0 if self._angle_unit() == "deg" else math.pi)
                     spin.setSingleStep(1.0 if self._angle_unit() == "deg" else 0.05)
                     spin.setSuffix(f" {_angle_unit_label(self._angle_unit())}")
@@ -2405,8 +2434,13 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 spin.setProperty("plasmon_axis", normalized_axis)
             finally:
                 spin.blockSignals(False)
+        self._canonical_physical_values["plasmon_scan_start"] = float(start)
+        self._canonical_physical_values["plasmon_scan_stop"] = float(stop)
 
     def _selected_plasmon_coordinate_value(self) -> float:
+        canonical = getattr(self, "_canonical_physical_values", {}).get("plasmon_coordinate")
+        if canonical is not None:
+            return float(canonical)
         axis = self._selected_plasmon_coordinate_axis()
         value = float(self.plasmon_angle_spin.value())
         if axis == PLASMON_AXIS_K_ANGSTROM_INV:
@@ -2421,6 +2455,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         return float(value)
 
     def _selected_plasmon_scan_start(self) -> float:
+        canonical = getattr(self, "_canonical_physical_values", {}).get("plasmon_scan_start")
+        if canonical is not None:
+            return float(canonical)
         axis = self._selected_plasmon_scan_axis()
         value = float(self.plasmon_scan_start_spin.value())
         if axis == PLASMON_AXIS_K_ANGSTROM_INV:
@@ -2428,6 +2465,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         return float(self._angle_display_to_deg(value))
 
     def _selected_plasmon_scan_stop(self) -> float:
+        canonical = getattr(self, "_canonical_physical_values", {}).get("plasmon_scan_stop")
+        if canonical is not None:
+            return float(canonical)
         axis = self._selected_plasmon_scan_axis()
         value = float(self.plasmon_scan_stop_spin.value())
         if axis == PLASMON_AXIS_K_ANGSTROM_INV:
@@ -2447,6 +2487,15 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 item.setCheckState(state)
         finally:
             widget.blockSignals(False)
+
+    def _remember_canonical_value(self, key: str, value: float) -> None:
+        self._canonical_physical_values[key] = float(value)
+
+    def _remember_scan_value(self, key: str, displayed_value: float) -> None:
+        value = float(displayed_value)
+        if self._selected_plasmon_scan_axis() != PLASMON_AXIS_K_ANGSTROM_INV:
+            value = self._angle_display_to_deg(value)
+        self._remember_canonical_value(key, value)
 
     def _apply_plasmon_benchmark_preset(self) -> None:
         preset = self._selected_plasmon_benchmark_preset()
@@ -2556,6 +2605,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             self._set_checked_plasmon_compare_models(None)
             self.plasmon_compare_policies_checkbox.setChecked(False)
             self.plasmon_energy_spin.setValue(float(self._display_photon_energy_from_kev(8.307, unit=self._photon_spin_unit(self.plasmon_energy_spin))))
+            self._remember_canonical_value("plasmon_energy_kev", 8.307)
             self.plasmon_window_spin.setValue(45.0)
             self.plasmon_points_spin.setValue(1201)
             self.plasmon_fwhm_spin.setValue(3.5)
@@ -2735,6 +2785,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 if index >= 0:
                     combo.setCurrentIndex(index)
             self.plasmon_energy_spin.setValue(float(self._display_photon_energy_from_kev(float(plasmon.photon_energy_kev), unit=self._photon_spin_unit(self.plasmon_energy_spin))))
+            self._remember_canonical_value("plasmon_energy_kev", float(plasmon.photon_energy_kev))
             self._configure_plasmon_coordinate_spin(
                 axis=str(getattr(plasmon, "coordinate_axis", PLASMON_AXIS_ANGLE_DEG)),
                 canonical_value=float(getattr(plasmon, "coordinate_value", plasmon.scattering_angle_deg)),
@@ -3933,9 +3984,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         for spin, minimum_deg, maximum_deg, step_deg in (
             (self.los_angle_spin, 0.0, 89.0, 2.5),
             (self.xrd_angle_spin, 0.1, 89.9, 0.5),
-            (self.plasmon_angle_spin, 0.1, 180.0, 1.0),
         ):
-            native_value_deg = self._angle_display_to_deg(float(spin.value()), unit=str(previous.angle_unit))
+            canonical_key = "los_angle_deg" if spin is self.los_angle_spin else "xrd_angle_deg"
+            native_value_deg = float(self._canonical_physical_values[canonical_key])
             spin.blockSignals(True)
             try:
                 if angle_unit == "rad":
@@ -3955,9 +4006,8 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
 
         photon_unit = self._photon_unit()
         photon_suffix = f" {_photon_unit_label(photon_unit)}"
-        for spin in (self.xrd_energy_spin, self.plasmon_energy_spin):
-            previous_unit = _normalize_photon_unit(str(spin.property("photon_unit") or previous.photon_unit))
-            native_kev = self._photon_display_to_kev(float(spin.value()), unit=previous_unit)
+        for spin, canonical_key in ((self.xrd_energy_spin, "xrd_energy_kev"), (self.plasmon_energy_spin, "plasmon_energy_kev")):
+            native_kev = float(self._canonical_physical_values[canonical_key])
             spin.blockSignals(True)
             try:
                 spin.setDecimals(3 if photon_unit == "keV" else 4)
@@ -3976,7 +4026,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             finally:
                 spin.blockSignals(False)
 
-        native_density_g_cm3 = self._density_display_to_g_cm3(float(self.min_density_spin.value()), unit=str(previous.density_unit))
+        native_density_g_cm3 = float(self._canonical_physical_values["min_density_g_cm3"])
         self.min_density_spin.blockSignals(True)
         try:
             self.min_density_spin.setDecimals(4 if self._density_unit() == "g/cm3" else 1)
@@ -3990,7 +4040,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         finally:
             self.min_density_spin.blockSignals(False)
 
-        native_line_nm = self._line_display_value_to_nm(float(self.spectroscopy_wavelength_spin.value()), unit=str(previous.photon_unit))
+        native_line_nm = float(self._canonical_physical_values["spectroscopy_line_nm"])
         self.spectroscopy_wavelength_spin.blockSignals(True)
         try:
             if photon_unit == "nm":
@@ -4033,12 +4083,12 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 combo.setItemText(k_index, "k [1/A]")
         self._configure_plasmon_coordinate_spin(
             axis=self._selected_plasmon_coordinate_axis(),
-            canonical_value=self._selected_plasmon_coordinate_value(),
+            canonical_value=float(self._canonical_physical_values["plasmon_coordinate"]),
         )
         self._configure_plasmon_scan_spins(
             axis=self._selected_plasmon_scan_axis(),
-            start=self._selected_plasmon_scan_start(),
-            stop=self._selected_plasmon_scan_stop(),
+            start=float(self._canonical_physical_values["plasmon_scan_start"]),
+            stop=float(self._canonical_physical_values["plasmon_scan_stop"]),
         )
 
     def set_display_settings(self, settings: object) -> None:
@@ -4056,15 +4106,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         zone_upper = int(self.zone_upper_spin.value())
         preheat_target_region_id = self.preheat_target_combo.currentData()
         return DerivedAnalysisParameters(
-            xrd_photon_energy_kev=self._photon_display_to_kev(
-                float(self.xrd_energy_spin.value()),
-                unit=self._photon_spin_unit(self.xrd_energy_spin),
-            ),
-            xrd_initial_bragg_angle_deg=self._angle_display_to_deg(float(self.xrd_angle_spin.value())),
-            plasmon_photon_energy_kev=self._photon_display_to_kev(
-                float(self.plasmon_energy_spin.value()),
-                unit=self._photon_spin_unit(self.plasmon_energy_spin),
-            ),
+            xrd_photon_energy_kev=float(self._canonical_physical_values["xrd_energy_kev"]),
+            xrd_initial_bragg_angle_deg=float(self._canonical_physical_values["xrd_angle_deg"]),
+            plasmon_photon_energy_kev=float(self._canonical_physical_values["plasmon_energy_kev"]),
             plasmon_scattering_angle_deg=self._selected_plasmon_fixed_angle_deg(),
             plasmon_adiabatic_index=float(self.plasmon_gamma_spin.value()),
             plasmon_model=self._selected_plasmon_model(),
@@ -4094,18 +4138,18 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             plasmon_compare_models=bool(self.plasmon_compare_models_checkbox.isChecked()),
             plasmon_compare_model_names=self._checked_plasmon_compare_models(),
             plasmon_compare_policies=bool(self.plasmon_compare_policies_checkbox.isChecked()),
-            spectroscopy_line_wavelength_nm=self._line_display_value_to_nm(float(self.spectroscopy_wavelength_spin.value())),
+            spectroscopy_line_wavelength_nm=float(self._canonical_physical_values["spectroscopy_line_nm"]),
             transmission_mode=str(self.transmission_mode_combo.currentData()),
             transmission_photon_energy_kev=self._selected_transmission_energy_kev(),
             observation_side=str(self.observation_side_combo.currentData()),
-            line_of_sight_angle_deg=self._angle_display_to_deg(float(self.los_angle_spin.value())),
+            line_of_sight_angle_deg=float(self._canonical_physical_values["los_angle_deg"]),
             profile_coordinate_mode=str(self.profile_coordinate_combo.currentData()),
             reuse_viewer_subset=bool(self.reuse_viewer_subset_checkbox.isChecked()),
             derived_region_ids=self._checked_values_for_filter(self.region_list),
             derived_material_ids=self._checked_values_for_filter(self.material_list),
             exclude_entry_region=bool(self.exclude_entry_region_checkbox.isChecked()),
             exclude_low_density=bool(self.exclude_low_density_checkbox.isChecked() or self.min_density_spin.value() > 0.0),
-            min_density_g_cm3=self._density_display_to_g_cm3(float(self.min_density_spin.value())),
+            min_density_g_cm3=float(self._canonical_physical_values["min_density_g_cm3"]),
             exclude_opposite_velocity=bool(self.exclude_opposite_velocity_checkbox.isChecked()),
             zone_index_lower=(zone_lower if zone_lower > 1 else None),
             zone_index_upper=(zone_upper if zone_upper > 0 and zone_upper < max(1, self._context.n_zones) else None),

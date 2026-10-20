@@ -212,6 +212,50 @@ class DerivedStabilityTests(unittest.TestCase):
         finally:
             workspace.close()
 
+    def test_radian_precision_and_unit_switches_preserve_canonical_values(self) -> None:
+        workspace = HeliosDerivedWorkspace()
+        try:
+            radians_and_alternate_units = replace(
+                default_viewer_settings(), angle_unit="rad", photon_unit="nm", density_unit="kg/m3",
+            )
+            workspace.set_display_settings(radians_and_alternate_units)
+            workspace.los_angle_spin.setValue(math.pi / 4.0)
+            workspace.xrd_angle_spin.setValue(math.pi / 3.0)
+            workspace.plasmon_angle_spin.setValue(math.pi / 2.0)
+            workspace.xrd_energy_spin.setValue(0.15)
+            workspace.plasmon_energy_spin.setValue(0.16)
+            workspace.spectroscopy_wavelength_spin.setValue(532.123456)
+            workspace.min_density_spin.setValue(2400.0)
+
+            before = workspace.parameters()
+            self.assertEqual(workspace.plasmon_angle_spin.decimals(), 6)
+            self.assertAlmostEqual(before.plasmon_scattering_angle_deg, 90.0, delta=5.0e-5)
+            original = (
+                before.line_of_sight_angle_deg,
+                before.xrd_initial_bragg_angle_deg,
+                before.xrd_photon_energy_kev,
+                before.plasmon_photon_energy_kev,
+                before.spectroscopy_line_wavelength_nm,
+                before.min_density_g_cm3,
+            )
+
+            workspace.set_display_settings(replace(radians_and_alternate_units, angle_unit="deg", photon_unit="eV", density_unit="g/cm3"))
+            workspace.set_display_settings(radians_and_alternate_units)
+            after = workspace.parameters()
+            self.assertEqual(
+                original,
+                (
+                    after.line_of_sight_angle_deg,
+                    after.xrd_initial_bragg_angle_deg,
+                    after.xrd_photon_energy_kev,
+                    after.plasmon_photon_energy_kev,
+                    after.spectroscopy_line_wavelength_nm,
+                    after.min_density_g_cm3,
+                ),
+            )
+        finally:
+            workspace.close()
+
     def test_controller_cancels_superseded_inflight_request(self) -> None:
         path = HDF5_ROOT / "5Fe+4.9TW+light_stabilized.h5"
         dataset = load_run_data(path)
