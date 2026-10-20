@@ -55,3 +55,17 @@ _tmp_plasmon_fourth_pass/
 /outputs/distributables/helios-parser-viewer_*.deb
 /outputs/distributables/helios-parser-viewer-v*-windows-portable.zip
 /outputs/distributables/helios-parser-viewer-v*-linux-portable.tar.gz
+
+# Historical release bundles belong on GitHub Releases, not in the source repo
+/outputs/release/*.zip
+/outputs/distributables/*
+/docs.zip
+/NRL_Formulary_2023.pdf
+
+# Root-level generated validation and phase reports
+/*_report.md
+/phase*_*.md
+/plasmon_*_report.md
+/plasmon_*_verification_report.md
+/outputs/screenshots/*/report.json
+/outputs/wave*_retest.txt

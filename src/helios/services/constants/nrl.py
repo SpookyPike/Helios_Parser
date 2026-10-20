@@ -3,7 +3,7 @@
 This module centralizes the physical constants and short reference metadata used
 by the Phase 4 Derived / Analysis services. The primary source is:
 
-    NRL Plasma Formulary 2023, repository file ``NRL_Formulary_2023.pdf``
+    NRL Plasma Formulary 2023 (published reference; not bundled in this repository)
 
 Important unit discipline from the formulary:
 - most plasma quick-look formulas are in Gaussian CGS
