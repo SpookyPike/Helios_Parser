@@ -155,6 +155,7 @@ def shared_raw_cache_stats() -> dict[str, object]:
 def publish_open_run_payload(
     path: str | Path,
     *,
+    revision: RunRevision | None = None,
     summary: dict[str, object],
     metadata: dict[str, object],
     regions: dict[str, object],
@@ -172,7 +173,7 @@ def publish_open_run_payload(
 ) -> tuple[object, ...]:
     """Publish lightweight run-open data into the shared session cache."""
 
-    run_key = run_identity_for_path(path)
+    run_key = revision.cache_key if revision is not None else run_identity_for_path(path)
     _share_meta(run_key, "summary", dict(summary))
     _share_meta(run_key, "metadata", dict(metadata))
     _share_meta(run_key, "regions", dict(regions))
@@ -195,13 +196,14 @@ def publish_open_run_payload(
 def publish_field_payload(
     path: str | Path,
     *,
+    revision: RunRevision | None = None,
     field_name: str,
     data: np.ndarray,
     edge_data: np.ndarray | None = None,
 ) -> tuple[object, ...]:
     """Publish a viewer-loaded field into the shared session cache."""
 
-    run_key = run_identity_for_path(path)
+    run_key = revision.cache_key if revision is not None else run_identity_for_path(path)
     _share_array(run_key, f"field:{field_name}", data, np.float64)
     if edge_data is not None:
         _share_array(run_key, f"field:{field_name}:edge", edge_data, np.float64)
@@ -403,6 +405,11 @@ def load_run_data(
         regions = _cached_meta(run_key, "regions")
         materials = _cached_meta(run_key, "materials")
         fields = _cached_meta(run_key, "fields")
+        missing_core_fields = set(_cached_meta(run_key, "missing_core_fields") or ())
+        if fields is not None:
+            missing_core_fields.update({"density", "velocity", "temperature_e", "temperature_i", "electron_density", "mean_charge"} - set(fields))
+            if missing_core_fields:
+                _share_meta(run_key, "missing_core_fields", tuple(sorted(missing_core_fields)))
         run_status = _cached_meta(run_key, "run_status")
         visar_support_metadata = _cached_meta(run_key, "visar_support_metadata")
         has_dynamic_radius = _cached_meta(run_key, "has_dynamic_radius")
@@ -438,15 +445,14 @@ def load_run_data(
             or static_x_edges is None
             or zone_region_id is None
             or zone_material_index is None
-            or density is None
-            or velocity is None
-            or temperature_e is None
-            or temperature_i is None
-            or electron_density is None
-            or mean_charge is None
+            or (density is None and "density" not in missing_core_fields)
+            or (velocity is None and "velocity" not in missing_core_fields)
+            or (temperature_e is None and "temperature_e" not in missing_core_fields)
+            or (temperature_i is None and "temperature_i" not in missing_core_fields)
+            or (electron_density is None and "electron_density" not in missing_core_fields)
+            or (mean_charge is None and "mean_charge" not in missing_core_fields)
             or (
-                requested_fields is not None
-                and any(optional_fields[name] is None and (fields is None or name in fields) for name in requested_optional)
+                any(optional_fields[name] is None and (fields is None or name in fields) for name in requested_optional)
             )
         )
         if needs_open:
@@ -494,17 +500,20 @@ def load_run_data(
                     zone_material_index = _share_array(run_key, "zone_material_index", run.get_grid("zone_material_index"), np.int32)
 
                 field_names = set(str(name) for name in fields)
-                if density is None:
+                missing_core_fields.update({"density", "velocity", "temperature_e", "temperature_i", "electron_density", "mean_charge"} - field_names)
+                if missing_core_fields:
+                    _share_meta(run_key, "missing_core_fields", tuple(sorted(missing_core_fields)))
+                if density is None and "density" in field_names:
                     density = _share_array(run_key, "field:density", run.get_field("density"), np.float64)
-                if velocity is None:
+                if velocity is None and "velocity" in field_names:
                     velocity = _share_array(run_key, "field:velocity", run.get_field("velocity"), np.float64)
-                if temperature_e is None:
+                if temperature_e is None and "temperature_e" in field_names:
                     temperature_e = _share_array(run_key, "field:temperature_e", run.get_field("temperature_e"), np.float64)
-                if temperature_i is None:
+                if temperature_i is None and "temperature_i" in field_names:
                     temperature_i = _share_array(run_key, "field:temperature_i", run.get_field("temperature_i"), np.float64)
-                if electron_density is None:
+                if electron_density is None and "electron_density" in field_names:
                     electron_density = _share_array(run_key, "field:electron_density", run.get_field("electron_density"), np.float64)
-                if mean_charge is None:
+                if mean_charge is None and "mean_charge" in field_names:
                     mean_charge = _share_array(run_key, "field:mean_charge", run.get_field("mean_charge"), np.float64)
                 if zone_width is None:
                     if "zone_width" in field_names:
@@ -537,6 +546,29 @@ def load_run_data(
         else:
             increment_counter("shared_raw_cache.run.hit")
 
+        # Keep the dataset grid-shaped so modules can return typed
+        # unavailable results. Capability metadata below distinguishes these
+        # NaN placeholders from fields actually present in the source.
+        expected_core_shape = (int(time_s.size), int(summary["n_zones"]))
+        core_arrays = {
+            "density": density,
+            "velocity": velocity,
+            "temperature_e": temperature_e,
+            "temperature_i": temperature_i,
+            "electron_density": electron_density,
+            "mean_charge": mean_charge,
+        }
+        for field_name, values in core_arrays.items():
+            if values is None:
+                placeholder = np.full(expected_core_shape, np.nan, dtype=np.float64)
+                core_arrays[field_name] = placeholder
+        density = core_arrays["density"]
+        velocity = core_arrays["velocity"]
+        temperature_e = core_arrays["temperature_e"]
+        temperature_i = core_arrays["temperature_i"]
+        electron_density = core_arrays["electron_density"]
+        mean_charge = core_arrays["mean_charge"]
+
         if optional_fields["plasma_pressure_j_cm3"] is None:
             if optional_fields["pressure_i"] is not None and optional_fields["pressure_e"] is not None:
                 optional_fields["plasma_pressure_j_cm3"] = _share_array(
@@ -562,8 +594,6 @@ def load_run_data(
                 run_status = dict(summary_status)
         assert time_s is not None and static_x is not None and static_x_edges is not None
         assert zone_region_id is not None and zone_material_index is not None
-        assert density is not None and velocity is not None and temperature_e is not None and temperature_i is not None
-        assert electron_density is not None and mean_charge is not None
         available_fields = tuple(str(name) for name in fields)
         n_zones = int(summary["n_zones"])
         zone_atomic_weight = _optional_zone_material_property(regions, "atomic_weight", n_zones)

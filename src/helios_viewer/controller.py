@@ -244,6 +244,7 @@ class RunController(QtCore.QObject):
         self.diagnostic_cache.clear(reason=f"run_opened:generation:{self._run_generation}")
         publish_open_run_payload(
             payload.path,
+            revision=payload.revision,
             summary=payload.summary,
             metadata=payload.metadata,
             regions=payload.regions,
@@ -280,6 +281,7 @@ class RunController(QtCore.QObject):
         if self.run_payload is not None:
             publish_field_payload(
                 self.run_payload.path,
+                revision=self.run_payload.revision,
                 field_name=payload.field_name,
                 data=payload.data,
                 edge_data=payload.edge_data,
