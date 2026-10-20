@@ -24,7 +24,8 @@ class PackagedScientificResourceTests(unittest.TestCase):
         pairs = (
             (
                 resource_root.joinpath("hed_helios_cold_electronic_baseline_core.json"),
-                repo_root / "hed_helios_cold_electronic_baseline_core.json",
+                repo_root
+                / "src/helios/services/derived/resources/hed_helios_cold_electronic_baseline_core.json",
             ),
             (
                 resource_root.joinpath("xcom_fallback_1keV_12keV_extended.json"),
