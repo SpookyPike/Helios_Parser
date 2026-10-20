@@ -182,7 +182,11 @@ class ValidationTests(unittest.TestCase):
                 expected = EXPECTED_COUNTS[name]
                 self.assertEqual(simulation.metadata["n_zones"], expected["zones"])
                 self.assertEqual(simulation.metadata["n_snapshots"], expected["snapshots"])
-                self.assertEqual(set(simulation.fields), EXPECTED_FIELDS[name])
+                self.assertTrue(EXPECTED_FIELDS[name].issubset(simulation.fields))
+                self.assertTrue({"plasma_pressure_j_cm3", "total_pressure_j_cm3"}.issubset(simulation.fields))
+                np.testing.assert_array_equal(
+                    simulation.fields["pressure"], simulation.fields["total_pressure_j_cm3"]
+                )
                 self.assertTrue(CORE_FIELDS.issubset(simulation.fields))
                 self.assertEqual(set(simulation.diagnostics), DIAGNOSTIC_SECTIONS)
                 self.assertEqual(simulation.regions["region_index"].shape[0], expected["regions"])
