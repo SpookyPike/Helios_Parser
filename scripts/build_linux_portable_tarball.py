@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import fnmatch
 import shutil
 import sys
 import tarfile
@@ -30,6 +31,23 @@ def _ignore_runtime_junk(_: str, names: list[str]) -> set[str]:
     }
 
 
+def _ignore_internal_doc_artifacts(_: str, names: list[str]) -> set[str]:
+    ignored = _ignore_runtime_junk("", names)
+    patterns = (
+        "*audit*.md",
+        "*plan*.md",
+        "*review*.md",
+        "*validation*.md",
+        "*bug*report*.md",
+        "helios_performance_*.json",
+    )
+    for name in names:
+        normalized = name.lower()
+        if normalized == "performance" or any(fnmatch.fnmatchcase(normalized, pattern) for pattern in patterns):
+            ignored.add(name)
+    return ignored
+
+
 def _write_executable(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8", newline="\n")
@@ -50,7 +68,7 @@ def main() -> int:
     if BUNDLE_DIR.exists():
         shutil.rmtree(BUNDLE_DIR)
     shutil.copytree(SRC, BUNDLE_DIR / "src", ignore=_ignore_runtime_junk)
-    shutil.copytree(ROOT / "docs", BUNDLE_DIR / "docs", ignore=_ignore_runtime_junk)
+    shutil.copytree(ROOT / "docs", BUNDLE_DIR / "docs", ignore=_ignore_internal_doc_artifacts)
     shutil.copy2(ROOT / "README.md", BUNDLE_DIR / "README.md")
     shutil.copy2(ROOT / "pyproject.toml", BUNDLE_DIR / "pyproject.toml")
     _write_executable(BUNDLE_DIR / "bin" / "helios-parse-view", _launcher("helios_app"))

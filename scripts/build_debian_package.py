@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import fnmatch
 import gzip
 import os
 import shutil
@@ -42,6 +43,23 @@ def _copy_tree(source: Path, target: Path) -> None:
     shutil.copytree(source, target, ignore=_ignore_runtime_junk)
 
 
+def _ignore_internal_doc_artifacts(_: str, names: list[str]) -> set[str]:
+    ignored = _ignore_runtime_junk("", names)
+    patterns = (
+        "*audit*.md",
+        "*plan*.md",
+        "*review*.md",
+        "*validation*.md",
+        "*bug*report*.md",
+        "helios_performance_*.json",
+    )
+    for name in names:
+        normalized = name.lower()
+        if normalized == "performance" or any(fnmatch.fnmatchcase(normalized, pattern) for pattern in patterns):
+            ignored.add(name)
+    return ignored
+
+
 def _write_executable(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8", newline="\n")
@@ -59,7 +77,7 @@ exec python3 -m {module} "$@"
 def _populate_data_tree(data_root: Path) -> None:
     app_root = data_root / INSTALL_ROOT
     _copy_tree(SRC, app_root / "src")
-    _copy_tree(ROOT / "docs", app_root / "docs")
+    shutil.copytree(ROOT / "docs", app_root / "docs", ignore=_ignore_internal_doc_artifacts)
     shutil.copy2(ROOT / "README.md", app_root / "README.md")
     shutil.copy2(ROOT / "pyproject.toml", app_root / "pyproject.toml")
 
