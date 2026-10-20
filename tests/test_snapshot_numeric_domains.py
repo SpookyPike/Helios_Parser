@@ -48,6 +48,41 @@ class SnapshotNumericDomainTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "nondecreasing"):
                     next(iterator)
 
+    def test_duplicate_snapshot_times_are_retained(self) -> None:
+        text = SAMPLE.read_text(encoding="utf-8", errors="replace")
+        lines = text.splitlines()
+        header_lines = [index for index, line in enumerate(lines) if re.match(r"^\s*Cycle\s+Time\s+\(s\)", line)]
+        first_row = lines[header_lines[0] + 1].split()
+        second_row = lines[header_lines[1] + 1].split()
+        second_row[1] = first_row[1]
+        lines[header_lines[1] + 1] = "  ".join(second_row)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            duplicate = Path(tmpdir) / "duplicate_time.log"
+            duplicate.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            parser = HeliosParser()
+            with parser.open_document(duplicate) as document:
+                snapshots = list(document.iter_snapshots_streaming())
+            self.assertEqual(len(snapshots), len(header_lines))
+            self.assertEqual(snapshots[0].time, snapshots[1].time)
+
+    def test_decreasing_cycle_sequence_is_fatal(self) -> None:
+        text = SAMPLE.read_text(encoding="utf-8", errors="replace")
+        lines = text.splitlines()
+        header_lines = [index for index, line in enumerate(lines) if re.match(r"^\s*Cycle\s+Time\s+\(s\)", line)]
+        first_row = lines[header_lines[0] + 1].split()
+        second_row = lines[header_lines[1] + 1].split()
+        second_row[0] = str(int(first_row[0]) - 1)
+        lines[header_lines[1] + 1] = "  ".join(second_row)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            malformed = Path(tmpdir) / "decreasing_cycle.log"
+            malformed.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            parser = HeliosParser()
+            with parser.open_document(malformed) as document:
+                iterator = document.iter_snapshots_streaming()
+                next(iterator)
+                with self.assertRaisesRegex(ValueError, "cycles must be nondecreasing"):
+                    next(iterator)
+
 
 if __name__ == "__main__":
     unittest.main()
