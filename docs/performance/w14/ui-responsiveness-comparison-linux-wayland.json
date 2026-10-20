@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "verdict": "unpaired_inconclusive",
+  "reason": "One fresh process per revision in this matched sample; baseline exited with SIGSEGV (139) after saving its complete interaction report, while candidate exited cleanly. No paired or repeatable timing conclusion is valid.",
+  "baseline_revision": "76634468fb41fe9f3ca044a76879d91ee8ab70af",
+  "candidate_revision": "1f1c8c39c4b9e52d20262e4bdac2f0bebf8f15ef",
+  "fixture_sha256": "8d3242b8d48f302e5ad821f9fb42b3121c38b8b15563fdd01fdbe905b3fe1fc9",
+  "interaction_samples_per_revision": 100,
+  "process_exit_code": {
+    "baseline": 139,
+    "candidate": 0
+  },
+  "latest_snapshot_render_correct": {
+    "baseline": true,
+    "candidate": true
+  },
+  "metrics": {
+    "settling_p50_ms": {
+      "baseline": 16.97011454962194,
+      "candidate": 17.515884479507804,
+      "candidate_over_baseline": 1.0321606509072163
+    },
+    "settling_p95_ms": {
+      "baseline": 23.735875030979514,
+      "candidate": 23.552580969408154,
+      "candidate_over_baseline": 0.9922777626132541
+    },
+    "event_loop_gap_p50_ms": {
+      "baseline": 10.992429102770984,
+      "candidate": 11.122156167402864,
+      "candidate_over_baseline": 1.0118014920468468
+    },
+    "event_loop_gap_p95_ms": {
+      "baseline": 48.16539911553264,
+      "candidate": 50.580460112541914,
+      "candidate_over_baseline": 1.0501409941858129
+    },
+    "event_loop_gap_max_ms": {
+      "baseline": 68.39157291688025,
+      "candidate": 62.79263808391988,
+      "candidate_over_baseline": 0.9181341414714203
+    }
+  }
+}
