@@ -5,7 +5,7 @@
 **Plan:** [HELIOS_FIX_IMPLEMENTATION_PLAN.md](HELIOS_FIX_IMPLEMENTATION_PLAN.md)
 **Audit:** [HELIOS_AUDIT_2026-10-20.md](HELIOS_AUDIT_2026-10-20.md)
 
-This is validation evidence, not a release sign-off. The user asked to prefer focused tests and run the full suite only when needed. After the two earlier full-profile failures were fixed and verified with focused tests, the full profile was rerun because W14 requires post-fix integration evidence. The latest run, after the cache-retirement lifecycle change, completed all 78 entries with zero failures, zero timeouts, zero missing entries, and two explicit test skips. The Linux full-profile gate passes. Native Linux Wayland accessibility/lifecycle/layout/theme checks also pass; Windows/frozen-runtime validation, native latency measurement, and active-task/view memory limits remain open release work.
+This is validation evidence, not a release sign-off. The user asked to prefer focused tests and run the full suite only when needed. After the two earlier full-profile failures were fixed and verified with focused tests, the full profile was rerun because W14 requires post-fix integration evidence. The latest run, after the cache-retirement lifecycle change, completed all 78 entries with zero failures, zero timeouts, zero missing entries, and two explicit test skips. The Linux full-profile gate passes. Native Linux Wayland accessibility/lifecycle/layout/theme checks and Linux PyInstaller frozen-runtime smoke also pass; Windows build/runtime validation, native latency measurement, and active-task/view memory limits remain open release work.
 
 ## Focused validation
 
@@ -14,6 +14,7 @@ All tests below ran from the disposable current-source tree created by `scripts/
 | Target | Result | Evidence |
 |---|---|---|
 | Native Wayland UI | PASS | `test_accessibility_controls.py`, `test_qt_lifecycle.py`, `test_w11_layout.py`, and `test_w11_theme_copy.py`: 12 tests passed with `QT_QPA_PLATFORM=wayland`; exact resize assertions wait for compositor acknowledgement. The size request test also passed with `QT_QPA_PLATFORM=xcb` (1 test). |
+| Linux frozen runtime | PASS | PyInstaller 6.22.3 built the repository spec into `/tmp/helios-frozen-dist-20261020`; the GUI stayed alive for a 5-second offscreen startup smoke, and the frozen CLI converted the BPF fixture to H5D schema 2.1. Both bundled scientific-resource JSON files had hashes matching their source files. This is Linux evidence; the Windows build/runtime remains untested. |
 | `test_cache_lifecycle.py` | PASS | Stable bucket identity and clear lifecycle |
 | `test_derived_backend_optimization.py` | PASS | Field-read and derived-backend work counts |
 | `test_plasmon_energy_grid_cache.py` | PASS | Exact spectrum-grid cache behavior |
@@ -86,7 +87,7 @@ This single exploratory run shows a zone-trace regression for the candidate layo
 | F22 Pending I/O | W08 request coalescing (`25f66e7`) | `test_viewer_wave2.py` | Passed |
 | F23 Per-field metadata | W08 lazy metadata (`d99955f`) | `test_reader.py` | Passed |
 | F24 Theme contrast | W11 theme refresh (`6d5effb`) | Theme/accessibility tests | Full/offscreen suite and native Wayland theme checks passed; Windows native theme review pending |
-| F25 Packaged resources | W12c package data (`8fc08e9`) | Installed wheel/sdist resource smoke | Earlier packaging smoke passed; frozen-runtime resource check unavailable/not run |
+| F25 Packaged resources | W12c package data (`8fc08e9`) | Installed wheel/sdist smoke and Linux frozen-runtime resource check | Installed package smoke passed; Linux PyInstaller spec bundled both scientific-resource files with matching hashes and the frozen CLI smoke passed. Windows frozen-runtime resource check pending |
 
 ## Remaining release checks
 
@@ -95,6 +96,6 @@ This single exploratory run shows a zone-trace regression for the candidate layo
 - Cache-retirement evidence: ten large-fixture open/analyze/retire cycles cleared all 24 revision-owned entries per cycle and retained zero cache bytes. After the initial cycle, post-retirement RSS stayed within a 0.26 MiB range over cycles 2–10; RSS remains above its starting point because native allocators retain pages. The benchmark does not claim an RSS ceiling for arrays retained by active tasks or views.
 - The P01/P04/P05/P07 paired profiles, comparisons and fixture manifests are archived; P01/P04 passed, P07 was inconclusive, and the final P05 comparison passed after optimization. The earlier P05 failure is retained as a before-optimization profile.
 - Native Linux Wayland accessibility/lifecycle/layout/theme checks passed (12 tests), and the size request test passed on XCB. Windows native checks remain pending. Native UI latency measurement with the plan's interaction sample remains unrun.
-- PyInstaller/frozen-runtime resource smoke: pending because the supported frozen build environment was not exercised.
+- Linux PyInstaller frozen-runtime smoke passed: GUI startup, BPF-to-H5D CLI conversion, and scientific-resource hash checks. Windows frozen-runtime build/smoke remains pending.
 
-The current branch has passing focused evidence for the performance-sensitive reader, cache, derived, viewer, spectrum-cache, and XCOM paths. The post-fix Linux W14 full-profile gate and synchronous P06 cache-retirement gate pass. Overall release completion remains open because Windows native checks, frozen-runtime smoke, and native UI latency measurement have not been run; the cache budget also excludes arrays retained by active tasks and views.
+The current branch has passing focused evidence for the performance-sensitive reader, cache, derived, viewer, spectrum-cache, and XCOM paths. The post-fix Linux W14 full-profile gate, synchronous P06 cache-retirement gate, and Linux frozen-runtime smoke pass. Overall release completion remains open because Windows native/build checks and native UI latency measurement have not been run; the cache budget also excludes arrays retained by active tasks and views.
