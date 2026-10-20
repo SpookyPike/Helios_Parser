@@ -113,12 +113,17 @@ class BpfPipelineTests(unittest.TestCase):
                 self.assertTrue(bpf.layout.incomplete_final_snapshot)
                 self.assertGreater(bpf.layout.partial_final_record_bytes, 0)
             output = Path(tmpdir) / "truncated.h5"
+            complete_output = Path(tmpdir) / "complete.h5"
             write_hdf5(truncated, output)
-            with HeliosRun(output) as run:
+            write_hdf5(BPF_SAMPLE, complete_output)
+            with HeliosRun(output) as run, HeliosRun(complete_output) as complete_run:
                 status = run.get_run_status()
                 self.assertEqual(status["state"], "truncated")
                 self.assertEqual(status["valid_snapshot_count"], 7)
                 self.assertTrue(status["dropped_partial_final_block"])
+                self.assertEqual(run.n_snapshots, 7)
+                for field_name in run.list_fields():
+                    np.testing.assert_array_equal(run.get_field(field_name), complete_run.get_field(field_name)[:7])
 
     def test_nonzero_bpf_trailer_is_not_accepted_as_documented_trailer(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
