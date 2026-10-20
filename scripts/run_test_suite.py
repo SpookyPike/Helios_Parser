@@ -283,9 +283,24 @@ def run_entry(entry: TestEntry, report_dir: Path, root: Path = ROOT) -> dict[str
                 try:
                     tail, _ = process.communicate(timeout=1.0)
                 except subprocess.TimeoutExpired:
-                    tail, _ = process.communicate()
-                # Descendants can close the wrapper's pipes and outlive its
-                # process. Remove any remaining group members before continuing.
+                    # Do not wait for pipe EOF before killing: a direct child
+                    # may ignore TERM, or a descendant may keep the pipe open.
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    try:
+                        tail, _ = process.communicate(timeout=1.0)
+                    except subprocess.TimeoutExpired:
+                        # Reap the wrapper with a bounded wait and close our
+                        # pipe handles if an escaped descendant still owns them.
+                        process.kill()
+                        for stream in (process.stdout, process.stderr):
+                            if stream is not None:
+                                stream.close()
+                        process.wait(timeout=1.0)
+                        tail = ""
+                # Descendants can close the wrapper's pipes and outlive it.
                 try:
                     os.killpg(process.pid, 0)
                 except ProcessLookupError:

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
+import signal
+import subprocess
 import sys
 import tempfile
 import time
@@ -175,6 +178,49 @@ class TestSuiteRunnerTests(unittest.TestCase):
                 run_test_suite.TIMEOUT_OVERRIDES.pop("wrapper-child.py", None)
             else:
                 run_test_suite.TIMEOUT_OVERRIDES["wrapper-child.py"] = original
+
+    @unittest.skipUnless(sys.platform != "win32", "POSIX process-group timeout behavior")
+    def test_runner_kills_term_resistant_process_with_inherited_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            report = root / "reports"
+            report.mkdir()
+            marker = root / "natural-completion.txt"
+            code = (
+                "import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); "
+                f"time.sleep(3); open({str(marker)!r}, 'w').write('late')"
+            )
+            entry = run_test_suite.TestEntry("resistant.py", (sys.executable, "-c", code), "test")
+            original = run_test_suite.TIMEOUT_OVERRIDES.get("resistant.py")
+            run_test_suite.TIMEOUT_OVERRIDES["resistant.py"] = 0.15
+            try:
+                # Run the regression in a separately supervised process so a
+                # future broken timeout implementation cannot hang this suite.
+                supervisor = (
+                    "import json; from pathlib import Path; from scripts import run_test_suite; "
+                    f"entry=run_test_suite.TestEntry('resistant.py', ({sys.executable!r}, '-c', {code!r}), 'test'); "
+                    f"run_test_suite.TIMEOUT_OVERRIDES['resistant.py']=0.15; "
+                    f"print(json.dumps(run_test_suite.run_entry(entry, Path({str(report)!r}), root=Path({str(root)!r}))))"
+                )
+                process = subprocess.Popen(
+                    [sys.executable, "-c", supervisor], cwd=run_test_suite.ROOT,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                    start_new_session=True,
+                )
+                try:
+                    stdout, stderr = process.communicate(timeout=4.0)
+                except subprocess.TimeoutExpired:
+                    os.killpg(process.pid, signal.SIGKILL)
+                    process.communicate(timeout=1.0)
+                    self.fail("outer watchdog expired; timeout regression hung")
+                self.assertEqual(process.returncode, 0, stderr)
+                self.assertIn('"timed_out": true', stdout)
+                self.assertFalse(marker.exists())
+            finally:
+                if original is None:
+                    run_test_suite.TIMEOUT_OVERRIDES.pop("resistant.py", None)
+                else:
+                    run_test_suite.TIMEOUT_OVERRIDES["resistant.py"] = original
 
 
 if __name__ == "__main__":
