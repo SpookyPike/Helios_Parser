@@ -37,19 +37,18 @@ class W11LayoutTests(unittest.TestCase):
             # does not clamp the top-level window before Qt receives its size.
             min_width = window.minimumSizeHint().width()
             min_height = window.minimumSizeHint().height()
-            sizes = (
+            def fit_dimension(target: int, available_size: int, minimum: int, ratio: float) -> int:
+                if available_size >= target:
+                    return target
+                return min(target, max(minimum, int(available_size * ratio)))
+
+            requests = ((1024, 768, 0.85), (1280, 800, 0.90), (1860, 1120, 0.95))
+            sizes = tuple(
                 (
-                    min(1024, max(min_width, int(available.width() * 0.85))),
-                    min(768, max(min_height, int(available.height() * 0.85))),
-                ),
-                (
-                    min(1280, max(min_width, int(available.width() * 0.95))),
-                    min(800, max(min_height, int(available.height() * 0.90))),
-                ),
-                (
-                    min(1860, max(min_width, int(available.width() * 0.98))),
-                    min(1120, max(min_height, int(available.height() * 0.95))),
-                ),
+                    fit_dimension(width, available.width(), min_width, ratio),
+                    fit_dimension(height, available.height(), min_height, ratio),
+                )
+                for width, height, ratio in requests
             )
             for size in sizes:
                 with self.subTest(size=size):
