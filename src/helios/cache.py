@@ -128,13 +128,22 @@ class CacheLayer:
         return self._buckets[key]
 
     def clear_bucket(self, name: str, *, reason: str | None = None) -> None:
-        """Remove a single bucket if it exists."""
+        """Empty a single bucket while preserving its registered identity."""
+
+        key = str(name)
+        bucket = self._buckets.get(key)
+        if bucket is not None:
+            bucket.clear(reason=reason or f"clear_bucket:{key}")
+            self._last_clear_reason = reason or f"clear_bucket:{key}"
+
+    def remove_bucket(self, name: str, *, reason: str | None = None) -> None:
+        """Unregister a bucket explicitly when its identity is no longer owned."""
 
         key = str(name)
         bucket = self._buckets.pop(key, None)
         if bucket is not None:
-            bucket.clear(reason=reason or f"clear_bucket:{key}")
-            self._last_clear_reason = reason or f"clear_bucket:{key}"
+            bucket.clear(reason=reason or f"remove_bucket:{key}")
+            self._last_clear_reason = reason or f"remove_bucket:{key}"
 
     def clear(self, *, reason: str | None = None) -> None:
         """Clear the entire cache layer."""
@@ -142,7 +151,6 @@ class CacheLayer:
         self._last_clear_reason = None if reason is None else str(reason)
         for key, bucket in list(self._buckets.items()):
             bucket.clear(reason=reason or f"clear_layer:{key}")
-        self._buckets.clear()
 
     def stats(self) -> CacheLayerStats:
         return CacheLayerStats(
