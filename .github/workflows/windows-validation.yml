@@ -40,6 +40,7 @@ jobs:
           $report = Join-Path $env:RUNNER_TEMP "helios-windows-test-runs"
           python scripts/run_test_suite.py --profile core `
             --only test_conversion_atomicity.py `
+            --only test_run_revision.py `
             --only test_qt_lifecycle.py `
             --only test_accessibility_controls.py `
             --only test_w11_layout.py `
