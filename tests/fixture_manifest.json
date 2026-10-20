@@ -42,6 +42,20 @@
       "dimensions": {"zones": 50, "snapshots": 901},
       "provenance": "ignored local historical fixture; not included in a clean checkout"
     },
+    "local_cu1e17_log": {
+      "path": "Cu1e17.log",
+      "size_bytes": 7610109,
+      "sha256": "6d981e10f166e37d3ea97f78e47bec178ebc1aec099438a754931a747122d26f",
+      "format": "HELIOS LOG",
+      "provenance": "ignored local historical fixture; not included in a clean checkout"
+    },
+    "local_cu1e17_cyl_log": {
+      "path": "Cu1e17_cyl.log",
+      "size_bytes": 8850511,
+      "sha256": "f8fa3cb7e93659ed0854cd62b9b458467f0670c5e611efc3e2d29388cf2773b4",
+      "format": "HELIOS LOG",
+      "provenance": "ignored local historical fixture; not included in a clean checkout"
+    },
     "local_si15_log": {
       "path": "10ns+15Si+70Al+10Si+4.27TW.log",
       "size_bytes": 268463956,
@@ -149,6 +163,7 @@
     "test_coordinate_semantics.py": ["local_cu1e17_log", "local_cu1e17_cyl_log", "local_h5_cu"],
     "test_derived_backend_optimization.py": ["local_h5_cu1e17_cyl"],
     "test_app_phase412.py": ["local_h5_50al_root"],
+    "test_derived_phase41.py": ["local_cu1e17_log", "local_cu1e17_cyl_log"],
     "test_transmission_xcom.py": ["local_h5_fe", "local_h5_cu", "local_h5_50al_root"],
     "test_validation.py": ["local_fe_log", "local_si_log", "local_cu0166_log", "local_cu14_log", "local_si15_log"],
     "test_wave4_ingest.py": ["local_fe_log", "local_h5_cu"],

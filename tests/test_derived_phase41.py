@@ -68,7 +68,10 @@ class DerivedPhase41Tests(unittest.TestCase):
         self.assertGreater(result.selected_zone_count, 0)
         self.assertGreaterEqual(len(result.xrd.time_plots), 5)
         self.assertGreaterEqual(len(result.plasmon.time_plots), 5)
-        self.assertGreaterEqual(len(result.transmission.time_plots), 4)
+        self.assertEqual(
+            {plot.key for plot in result.transmission.time_plots},
+            {"selected_tau", "selected_transmission"},
+        )
         self.assertGreaterEqual(len(result.spectroscopy.time_plots), 3)
         self.assertIn("back side", result.transmission.geometry_summary)
         self.assertEqual(result.plasmon.weighting_mode, "electron_column")
@@ -88,9 +91,11 @@ class DerivedPhase41Tests(unittest.TestCase):
             workspace.set_context(context)
             workspace.set_result(result)
             process_events(20)
-            top_level_labels = [workspace.warnings_tree.topLevelItem(index).text(0).lower() for index in range(workspace.warnings_tree.topLevelItemCount())]
-            self.assertIn("selection", top_level_labels)
-            selection_index = top_level_labels.index("selection")
+            top_level_labels = [
+                workspace.warnings_tree.topLevelItem(index).text(0).lower()
+                for index in range(workspace.warnings_tree.topLevelItemCount())
+            ]
+            selection_index = next(index for index, label in enumerate(top_level_labels) if label.startswith("selection"))
             selection_item = workspace.warnings_tree.topLevelItem(selection_index)
             self.assertGreater(selection_item.childCount(), 0)
             self.assertEqual(selection_item.child(0).text(0), "ERROR")

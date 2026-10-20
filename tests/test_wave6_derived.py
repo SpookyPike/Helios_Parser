@@ -1344,7 +1344,8 @@ class Wave6DerivedTests(unittest.TestCase):
         workspace = HeliosDerivedWorkspace()
         try:
             formatted = workspace._format_time(2.5e-12)
-            self.assertIn("ps", formatted)
+            self.assertIn("ns", formatted)
+            self.assertIn("2.500e-03", formatted)
             self.assertNotEqual("0.000 s", formatted)
         finally:
             workspace.close()
