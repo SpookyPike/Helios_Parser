@@ -43,24 +43,49 @@ def _cache_float_token(value: float) -> float:
     return float(f"{value:.12g}")
 
 
+def _axis_float_token(value: float) -> str:
+    """Encode a finite float64 value without rounding it for an axis key."""
+
+    return float(value).hex()
+
+
+def _axis_float_from_token(token: object) -> float:
+    try:
+        value = float.fromhex(str(token))
+    except (TypeError, ValueError) as exc:
+        message = f"Invalid float token in plasmon energy-axis key: {token!r}"
+        raise ValueError(message) from exc
+    if not math.isfinite(value):
+        raise ValueError("Plasmon energy-axis keys must contain finite values.")
+    return value
+
+
 def _energy_axis_cache_key(delta_energy_ev: np.ndarray) -> tuple[object, ...]:
-    energy = np.asarray(delta_energy_ev, dtype=np.float64).reshape(-1)
+    energy = np.asarray(delta_energy_ev, dtype=np.float64)
+    if energy.ndim != 1:
+        raise ValueError("Plasmon energy axis must be one-dimensional.")
+    if not np.all(np.isfinite(energy)):
+        raise ValueError("Plasmon energy axis must contain only finite values.")
     if energy.size == 0:
         return ("empty", 0)
     if energy.size == 1:
-        scalar = _cache_float_token(float(energy[0]))
+        scalar = _axis_float_token(float(energy[0]))
         return ("single", scalar)
-    step = float(energy[1] - energy[0])
-    if np.allclose(
-        energy,
-        float(energy[0]) + step * np.arange(energy.size, dtype=np.float64),
-        rtol=0.0,
-        atol=max(1.0e-12, abs(step) * 1.0e-12),
-    ):
-        return ("linspace", int(energy.size), _cache_float_token(float(energy[0])), _cache_float_token(float(energy[-1])))
-    if energy.size <= 32:
-        return ("tuple", tuple(_cache_float_token(float(value)) for value in energy.tolist()))
-    return ("linspace", int(energy.size), _cache_float_token(float(energy[0])), _cache_float_token(float(energy[-1])))
+    start = float(energy[0])
+    stop = float(energy[-1])
+    reconstructed = np.linspace(start, stop, int(energy.size), dtype=np.float64)
+    if np.array_equal(energy, reconstructed):
+        return (
+            "linspace",
+            int(energy.size),
+            _axis_float_token(start),
+            _axis_float_token(stop),
+        )
+    return (
+        "tuple",
+        int(energy.size),
+        tuple(_axis_float_token(float(value)) for value in energy),
+    )
 
 
 def _energy_axis_from_cache_key(axis_key: tuple[object, ...]) -> np.ndarray:
@@ -68,13 +93,36 @@ def _energy_axis_from_cache_key(axis_key: tuple[object, ...]) -> np.ndarray:
         return np.zeros(0, dtype=np.float64)
     kind = str(axis_key[0])
     if kind == "empty":
+        if len(axis_key) != 2 or int(axis_key[1]) != 0:
+            raise ValueError(f"Invalid empty plasmon energy-axis key: {axis_key!r}")
         return np.zeros(0, dtype=np.float64)
     if kind == "single":
-        return np.asarray([float(axis_key[1])], dtype=np.float64)
+        if len(axis_key) != 2:
+            message = f"Invalid single-value plasmon energy-axis key: {axis_key!r}"
+            raise ValueError(message)
+        return np.asarray([_axis_float_from_token(axis_key[1])], dtype=np.float64)
     if kind == "linspace":
-        return np.linspace(float(axis_key[2]), float(axis_key[3]), int(axis_key[1]), dtype=np.float64)
+        if len(axis_key) != 4:
+            raise ValueError(f"Invalid linspace plasmon energy-axis key: {axis_key!r}")
+        count = int(axis_key[1])
+        if count < 2:
+            message = f"Invalid linspace point count in energy-axis key: {count}"
+            raise ValueError(message)
+        start = _axis_float_from_token(axis_key[2])
+        stop = _axis_float_from_token(axis_key[3])
+        return np.linspace(start, stop, count, dtype=np.float64)
     if kind == "tuple":
-        return np.asarray(tuple(float(value) for value in axis_key[1]), dtype=np.float64)
+        if len(axis_key) != 3:
+            raise ValueError(f"Invalid tuple plasmon energy-axis key: {axis_key!r}")
+        count = int(axis_key[1])
+        tokens = tuple(axis_key[2])
+        if count < 0 or len(tokens) != count:
+            message = f"Energy-axis key count does not match its values: {axis_key!r}"
+            raise ValueError(message)
+        return np.asarray(
+            tuple(_axis_float_from_token(token) for token in tokens),
+            dtype=np.float64,
+        )
     raise ValueError(f"Unsupported plasmon energy-axis cache key: {axis_key!r}")
 
 
