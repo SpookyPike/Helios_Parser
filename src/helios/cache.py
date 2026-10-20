@@ -160,6 +160,7 @@ class CacheLayer:
     """Named cache buckets with explicit invalidation."""
 
     default_bucket_size: int | None = None
+    default_bucket_byte_limit: int | None = None
     _buckets: dict[str, BoundedCacheBucket] = field(default_factory=dict)
     _last_clear_reason: str | None = None
 
@@ -170,7 +171,7 @@ class CacheLayer:
         if key not in self._buckets:
             self._buckets[key] = BoundedCacheBucket(
                 max_items=self.default_bucket_size if max_items is None else max_items,
-                max_bytes=max_bytes,
+                max_bytes=self.default_bucket_byte_limit if max_bytes is None else max_bytes,
             )
         elif max_items is not None:
             self._buckets[key].max_items = int(max_items)
@@ -222,6 +223,14 @@ class AnalyzerCacheSet:
     raw_data_cache: CacheLayer = field(default_factory=lambda: CacheLayer(default_bucket_size=4))
     derived_cache: CacheLayer = field(default_factory=lambda: CacheLayer(default_bucket_size=24))
     view_cache: CacheLayer = field(default_factory=lambda: CacheLayer(default_bucket_size=16))
+    raw_bucket_byte_limit: int | None = None
+    derived_bucket_byte_limit: int | None = None
+    view_bucket_byte_limit: int | None = None
+
+    def __post_init__(self) -> None:
+        self.raw_data_cache.default_bucket_byte_limit = self.raw_bucket_byte_limit
+        self.derived_cache.default_bucket_byte_limit = self.derived_bucket_byte_limit
+        self.view_cache.default_bucket_byte_limit = self.view_bucket_byte_limit
 
     def stats(self) -> dict[str, CacheLayerStats]:
         return {

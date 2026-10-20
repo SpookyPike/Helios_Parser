@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from helios.cache import CacheLayer, estimate_nbytes
+from helios.cache import AnalyzerCacheSet, CacheLayer, estimate_nbytes
 
 
 class CacheLifecycleTests(unittest.TestCase):
@@ -59,6 +59,13 @@ class CacheLifecycleTests(unittest.TestCase):
             bucket["too-large"] = np.arange(3, dtype=np.float64)
         self.assertEqual(0, len(bucket))
         self.assertEqual(24, estimate_nbytes(np.arange(3, dtype=np.float64)))
+
+    def test_cache_set_accepts_injected_per_layer_budgets(self) -> None:
+        cache_set = AnalyzerCacheSet(raw_bucket_byte_limit=32, derived_bucket_byte_limit=48)
+        raw_bucket = cache_set.raw_data_cache.bucket("raw")
+        derived_bucket = cache_set.derived_cache.bucket("derived")
+        self.assertEqual(32, raw_bucket.stats().byte_capacity)
+        self.assertEqual(48, derived_bucket.stats().byte_capacity)
 
 
 if __name__ == "__main__":
