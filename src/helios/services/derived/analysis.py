@@ -629,7 +629,10 @@ def _compute_module_results(
         availability.append(DerivedModuleAvailability(contract.name, True))
         existing = getattr(base_result, contract.name) if base_result is not None else None
         include_time_plots = contract.name in requested_time_plot_modules and not (existing is not None and contract.time_plots_loaded(existing))
-        if existing is not None and not include_time_plots and int(getattr(base_result, "snapshot_index", snapshot_index)) == int(snapshot_index):
+        # Snapshot-local products carry their own generation index. The
+        # enclosing result may already have advanced while this inactive
+        # module was retained, so its index is the only safe reuse check.
+        if existing is not None and not include_time_plots and int(getattr(existing, "snapshot_index", -1)) == int(snapshot_index):
             computed[contract.name] = existing
             continue
         if progress_check is not None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from pathlib import Path
 import unittest
 
@@ -10,7 +11,7 @@ import _test_bootstrap  # noqa: F401
 
 from helios.runtime import RunContext
 from helios.services.derived.models import DerivedFieldCapabilities, DerivedRunData
-from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
+from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result, refresh_analysis_result_for_snapshot
 from helios.services.derived.plasmon import electron_debye_length_cm, electron_plasma_frequency_rad_s
 from helios.services.derived.selection import (
     WEIGHTING_MASS,
@@ -23,6 +24,7 @@ from helios.services.derived.selection import (
 from helios.services.derived.shock_tracking import _smooth_track, track_shock_front
 from helios.services.derived.spectroscopy import doppler_width_fraction, doppler_width_fraction_array
 from helios.services.derived.xrd import _region_metrics_for_snapshot, _zone_region_dense_index
+from helios.services.derived.plasmon_validation import uniform_al_dataset
 
 
 def _synthetic_dataset() -> tuple[DerivedRunData, RunContext]:
@@ -101,6 +103,60 @@ def _synthetic_dataset() -> tuple[DerivedRunData, RunContext]:
 
 
 class DerivedServicesPhase4Tests(unittest.TestCase):
+    def test_lazy_module_revisit_recomputes_snapshot_local_product(self) -> None:
+        dataset, context = uniform_al_dataset(2.7, 10.0)
+        dataset.summary["n_snapshots"] = 2
+        dataset.time_s = np.asarray([0.0, 1.0e-9])
+        for name in (
+            "zone_width_cm", "density_g_cm3", "velocity_cm_s", "temperature_e_ev",
+            "temperature_i_ev", "electron_density_cm3", "mean_charge",
+        ):
+            values = np.asarray(getattr(dataset, name))
+            stacked = np.repeat(values[:1], 2, axis=0)
+            setattr(dataset, name, stacked)
+        dataset.density_g_cm3[1] *= 2.0
+        context = replace(context, time_values=dataset.time_s.copy(), snapshot_index=0)
+        parameters = DerivedAnalysisParameters()
+        first = compute_analysis_result(
+            dataset,
+            context,
+            parameters=parameters,
+            context_key=("xrd", 0),
+            requested_modules={"xrd"},
+            include_wavefront=False,
+        )
+        next_context = replace(context, snapshot_index=1)
+        switched = refresh_analysis_result_for_snapshot(
+            dataset,
+            next_context,
+            parameters=parameters,
+            context_key=("spectroscopy", 1),
+            base_result=first,
+            requested_modules={"spectroscopy"},
+        )
+        revisited = refresh_analysis_result_for_snapshot(
+            dataset,
+            next_context,
+            parameters=parameters,
+            context_key=("xrd", 1),
+            base_result=switched,
+            requested_modules={"xrd"},
+        )
+        fresh = compute_analysis_result(
+            dataset,
+            next_context,
+            parameters=parameters,
+            context_key=("fresh-xrd", 1),
+            requested_modules={"xrd"},
+            include_wavefront=False,
+        )
+
+        self.assertEqual(0, first.xrd.snapshot_index)
+        self.assertEqual(1, revisited.snapshot_index)
+        self.assertEqual(1, revisited.xrd.snapshot_index)
+        self.assertTrue(fresh.xrd.layers)
+        self.assertAlmostEqual(fresh.xrd.layers[0].bragg_shift_deg, revisited.xrd.layers[0].bragg_shift_deg)
+
     def test_shock_track_smoothing_matches_previous_monotonic_enforcement(self) -> None:
         track = np.asarray([np.nan, np.nan, 8.0, 7.4, 7.8, 6.1, 6.3, 4.0], dtype=np.float64)
 
