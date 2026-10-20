@@ -12,11 +12,13 @@ lightweight observability via size/capacity/hit/miss/eviction counters.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields, is_dataclass
 from collections import OrderedDict
 from collections.abc import Iterator, MutableMapping
 from pathlib import Path
 from typing import Any
+
+import numpy as np
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +30,8 @@ class CacheBucketStats:
     evictions: int
     clears: int
     last_clear_reason: str | None
+    bytes_used: int = 0
+    byte_capacity: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +52,7 @@ class BoundedCacheBucket(MutableMapping[Any, Any]):
     """
 
     max_items: int | None = None
+    max_bytes: int | None = None
     _items: OrderedDict[Any, Any] = field(default_factory=OrderedDict)
     _hits: int = 0
     _misses: int = 0
@@ -62,6 +67,8 @@ class BoundedCacheBucket(MutableMapping[Any, Any]):
         return value
 
     def __setitem__(self, key: Any, value: Any) -> None:
+        if self.max_bytes is not None and int(self.max_bytes) > 0 and estimate_nbytes(value) > int(self.max_bytes):
+            raise ValueError(f"Cache entry requires {estimate_nbytes(value)} bytes; bucket limit is {int(self.max_bytes)}.")
         self._items[key] = value
         self._items.move_to_end(key)
         self._evict_if_needed()
@@ -98,14 +105,54 @@ class BoundedCacheBucket(MutableMapping[Any, Any]):
             evictions=int(self._evictions),
             clears=int(self._clears),
             last_clear_reason=self._last_clear_reason,
+            bytes_used=estimate_nbytes(tuple(self._items.values())),
+            byte_capacity=None if self.max_bytes is None else int(self.max_bytes),
         )
 
     def _evict_if_needed(self) -> None:
-        if self.max_items is None or self.max_items <= 0:
-            return
-        while len(self._items) > int(self.max_items):
+        while self._items and (
+            (self.max_items is not None and self.max_items > 0 and len(self._items) > int(self.max_items))
+            or (self.max_bytes is not None and self.max_bytes > 0 and estimate_nbytes(tuple(self._items.values())) > int(self.max_bytes))
+        ):
             self._items.popitem(last=False)
             self._evictions += 1
+
+
+def estimate_nbytes(value: Any) -> int:
+    """Estimate retained NumPy/object bytes, deduplicating shared array bases."""
+
+    arrays: set[int] = set()
+    objects: set[int] = set()
+
+    def visit(item: Any) -> int:
+        if isinstance(item, np.ndarray):
+            base = item
+            while isinstance(getattr(base, "base", None), np.ndarray):
+                base = base.base
+            identity = id(base)
+            if identity in arrays:
+                return 0
+            arrays.add(identity)
+            return int(base.nbytes)
+        identity = id(item)
+        if identity in objects:
+            return 0
+        if isinstance(item, dict):
+            objects.add(identity)
+            return sum(visit(key) + visit(child) for key, child in item.items())
+        if isinstance(item, (tuple, list, set, frozenset)):
+            objects.add(identity)
+            return sum(visit(child) for child in item)
+        if is_dataclass(item) and not isinstance(item, type):
+            objects.add(identity)
+            return sum(visit(getattr(item, descriptor.name)) for descriptor in fields(item))
+        if isinstance(item, str):
+            return len(item.encode("utf-8"))
+        if isinstance(item, (bytes, bytearray, memoryview)):
+            return len(item)
+        return 0
+
+    return int(visit(value))
 
 
 @dataclass(slots=True)
@@ -116,14 +163,20 @@ class CacheLayer:
     _buckets: dict[str, BoundedCacheBucket] = field(default_factory=dict)
     _last_clear_reason: str | None = None
 
-    def bucket(self, name: str, *, max_items: int | None = None) -> BoundedCacheBucket:
+    def bucket(self, name: str, *, max_items: int | None = None, max_bytes: int | None = None) -> BoundedCacheBucket:
         """Return the named mutable cache bucket, creating it if needed."""
 
         key = str(name)
         if key not in self._buckets:
-            self._buckets[key] = BoundedCacheBucket(max_items=self.default_bucket_size if max_items is None else max_items)
+            self._buckets[key] = BoundedCacheBucket(
+                max_items=self.default_bucket_size if max_items is None else max_items,
+                max_bytes=max_bytes,
+            )
         elif max_items is not None:
             self._buckets[key].max_items = int(max_items)
+            self._buckets[key]._evict_if_needed()
+        if key in self._buckets and max_bytes is not None:
+            self._buckets[key].max_bytes = int(max_bytes)
             self._buckets[key]._evict_if_needed()
         return self._buckets[key]
 
