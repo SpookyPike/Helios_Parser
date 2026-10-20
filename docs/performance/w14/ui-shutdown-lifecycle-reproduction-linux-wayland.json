@@ -1,0 +1,67 @@
+{
+  "platform": "native Wayland",
+  "test": "test_qt_lifecycle.QtLifecycleTests.test_viewer_close_drains_queued_open_and_stops_worker_thread",
+  "fixture": "tracked 5Fe+4.9TW+light.bpf converted to a temporary H5D during the test",
+  "groups": {
+    "origin_master_original": [
+      {
+        "run": 1,
+        "exit_code": -11,
+        "ok_marker": true,
+        "output_tail": ": shiboken6.Shiboken, PySide6.QtCore, PySide6.QtGui, PySide6.QtWidgets, h5py._errors, h5py.defs, h5py._objects, h5py.h5, numpy._core._multiarray_umath, numpy.linalg._umath_linalg, h5py.utils, h5py.h5t, h5py.h5s, h5py.h5ac, h5py.h5p, h5py.h5r, h5py._npystrings, h5py._proxy, h5py._conv, h5py.h5z, h5py.h5a, h5py.h5d, h5py.h5ds, h5py.h5g, h5py.h5i, h5py.h5o, h5py.h5f, h5py.h5fd, h5py.h5pl, h5py.h5l, h5py._selector, PySide6.QtSvg, PySide6.QtOpenGLWidgets, PySide6.QtTest, PySide6.QtOpenGL (total: 35)\n"
+      },
+      {
+        "run": 2,
+        "exit_code": -11,
+        "ok_marker": true,
+        "output_tail": ": shiboken6.Shiboken, PySide6.QtCore, PySide6.QtGui, PySide6.QtWidgets, h5py._errors, h5py.defs, h5py._objects, h5py.h5, numpy._core._multiarray_umath, numpy.linalg._umath_linalg, h5py.utils, h5py.h5t, h5py.h5s, h5py.h5ac, h5py.h5p, h5py.h5r, h5py._npystrings, h5py._proxy, h5py._conv, h5py.h5z, h5py.h5a, h5py.h5d, h5py.h5ds, h5py.h5g, h5py.h5i, h5py.h5o, h5py.h5f, h5py.h5fd, h5py.h5pl, h5py.h5l, h5py._selector, PySide6.QtSvg, PySide6.QtOpenGLWidgets, PySide6.QtTest, PySide6.QtOpenGL (total: 35)\n"
+      },
+      {
+        "run": 3,
+        "exit_code": -11,
+        "ok_marker": true,
+        "output_tail": ": shiboken6.Shiboken, PySide6.QtCore, PySide6.QtGui, PySide6.QtWidgets, h5py._errors, h5py.defs, h5py._objects, h5py.h5, numpy._core._multiarray_umath, numpy.linalg._umath_linalg, h5py.utils, h5py.h5t, h5py.h5s, h5py.h5ac, h5py.h5p, h5py.h5r, h5py._npystrings, h5py._proxy, h5py._conv, h5py.h5z, h5py.h5a, h5py.h5d, h5py.h5ds, h5py.h5g, h5py.h5i, h5py.h5o, h5py.h5f, h5py.h5fd, h5py.h5pl, h5py.h5l, h5py._selector, PySide6.QtSvg, PySide6.QtOpenGLWidgets, PySide6.QtTest, PySide6.QtOpenGL (total: 35)\n"
+      }
+    ],
+    "origin_master_plus_c9a4372_slider_style": [
+      {
+        "run": 1,
+        "exit_code": 0,
+        "ok_marker": true,
+        "output_tail": ".\n----------------------------------------------------------------------\nRan 1 test in 0.447s\n\nOK\n"
+      },
+      {
+        "run": 2,
+        "exit_code": 0,
+        "ok_marker": true,
+        "output_tail": ".\n----------------------------------------------------------------------\nRan 1 test in 0.426s\n\nOK\n"
+      },
+      {
+        "run": 3,
+        "exit_code": 0,
+        "ok_marker": true,
+        "output_tail": ".\n----------------------------------------------------------------------\nRan 1 test in 0.448s\n\nOK\n"
+      }
+    ],
+    "candidate": [
+      {
+        "run": 1,
+        "exit_code": 0,
+        "ok_marker": true,
+        "output_tail": ".\n----------------------------------------------------------------------\nRan 1 test in 0.438s\n\nOK\n"
+      },
+      {
+        "run": 2,
+        "exit_code": 0,
+        "ok_marker": true,
+        "output_tail": ".\n----------------------------------------------------------------------\nRan 1 test in 0.415s\n\nOK\n"
+      },
+      {
+        "run": 3,
+        "exit_code": 0,
+        "ok_marker": true,
+        "output_tail": ".\n----------------------------------------------------------------------\nRan 1 test in 0.412s\n\nOK\n"
+      }
+    ]
+  }
+}
