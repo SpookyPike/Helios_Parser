@@ -5,6 +5,7 @@ import re
 import struct
 import tempfile
 import unittest
+import logging
 from decimal import Decimal
 from unittest import mock
 from pathlib import Path
@@ -15,6 +16,7 @@ import numpy as np
 import _test_bootstrap  # noqa: F401
 from helios_parser import HeliosRun, write_hdf5
 from helios_parser.bpf import BpfFile
+from helios_parser.hdf5 import _stage_aligned_log_companion
 from helios_parser.parser import HeliosParser
 from helios.services.derived.common import load_run_data
 
@@ -164,6 +166,51 @@ class BpfPipelineTests(unittest.TestCase):
                 self.assertEqual(run.n_snapshots, 7)
                 for field_name in run.list_fields():
                     np.testing.assert_array_equal(run.get_field(field_name), complete_run.get_field(field_name)[:7])
+
+    def test_partial_ionization_fraction_records_recover_complete_prefix(self) -> None:
+        with BpfFile(BPF_SAMPLE) as source:
+            start = BpfFile.snapshot_start(1, source.layout.block_records)
+            records = (70, 72)
+            raw = BPF_SAMPLE.read_bytes()
+            cuts = []
+            for relative in records:
+                index = start + relative
+                payload_start = source._payload_offsets[index]
+                payload_length = source._payload_lengths[index]
+                cuts.append(raw[: payload_start + payload_length // 2])
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for relative, truncated_bytes in zip(records, cuts):
+                with self.subTest(relative_record=relative):
+                    truncated = Path(tmpdir) / f"fraction-{relative}.bpf"
+                    truncated.write_bytes(truncated_bytes)
+                    with BpfFile(truncated) as parsed:
+                        self.assertEqual(1, parsed.layout.n_snapshots)
+                        self.assertTrue(parsed.layout.incomplete_final_snapshot)
+
+    def test_explicit_log_companion_domain_error_is_not_fallback(self) -> None:
+        parser = HeliosParser()
+        with parser.open_document(LOG_BPF_SAMPLE) as document:
+            block = document.index.snapshot_blocks[-1]
+            original_block = document.buffer.slice(block.span)
+            lines = original_block.splitlines()
+            header_index = next(i for i, line in enumerate(lines) if re.match(r"^\s*Cycle\s+Time\s+\(s\)", line))
+            tokens = lines[header_index + 1].split()
+            tokens[0] = "1.5"
+            lines[header_index + 1] = " ".join(tokens)
+            original = LOG_BPF_SAMPLE.read_bytes()
+            modified = original.replace(original_block.encode(), "\n".join(lines).encode(), 1)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            invalid_log = Path(tmpdir) / "invalid-final.log"
+            invalid_log.write_bytes(modified)
+            with self.assertRaisesRegex(ValueError, "cycle must be a finite integer"):
+                _stage_aligned_log_companion(
+                    invalid_log,
+                    LOG_BPF_COMPANION,
+                    invalid_log,
+                    Path(tmpdir) / "stage.h5",
+                    parser=parser,
+                    logger=logging.getLogger(__name__),
+                )
 
     def test_nonzero_bpf_trailer_is_not_accepted_as_documented_trailer(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

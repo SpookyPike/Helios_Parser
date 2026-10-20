@@ -19,7 +19,7 @@ import numpy as np
 from helios.instrumentation import record_duration
 from .bpf import LOG_COMPATIBLE_BPF_ALIASES, BpfFile, alias_metadata, field_metadata_for_bpf_key
 from .document import diagnostic_value_width, flatten_snapshot_diagnostics, normalize_diagnostic_value, reconcile_diagnostic_width
-from .parser import DEFAULT_TOKENIZER, HeliosParser
+from .parser import DEFAULT_TOKENIZER, HeliosParser, SnapshotDomainError
 
 LOGGER = logging.getLogger(__name__)
 STRING_DTYPE = h5py.string_dtype(encoding="utf-8")
@@ -605,6 +605,8 @@ def _stage_aligned_log_companion(
                         cycle, snapshot_time, values = document.snapshot_parser.parse_laser_source_companion(
                             block_text, layout.n_zones
                         )
+                    except SnapshotDomainError:
+                        raise
                     except Exception:
                         # Match the general streaming parser's recoverable-tail
                         # contract: a damaged final frame invalidates the

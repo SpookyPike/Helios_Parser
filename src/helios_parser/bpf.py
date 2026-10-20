@@ -553,7 +553,11 @@ class BpfFile:
         relative = prefix_count
         expected = self._expected_record_bytes(relative, n_nodes, n_zones, n_freq_bins)
         if relative >= 69 and (relative - 69) % 2 == 1:
-            expected = self._payload_lengths[start + relative - 1] if start + relative - 1 < self.record_count else 0
+            fraction_relative = relative - 2 if relative > 70 else relative
+            fraction_index = start + fraction_relative
+            if fraction_index >= self.record_count and start >= block_records:
+                fraction_index -= block_records
+            expected = self._payload_lengths[fraction_index] if 0 <= fraction_index < self.record_count else 0
         if expected <= 0:
             return False
         tail = self._partial_tail
