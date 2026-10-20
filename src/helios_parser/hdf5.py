@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import secrets
+import stat
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -751,11 +754,10 @@ def _write_hdf5_from_bpf(
             logger.info("Wrote %s BPF snapshots to %s", layout.n_snapshots, target)
             del snapshot, first_snapshot
     record_duration("hdf5.write", time.perf_counter() - started_write)
-    emit_progress("done", 1, 1, 1.0, f"Wrote {target.name}")
     return target
 
 
-def write_hdf5(
+def _write_hdf5_unpublished(
     input_path: str | Path,
     output_path: str | Path,
     *,
@@ -770,12 +772,6 @@ def write_hdf5(
     source = Path(input_path)
     target = Path(output_path)
     selection = resolve_parse_sources(source)
-    if target.exists() and not overwrite:
-        raise FileExistsError(f"{target} already exists. Use --overwrite to replace it.")
-
-    if target.exists():
-        target.unlink()
-
     if selection.bpf_path is not None:
         return _write_hdf5_from_bpf(
             selection.requested_path,
@@ -1190,6 +1186,133 @@ def write_hdf5(
     record_duration("hdf5.write", elapsed_write)
     if active_logger.isEnabledFor(logging.DEBUG):
         active_logger.debug("hdf5.write took %.3f ms (%s)", elapsed_write * 1.0e3, source.name)
-    emit_progress("done", 1, 1, 1.0, f"Wrote {target.name}")
 
     return target
+
+
+def _selected_input_paths(selection: ParseSourceSelection) -> tuple[Path, ...]:
+    paths = [selection.requested_path, selection.primary_path]
+    if selection.bpf_path is not None:
+        paths.append(selection.bpf_path)
+    if selection.log_path is not None:
+        paths.append(selection.log_path)
+    unique: list[Path] = []
+    seen: set[Path] = set()
+    for path in paths:
+        resolved = path.resolve(strict=False)
+        if resolved not in seen:
+            seen.add(resolved)
+            unique.append(path)
+    return tuple(unique)
+
+
+def _paths_alias(left: Path, right: Path) -> bool:
+    if left.resolve(strict=False) == right.resolve(strict=False):
+        return True
+    try:
+        return left.exists() and right.exists() and os.path.samefile(left, right)
+    except OSError:
+        return False
+
+
+def _create_sibling_temp(target: Path) -> tuple[Path, int]:
+    flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
+    if hasattr(os, "O_BINARY"):
+        flags |= os.O_BINARY
+    for _ in range(100):
+        candidate = target.with_name(f".{target.name}.{secrets.token_hex(8)}.tmp")
+        try:
+            fd = os.open(candidate, flags, 0o666)
+            return candidate, fd
+        except FileExistsError:
+            continue
+    raise FileExistsError(f"Could not allocate a temporary output beside {target}.")
+
+
+def _validate_completed_hdf5(path: Path) -> None:
+    with h5py.File(path, "r") as handle:
+        required = ("grid", "time/time", "fields", "metadata/n_snapshots", "metadata/run_status/state")
+        missing = [name for name in required if name not in handle]
+        if missing:
+            raise ValueError(f"Generated HDF5 is missing required entries: {', '.join(missing)}.")
+        count = int(handle["metadata/n_snapshots"][()])
+        if count <= 0 or int(handle["time/time"].shape[0]) != count:
+            raise ValueError("Generated HDF5 has an invalid snapshot count.")
+        state = handle["metadata/run_status/state"][()]
+        if isinstance(state, bytes):
+            state = state.decode("utf-8", errors="replace")
+        if not str(state):
+            raise ValueError("Generated HDF5 has no run status.")
+
+
+def write_hdf5(
+    input_path: str | Path,
+    output_path: str | Path,
+    *,
+    compression: str | None = None,
+    overwrite: bool = False,
+    parser: HeliosParser | None = None,
+    logger: logging.Logger | None = None,
+    progress_callback: Callable[[WriteProgress], None] | None = None,
+) -> Path:
+    """Convert HELIOS input and atomically publish a validated HDF5 file.
+
+    Existing symlink outputs are replaced as directory entries; their referents
+    are never overwritten. Output paths may not alias the selected input files.
+    """
+    active_logger = logger or LOGGER
+    active_parser = parser or HeliosParser(active_logger)
+    source = Path(input_path)
+    target = Path(output_path)
+    selection = resolve_parse_sources(source)
+    inputs = _selected_input_paths(selection)
+    if any(_paths_alias(target, item) for item in inputs):
+        raise ValueError(f"Output path {target} aliases a selected input file.")
+
+    exists = os.path.lexists(target)
+    if exists and not overwrite:
+        raise FileExistsError(f"{target} already exists. Use --overwrite to replace it.")
+    if target.parent and not target.parent.exists():
+        raise FileNotFoundError(target.parent)
+
+    temp_path, fd = _create_sibling_temp(target)
+    os.close(fd)
+    published = False
+    try:
+        def report(event: WriteProgress) -> None:
+            if progress_callback is None:
+                return
+            message = event.message.replace(temp_path.name, target.name)
+            progress_callback(WriteProgress(event.stage, event.current, event.total, event.fraction, message))
+
+        _write_hdf5_unpublished(
+            source,
+            temp_path,
+            compression=compression,
+            overwrite=False,
+            parser=active_parser,
+            logger=active_logger,
+            progress_callback=report if progress_callback is not None else None,
+        )
+        _validate_completed_hdf5(temp_path)
+        if exists and not target.is_symlink():
+            os.chmod(temp_path, stat.S_IMODE(target.stat().st_mode))
+        if exists or overwrite:
+            os.replace(temp_path, target)
+        else:
+            # link() is an atomic no-clobber publish on the same filesystem.
+            os.link(temp_path, target)
+            temp_path.unlink()
+        published = True
+        if progress_callback is not None:
+            try:
+                progress_callback(WriteProgress("done", 1, 1, 1.0, f"Wrote {target.name}"))
+            except Exception:
+                active_logger.exception("HDF5 output was published, but the completion callback failed.")
+        return target
+    finally:
+        if not published:
+            try:
+                temp_path.unlink(missing_ok=True)
+            except OSError:
+                active_logger.warning("Could not remove temporary HDF5 output %s", temp_path, exc_info=True)
