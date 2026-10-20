@@ -29,17 +29,17 @@ The first W14 targeted attempt exposed two test-harness issues, both corrected a
 
 ## Paired performance evidence and limits
 
-Paired before/after profiles and comparator outputs are archived under [`docs/performance/w14/`](performance/w14/). Measurements ran on the same Linux x86_64 host (12th Gen Intel Core i7-12700H, Python 3.12.13, NumPy 2.5.4, h5py 3.16.0, PySide6 6.12.0; 64 GiB RAM where the harness recorded it). Short cases used ten alternating pairs; slower loading and conversion cases used five pairs. Baseline source was `origin/master` at `76634468`; candidate source was branch commit `a319dca`. Source fingerprints, fixture records and raw samples are in the archived JSON.
+Paired before/after profiles and comparator outputs are archived under [`docs/performance/w14/`](performance/w14/). Measurements ran on the same Linux x86_64 host (12th Gen Intel Core i7-12700H, Python 3.12.13, NumPy 2.5.4, h5py 3.16.0, PySide6 6.12.0; 64 GiB RAM where the harness recorded it). Short cases used ten alternating pairs; slower loading and conversion cases used five pairs. Baseline source was `origin/master` at `76634468`. The first candidate profiles used branch commit `a319dca`; the P05 fast-path rerun used the working-tree source fingerprint based on that commit, before the optimization commit was created. Source fingerprints, fixture records and raw samples are in the archived JSON.
 
 | Case | Result | Evidence |
 |---|---|---|
 | P01 grouped XCOM (1,300 zones, 3 materials × 4 energies) | PASS | 10 pairs; median 60.817 → 1.148 ms; lookup calls 5,200 → 12; optical-depth scalar-reference error 2.842e-13; exact comparator output in `xcom-comparison-10.json` |
 | P04 demand-driven derived loading (50Al stabilized HDF5) | PASS | 5 pairs; retained arrays 203.1 → 70.4 MB; optional arrays 125.0 MB → 0; peak RSS delta 473.0 → 205.5 MB; elapsed 0.546 → 0.247 s; all 12 output checksums equal |
-| P05 BPF companion conversion (Cu BPF + same-stem LOG) | FAIL / review required | 5 pairs; exact output equivalence passed; peak RSS delta improved 124.0 → 112.3 MB, but total-time median was 12.1% slower and first-write median 12.7% slower after normalization; first-write paired 95% interval was 1.047–1.389. The comparator correctly exits nonzero. The LOG fixture hash is recorded in the archived fixture JSON; this is the locally edited fixture version present during the run. Investigate parser-work cost or record an explicit accepted tradeoff before closing P05. |
+| P05 BPF companion conversion (Cu BPF + same-stem LOG) | PASS; timing improvement inconclusive | After a narrow parser fast path for cycle/time and the laser-source column, 5 paired fresh-process runs produced exact output equivalence and no metric exceeded the 10% slowdown threshold. Median total time was 5.359 → 5.316 s (paired 95% interval 0.971–1.174, inconclusive), first-write 1.399 → 1.167 s (0.814–1.180, inconclusive), and peak RSS delta 124.0 → 112.2 MB (0.904 ratio, improved). The earlier pre-fast-path regression remains archived for traceability. The LOG fixture hash is recorded in the fixture JSON; this is the locally edited fixture version present during the run. |
 | P06 cache retention (10 repeated loads) | Diagnostic only; lifecycle gate still open | RSS was available, but inspection shows this benchmark retained ten distinct raw-data revisions and did not execute an application run-retirement hook. Its rising cache/RSS values cannot be treated as a valid open/analyze/retire result. The archived profile exposes this gap; rerun after the lifecycle benchmark models actual retirement. |
 | P07 HDF5 access | PASS for comparator; timing inconclusive | 10 pairs; all representative median ratios were within about 1.3% of baseline and classified inconclusive. The earlier exploratory zone-trace result remains a one-off and is not a speed claim. This profile predates the RAM-capture fallback, so `ram_bytes` is null in its environment record. |
 
-The paired artifacts are evidence for their named fixtures and source fingerprints only; they are not CI timing limits. P05 remains unresolved, and P06 needs a valid retirement benchmark before its memory gate can pass.
+The paired artifacts are evidence for their named fixtures and source fingerprints only; they are not CI timing limits. P05 now passes the proposed regression threshold with exact output equivalence, though speed and first-write improvements remain inconclusive. P06 needs a valid retirement benchmark before its memory gate can pass.
 
 ## Earlier exploratory performance evidence
 
@@ -74,7 +74,7 @@ This single exploratory run shows a zone-trace regression for the candidate layo
 | F15 Display units | W10 canonical/display conversion (`bb65a93`, `f83e1fe`) | Viewer unit tests and app phase3 | Focused `test_app_phase3.py` passed |
 | F16 Spectrum grids | W12 exact axes (`33407e1`) | `test_plasmon_energy_grid_cache.py` | Passed |
 | F17 Radian precision | W10 canonical controls (`e875a8c`) | Unit round-trip tests | Existing targeted work passed during implementation; not rerun in this W14 pass |
-| F18 Streamed companion | W04 streamed source and alignment (`936b3fb`) | `test_wave4_ingest.py` | Focused tests passed; paired output-equivalence and RSS improved, but P05 time/first-write regression is over the 10% review threshold |
+| F18 Streamed companion | W04 streamed source and alignment (`936b3fb`), narrow LOG companion parser | `test_wave4_ingest.py`, `test_bpf_pipeline.py` | 17 focused tests passed; follow-up P05 comparator passed exact output and the 10% regression threshold; runtime and first-write comparisons are inconclusive |
 | F19 Demand loading/memory | W07 lazy fields and budgets (`03fa549`, `df0a422`) | `test_derived_backend_optimization.py`, cache budget tests | Work-count/budget tests and paired derived-load/RSS comparison passed; cache-retirement RSS gate still needs a lifecycle-valid run |
 | F20 Cache clearing | W05 stable bucket identity (`aa4b475`) | `test_cache_lifecycle.py` | Passed |
 | F21 Grouped XCOM | W12b grouped lookups (`5048a9c`) | `test_transmission_xcom.py`, including 1,300 zones | Passed; paired P01 confirms 5,200 → 12 lookups/run and a 52.9× median speedup on the archived fixture |
@@ -86,9 +86,9 @@ This single exploratory run shows a zone-trace regression for the candidate layo
 ## Remaining release checks
 
 - Full dynamically discovered release suite and smoke: incomplete by user preference; rerun only if required for a release decision.
-- P05 BPF companion paired timing review: unresolved because total conversion and first-write timing exceed the proposed 10% regression threshold; exact output equivalence and lower peak RSS are recorded.
+- P05 BPF companion paired timing review: passed after the narrow parser path; speedup remains unproven because the paired confidence intervals are inconclusive.
 - Cache-retirement RSS: pending a corrected ten-cycle benchmark that actually retires each run revision. The first diagnostic retained distinct raw revisions and is not considered an acceptance measurement.
-- The P01/P04/P05/P07 paired profiles, comparisons and fixture manifests are archived; P01/P04 passed, P07 was inconclusive, and P05 failed its timing threshold.
+- The P01/P04/P05/P07 paired profiles, comparisons and fixture manifests are archived; P01/P04 passed, P07 was inconclusive, and the final P05 comparison passed after optimization. The earlier P05 failure is retained as a before-optimization profile.
 - Native GUI latency/accessibility and lifecycle checks on supported desktop platforms: pending; offscreen Linux tests only.
 - PyInstaller/frozen-runtime resource smoke: pending because the supported frozen build environment was not exercised.
 

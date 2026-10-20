@@ -588,8 +588,9 @@ def _stage_aligned_log_companion(
             bpf_headers = list(bpf.iter_snapshot_headers())
             blocks = document.index.snapshot_blocks
             aligned = len(blocks) == layout.n_snapshots and len(bpf_headers) == layout.n_snapshots
-            candidate_complete = True
             snapshot_count = 0
+            previous_time: float | None = None
+            previous_cycle: int | None = None
             with h5py.File(staging_path, "w") as stage:
                 candidate = stage.create_dataset(
                     "laser_source_j_g",
@@ -598,36 +599,49 @@ def _stage_aligned_log_companion(
                     chunks=_field_chunk_shape(layout.n_snapshots, layout.n_zones),
                     fillvalue=np.nan,
                 )
-                iterator = document.iter_snapshots_streaming(header=log_header)
-                for index, snapshot in enumerate(iterator):
+                for index, block in enumerate(blocks):
+                    block_text = document.buffer.slice(block.span)
+                    try:
+                        cycle, snapshot_time, values = document.snapshot_parser.parse_laser_source_companion(
+                            block_text, layout.n_zones
+                        )
+                    except Exception:
+                        # Match the general streaming parser's recoverable-tail
+                        # contract: a damaged final frame invalidates the
+                        # companion, while corruption in an earlier frame is an
+                        # input error (or optional-companion fallback).
+                        if index == len(blocks) - 1 and snapshot_count > 0:
+                            aligned = False
+                            break
+                        raise
+                    if previous_time is not None and snapshot_time < previous_time:
+                        raise ValueError(
+                            f"Snapshot times must be nondecreasing; block {int(block.index)} has "
+                            f"{snapshot_time} after {previous_time}."
+                        )
+                    if previous_cycle is not None and cycle < previous_cycle:
+                        raise ValueError(
+                            f"Snapshot cycles must be nondecreasing; block {int(block.index)} has "
+                            f"{cycle} after {previous_cycle}."
+                        )
+                    previous_time, previous_cycle = snapshot_time, cycle
                     snapshot_count += 1
                     if index >= layout.n_snapshots:
                         aligned = False
                         continue
                     bpf_time, bpf_cycle = bpf_headers[index]
-                    cycle_token, time_token = _log_cycle_time_tokens(document.buffer.slice(blocks[index].span))
-                    if _decimal_token(cycle_token) != Decimal(bpf_cycle) or int(snapshot.cycle) != bpf_cycle:
+                    cycle_token, time_token = _log_cycle_time_tokens(block_text)
+                    if _decimal_token(cycle_token) != Decimal(bpf_cycle) or cycle != bpf_cycle:
                         aligned = False
                     if not _log_time_matches_bpf(time_token, bpf_time):
                         aligned = False
-                    if int(snapshot.cycle) != bpf_cycle:
-                        aligned = False
-                    laser = snapshot.fields.get("laser_source")
-                    if laser is None:
-                        candidate_complete = False
-                    else:
-                        values = np.asarray(laser, dtype=np.float64)
-                        if values.shape != (layout.n_zones,) or not np.all(np.isfinite(values)):
-                            candidate_complete = False
-                        else:
-                            candidate[index] = values
-                status = iterator.run_status
-                if snapshot_count != layout.n_snapshots or (status is not None and status.state == "truncated"):
-                    aligned = False
+                    candidate[index] = values
+            if snapshot_count != layout.n_snapshots:
+                aligned = False
             if not aligned:
                 logger.warning("Ignoring unaligned LOG companion %s for BPF %s; BPF metadata and sampled source will be used.", log_path, bpf_path)
                 return None, False
-            return log_header, candidate_complete
+            return log_header, True
     except Exception:
         if explicitly_requested:
             raise

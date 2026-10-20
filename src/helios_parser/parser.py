@@ -234,6 +234,7 @@ def _parse_field_table_rows(
     logger: logging.Logger,
     *,
     geometry: str | None = None,
+    selected_fields: set[str] | None = None,
 ) -> tuple[dict[str, np.ndarray], dict[str, str], dict[str, str], dict[str, np.ndarray | float | None]]:
     def extract_zone_zero_boundary() -> float | None:
         for raw_line in data_lines:
@@ -300,8 +301,12 @@ def _parse_field_table_rows(
             raw_units.append(_normalize_unit(padded_units[start:end]))
 
     canonical_labels = [_canonical_field_name(label) for label in raw_labels]
-    units = {name: unit for name, unit in zip(canonical_labels, raw_units)}
-    raw_field_map = {name: label for name, label in zip(canonical_labels, raw_labels)}
+    selected_indexes = {
+        index for index, name in enumerate(canonical_labels)
+        if selected_fields is None or name in selected_fields
+    }
+    units = {name: unit for name, unit in zip(canonical_labels, raw_units) if selected_fields is None or name in selected_fields}
+    raw_field_map = {name: label for name, label in zip(canonical_labels, raw_labels) if selected_fields is None or name in selected_fields}
     normalize_number_token = DEFAULT_TOKENIZER.normalize_number_token
     normalize_numeric_text = DEFAULT_TOKENIZER.normalize_numeric_text
     extract_number_tokens = _extract_number_tokens
@@ -343,7 +348,7 @@ def _parse_field_table_rows(
             parsed_rows = int(np.count_nonzero(valid))
             if parsed_rows != n_zones:
                 logger.warning("Parsed %s zone rows for a table, expected %s.", parsed_rows, n_zones)
-            arrays = {name: matrix[:, index] for index, name in enumerate(canonical_labels)}
+            arrays = {name: matrix[:, index] for index, name in enumerate(canonical_labels) if index in selected_indexes}
             if layout_key == "primary" and "radius" in arrays and "zone_width" in arrays:
                 boundary_edge = extract_zone_zero_boundary()
                 coordinate_issues: list[CoordinateValidationIssue] = []
@@ -406,7 +411,7 @@ def _parse_field_table_rows(
 
     if parsed_rows != n_zones:
         logger.warning("Parsed %s zone rows for a table, expected %s.", parsed_rows, n_zones)
-    arrays = {name: matrix[:, index] for index, name in enumerate(canonical_labels)}
+    arrays = {name: matrix[:, index] for index, name in enumerate(canonical_labels) if index in selected_indexes}
     if layout_key == "primary" and "radius" in arrays and "zone_width" in arrays:
         boundary_edge = extract_zone_zero_boundary()
         coordinate_issues: list[CoordinateValidationIssue] = []
@@ -1107,6 +1112,70 @@ class SnapshotBlockSemanticParser:
             else None,
             diagnostics=diagnostics,
         )
+
+    def parse_laser_source_companion(
+        self, block_text: str, n_zones: int
+    ) -> tuple[int, float, np.ndarray]:
+        """Read only cycle/time and the laser-source column from one LOG frame.
+
+        BPF companion validation does not consume the LOG's other fields or
+        diagnostics. Keeping this path narrow avoids allocating a full
+        ``Snapshot`` for every frame while preserving the source table's row
+        completeness and numeric-domain checks.
+        """
+        lines = block_text.splitlines()
+        cycle_line_index = next((i for i, line in enumerate(lines) if CYCLE_HEADER_RE.match(line)), None)
+        if cycle_line_index is None or cycle_line_index + 1 >= len(lines):
+            raise ValueError("Snapshot block is missing cycle metadata.")
+        cycle_tokens = _extract_number_tokens(lines[cycle_line_index + 1])
+        if len(cycle_tokens) < 3:
+            raise ValueError(f"Malformed cycle line: {lines[cycle_line_index + 1]}")
+        cycle_value, time_value, time_step = (float(token.replace("D", "E").replace("d", "E")) for token in cycle_tokens[:3])
+        if not np.isfinite(cycle_value) or not cycle_value.is_integer():
+            raise SnapshotDomainError(f"Snapshot cycle must be a finite integer, got {cycle_tokens[0]!r}.")
+        if not np.isfinite(time_value):
+            raise SnapshotDomainError(f"Snapshot time must be finite, got {cycle_tokens[1]!r}.")
+        if not np.isfinite(time_step):
+            raise SnapshotDomainError(f"Snapshot time step must be finite, got {cycle_tokens[2]!r}.")
+
+        cycle = int(cycle_value)
+        first_header_index = _consume_until_table_header_in_block(lines, cycle_line_index + 2)
+        if first_header_index is None or first_header_index + 1 >= len(lines):
+            raise ValueError(f"Snapshot at cycle {cycle} is missing the first field table.")
+        primary_lines, next_index = _read_table_data_lines_in_block(lines, first_header_index + 2)
+        fields, _, _, extras = _parse_field_table_rows(
+            primary_lines,
+            lines[first_header_index],
+            lines[first_header_index + 1],
+            int(n_zones),
+            self.logger,
+            selected_fields={"laser_source"},
+        )
+        if "laser_source" not in fields:
+            second_header_index = _consume_until_table_header_in_block(lines, next_index)
+            if second_header_index is not None and second_header_index + 1 < len(lines):
+                secondary_lines, _ = _read_table_data_lines_in_block(lines, second_header_index + 2)
+                fields, _, _, extras = _parse_field_table_rows(
+                    secondary_lines,
+                    lines[second_header_index],
+                    lines[second_header_index + 1],
+                    int(n_zones),
+                    self.logger,
+                    selected_fields={"laser_source"},
+                )
+        parsed = int(extras.get("parsed_row_count", 0))
+        expected = int(extras.get("expected_row_count", n_zones))
+        padded = int(extras.get("padded_row_count", 0))
+        laser = fields.get("laser_source")
+        if parsed != expected or padded > 0 or laser is None:
+            raise ValueError(
+                f"Snapshot at cycle {cycle} has an incomplete laser-source table "
+                f"({parsed}/{expected} rows, padded_rows={padded})."
+            )
+        values = np.asarray(laser, dtype=np.float64)
+        if values.shape != (int(n_zones),) or not np.all(np.isfinite(values)):
+            raise SnapshotDomainError(f"Snapshot at cycle {cycle} has invalid laser-source values.")
+        return cycle, time_value, values
 
 
 class HeliosParser:
