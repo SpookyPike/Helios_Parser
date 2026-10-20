@@ -10,6 +10,7 @@ import _test_bootstrap  # noqa: F401
 
 from helios.runtime import RunContext
 from helios.services.derived.models import DerivedRunData
+from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
 from helios.services.derived.plasmon import electron_debye_length_cm, electron_plasma_frequency_rad_s
 from helios.services.derived.selection import (
     WEIGHTING_MASS,
@@ -141,6 +142,34 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
         self.assertEqual(crossing.interface_label, "Region 1 -> 2")
         self.assertEqual(crossing.crossing_snapshot, 4)
         self.assertAlmostEqual(float(crossing.crossing_time_s), 4.0e-9, places=15)
+
+    def test_shock_tracking_reports_missing_initial_density_without_fallback(self) -> None:
+        dataset, context = _synthetic_dataset()
+        dataset.zone_initial_density_g_cm3 = None
+        result = track_shock_front(dataset, context)
+        self.assertEqual("unavailable: missing initial material density", result.method)
+        self.assertIsNone(result.activation_snapshot_index)
+        self.assertTrue(np.all(np.isnan(result.position_cm)))
+        self.assertIn("initial material density is missing", result.warnings[0].message)
+
+    def test_missing_material_properties_produce_module_availability_instead_of_key_error(self) -> None:
+        dataset, context = _synthetic_dataset()
+        dataset.zone_atomic_weight = None
+        dataset.zone_initial_density_g_cm3 = None
+        result = compute_analysis_result(
+            dataset,
+            context,
+            parameters=DerivedAnalysisParameters(),
+            context_key=("missing-material-properties",),
+            requested_time_plot_modules=frozenset(),
+            include_wavefront=False,
+        )
+        availability = {item.module: item for item in result.module_availability}
+        self.assertFalse(availability["xrd"].available)
+        self.assertFalse(availability["plasmon"].available)
+        self.assertFalse(availability["spectroscopy"].available)
+        self.assertIn("zone_atomic_weight", availability["spectroscopy"].reason)
+        self.assertEqual("unavailable: missing initial material density", result.shock.method)
 
     def test_nrl_formula_helpers_return_dimensionally_sane_values(self) -> None:
         te_ev = 100.0

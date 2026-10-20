@@ -2160,11 +2160,63 @@ def track_shock_front(
             warnings=tuple(warnings),
         )
 
+    if dataset.zone_initial_density_g_cm3 is None:
+        warnings.append(
+            DerivedWarning(
+                "shock",
+                "Shock tracking is unavailable because initial material density is missing; no density reference was inferred.",
+                severity="warning",
+            )
+        )
+        empty = np.full(n_snapshots, np.nan, dtype=np.float64)
+        empty_i = np.full(n_snapshots, -1, dtype=np.int32)
+        return ShockTrackingResult(
+            method="unavailable: missing initial material density",
+            coordinate_label=_coordinate_label(dataset),
+            time_s=np.asarray(dataset.time_s, dtype=np.float64),
+            position_cm=empty,
+            zone_index=empty_i,
+            velocity_cm_s=empty,
+            speed_magnitude_cm_s=empty,
+            detector_score=empty,
+            smoothed_position_cm=empty,
+            smoothed_zone_index=empty,
+            activation_snapshot_index=None,
+            propagation_direction=propagation_direction,
+            breakout_time_s=None,
+            interface_crossings=(),
+            warnings=tuple(warnings),
+        )
+
     sign = 1.0 if propagation_direction == "high_to_low" else -1.0
     initial_density = np.asarray(dataset.zone_initial_density_g_cm3, dtype=np.float64)
-    fallback_density = np.asarray(dataset.density_g_cm3[0], dtype=np.float64)
-    initial_density = np.where(np.isfinite(initial_density) & (initial_density > 0.0), initial_density, fallback_density)
-    initial_density = np.where(initial_density > 0.0, initial_density, 1.0)
+    if initial_density.shape != (int(dataset.summary["n_zones"]),) or not np.all(np.isfinite(initial_density) & (initial_density > 0.0)):
+        warnings.append(
+            DerivedWarning(
+                "shock",
+                "Shock tracking is unavailable because initial material density is incomplete or invalid.",
+                severity="warning",
+            )
+        )
+        empty = np.full(n_snapshots, np.nan, dtype=np.float64)
+        empty_i = np.full(n_snapshots, -1, dtype=np.int32)
+        return ShockTrackingResult(
+            method="unavailable: invalid initial material density",
+            coordinate_label=_coordinate_label(dataset),
+            time_s=np.asarray(dataset.time_s, dtype=np.float64),
+            position_cm=empty,
+            zone_index=empty_i,
+            velocity_cm_s=empty,
+            speed_magnitude_cm_s=empty,
+            detector_score=empty,
+            smoothed_position_cm=empty,
+            smoothed_zone_index=empty,
+            activation_snapshot_index=None,
+            propagation_direction=propagation_direction,
+            breakout_time_s=None,
+            interface_crossings=(),
+            warnings=tuple(warnings),
+        )
 
     event_scaffold = _ShockEventScaffold(
         time_s=np.asarray(dataset.time_s, dtype=np.float64),

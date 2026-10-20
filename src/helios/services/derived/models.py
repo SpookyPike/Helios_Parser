@@ -786,3 +786,11 @@ class DerivedAnalysisResult:
     wave_tracking: WaveTrackingResult | None = None
     interface_events: InterfaceEventsResult | None = None
     preheat: PreheatSummary | None = None
+    module_availability: tuple["DerivedModuleAvailability", ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class DerivedModuleAvailability:
+    module: str
+    available: bool
+    reason: str | None = None
