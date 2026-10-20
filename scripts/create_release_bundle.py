@@ -61,6 +61,22 @@ IGNORE_PATTERNS = (
     "plasmon_xrts_observable.md",
     "derived_plasmon_current.png",
     "derived_transmission_current.png",
+    "HELIOS_AUDIT_*.md",
+    "HELIOS_FIX_*.md",
+    "HELIOS_PR*_REVIEW*.md",
+    "HELIOS_PERFORMANCE_*.json",
+    "performance",
+    "v1_code_health_audit.md",
+    "*audit*.md",
+    "*plan*.md",
+    "*review*.md",
+    "*validation*.md",
+    "*bug*report*.md",
+    "*Audit*.md",
+    "*Plan*.md",
+    "*Review*.md",
+    "*Validation*.md",
+    "*Bug*Report*.md",
 )
 
 FORBIDDEN_BUNDLE_MARKERS = (
