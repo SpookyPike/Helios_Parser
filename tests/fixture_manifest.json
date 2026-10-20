@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "description": "Fixture inventory for portable core and historical integration suites. Local-only fixtures must be supplied by the operator; absence is an error, never a skip.",
+  "fixtures": {
+    "tracked_cu_log": {
+      "path": "new_data/25Cu+1.87TW/25Cu+1.87TW.log",
+      "size_bytes": 16839197,
+      "sha256": "62271631b329a7089fe01f4bd91f7ad42b5ec5d8a69713d763543cb9aed651b2",
+      "format": "HELIOS LOG",
+      "dimensions": {"zones": 50, "snapshots": "header/iterator validated"},
+      "provenance": "tracked project fixture"
+    },
+    "tracked_cu_bpf": {
+      "path": "new_data/25Cu+1.87TW/25Cu+1.87TW.bpf",
+      "size_bytes": 40375894,
+      "sha256": "03522cd47d20ca0973e632864ee3504e0c04177c0f8b4b4c906e18d20d051dc0",
+      "format": "HELIOS BPF",
+      "dimensions": {"zones": "reader validated", "snapshots": "reader validated"},
+      "provenance": "tracked project fixture"
+    },
+    "tracked_fe_bpf": {
+      "path": "new_data/5Fe+4.9TW+light/5Fe+4.9TW+light.bpf",
+      "size_bytes": 2192378,
+      "sha256": "55e1d83454b1a434cab7f696b753d42f72d2c8a7934a6be3dc76857d6667e6e4",
+      "format": "HELIOS BPF",
+      "dimensions": {"zones": "reader validated", "snapshots": "reader validated"},
+      "provenance": "tracked project fixture"
+    },
+    "local_fe_log": {
+      "path": "5Fe+4.9TW+light.log",
+      "size_bytes": 1287703,
+      "sha256": "1396ab61a1c33092f0631ab67ea98c3e2c45bc0265b67ab5b34f4d2ff705be69",
+      "format": "HELIOS LOG",
+      "dimensions": {"zones": 500, "snapshots": "header/iterator validated"},
+      "provenance": "ignored local historical fixture; not included in a clean checkout"
+    },
+    "local_si_log": {
+      "path": "10ns+10Si+60Al+15Si+4.27TW.log",
+      "size_bytes": 268467946,
+      "sha256": "0cb6fa745d0a58fe797c58c4d045ad6657423e5db2c89b43287b16e0ef62fc29",
+      "format": "HELIOS LOG",
+      "dimensions": {"zones": 1300, "snapshots": "header/iterator validated"},
+      "provenance": "ignored local historical fixture; not included in a clean checkout"
+    },
+    "local_cu1e17_log": {
+      "path": "Cu1e17.log",
+      "size_bytes": 7610109,
+      "sha256": "6d981e10f166e37d3ea97f78e47bec178ebc1aec099438a754931a747122d26f",
+      "format": "HELIOS LOG",
+      "dimensions": {"zones": "header/iterator validated", "geometry": "planar"},
+      "provenance": "ignored local historical fixture; not included in a clean checkout"
+    },
+    "local_cu1e17_cyl_log": {
+      "path": "Cu1e17_cyl.log",
+      "size_bytes": 8850511,
+      "sha256": "f8fa3cb7e93659ed0854cd62b9b458467f0670c5e611efc3e2d29388cf2773b4",
+      "format": "HELIOS LOG",
+      "dimensions": {"zones": "header/iterator validated", "geometry": "cylindrical"},
+      "provenance": "ignored local historical fixture; not included in a clean checkout"
+    },
+    "local_cu0166_log": {
+      "path": "Cu_0166.log",
+      "size_bytes": 43392983,
+      "sha256": "b3836b16a1420b6b328384f60afbed841c18bcaaf4e39f08bca261931d96cadf",
+      "format": "HELIOS LOG",
+      "dimensions": {"zones": 300, "snapshots": "header/iterator validated"},
+      "provenance": "ignored local historical fixture; not included in a clean checkout"
+    },
+    "local_h5_fe": {
+      "path": "outputs/hdf5/5Fe+4.9TW+light_stabilized.h5",
+      "size_bytes": 1188400,
+      "sha256": "1887eaa88529dc0b66c4aec528d52ba9be4b4a99b969fd32715807e48ce49d7c",
+      "format": "HELIOS HDF5",
+      "dimensions": {"zones": 500, "snapshots": 8, "regions": 1, "materials": 1},
+      "provenance": "ignored local derived fixture; generated from the historical Fe LOG"
+    },
+    "local_h5_cu": {
+      "path": "outputs/hdf5/Cu_0166_stabilized.h5",
+      "size_bytes": 57246408,
+      "sha256": "a4f46d7ddd8ea16b905e609e3cb7eecf6d95e3d21ba21d84be87ffbfdf1e660f",
+      "format": "HELIOS HDF5",
+      "dimensions": {"zones": 300, "snapshots": 461, "regions": 1, "materials": 1},
+      "provenance": "ignored local derived fixture; generated from the historical Cu LOG"
+    },
+    "local_h5_cu_root": {
+      "path": "Cu_0166_stabilized.h5",
+      "size_bytes": 57246408,
+      "sha256": "65825e5281600ccb7983ac9a8042e9b4bd088439b748e2cc4c7240a84b174723",
+      "format": "HELIOS HDF5",
+      "dimensions": {"zones": 300, "snapshots": 461, "regions": 1, "materials": 1},
+      "provenance": "ignored local derived fixture; legacy test path expects it at repository root"
+    },
+    "local_h5_50al_root": {
+      "path": "50Al+10E+25CH+3.5TW_stabilized.h5",
+      "size_bytes": 246382488,
+      "sha256": "a48f98adc437f2a9b8590541461ae539820ff345a09f2f72bc5e6cbcc774bdd7",
+      "format": "HELIOS HDF5",
+      "dimensions": {"zones": 1300, "snapshots": 751, "regions": 3, "materials": 3},
+      "provenance": "ignored local derived fixture; legacy test path expects it at repository root"
+    },
+    "local_h5_si": {
+      "path": "outputs/hdf5/10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "size_bytes": 225897264,
+      "sha256": "8d3242b8d48f302e5ad821f9fb42b3121c38b8b15563fdd01fdbe905b3fe1fc9",
+      "format": "HELIOS HDF5",
+      "dimensions": {"zones": 1300, "snapshots": 701, "regions": 3, "materials": 2},
+      "provenance": "ignored local derived fixture; generated from the historical Si LOG"
+    },
+    "local_h5_si": {
+      "path": "outputs/hdf5/10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
+      "size_bytes": 225897264,
+      "sha256": "8d3242b8d48f302e5ad821f9fb42b3121c38b8b15563fdd01fdbe905b3fe1fc9",
+      "format": "HELIOS HDF5",
+      "dimensions": {"zones": 1300, "snapshots": 701, "regions": 3, "materials": 2},
+      "provenance": "ignored local derived fixture; generated from the historical Si LOG"
+    }
+  },
+  "entry_requirements": {
+    "smoke_test.py": ["tracked_cu_log"],
+    "test_bpf_pipeline.py": ["tracked_cu_log", "tracked_cu_bpf", "tracked_fe_bpf"],
+    "test_cli_errors.py": ["tracked_fe_bpf"],
+    "test_streaming_conversion.py": ["local_fe_log"],
+    "test_run_status.py": ["local_fe_log", "local_cu1e17_log", "local_cu1e17_cyl_log", "local_h5_cu"],
+    "test_coordinate_semantics.py": ["local_cu1e17_log", "local_cu1e17_cyl_log", "local_h5_cu"],
+    "test_validation.py": ["local_fe_log", "local_si_log", "local_cu0166_log"],
+    "test_wave4_ingest.py": ["local_fe_log", "local_h5_cu"],
+    "test_derived_phase412.py": ["local_h5_50al_root", "local_h5_cu_root", "local_h5_cu", "local_h5_si"],
+    "test_wave6_derived.py": ["local_h5_50al_root", "local_h5_cu_root"]
+  },
+  "entry_prefix_requirements": {
+    "test_reader.py": ["local_h5_fe", "local_h5_cu", "local_h5_si"],
+    "test_viewer_": ["local_h5_fe", "local_h5_cu", "local_h5_si"],
+    "test_derived_": ["local_h5_fe", "local_h5_cu", "local_h5_si"],
+    "test_plasmon_": ["local_h5_fe", "local_h5_cu", "local_h5_si"],
+    "test_app_": ["local_fe_log", "local_h5_fe", "local_h5_cu", "local_h5_si"],
+    "test_wave": ["local_h5_fe", "local_h5_cu", "local_h5_si"]
+  }
+}

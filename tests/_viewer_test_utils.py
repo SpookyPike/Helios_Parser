@@ -12,7 +12,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 ROOT = Path(__file__).resolve().parents[1]
 HDF5_ROOT = ROOT / "outputs" / "hdf5"
-TEST_SETTINGS_ROOT = ROOT / "outputs" / "test_settings"
+TEST_SETTINGS_ROOT = Path(os.environ.get("HELIOS_TEST_SETTINGS_DIR", ROOT / "outputs" / "test_settings"))
 EXPECTED = {
     "5Fe+4.9TW+light_stabilized.h5": {"zones": 500, "snapshots": 8, "regions": 1, "materials": 1},
     "Cu_0166_stabilized.h5": {"zones": 300, "snapshots": 461, "regions": 1, "materials": 1},
@@ -33,9 +33,10 @@ def get_app() -> QtWidgets.QApplication:
 def reset_test_settings() -> None:
     app = get_app()
     del app
-    store = QtCore.QSettings("HeliosViewer", "HELIOS HDF5 Quick Look")
-    store.clear()
-    store.sync()
+    for application_name in ("HELIOS HDF5 Quick Look", "HELIOS Parse View"):
+        store = QtCore.QSettings("HeliosViewer", application_name)
+        store.clear()
+        store.sync()
 
 
 def process_events(delay_ms: int = 0) -> None:
