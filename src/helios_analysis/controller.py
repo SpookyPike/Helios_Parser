@@ -201,7 +201,10 @@ class DerivedController(QtCore.QObject):
         return self._context
 
     def cache_stats(self) -> dict[str, object]:
-        return self._cache_layers.stats()
+        stats: dict[str, object] = self._cache_layers.stats()
+        stats["aggregate_memory"] = self._cache_layers.memory_stats()
+        stats["active_task_and_external_arrays"] = "outside cache accounting"
+        return stats
 
     def shutdown(self) -> None:
         self._shutting_down = True

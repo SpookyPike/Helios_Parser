@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from helios.cache import AnalyzerCacheSet, CacheLayer, estimate_nbytes
+from helios.cache import AnalyzerCacheSet, CacheCoordinator, CacheLayer, estimate_nbytes
 
 
 class CacheLifecycleTests(unittest.TestCase):
@@ -66,6 +66,56 @@ class CacheLifecycleTests(unittest.TestCase):
         derived_bucket = cache_set.derived_cache.bucket("derived")
         self.assertEqual(32, raw_bucket.stats().byte_capacity)
         self.assertEqual(48, derived_bucket.stats().byte_capacity)
+
+    def test_aggregate_budget_evicts_oldest_entry_across_cache_owners(self) -> None:
+        coordinator = CacheCoordinator(max_bytes=12)
+        viewer = CacheLayer(coordinator=coordinator).bucket("viewer")
+        derived = CacheLayer(coordinator=coordinator).bucket("derived")
+
+        viewer["old"] = np.arange(8, dtype=np.uint8)
+        derived["new"] = np.arange(8, dtype=np.uint8)
+
+        self.assertNotIn("old", viewer)
+        self.assertIn("new", derived)
+        stats = coordinator.stats()
+        self.assertEqual(8, stats.bytes_used)
+        self.assertEqual(12, stats.byte_capacity)
+        self.assertEqual(1, stats.evictions)
+
+    def test_aggregate_accounting_deduplicates_arrays_shared_between_owners(self) -> None:
+        coordinator = CacheCoordinator(max_bytes=24)
+        viewer = CacheLayer(coordinator=coordinator).bucket("viewer")
+        derived = CacheLayer(coordinator=coordinator).bucket("derived")
+        shared = np.arange(16, dtype=np.uint8)
+
+        viewer[""] = shared
+        derived[""] = {"": shared[4:]}
+
+        self.assertEqual(shared.nbytes, coordinator.stats().bytes_used)
+        self.assertEqual(0, coordinator.stats().evictions)
+
+    def test_analyzer_cache_sets_share_the_session_coordinator(self) -> None:
+        viewer = AnalyzerCacheSet()
+        derived = AnalyzerCacheSet()
+        viewer_bucket = viewer.raw_data_cache.bucket("viewer_probe")
+        derived_bucket = derived.derived_cache.bucket("derived_probe")
+
+        self.assertIs(viewer_bucket.coordinator, derived_bucket.coordinator)
+        self.assertGreaterEqual(viewer.memory_stats().registered_buckets, 2)
+
+    def test_aggregate_limit_can_be_injected_across_analyzer_cache_sets(self) -> None:
+        coordinator = CacheCoordinator(max_bytes=12)
+        viewer = AnalyzerCacheSet(coordinator=coordinator)
+        derived = AnalyzerCacheSet(coordinator=coordinator)
+        viewer_bucket = viewer.raw_data_cache.bucket("viewer")
+        derived_bucket = derived.derived_cache.bucket("derived")
+
+        viewer_bucket["old"] = np.arange(8, dtype=np.uint8)
+        derived_bucket["new"] = np.arange(8, dtype=np.uint8)
+
+        self.assertNotIn("old", viewer_bucket)
+        self.assertIn("new", derived_bucket)
+        self.assertLessEqual(viewer.memory_stats().bytes_used, 12)
 
 
 if __name__ == "__main__":

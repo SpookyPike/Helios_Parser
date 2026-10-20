@@ -17,6 +17,7 @@ from collections import OrderedDict
 from collections.abc import Iterator, MutableMapping
 from pathlib import Path
 from typing import Any
+import weakref
 
 import numpy as np
 
@@ -41,7 +42,74 @@ class CacheLayerStats:
     last_clear_reason: str | None
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
+class CacheCoordinatorStats:
+    registered_buckets: int
+    bytes_used: int
+    byte_capacity: int | None
+    evictions: int
+
+
+class CacheCoordinator:
+    """Optional aggregate byte budget for cache buckets with shared ownership.
+
+    The coordinator accounts for shared NumPy allocations once across all
+    registered buckets and evicts the globally least-recently-used cache entry
+    when its configured limit is exceeded. Objects held by active callers or
+    tasks are outside this cache-only budget.
+    """
+
+    def __init__(self, max_bytes: int | None = None) -> None:
+        self.max_bytes = None if max_bytes is None else max(0, int(max_bytes))
+        self._buckets: weakref.WeakValueDictionary[int, BoundedCacheBucket] = weakref.WeakValueDictionary()
+        self._clock = 0
+        self._evictions = 0
+
+    def register(self, bucket: BoundedCacheBucket) -> None:
+        self._buckets[id(bucket)] = bucket
+
+    def touch(self, bucket: BoundedCacheBucket, key: Any) -> None:
+        self._clock += 1
+        bucket._entry_age[key] = self._clock
+
+    def set_limit(self, max_bytes: int | None) -> None:
+        self.max_bytes = None if max_bytes is None else max(0, int(max_bytes))
+        self.enforce()
+
+    def bytes_used(self) -> int:
+        return estimate_nbytes(tuple(value for bucket in self._buckets.values() for value in bucket._items.values()))
+
+    def stats(self) -> CacheCoordinatorStats:
+        return CacheCoordinatorStats(
+            registered_buckets=len(self._buckets),
+            bytes_used=self.bytes_used(),
+            byte_capacity=self.max_bytes,
+            evictions=int(self._evictions),
+        )
+
+    def enforce(self) -> None:
+        if self.max_bytes is None or self.max_bytes <= 0:
+            return
+        while self._buckets and self.bytes_used() > self.max_bytes:
+            oldest: tuple[int, BoundedCacheBucket, Any] | None = None
+            for bucket in tuple(self._buckets.values()):
+                if not bucket._items:
+                    continue
+                key = next(iter(bucket._items))
+                age = bucket._entry_age.get(key, 0)
+                if oldest is None or age < oldest[0]:
+                    oldest = (age, bucket, key)
+            if oldest is None:
+                return
+            _, bucket, key = oldest
+            bucket._evict_key(key)
+            self._evictions += 1
+
+
+_DEFAULT_CACHE_COORDINATOR = CacheCoordinator()
+
+
+@dataclass(eq=False)
 class BoundedCacheBucket(MutableMapping[Any, Any]):
     """Small LRU-style bucket used for long-lived cache layers.
 
@@ -53,7 +121,9 @@ class BoundedCacheBucket(MutableMapping[Any, Any]):
 
     max_items: int | None = None
     max_bytes: int | None = None
+    coordinator: CacheCoordinator | None = field(default=None, repr=False)
     _items: OrderedDict[Any, Any] = field(default_factory=OrderedDict)
+    _entry_age: dict[Any, int] = field(default_factory=dict, repr=False)
     _hits: int = 0
     _misses: int = 0
     _evictions: int = 0
@@ -64,17 +134,29 @@ class BoundedCacheBucket(MutableMapping[Any, Any]):
         value = self._items[key]
         self._hits += 1
         self._items.move_to_end(key)
+        if self.coordinator is not None:
+            self.coordinator.touch(self, key)
         return value
 
     def __setitem__(self, key: Any, value: Any) -> None:
         if self.max_bytes is not None and int(self.max_bytes) > 0 and estimate_nbytes(value) > int(self.max_bytes):
             raise ValueError(f"Cache entry requires {estimate_nbytes(value)} bytes; bucket limit is {int(self.max_bytes)}.")
+        if self.coordinator is not None and self.coordinator.max_bytes is not None and self.coordinator.max_bytes > 0:
+            size = estimate_nbytes(value)
+            if size > self.coordinator.max_bytes:
+                raise ValueError(f"Cache entry requires {size} bytes; aggregate limit is {self.coordinator.max_bytes}.")
         self._items[key] = value
         self._items.move_to_end(key)
+        if self.coordinator is not None:
+            self.coordinator.register(self)
+            self.coordinator.touch(self, key)
         self._evict_if_needed()
+        if self.coordinator is not None:
+            self.coordinator.enforce()
 
     def __delitem__(self, key: Any) -> None:
         del self._items[key]
+        self._entry_age.pop(key, None)
 
     def __iter__(self) -> Iterator[Any]:
         return iter(self._items)
@@ -87,12 +169,15 @@ class BoundedCacheBucket(MutableMapping[Any, Any]):
             value = self._items[key]
             self._hits += 1
             self._items.move_to_end(key)
+            if self.coordinator is not None:
+                self.coordinator.touch(self, key)
             return value
         self._misses += 1
         return default
 
     def clear(self, *, reason: str | None = None) -> None:
         self._items.clear()
+        self._entry_age.clear()
         self._clears += 1
         self._last_clear_reason = None if reason is None else str(reason)
 
@@ -114,7 +199,13 @@ class BoundedCacheBucket(MutableMapping[Any, Any]):
             (self.max_items is not None and self.max_items > 0 and len(self._items) > int(self.max_items))
             or (self.max_bytes is not None and self.max_bytes > 0 and estimate_nbytes(tuple(self._items.values())) > int(self.max_bytes))
         ):
-            self._items.popitem(last=False)
+            key = next(iter(self._items))
+            self._evict_key(key)
+
+    def _evict_key(self, key: Any) -> None:
+        if key in self._items:
+            del self._items[key]
+            self._entry_age.pop(key, None)
             self._evictions += 1
 
 
@@ -161,8 +252,13 @@ class CacheLayer:
 
     default_bucket_size: int | None = None
     default_bucket_byte_limit: int | None = None
+    coordinator: CacheCoordinator | None = None
     _buckets: dict[str, BoundedCacheBucket] = field(default_factory=dict)
     _last_clear_reason: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.coordinator is None:
+            self.coordinator = _DEFAULT_CACHE_COORDINATOR
 
     def bucket(self, name: str, *, max_items: int | None = None, max_bytes: int | None = None) -> BoundedCacheBucket:
         """Return the named mutable cache bucket, creating it if needed."""
@@ -172,7 +268,10 @@ class CacheLayer:
             self._buckets[key] = BoundedCacheBucket(
                 max_items=self.default_bucket_size if max_items is None else max_items,
                 max_bytes=self.default_bucket_byte_limit if max_bytes is None else max_bytes,
+                coordinator=self.coordinator,
             )
+            if self.coordinator is not None:
+                self.coordinator.register(self._buckets[key])
         elif max_items is not None:
             self._buckets[key].max_items = int(max_items)
             self._buckets[key]._evict_if_needed()
@@ -226,11 +325,22 @@ class AnalyzerCacheSet:
     raw_bucket_byte_limit: int | None = None
     derived_bucket_byte_limit: int | None = None
     view_bucket_byte_limit: int | None = None
+    aggregate_byte_limit: int | None = None
+    coordinator: CacheCoordinator = field(default_factory=lambda: _DEFAULT_CACHE_COORDINATOR, repr=False)
 
     def __post_init__(self) -> None:
+        self.raw_data_cache.coordinator = self.coordinator
+        self.derived_cache.coordinator = self.coordinator
+        self.view_cache.coordinator = self.coordinator
+        for layer in (self.raw_data_cache, self.derived_cache, self.view_cache):
+            for bucket in layer._buckets.values():
+                bucket.coordinator = self.coordinator
+                self.coordinator.register(bucket)
         self.raw_data_cache.default_bucket_byte_limit = self.raw_bucket_byte_limit
         self.derived_cache.default_bucket_byte_limit = self.derived_bucket_byte_limit
         self.view_cache.default_bucket_byte_limit = self.view_bucket_byte_limit
+        if self.aggregate_byte_limit is not None:
+            self.coordinator.set_limit(self.aggregate_byte_limit)
 
     def stats(self) -> dict[str, CacheLayerStats]:
         return {
@@ -238,6 +348,9 @@ class AnalyzerCacheSet:
             "derived_cache": self.derived_cache.stats(),
             "view_cache": self.view_cache.stats(),
         }
+
+    def memory_stats(self) -> CacheCoordinatorStats:
+        return self.coordinator.stats()
 
 
 _SESSION_RAW_DATA_CACHE = CacheLayer(default_bucket_size=64)

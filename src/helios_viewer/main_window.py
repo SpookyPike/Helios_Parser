@@ -2006,6 +2006,8 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         return {
             "controller": self.controller.cache_stats(),
             "view_cache": self.cache_layers.view_cache.stats(),
+            "aggregate_memory": self.cache_layers.memory_stats(),
+            "active_task_and_external_arrays": "outside cache accounting",
         }
 
     def _on_run_opened(self, payload: OpenRunPayload) -> None:
