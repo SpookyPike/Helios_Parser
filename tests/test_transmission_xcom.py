@@ -32,6 +32,7 @@ from helios.services.derived.xcom_hook import (
     ColdAttenuationZone,
     HeliosXcomBackend,
     PersistentColdAttenuationCache,
+    PrecomputedColdTableBackend,
     build_cold_attenuation_request,
     canonical_fallback_table_key,
     load_precomputed_cold_backend,
@@ -377,6 +378,66 @@ class TransmissionXcomTests(unittest.TestCase):
         self.assertAlmostEqual(expected_tau, actual_tau, places=12)
         self.assertAlmostEqual(math.exp(-expected_tau), float(result.transmission[0]), places=12)
 
+    def test_precomputed_backend_resolves_each_material_energy_once_for_many_zones(self) -> None:
+        backend = PrecomputedColdTableBackend()
+        zones = tuple(
+            ColdAttenuationZone(
+                zone_index=index,
+                region_id=1,
+                material_id=1,
+                material_label="Cu",
+                material_display_label="Copper",
+                material_resolution_status="resolved_from_eos",
+                material_canonical_key="cu",
+                density_g_cm3=2.0 + (index % 3) * 0.25,
+                path_length_cm=1.0e-4,
+            )
+            for index in range(1300)
+        )
+        request = ColdAttenuationRequest(
+            snapshot_index=0,
+            observation_side="front",
+            line_of_sight_cosine=1.0,
+            photon_energies_kev=(8.0,),
+            zones=zones,
+        )
+        original_lookup = lookup_fallback_mu_rho
+        with mock.patch(
+            "helios.services.derived.xcom_hook.lookup_fallback_mu_rho",
+            wraps=original_lookup,
+        ) as lookup_spy:
+            result = backend.compute_transmission(request)
+
+        self.assertEqual(1, lookup_spy.call_count)
+        expected_areal = sum(zone.density_g_cm3 * zone.path_length_cm for zone in zones)
+        expected_tau = original_lookup("Cu", 8.0).mu_rho_cm2_g * expected_areal
+        self.assertTrue(np.isclose(result.metadata["optical_depth"][0], expected_tau, rtol=1e-12, atol=1e-15))
+        self.assertTrue(np.isclose(result.transmission[0], math.exp(-expected_tau), rtol=1e-12, atol=1e-15))
+        budget = result.metadata["material_budgets"][0]
+        self.assertTrue(np.isclose(budget["areal_density_g_cm2"], expected_areal, rtol=1e-12, atol=1e-15))
+
+    def test_precomputed_backend_rejects_invalid_zone_density_and_path(self) -> None:
+        backend = PrecomputedColdTableBackend()
+        for field, value in (("density_g_cm3", -1.0), ("path_length_cm", float("inf"))):
+            zone = ColdAttenuationZone(
+                zone_index=0,
+                region_id=1,
+                material_id=1,
+                material_label="Cu",
+                density_g_cm3=2.0,
+                path_length_cm=1.0e-4,
+                material_canonical_key="cu",
+            )
+            request = ColdAttenuationRequest(
+                snapshot_index=0,
+                observation_side="front",
+                line_of_sight_cosine=1.0,
+                photon_energies_kev=(8.0,),
+                zones=(replace(zone, **{field: value}),),
+            )
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "finite and nonnegative"):
+                backend.compute_transmission(request)
+
     def test_fallback_table_loglog_interpolation_and_transmission_from_areal_density(self) -> None:
         table = self._fallback_table_json()
         cu_rows = table["materials"]["cu"]["rows"]
@@ -397,6 +458,17 @@ class TransmissionXcomTests(unittest.TestCase):
         transmission = math.exp(-lookup.mu_rho_cm2_g * areal_density)
         self.assertGreaterEqual(transmission, 0.0)
         self.assertLessEqual(transmission, 1.0)
+
+    def test_exact_lookup_keeps_first_repeated_energy_entry(self) -> None:
+        energies = np.asarray([1000.0, 1500.0, 1500.0, 2000.0])
+        coefficients = np.asarray([1.0, 2.0, 3.0, 4.0])
+        with mock.patch(
+            "helios.services.derived.xcom_hook._fallback_table_vectors",
+            return_value=(energies, coefficients),
+        ):
+            lookup = lookup_fallback_mu_rho("Cu", 1.5)
+        self.assertEqual("exact", lookup.interpolation_kind)
+        self.assertEqual(2.0, lookup.mu_rho_cm2_g)
 
     def test_apply_transmission_model_free_free_plus_thomson_populates_region_taus(self) -> None:
         _path, dataset, context, parameters, geometry = self._load_transmission_inputs()
