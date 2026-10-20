@@ -163,6 +163,7 @@
     "test_coordinate_semantics.py": ["local_cu1e17_log", "local_cu1e17_cyl_log", "local_h5_cu"],
     "test_derived_backend_optimization.py": ["local_h5_cu1e17_cyl"],
     "test_app_phase412.py": ["local_h5_50al_root"],
+    "test_phase412c_snapshot.py": ["local_h5_cu_root", "local_h5_50al_root", "local_h5_si"],
     "test_derived_phase41.py": ["local_cu1e17_log", "local_cu1e17_cyl_log"],
     "test_viewer_phase34.py": ["local_cu1e17_cyl_log"],
     "test_transmission_xcom.py": ["local_h5_fe", "local_h5_cu", "local_h5_50al_root"],
