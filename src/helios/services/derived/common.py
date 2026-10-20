@@ -413,6 +413,8 @@ def load_run_data(
         run_status = _cached_meta(run_key, "run_status")
         visar_support_metadata = _cached_meta(run_key, "visar_support_metadata")
         has_dynamic_radius = _cached_meta(run_key, "has_dynamic_radius")
+        dynamic_center_present = _cached_meta(run_key, "dynamic_center_present")
+        dynamic_edge_present = _cached_meta(run_key, "dynamic_edge_present")
         time_s = _cached_array(run_key, "time_s")
         static_x = _cached_array(run_key, "static_x_center_cm")
         static_x_edges = _cached_array(run_key, "static_x_edge_cm")
@@ -444,7 +446,8 @@ def load_run_data(
             or static_x is None
             or static_x_edges is None
             or zone_width is None
-            or (has_dynamic_radius is True and (radius is None or radius_edges is None))
+            or (dynamic_center_present is True and radius is None)
+            or (dynamic_edge_present is True and radius_edges is None)
             or zone_region_id is None
             or zone_material_index is None
             or (density is None and "density" not in missing_core_fields)
@@ -472,6 +475,17 @@ def load_run_data(
                     fields = _share_meta(run_key, "fields", tuple(run.list_fields()))
                 if has_dynamic_radius is None:
                     has_dynamic_radius = _share_meta(run_key, "has_dynamic_radius", bool(run.has_dynamic_coordinate()))
+                if dynamic_center_present is None or dynamic_edge_present is None:
+                    coordinate_model = run.get_metadata().get("coordinate_model", {})
+                    center_name = str(coordinate_model.get("dynamic_center_dataset", "dynamic_coordinate_center"))
+                    edge_name = str(coordinate_model.get("dynamic_edge_dataset", "dynamic_coordinate_edge"))
+                    legacy_radius = "radius" in run._field_datasets
+                    dynamic_center_present = _share_meta(
+                        run_key, "dynamic_center_present", bool(legacy_radius or center_name in run._grid_datasets)
+                    )
+                    dynamic_edge_present = _share_meta(
+                        run_key, "dynamic_edge_present", bool(legacy_radius or edge_name in run._grid_datasets)
+                    )
                 if run_status is None:
                     run_status = _share_meta(run_key, "run_status", run.get_run_status())
                 if visar_support_metadata is None:

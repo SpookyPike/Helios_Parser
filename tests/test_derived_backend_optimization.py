@@ -443,13 +443,46 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
             context,
             parameters=DerivedAnalysisParameters(weighting_mode="electron_column"),
             context_key=("missing-electron-density-weighted",),
-            requested_modules={"spectroscopy"},
+            requested_modules={"xrd", "spectroscopy"},
             requested_time_plot_modules={"spectroscopy"},
             include_wavefront=False,
         )
         weighted_availability = {item.module: item for item in weighted_result.module_availability}
         self.assertFalse(weighted_availability["spectroscopy"].available)
         self.assertIn("electron_density", weighted_availability["spectroscopy"].reason)
+        self.assertFalse(weighted_availability["xrd"].available)
+        self.assertIn("electron_density", weighted_availability["xrd"].reason)
+
+    def test_center_only_dynamic_coordinate_is_complete_warm_cache(self) -> None:
+        source = HDF5_ROOT / "Cu_0166_stabilized.h5"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / source.name
+            shutil.copy2(source, path)
+            path.chmod(0o600)
+            with h5py.File(path, "r+") as handle:
+                radius = np.asarray(handle["fields/radius"])
+                del handle["fields/radius"]
+                handle["grid"].create_dataset("dynamic_coordinate_center", data=radius)
+            clear_session_raw_data_cache(reason="center-only-dynamic-coordinate-test")
+            opens = 0
+            real_reader = HeliosRun
+
+            def counted_reader(*args, **kwargs):
+                nonlocal opens
+                opens += 1
+                return real_reader(*args, **kwargs)
+
+            with mock.patch.object(common, "HeliosRun", side_effect=counted_reader):
+                first = load_run_data(path, requested_fields=())
+                self.assertIsNotNone(first.radius_cm)
+                self.assertIsNone(first.radius_edge_cm)
+                initial_opens = opens
+                for _ in range(3):
+                    warm = load_run_data(path, requested_fields=())
+                    self.assertIsNotNone(warm.radius_cm)
+                    self.assertIsNone(warm.radius_edge_cm)
+            self.assertEqual(1, initial_opens)
+            self.assertEqual(initial_opens, opens)
 
     def test_mass_weighted_spectroscopy_requires_density(self) -> None:
         source = HDF5_ROOT / "Cu_0166_stabilized.h5"

@@ -292,6 +292,31 @@ class DerivedServicesPhase4Tests(unittest.TestCase):
         self.assertTrue(np.isnan(metrics["bragg_shift_deg"][1]))
         self.assertTrue(any("sin(theta') > 1" in warning.message for warning in warnings))
 
+    def test_unreachable_bragg_angle_keeps_finite_q_in_public_result(self) -> None:
+        dataset, context = _synthetic_dataset()
+        dataset.field_capabilities = DerivedFieldCapabilities(
+            available_fields=("density", "velocity", "zone_width", "temperature_e", "temperature_i", "electron_density", "mean_charge")
+        )
+        context = replace(context, snapshot_index=4)
+        result = compute_analysis_result(
+            dataset,
+            context,
+            parameters=DerivedAnalysisParameters(xrd_initial_bragg_angle_deg=85.0),
+            context_key=("unreachable-public-xrd",),
+            requested_modules=frozenset({"xrd"}),
+            requested_time_plot_modules=frozenset(),
+            include_wavefront=False,
+        )
+        self.assertTrue(result.xrd.layers)
+        unreachable = [layer for layer in result.xrd.layers if layer.compression_ratio > 1.0]
+        self.assertTrue(unreachable)
+        for layer in result.xrd.layers:
+            self.assertTrue(np.isfinite(layer.q_compressed_inv_angstrom))
+        for layer in unreachable:
+            self.assertIsNone(layer.shifted_bragg_angle_deg)
+            self.assertIsNone(layer.bragg_shift_deg)
+        self.assertTrue(any("sin(theta') > 1" in warning.message for warning in result.xrd.warnings))
+
     def test_missing_material_properties_produce_module_availability_instead_of_key_error(self) -> None:
         dataset, context = _synthetic_dataset()
         dataset.zone_initial_density_g_cm3 = None

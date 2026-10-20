@@ -579,8 +579,8 @@ def _compute_module_results(
             missing = ("no zones remain after the active selection",)
         else:
             missing = contract.missing_requirements(dataset)
-            if contract.name == "spectroscopy":
-                weighting_mode = resolve_weighting_mode(parameters.weighting_mode, module_name="spectroscopy")
+            if contract.name in {"xrd", "spectroscopy"}:
+                weighting_mode = resolve_weighting_mode(parameters.weighting_mode, module_name=contract.name)
                 weighted_field = {
                     "mass": "density",
                     "electron_density": "electron_density",
