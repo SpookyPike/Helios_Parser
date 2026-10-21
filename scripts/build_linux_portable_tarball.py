@@ -5,6 +5,7 @@ import os
 import shutil
 import sys
 import tarfile
+import tempfile
 from pathlib import Path
 
 
@@ -68,39 +69,36 @@ exec python3 -m {module} "$@"
 """
 
 
-def main() -> int:
-    OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
-    if BUNDLE_DIR.exists():
-        shutil.rmtree(BUNDLE_DIR)
-    shutil.copytree(SRC, BUNDLE_DIR / "src", ignore=_ignore_runtime_junk)
-    shutil.copytree(ROOT / "docs", BUNDLE_DIR / "docs", ignore=_ignore_internal_doc_artifacts)
-    shutil.copy2(ROOT / "README.md", BUNDLE_DIR / "README.md")
-    shutil.copy2(ROOT / "pyproject.toml", BUNDLE_DIR / "pyproject.toml")
+def _populate_bundle(bundle_dir: Path) -> None:
+    shutil.copytree(SRC, bundle_dir / "src", ignore=_ignore_runtime_junk)
+    shutil.copytree(ROOT / "docs", bundle_dir / "docs", ignore=_ignore_internal_doc_artifacts)
+    shutil.copy2(ROOT / "README.md", bundle_dir / "README.md")
+    shutil.copy2(ROOT / "pyproject.toml", bundle_dir / "pyproject.toml")
     native_bundle_dir = os.environ.get("HELIOS_XCOM_BUNDLE_DIR")
     if native_bundle_dir:
         source = Path(native_bundle_dir).resolve()
         required = (source / "xcom", source / "manifest.json", source / "XCOM_NOTICE.txt")
         if any(not path.is_file() for path in required) or len(list(source.glob("MDATX3.*"))) != 100:
             raise ValueError(f"XCOM bundle is incomplete: {source}")
-        shutil.copytree(source, BUNDLE_DIR / "helios_xcom_native" / "linux-x86_64")
-    _write_executable(BUNDLE_DIR / "bin" / "helios-parse-view", _launcher("helios_app"))
-    _write_executable(BUNDLE_DIR / "bin" / "helios-to-hdf5", _launcher("helios_parser"))
-    _write_executable(BUNDLE_DIR / "bin" / "helios-hdf5-viewer", _launcher("helios_viewer"))
-    (BUNDLE_DIR / "sample_data").mkdir(parents=True, exist_ok=True)
-    (BUNDLE_DIR / "examples").mkdir(parents=True, exist_ok=True)
+        shutil.copytree(source, bundle_dir / "helios_xcom_native" / "linux-x86_64")
+    _write_executable(bundle_dir / "bin" / "helios-parse-view", _launcher("helios_app"))
+    _write_executable(bundle_dir / "bin" / "helios-to-hdf5", _launcher("helios_parser"))
+    _write_executable(bundle_dir / "bin" / "helios-hdf5-viewer", _launcher("helios_viewer"))
+    (bundle_dir / "sample_data").mkdir(parents=True, exist_ok=True)
+    (bundle_dir / "examples").mkdir(parents=True, exist_ok=True)
     shutil.copy2(
         ROOT / "new_data" / "25Cu+1.87TW" / "25Cu+1.87TW.log",
-        BUNDLE_DIR / "sample_data" / "25Cu+1.87TW.log",
+        bundle_dir / "sample_data" / "25Cu+1.87TW.log",
     )
     bpf_source = ROOT / "new_data" / "5Fe+4.9TW+light" / "5Fe+4.9TW+light.bpf"
-    shutil.copy2(bpf_source, BUNDLE_DIR / "sample_data" / "5Fe+4.9TW+light.bpf")
+    shutil.copy2(bpf_source, bundle_dir / "sample_data" / "5Fe+4.9TW+light.bpf")
     write_hdf5(
         bpf_source,
-        BUNDLE_DIR / "examples" / "5Fe+4.9TW+light_bpf_schema2.h5",
+        bundle_dir / "examples" / "5Fe+4.9TW+light_bpf_schema2.h5",
         overwrite=True,
         compression="lzf",
     )
-    (BUNDLE_DIR / "README_LINUX_PORTABLE.txt").write_text(
+    (bundle_dir / "README_LINUX_PORTABLE.txt").write_text(
         f"""# HELIOS Parse / View {RELEASE_VERSION} Linux portable bundle
 
 This is a source-runtime portable bundle, not an AppImage. It does not require
@@ -118,14 +116,25 @@ Launch from the extracted directory:
 - `bin/helios-hdf5-viewer examples/5Fe+4.9TW+light_bpf_schema2.h5`
 
 Use the Debian package when you want dependency installation handled by apt.
+Extract the tarball on a filesystem that permits execution.
 """,
         encoding="utf-8",
         newline="\n",
     )
-    if TARBALL_PATH.exists():
-        TARBALL_PATH.unlink()
-    with tarfile.open(TARBALL_PATH, "w:gz") as archive:
-        archive.add(BUNDLE_DIR, arcname=BUNDLE_NAME)
+
+
+def main() -> int:
+    OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="helios-linux-portable-") as tmpdir:
+        staged_bundle = Path(tmpdir) / BUNDLE_NAME
+        _populate_bundle(staged_bundle)
+        if TARBALL_PATH.exists():
+            TARBALL_PATH.unlink()
+        with tarfile.open(TARBALL_PATH, "w:gz") as archive:
+            archive.add(staged_bundle, arcname=BUNDLE_NAME)
+        if BUNDLE_DIR.exists():
+            shutil.rmtree(BUNDLE_DIR)
+        shutil.copytree(staged_bundle, BUNDLE_DIR)
     print(TARBALL_PATH)
     return 0
 
