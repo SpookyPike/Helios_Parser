@@ -1,6 +1,7 @@
 """Native integration checks; these deliberately compile and exercise XCOM."""
 import shutil
 import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,6 +19,7 @@ from helios.services.derived.xcom_hook import (
     describe_optional_cold_backend,
 )
 from build_xcom_native import build
+from helios.cancellation import AnalysisCancelled
 
 
 @unittest.skipUnless(shutil.which("gfortran"), "native XCOM integration requires gfortran")
@@ -78,6 +80,29 @@ class XcomNativeTests(unittest.TestCase):
         for energies in ((0.9,), (35.01,), (float("nan"),), (36.0,)):
             with self.subTest(energies=energies), self.assertRaises(ValueError):
                 self.client.query_element("Cu", energies)
+
+    def test_cancellation_terminates_and_reaps_native_process(self):
+        process = mock.Mock()
+        process.communicate.side_effect = [
+            subprocess.TimeoutExpired("xcom", 0.1),
+            ("", ""),
+        ]
+        checks = 0
+
+        def cancel_after_first_poll():
+            nonlocal checks
+            checks += 1
+            if checks > 1:
+                raise AnalysisCancelled("cancelled")
+
+        with mock.patch(
+            "helios.services.derived.xcom_native.subprocess.Popen",
+            return_value=process,
+        ), self.assertRaises(AnalysisCancelled):
+            self.client.query_element("Cu", (8.0,), progress_check=cancel_after_first_poll)
+        process.terminate.assert_called_once_with()
+        process.wait.assert_called_once()
+        self.assertEqual(2, process.communicate.call_count)
 
     def test_packaged_provider_manifest_validates_all_element_data(self):
         self.assertTrue((self._provider_dir / "manifest.json").is_file())
