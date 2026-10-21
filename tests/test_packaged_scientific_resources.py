@@ -34,6 +34,10 @@ class PackagedScientificResourceTests(unittest.TestCase):
                 resource_root.joinpath("xcom_fallback_1keV_12keV_extended.json"),
                 repo_root / "x-com_fallback" / "xcom_fallback_1keV_12keV_extended.json",
             ),
+            (
+                resource_root.joinpath("xcom_atomic_weights.json"),
+                repo_root / "x-com_fallback" / "xcom_atomic_weights.json",
+            ),
         )
         for packaged, repository in pairs:
             with self.subTest(resource=packaged.name):
@@ -49,6 +53,12 @@ class PackagedScientificResourceTests(unittest.TestCase):
 
     def test_scientific_loaders_use_packaged_resources(self) -> None:
         self.assertTrue(fallback_table_available())
+        weights = json.loads(
+            resources.files("helios.services.derived")
+            .joinpath("resources", "xcom_atomic_weights.json")
+            .read_text(encoding="utf-8")
+        )
+        self.assertEqual(100, len(weights["weights"]))
         self.assertIn(
             "materials",
             json.loads(

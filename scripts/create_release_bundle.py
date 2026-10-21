@@ -40,7 +40,6 @@ FILES_TO_COPY = (
     "README.md",
     "pyproject.toml",
     "app_icon.png",
-    "XCOM.tar.gz",
 )
 
 RELEASE_INPUT_FILES = (

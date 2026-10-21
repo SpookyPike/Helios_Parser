@@ -17,6 +17,7 @@ already present in the parsed payload.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Callable
 from functools import cached_property
 import hashlib
 import importlib
@@ -448,7 +449,7 @@ _FALLBACK_TABLE_CACHE: dict[str, object] | None = None
 _FALLBACK_VECTOR_CACHE: dict[tuple[str, str], tuple[np.ndarray, np.ndarray]] = {}
 _FALLBACK_TABLE_DEFAULT_QUANTITY = "mu_rho_total_cm2_g"
 _FALLBACK_TABLE_MIN_KEV = 1.0
-_FALLBACK_TABLE_MAX_KEV = 12.0
+_FALLBACK_TABLE_MAX_KEV = 35.0
 _FALLBACK_TABLE_EXTRAP_FACTOR = 1.2
 _CANONICAL_MATERIAL_ALIASES = {
     "al": "al",
@@ -528,6 +529,7 @@ class ColdAttenuationRequest:
     line_of_sight_cosine: float
     photon_energies_kev: tuple[float, ...]
     zones: tuple[ColdAttenuationZone, ...]
+    cancellation_check: Callable[[], None] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -709,7 +711,7 @@ def lookup_fallback_mu_rho(
         interpolation_kind = "extrapolated"
         note = (
             f"Precomputed XCOM table extrapolated below {minimum_kev:.4g} keV; "
-            f"use with caution outside the native 1–12 keV range."
+            f"use with caution outside the native 1–35 keV range."
         )
     elif index >= len(xs):
         if not allow_extrapolation or len(xs) < 2:
@@ -718,7 +720,7 @@ def lookup_fallback_mu_rho(
         interpolation_kind = "extrapolated"
         note = (
             f"Precomputed XCOM table extrapolated above {maximum_kev:.4g} keV; "
-            f"use with caution outside the native 1–12 keV range."
+            f"use with caution outside the native 1–35 keV range."
         )
     else:
         mu_rho = _interp_loglog(energy_ev, xs[index - 1], ys[index - 1], xs[index], ys[index])
@@ -1015,13 +1017,17 @@ def cold_attenuation_cache_key(
     attenuation_mode: str = "total_with_coherent",
 ) -> tuple[str, dict[str, object]]:
     grouped, _resolved, unresolved = _material_resolution_summary(request)
+    from helios.services.derived.xcom_composition import atomic_weights
+
+    _weights, atomic_weight_fingerprint = atomic_weights()
     payload = {
         "schema_version": _CACHE_SCHEMA_VERSION,
         "backend_fingerprint": str(backend_fingerprint),
+        "atomic_weight_fingerprint": atomic_weight_fingerprint,
         "attenuation_mode": str(attenuation_mode),
-        "energies_kev": [round(float(value), 9) for value in request.photon_energies_kev],
+        "energies_kev": [float(value).hex() for value in request.photon_energies_kev],
         "materials": [
-            {"label": label, "areal_density_g_cm2": round(float(grouped[label]), 12)}
+            {"label": label, "areal_density_g_cm2": float(grouped[label]).hex()}
             for label in sorted(grouped)
         ],
         "unresolved_materials": list(unresolved),
@@ -1037,6 +1043,11 @@ def _load_helios_xcom_module() -> object:
     with _XCOM_MODULE_LOCK:
         if _XCOM_MODULE is not None:
             return _XCOM_MODULE
+        from helios.services.derived.xcom_native import provider_identity
+
+        if provider_identity() is not None:
+            _XCOM_MODULE = importlib.import_module("helios.services.derived.xcom_native")
+            return _XCOM_MODULE
         wrapper_root = _ensure_wrapper_root() / "helios_xcom_integration"
         if str(wrapper_root) not in sys.path:
             sys.path.insert(0, str(wrapper_root))
@@ -1045,6 +1056,11 @@ def _load_helios_xcom_module() -> object:
 
 
 def _current_backend_identity_fingerprint() -> str | None:
+    from helios.services.derived.xcom_native import provider_identity
+
+    native_identity = provider_identity()
+    if native_identity is not None:
+        return native_identity
     wrapper_archive = _wrapper_archive_path()
     if wrapper_archive.exists():
         return _archive_fingerprint(wrapper_archive)
@@ -1070,14 +1086,18 @@ def _probe_optional_cold_backend(*, probe_compute: bool) -> ColdAttenuationBacke
     wrapper_archive = _wrapper_archive_path()
     source_archive = _source_archive_path()
     wrapper_present = bool(wrapper_archive.exists())
+    from helios.services.derived.xcom_native import provider_identity
+
+    native_fingerprint = provider_identity()
+    native_present = native_fingerprint is not None
     backend_name = "XCOM"
-    backend_fingerprint = _archive_fingerprint(wrapper_archive) if wrapper_present else (_archive_fingerprint(source_archive) if source_archive.exists() else None)
-    if not wrapper_present:
+    backend_fingerprint = native_fingerprint or (_archive_fingerprint(wrapper_archive) if wrapper_present else (_archive_fingerprint(source_archive) if source_archive.exists() else None))
+    if not wrapper_present and not native_present:
         if source_archive.exists():
             return ColdAttenuationBackendStatus(
                 available=False,
                 status="source_only",
-                message="Vendor XCOM source bundle is present, but the Python wrapper archive is not available.",
+                message="XCOM source is present, but no configured native executable and element database are available.",
                 backend_name=backend_name,
                 backend_fingerprint=backend_fingerprint,
                 wrapper_present=False,
@@ -1086,7 +1106,7 @@ def _probe_optional_cold_backend(*, probe_compute: bool) -> ColdAttenuationBacke
         return ColdAttenuationBackendStatus(
             available=False,
             status="unavailable",
-            message="Optional XCOM backend is not installed.",
+            message="Optional XCOM backend is not installed. Validated table coverage remains available.",
             backend_name=backend_name,
             backend_fingerprint=None,
             wrapper_present=False,
@@ -1098,10 +1118,10 @@ def _probe_optional_cold_backend(*, probe_compute: bool) -> ColdAttenuationBacke
         return ColdAttenuationBackendStatus(
             available=False,
             status="import_failed",
-            message=f"XCOM wrapper import failed: {exc}",
+            message=f"XCOM backend import failed: {exc}",
             backend_name=backend_name,
             backend_fingerprint=backend_fingerprint,
-            wrapper_present=True,
+            wrapper_present=wrapper_present,
             import_ok=False,
             checked_at=checked_at,
         )
@@ -1117,7 +1137,7 @@ def _probe_optional_cold_backend(*, probe_compute: bool) -> ColdAttenuationBacke
             message=f"XCOM client initialization failed: {exc}",
             backend_name=backend_name,
             backend_fingerprint=backend_fingerprint,
-            wrapper_present=True,
+            wrapper_present=wrapper_present,
             import_ok=True,
             client_ok=False,
             checked_at=checked_at,
@@ -1126,13 +1146,26 @@ def _probe_optional_cold_backend(*, probe_compute: bool) -> ColdAttenuationBacke
         return ColdAttenuationBackendStatus(
             available=False,
             status="client_ok_unchecked",
-            message="XCOM wrapper imported and client initialized; compute health is checked on explicit XCOM requests.",
+            message="XCOM provider initialized; compute health is checked on explicit XCOM requests.",
             backend_name=backend_name,
             backend_fingerprint=backend_fingerprint,
-            wrapper_present=True,
+            wrapper_present=wrapper_present,
             import_ok=True,
             client_ok=True,
             compute_ok=False,
+            checked_at=checked_at,
+        )
+    if bool(getattr(module, "defer_compute_probe", False)):
+        return ColdAttenuationBackendStatus(
+            available=True,
+            status="ready",
+            message="Native XCOM executable and all 100 element files are available; calculation is validated on the requested batch.",
+            backend_name=backend_name,
+            backend_fingerprint=backend_fingerprint,
+            wrapper_present=wrapper_present,
+            import_ok=True,
+            client_ok=True,
+            compute_ok=True,
             checked_at=checked_at,
         )
     try:
@@ -1153,7 +1186,7 @@ def _probe_optional_cold_backend(*, probe_compute: bool) -> ColdAttenuationBacke
             message=f"XCOM smoke compute failed: {exc}",
             backend_name=backend_name,
             backend_fingerprint=backend_fingerprint,
-            wrapper_present=True,
+            wrapper_present=wrapper_present,
             import_ok=True,
             client_ok=True,
             compute_ok=False,
@@ -1162,10 +1195,10 @@ def _probe_optional_cold_backend(*, probe_compute: bool) -> ColdAttenuationBacke
     return ColdAttenuationBackendStatus(
         available=True,
         status="active",
-        message="XCOM wrapper imported and smoke compute succeeded for this session.",
+        message="XCOM provider initialized and smoke compute succeeded for this session.",
         backend_name=backend_name,
         backend_fingerprint=backend_fingerprint,
-        wrapper_present=True,
+        wrapper_present=wrapper_present,
         import_ok=True,
         client_ok=True,
         compute_ok=True,
@@ -1225,6 +1258,11 @@ class HeliosXcomBackend:
             density_g_cm3=density_values,
             path_length_cm=path_values,
             energies_kev=request.photon_energies_kev,
+            **(
+                {"progress_check": request.cancellation_check}
+                if request.cancellation_check is not None
+                else {}
+            ),
         )
         grouped_budgets: dict[str, dict[str, object]] = {}
         for budget in getattr(curve, "per_material", ()):
@@ -1283,6 +1321,7 @@ def build_cold_attenuation_request(
     parameters,
     geometry,
     photon_energies_kev: tuple[float, ...],
+    cancellation_check: Callable[[], None] | None = None,
 ) -> ColdAttenuationRequest:
     """Build the optional-backend request from the active HELIOS snapshot subset.
 
@@ -1345,4 +1384,5 @@ def build_cold_attenuation_request(
         line_of_sight_cosine=float(geometry.line_of_sight_cosine),
         photon_energies_kev=tuple(float(value) for value in photon_energies_kev),
         zones=tuple(zones),
+        cancellation_check=cancellation_check,
     )

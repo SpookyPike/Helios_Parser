@@ -9,6 +9,7 @@ from typing import Callable
 
 import numpy as np
 
+from helios.cancellation import AnalysisCancelled
 from helios.instrumentation import increment_counter, timed_block
 from helios.runtime import RunContext
 from helios.services.constants import HBAR_EV_S, THOMSON_CROSS_SECTION_CM2
@@ -560,6 +561,7 @@ def _xcom_material_tau_coefficients(
     parameters: "DerivedAnalysisParameters",
     geometry: "AnalysisGeometryMetadata",
     zone_indices: np.ndarray,
+    progress_check: Callable[[], None] | None = None,
 ) -> tuple[dict[str, float], TransmissionColdRefinement | None, tuple[DerivedWarning, ...], str, str]:
     """Return per-material XCOM tau / areal-density coefficients for selected zones."""
 
@@ -572,6 +574,7 @@ def _xcom_material_tau_coefficients(
         parameters=parameters,
         geometry=geometry,
         photon_energies_kev=(energy_kev,),
+        cancellation_check=progress_check,
     )
     subset = _subset_cold_request(request, zone_indices)
     applicability, cold_fraction, path_weighted_te, path_weighted_zbar, applicability_message = _assess_xcom_applicability(dataset, subset)
@@ -588,23 +591,56 @@ def _xcom_material_tau_coefficients(
             photon_energies_kev=(energy_kev,),
         ), (), "baseline", str(backend_status.status)
     if unresolved_materials:
-        warning = DerivedWarning("transmission", "XCOM-classified zones include unresolved material labels; those zones fall back to Thomson.", severity="warning")
+        subset = replace(
+            subset,
+            zones=tuple(
+                zone
+                for zone in subset.zones
+                if str(zone.material_resolution_status) != "unresolved"
+            ),
+        )
+        if not subset.zones:
+            warning = DerivedWarning(
+                "transmission",
+                "No XCOM-classified materials have a resolved composition; those zones use the applicable fallback model.",
+                severity="warning",
+            )
+            refinement = TransmissionColdRefinement(
+                backend_status="unresolved_materials",
+                applicability=applicability,
+                message=warning.message,
+                backend_name=backend_status.backend_name,
+                backend_available=bool(backend_status.available),
+                backend_fingerprint=backend_status.backend_fingerprint,
+                source="baseline",
+                photon_energies_kev=(energy_kev,),
+                unresolved_materials=unresolved_materials,
+                cold_fraction=cold_fraction,
+                path_weighted_temperature_e_ev=path_weighted_te,
+                path_weighted_mean_charge=path_weighted_zbar,
+            )
+            return {}, refinement, (warning,), "baseline", "unresolved_materials"
+    if not 1.0 <= energy_kev <= 35.0:
+        message = (
+            f"XCOM supports photon energies from 1 to 35 keV; "
+            f"{energy_kev:.6g} keV is outside that range."
+        )
+        warning = DerivedWarning("transmission", message, severity="warning")
         refinement = TransmissionColdRefinement(
-            backend_status="unresolved_materials",
+            backend_status="outside_domain",
             applicability=applicability,
-            message="Some XCOM-classified zones could not be mapped to material formulas; Thomson fallback was used there.",
+            message=message,
             backend_name=backend_status.backend_name,
             backend_available=bool(backend_status.available),
             backend_fingerprint=backend_status.backend_fingerprint,
             source="baseline",
             photon_energies_kev=(energy_kev,),
             resolved_materials=resolved_materials,
-            unresolved_materials=unresolved_materials,
             cold_fraction=cold_fraction,
             path_weighted_temperature_e_ev=path_weighted_te,
             path_weighted_mean_charge=path_weighted_zbar,
         )
-        return {}, refinement, (warning,), "baseline", "unresolved_materials"
+        return {}, refinement, (warning,), "baseline", "outside_domain"
     if applicability == "not_recommended":
         warning = DerivedWarning("transmission", applicability_message, severity="caution")
         refinement = TransmissionColdRefinement(
@@ -635,17 +671,6 @@ def _xcom_material_tau_coefficients(
     warning_messages: list[str] = []
 
     backend_candidates: list[tuple[str, object | None, str | None, str | None, bool]] = []
-    live_backend = load_optional_cold_backend(require_compute_ok=True)
-    if live_backend is not None and backend_status.available:
-        backend_candidates.append(
-            (
-                "live_xcom_backend",
-                live_backend,
-                str(getattr(live_backend, "backend_name", None) or backend_status.backend_name or "XCOM"),
-                str(getattr(live_backend, "backend_fingerprint", None) or backend_status.backend_fingerprint or "xcom"),
-                True,
-            )
-        )
     table_backend = load_precomputed_cold_backend()
     if table_backend is not None:
         backend_candidates.append(
@@ -654,6 +679,17 @@ def _xcom_material_tau_coefficients(
                 table_backend,
                 str(getattr(table_backend, "backend_name", None) or "XCOM table"),
                 str(getattr(table_backend, "backend_fingerprint", None) or "precomputed_xcom_table"),
+                True,
+            )
+        )
+    live_backend = load_optional_cold_backend(require_compute_ok=True)
+    if live_backend is not None and backend_status.available:
+        backend_candidates.append(
+            (
+                "live_xcom_backend",
+                live_backend,
+                str(getattr(live_backend, "backend_name", None) or backend_status.backend_name or "XCOM"),
+                str(getattr(live_backend, "backend_fingerprint", None) or backend_status.backend_fingerprint or "xcom"),
                 True,
             )
         )
@@ -686,6 +722,8 @@ def _xcom_material_tau_coefficients(
                     backend_name=str(backend_name),
                     backend_fingerprint=str(backend_fingerprint),
                 )
+        except AnalysisCancelled:
+            raise
         except Exception as exc:
             warning_messages.append(f"{backend_name} refinement failed: {exc}")
             continue
@@ -719,6 +757,13 @@ def _xcom_material_tau_coefficients(
             path_weighted_temperature_e_ev=path_weighted_te,
             path_weighted_mean_charge=path_weighted_zbar,
         )
+        if unresolved_materials:
+            warning = DerivedWarning(
+                "transmission",
+                "Some XCOM-classified zones have unresolved compositions and use the applicable fallback model.",
+                severity="caution",
+            )
+            return {}, refinement, (warning, DerivedWarning("transmission", message_text, severity="warning")), "baseline", str(selected_backend_status)
         return {}, refinement, (warning,), "baseline", str(selected_backend_status)
 
     coefficients = _payload_coefficients(result_payload)
@@ -732,6 +777,16 @@ def _xcom_material_tau_coefficients(
         interpolation_note=interpolation_note or None,
         quantity_type=str(result_payload.get("quantity_type", "") or None),
     )
+    warning_list: list[DerivedWarning] = []
+    if unresolved_materials:
+        warning_list.append(
+            DerivedWarning(
+                "transmission",
+                "Some XCOM-classified zones have unresolved compositions and use the applicable fallback model.",
+                severity="caution",
+            )
+        )
+        message = f"{message} Unresolved materials use the applicable fallback model."
     refinement = _build_xcom_result_from_payload(
         payload=result_payload,
         backend_name=str(result_payload.get("backend_name", selected_backend_name or backend_status.backend_name or "XCOM")),
@@ -748,7 +803,7 @@ def _xcom_material_tau_coefficients(
         path_weighted_zbar=path_weighted_zbar,
         cached=cached,
     )
-    return coefficients, refinement, (), source, str(selected_backend_status)
+    return coefficients, refinement, tuple(warning_list), source, str(selected_backend_status)
 
 
 def _selected_time_plot_bundles(
@@ -815,7 +870,7 @@ def _mode_time_series_key(
         "transmission.selected_time_series",
         normalize_transmission_mode(mode),
         *_baseline_time_series_key(geometry=geometry, parameters=parameters),
-        (None if energy_kev is None else round(float(energy_kev), 12)),
+        (None if energy_kev is None else float(energy_kev).hex()),
         str(backend_fingerprint or ""),
     )
 
@@ -1098,6 +1153,7 @@ def apply_transmission_model(
             parameters=parameters,
             geometry=geometry,
             zone_indices=xcom_zone_indices,
+            progress_check=progress_check,
         )
         cold_refinement = refinement
         for warning in xcom_warnings:

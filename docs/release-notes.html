@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HELIOS Parse / View Release Notes 1.2.1</title>
+  <title>HELIOS Parse / View Release Notes 1.3.0</title>
   <link rel="stylesheet" href="assets/manual.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>Release Notes</h1>
         <p>
-          HELIOS Parse / View 1.2.1, released 2026-10-20.
+          HELIOS Parse / View 1.3.0, released 2026-10-21.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
       </div>
@@ -28,26 +28,36 @@
 
   <main>
     <section>
-      <h2>Why 1.2.1</h2>
+      <h2>Why 1.3.0</h2>
       <p>
-        This patch corrects cold-XCOM interpolation around absorption edges and improves the numerical precision
-        and reproducibility of the bundled attenuation tables.
+        This release adds an optional native XCOM 3.1 provider to the experimental Transmission workflow while
+        keeping covered calculations on the fast, in-process cold-XCOM tables.
       </p>
     </section>
 
     <section>
       <h2>Highlights in this release</h2>
       <ul>
-        <li>binary64 XCOM calculations with full-precision coefficient storage and adaptive sampling over 1–12 keV</li>
-        <li>paired below/above-edge rows prevent interpolation across atomic absorption discontinuities</li>
-        <li>independent native holdouts across 12 base materials show sampled interpolation errors below 0.01%</li>
-        <li>strict energy-range defaults and cached table fingerprints for repeated calculations</li>
-        <li><a href="xcom-tables.md">documented provenance, regeneration, and scientific limits</a></li>
+        <li>optional native XCOM 3.1 subprocess support for neutral elements and mixtures through Z=100</li>
+        <li>table-first calculations for covered requests, with native fallback for supported requests outside the table domain</li>
+        <li>bounded native request batching, result caching, cancellation, and subprocess cleanup</li>
+        <li>clearer Transmission units, provider status, and applicability guidance in the interface</li>
+        <li>cross-platform native packaging hooks; public release packages retain the lookup tables and omit native payloads pending redistribution review</li>
+        <li><a href="xcom-tables.md">documented table provenance, native provider behavior, and scientific limits</a></li>
       </ul>
     </section>
 
     <section>
       <h2>Changelog</h2>
+      <h3>1.3.0</h3>
+      <ul>
+        <li>integrated an optional native XCOM 3.1 subprocess adapter for supported neutral elements and mixtures up to Z=100</li>
+        <li>kept table-covered requests in-process and routed supported out-of-table requests to the native provider</li>
+        <li>added bounded batching and material/energy caching to avoid repeated native work in zone calculations</li>
+        <li>added cooperative cancellation, process cleanup, package hooks, and Windows portable validation</li>
+        <li>clarified units, native-provider availability, and neutral-atom applicability in Transmission help and status</li>
+        <li>public packages include lookup tables but exclude the vendor archive and compiled native payload pending redistribution review</li>
+      </ul>
       <h3>1.2.1</h3>
       <ul>
         <li>regenerated all 12 base materials and the SiO2 glass alias with edge-aware adaptive energy grids</li>
@@ -144,7 +154,7 @@
         <li>selected demo HDF5 examples under <code>examples/</code></li>
       </ul>
       <p>
-        The 1.2.1 bundle intentionally omits tests, internal audit and validation reports, old release outputs, and legacy shadow source files. Experimental Transmission/XCOM support remains in source behind development flags.
+        The 1.3.0 bundle intentionally omits tests, internal audit and validation reports, old release outputs, legacy shadow source files, the vendor XCOM archive, and compiled native payloads. Experimental Transmission/XCOM support remains behind development flags.
       </p>
     </section>
 
@@ -166,8 +176,8 @@
       <ul>
         <li>Author: Dmitrii Bespalov</li>
         <li>Organization: European XFEL</li>
-        <li>Release: 1.2.1</li>
-        <li>Date: 2026-10-20</li>
+        <li>Release: 1.3.0</li>
+        <li>Date: 2026-10-21</li>
       </ul>
     </section>
   </main>

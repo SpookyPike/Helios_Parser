@@ -74,11 +74,30 @@ def main() -> int:
             archive.extractall(tmp)
         app_root = tmp / f"helios-parser-viewer-v{RELEASE_VERSION}-windows-portable"
         verify_portable_scientific_resources(app_root)
+        native_bundle_required = bool(os.environ.get("HELIOS_XCOM_BUNDLE_DIR"))
+        env = os.environ.copy()
+        env.pop("HELIOS_XCOM_BUNDLE_DIR", None)
+        if native_bundle_required:
+            manifests = [
+                path for path in app_root.rglob("manifest.json")
+                if path.parent.name == "windows-x86_64"
+                and path.parent.parent.name == "helios_xcom_native"
+            ]
+            if len(manifests) != 1:
+                raise RuntimeError(f"expected one packaged Windows XCOM manifest, found {len(manifests)}")
+            native_root = manifests[0].parent
+            if (
+                not (native_root / "xcom.exe").is_file()
+                or not (native_root / "XCOM_NOTICE.txt").is_file()
+                or len(list(native_root.glob("MDATX3.*"))) != 100
+            ):
+                raise RuntimeError("portable XCOM payload is incomplete")
+            env["HELIOS_XCOM_EXECUTABLE"] = str(native_root / "xcom.exe")
+            env["HELIOS_XCOM_DATA_DIR"] = str(native_root)
         cli = app_root / "helios_to_hdf5.exe"
         gui = app_root / "HeliosParseView.exe"
         sample = app_root / "sample_data" / "5Fe+4.9TW+light.bpf"
         output = tmp / "parsed_from_portable.h5"
-        env = os.environ.copy()
         for key in ROOT_MARKERS:
             env.pop(key, None)
         subprocess.run(

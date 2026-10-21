@@ -817,7 +817,7 @@ class TransmissionXcomTests(unittest.TestCase):
             tolerance = max(abs(reference_value) * 0.15, 1.0e-20)
             self.assertAlmostEqual(float(actual_value), float(reference_value), delta=tolerance)
 
-    def test_refine_transmission_with_xcom_uses_live_backend_and_marks_result(self) -> None:
+    def test_refine_transmission_with_xcom_uses_live_backend_when_table_is_unavailable(self) -> None:
         _path, dataset, context, parameters, geometry = self._load_transmission_inputs()
         backend = _FakeBackend()
         cache_path = Path(tempfile.mkdtemp(prefix="xcom_cache_test_")) / "cache.json"
@@ -841,6 +841,7 @@ class TransmissionXcomTests(unittest.TestCase):
         with (
             mock.patch("helios.services.derived.transmission.describe_optional_cold_backend", return_value=available),
             mock.patch("helios.services.derived.transmission.load_optional_cold_backend", return_value=backend),
+            mock.patch("helios.services.derived.transmission.load_precomputed_cold_backend", return_value=None),
             mock.patch("helios.services.derived.transmission.persistent_cold_attenuation_cache", return_value=cache),
             mock.patch(
                 "helios.services.derived.transmission._assess_xcom_applicability",
@@ -981,7 +982,7 @@ class TransmissionXcomTests(unittest.TestCase):
         self.assertIn("precomputed XCOM table", refined.cold_refinement.message)
         self.assertGreaterEqual(table_backend.calls, 1)
 
-    def test_refine_transmission_with_xcom_prefers_live_backend_over_table(self) -> None:
+    def test_refine_transmission_prefers_validated_table_before_live_process(self) -> None:
         _path, dataset, context, parameters, geometry = self._load_transmission_inputs()
         live_backend = _FakeBackend()
         table_backend = _FakeTableBackend()
@@ -1025,9 +1026,9 @@ class TransmissionXcomTests(unittest.TestCase):
                 parameters=parameters,
                 geometry=geometry,
             )
-        self.assertEqual("live_xcom_backend", refined.source)
-        self.assertGreaterEqual(live_backend.calls, 1)
-        self.assertEqual(0, table_backend.calls)
+        self.assertEqual("precomputed_xcom_table", refined.source)
+        self.assertEqual(0, live_backend.calls)
+        self.assertGreaterEqual(table_backend.calls, 1)
 
     def test_cu_cold_case_uses_precomputed_table_as_valid_xcom_not_thomson_fallback(self) -> None:
         path = HDF5_ROOT / "Cu_0166_stabilized.h5"

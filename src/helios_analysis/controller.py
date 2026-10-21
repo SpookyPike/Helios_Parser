@@ -459,7 +459,7 @@ class DerivedController(QtCore.QObject):
         base_request_key = request_key_seed
         mode = normalize_transmission_mode(parameters.transmission_mode)
         energy_kev = float(parameters.transmission_photon_energy_kev)
-        request_key = (*request_key_seed, "transmission_model", mode, round(energy_kev, 12))
+        request_key = (*request_key_seed, "transmission_model", mode, energy_kev.hex())
         request = _PendingAnalysisRequest(
             context=self._context.copy(),
             parameters=parameters,
@@ -721,7 +721,7 @@ class DerivedController(QtCore.QObject):
             request_key=(
                 request_key
                 if update_kind != "transmission_model"
-                else (*request_key, "transmission_model", transmission_mode, round(float(parameters.transmission_photon_energy_kev), 12))
+                else (*request_key, "transmission_model", transmission_mode, float(parameters.transmission_photon_energy_kev).hex())
             ),
             requested_time_plot_modules=requested_time_plot_modules,
             requested_modules=self._requested_modules(),

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -30,6 +31,12 @@ def _copy_file(source: Path, target: Path) -> None:
 
 
 def _write_readme(portable_dir: Path) -> None:
+    native_note = (
+        "This build also includes the optional XCOM 3.1 neutral-atom reference "
+        "provider (Z=1–100, 1–35 keV).\n"
+        if list(portable_dir.rglob("manifest.json"))
+        else "The optional native XCOM provider is not included in this build.\n"
+    )
     text = f"""# HELIOS Parse / View {RELEASE_VERSION} Windows portable
 
 This folder is a no-install Windows build. It bundles the Python runtime and
@@ -45,6 +52,7 @@ checkout or `pip install`.
 
 Sample inputs are in `sample_data/`. A schema-2.1 BPF-derived HDF5 example is
 in `examples/`.
+{native_note}
 """
     (portable_dir / "README_PORTABLE.txt").write_text(text, encoding="utf-8")
 
@@ -85,6 +93,15 @@ def main() -> int:
     pyinstaller_dist = work_root / "dist" / "HeliosParserViewer"
     output_root.mkdir(parents=True, exist_ok=True)
     work_root.mkdir(parents=True, exist_ok=True)
+    build_environment = os.environ.copy()
+    configured_native_bundle = os.environ.get("HELIOS_XCOM_BUNDLE_DIR")
+    if configured_native_bundle:
+        native_bundle = Path(configured_native_bundle).resolve()
+        if not (native_bundle / "manifest.json").is_file():
+            raise FileNotFoundError(f"XCOM bundle manifest is missing: {native_bundle}")
+        build_environment["HELIOS_XCOM_BUNDLE_DIR"] = str(native_bundle)
+    else:
+        build_environment.pop("HELIOS_XCOM_BUNDLE_DIR", None)
     subprocess.run(
         [
             sys.executable,
@@ -99,6 +116,7 @@ def main() -> int:
             str(PYINSTALLER_SPEC),
         ],
         cwd=ROOT,
+        env=build_environment,
         check=True,
     )
     if portable_dir.exists():
