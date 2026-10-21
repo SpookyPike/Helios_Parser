@@ -3,8 +3,8 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `1.2.1`
-- Release date: `2026-10-20`
+- Release: `1.3.0`
+- Release date: `2026-10-21`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
 Top-level application modes:
@@ -28,6 +28,7 @@ This is no longer a minimal parser prototype. The current tree includes:
 - interface-aware diagnostics and a separate `Preheat` advanced tab
 - module-local XRD, Spectroscopy, and Warnings workflows in the production GUI
 - experimental Plasmon/XRTS and Transmission workflows retained behind `HELIOS_DEV_MODE=1` or `HELIOS_ENABLE_EXPERIMENTAL=1`
+- Transmission uses validated cold-XCOM lookup tables for covered requests and can use an optional native XCOM 3.1 backend for supported materials and energies
 
 ## Repository contents
 
@@ -86,7 +87,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parser-viewer-v1.2.1.zip`
+- `outputs/release/helios-parser-viewer-v1.3.0.zip`
 
 The bundle includes:
 
@@ -116,13 +117,19 @@ python scripts\build_linux_portable_tarball.py
 
 Expected artifact names:
 
-- `outputs/distributables/helios-parser-viewer-v1.2.1-windows-portable.zip`
-- `outputs/distributables/helios-parser-viewer_1.2.1_all.deb`
-- `outputs/distributables/helios-parser-viewer-v1.2.1-linux-portable.tar.gz`
+- `outputs/distributables/helios-parser-viewer-v1.3.0-windows-portable.zip`
+- `outputs/distributables/helios-parser-viewer_1.3.0_all.deb`
+- `outputs/distributables/helios-parser-viewer-v1.3.0-linux-portable.tar.gz`
 
-Published v1.2.1 downloads include the source bundle, Debian package, and Linux portable tarball.
-The source bundle supports Windows through its launcher. A v1.2.1 Windows portable executable
-was not rebuilt in this release; GitHub CI was skipped as requested.
+The v1.3.0 release provides the source bundle, Debian package, Linux portable tarball, standalone lookup tables, and checksums. Windows users can run the source bundle or build the portable ZIP locally using the instructions in the packaging guide. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+
+## Changelog 1.3.0
+
+- integrated an optional native XCOM 3.1 subprocess backend for supported neutral elements and mixtures up to Z=100
+- use the in-process, validated cold-XCOM tables for covered requests; native execution is reserved for supported requests outside the table domain
+- added bounded batching, exact-result caching, cancellation, and subprocess cleanup to keep repeated Transmission calculations responsive
+- clarified Transmission energy units, native-provider availability, and the scientific limits of neutral-atom data in the interface and docs
+- added cross-platform packaging hooks and Windows CI validation; native payload inclusion remains opt-in and is not part of public release assets
 
 ## Changelog 1.2.1
 
