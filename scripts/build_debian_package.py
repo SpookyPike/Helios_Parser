@@ -70,6 +70,10 @@ def _launcher(module: str) -> str:
     return f"""#!/usr/bin/env sh
 set -eu
 export PYTHONPATH="/opt/{PACKAGE_NAME}/src${{PYTHONPATH:+:$PYTHONPATH}}"
+if [ -x "/opt/{PACKAGE_NAME}/helios_xcom_native/linux-x86_64/xcom" ]; then
+  export HELIOS_XCOM_EXECUTABLE="/opt/{PACKAGE_NAME}/helios_xcom_native/linux-x86_64/xcom"
+  export HELIOS_XCOM_DATA_DIR="/opt/{PACKAGE_NAME}/helios_xcom_native/linux-x86_64"
+fi
 exec python3 -m {module} "$@"
 """
 
@@ -80,6 +84,13 @@ def _populate_data_tree(data_root: Path) -> None:
     shutil.copytree(ROOT / "docs", app_root / "docs", ignore=_ignore_internal_doc_artifacts)
     shutil.copy2(ROOT / "README.md", app_root / "README.md")
     shutil.copy2(ROOT / "pyproject.toml", app_root / "pyproject.toml")
+    native_bundle_dir = os.environ.get("HELIOS_XCOM_BUNDLE_DIR")
+    if native_bundle_dir:
+        source = Path(native_bundle_dir).resolve()
+        required = (source / "xcom", source / "manifest.json", source / "XCOM_NOTICE.txt")
+        if any(not path.is_file() for path in required) or len(list(source.glob("MDATX3.*"))) != 100:
+            raise ValueError(f"XCOM bundle is incomplete: {source}")
+        shutil.copytree(source, app_root / "helios_xcom_native" / "linux-x86_64")
 
     sample_dir = app_root / "sample_data"
     sample_dir.mkdir(parents=True, exist_ok=True)
@@ -128,6 +139,9 @@ This package installs the HELIOS parser/viewer Python source under
 
 Runtime dependencies are expected from Debian/Ubuntu packages. No editable
 source checkout or end-user pip install is required.
+When an approved XCOM native bundle is supplied at package-build time, it
+supports neutral-element coefficients from 1 to 35 keV; the application uses
+precomputed tables first.
 
 Launch:
 - helios-parse-view

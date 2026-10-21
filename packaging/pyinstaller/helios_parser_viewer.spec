@@ -1,11 +1,39 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 from pathlib import Path
+import os
 
 
 ROOT = Path.cwd()
 SRC = ROOT / "src"
 ICON = SRC / "helios_viewer" / "assets" / "app_icon.ico"
+NATIVE_BUNDLE = os.environ.get("HELIOS_XCOM_BUNDLE_DIR")
+NATIVE_BINARIES = []
+NATIVE_DATA = []
+NATIVE_HIDDEN_IMPORTS = [
+    "helios.services.derived.xcom_native",
+    "helios.services.derived.xcom_composition",
+]
+if NATIVE_BUNDLE:
+    native_root = Path(NATIVE_BUNDLE).resolve()
+    native_platform = native_root.name
+    native_destination = f"helios_xcom_native/{native_platform}"
+    native_executable = native_root / ("xcom.exe" if os.name == "nt" else "xcom")
+    if (
+        not native_executable.is_file()
+        or len(list(native_root.glob("MDATX3.*"))) != 100
+        or not (native_root / "manifest.json").is_file()
+        or not (native_root / "XCOM_NOTICE.txt").is_file()
+    ):
+        raise RuntimeError(
+            "HELIOS_XCOM_BUNDLE_DIR must contain the native executable, manifest, "
+            "vendor notice, and all 100 MDATX3 files"
+        )
+    NATIVE_BINARIES.append((str(native_executable), native_destination))
+    NATIVE_DATA.extend((str(item), native_destination) for item in native_root.glob("MDATX3.*"))
+    manifest = native_root / "manifest.json"
+    NATIVE_DATA.append((str(manifest), native_destination))
+    NATIVE_DATA.append((str(native_root / "XCOM_NOTICE.txt"), native_destination))
 
 COMMON_EXCLUDES = [
     "Cryptodome",
@@ -30,13 +58,14 @@ COMMON_EXCLUDES = [
 gui_analysis = Analysis(
     [str(ROOT / "packaging" / "entrypoints" / "helios_parse_view.py")],
     pathex=[str(SRC)],
-    binaries=[],
+    binaries=NATIVE_BINARIES,
     datas=[
         (str(SRC / "helios_viewer" / "assets"), "helios_viewer/assets"),
         (str(SRC / "helios" / "services" / "derived" / "resources"), "helios/services/derived/resources"),
         (str(SRC / "helios" / "services" / "derived" / "reference_data" / "plasmon"), "helios/services/derived/reference_data/plasmon"),
+        *NATIVE_DATA,
     ],
-    hiddenimports=["PySide6.QtSvg", "PySide6.QtOpenGLWidgets"],
+    hiddenimports=["PySide6.QtSvg", "PySide6.QtOpenGLWidgets", *NATIVE_HIDDEN_IMPORTS],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -68,12 +97,13 @@ gui_exe = EXE(
 cli_analysis = Analysis(
     [str(ROOT / "packaging" / "entrypoints" / "helios_to_hdf5.py")],
     pathex=[str(SRC)],
-    binaries=[],
+    binaries=NATIVE_BINARIES,
     datas=[
         (str(SRC / "helios" / "services" / "derived" / "resources"), "helios/services/derived/resources"),
         (str(SRC / "helios" / "services" / "derived" / "reference_data" / "plasmon"), "helios/services/derived/reference_data/plasmon"),
+        *NATIVE_DATA,
     ],
-    hiddenimports=[],
+    hiddenimports=NATIVE_HIDDEN_IMPORTS,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

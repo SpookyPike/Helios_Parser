@@ -1,7 +1,8 @@
 # Cold-XCOM attenuation tables
 
-HELIOS 1.2.1 replaces the coarse 500 eV fallback grid with adaptive, edge-aware
-tables over **1–12 keV**. The tables describe neutral-atom photon interactions;
+The current fallback uses adaptive, edge-aware tables over **1–35 keV**. The
+original 1.2.1 resource filename remains for compatibility although the validated
+upper limit is now 35 keV. The tables describe neutral-atom photon interactions;
 they are a cold reference rather than a warm-dense-matter opacity model.
 
 ## What changed
@@ -32,12 +33,13 @@ structure, or validate the application’s heuristic cold/plasma classification.
 The 12 base entries are Al, Cu, Fe, Si, Ti, Au, Be, C, CH, C2H4O, C22H10N2O5,
 and SiO2. The glass alias shares SiO2 values. C2H4O is an assumed epoxy surrogate;
 actual epoxy or glass composition must be supplied for quantitative comparisons.
-The generated data contain 1,919 rows including the glass alias.
+The generator records the current row count and independent holdout results in
+the table metadata.
 
 Each row stores mass coefficients in cm²/g for coherent scattering, incoherent
 scattering, photoelectric absorption, nuclear-field and electron-field pair
 production, total attenuation, and total attenuation without coherent scattering.
-Pair-production coefficients are zero throughout this 1–12 keV table.
+Pair-production coefficients are zero throughout this 1–35 keV table.
 
 For a multilayer line of sight,
 
@@ -77,6 +79,8 @@ schema, exact-edge convention, and validation results. The generator produces:
 - `x-com_fallback/xcom_fallback_1keV_12keV_extended.json`
 - `x-com_fallback/xcom_fallback_1keV_12keV_extended.csv`
 - an identical JSON copy under `src/helios/services/derived/resources/`
+- an atomic-weight JSON copied from XCOM's `ATWTS.DAT`, with the source archive
+  fingerprint, in both the generator and runtime-resource directories
 
 The historical filenames remain unchanged for compatibility. Regeneration is
 byte-identical with the same source and toolchain. Restart the app after updating
@@ -96,13 +100,26 @@ areal density. Its references now use native XCOM coefficients for the actual
 request. This fixture previously remained hidden by a skip when the optional
 live wrapper was unavailable.
 
+The optional native provider uses the bundled Fortran program through a bounded
+subprocess adapter. Build the native runtime for the target OS with
+`python scripts/build_xcom_native.py --output-dir <directory>`. Configure
+`HELIOS_XCOM_EXECUTABLE` and `HELIOS_XCOM_DATA_DIR` for a source run, or pass
+the build directory as `HELIOS_XCOM_BUNDLE_DIR` to a platform package build.
+The native payload remains opt-in for distributable builds until XCOM's
+redistribution terms and vendor notices have been reviewed. Table-covered
+requests use the in-process table and do not start XCOM.
+The native elemental database covers atomic numbers 1–100 and accepts simple
+neutral formulas or elemental mass fractions. The provider does not calculate
+ionization-state corrections; its recommendation remains limited to the app's
+cold/weakly ionized applicability heuristic.
+
 ## Availability and scientific references
 
-The new table ships in the v1.2.1 source, Debian, and Linux portable assets.
-GitHub CI was skipped for this patch at the maintainer’s request. A new Windows
-portable executable was not built; Windows users can use the source bundle or
-build locally. The optional live XCOM wrapper remains a separate integration;
-installing the updated table does not enable that missing wrapper.
+The native provider supports separately built Linux and Windows bundles.
+Platform package builders include it only when an approved target bundle is
+explicitly supplied through `HELIOS_XCOM_BUNDLE_DIR`. Without that opt-in, the
+application retains its bundled table capability and reports the native
+provider as unavailable.
 
 - [NIST XCOM scope and limitations](https://physics.nist.gov/PhysRefData/Xcom/Text/intro.html)
 - [NIST interpolation across atomic-shell boundaries and mixture weighting](https://physics.nist.gov/PhysRefData/Xcom/Text/chap3.html)

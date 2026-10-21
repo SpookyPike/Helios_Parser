@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import fnmatch
+import os
 import shutil
 import sys
 import tarfile
@@ -59,6 +60,10 @@ def _launcher(module: str) -> str:
 set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 export PYTHONPATH="$ROOT/src${{PYTHONPATH:+:$PYTHONPATH}}"
+if [ -x "$ROOT/helios_xcom_native/linux-x86_64/xcom" ]; then
+  export HELIOS_XCOM_EXECUTABLE="$ROOT/helios_xcom_native/linux-x86_64/xcom"
+  export HELIOS_XCOM_DATA_DIR="$ROOT/helios_xcom_native/linux-x86_64"
+fi
 exec python3 -m {module} "$@"
 """
 
@@ -71,6 +76,13 @@ def main() -> int:
     shutil.copytree(ROOT / "docs", BUNDLE_DIR / "docs", ignore=_ignore_internal_doc_artifacts)
     shutil.copy2(ROOT / "README.md", BUNDLE_DIR / "README.md")
     shutil.copy2(ROOT / "pyproject.toml", BUNDLE_DIR / "pyproject.toml")
+    native_bundle_dir = os.environ.get("HELIOS_XCOM_BUNDLE_DIR")
+    if native_bundle_dir:
+        source = Path(native_bundle_dir).resolve()
+        required = (source / "xcom", source / "manifest.json", source / "XCOM_NOTICE.txt")
+        if any(not path.is_file() for path in required) or len(list(source.glob("MDATX3.*"))) != 100:
+            raise ValueError(f"XCOM bundle is incomplete: {source}")
+        shutil.copytree(source, BUNDLE_DIR / "helios_xcom_native" / "linux-x86_64")
     _write_executable(BUNDLE_DIR / "bin" / "helios-parse-view", _launcher("helios_app"))
     _write_executable(BUNDLE_DIR / "bin" / "helios-to-hdf5", _launcher("helios_parser"))
     _write_executable(BUNDLE_DIR / "bin" / "helios-hdf5-viewer", _launcher("helios_viewer"))
@@ -96,6 +108,9 @@ an editable checkout and does not run pip, but it expects Python 3.10+ and the
 runtime Python packages to be installed by the operating system:
 
 python3, numpy, h5py, matplotlib, pyqtgraph, and PySide6 QtCore/Gui/Widgets/Svg.
+When an approved XCOM native bundle is supplied at package-build time, it
+supports neutral-element coefficients from 1 to 35 keV. The app continues to
+use precomputed tables first.
 
 Launch from the extracted directory:
 - `bin/helios-parse-view`

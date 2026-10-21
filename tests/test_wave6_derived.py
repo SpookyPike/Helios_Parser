@@ -758,20 +758,20 @@ class Wave6DerivedTests(unittest.TestCase):
             result.transmission,
             model_type="xcom",
             selected_mode="xcom",
-            photon_energy_kev=0.1,
+            photon_energy_kev=35.0,
             selected_tau=0.25,
             selected_transmission=0.78,
             source="cache",
-            status_message="XCOM refinement active at 100 eV (cache).",
+            status_message="XCOM reference active at 35 keV (cache).",
             cold_refinement=TransmissionColdRefinement(
                 backend_status="refined",
                 applicability="recommended",
-                message="XCOM refinement active at 100 eV (cache).",
+                message="XCOM reference active at 35 keV (cache).",
                 backend_name="XCOM",
                 backend_available=True,
                 backend_fingerprint="fake-backend-fingerprint",
                 source="cache",
-                photon_energies_kev=(0.1,),
+                photon_energies_kev=(35.0,),
                 transmission=(0.78,),
                 optical_depth=(0.25,),
                 attenuation_mode="total_with_coherent",
@@ -783,12 +783,14 @@ class Wave6DerivedTests(unittest.TestCase):
             workspace.set_context(context)
             workspace.transmission_energy_unit_combo.setCurrentIndex(max(0, workspace.transmission_energy_unit_combo.findData("eV")))
             workspace.transmission_mode_combo.setCurrentIndex(max(0, workspace.transmission_mode_combo.findData("xcom")))
-            workspace.transmission_energy_spin.setValue(100.0)
-            self.assertAlmostEqual(0.1, workspace.parameters().transmission_photon_energy_kev, places=6)
+            self.assertAlmostEqual(35000.0, workspace.transmission_energy_spin.maximum(), places=6)
+            workspace.transmission_energy_spin.setValue(35000.0)
+            self.assertAlmostEqual(35.0, workspace.parameters().transmission_photon_energy_kev, places=6)
             workspace.transmission_energy_unit_combo.setCurrentIndex(max(0, workspace.transmission_energy_unit_combo.findData("Angstrom")))
             process_events(20)
-            self.assertAlmostEqual(123.98419843320028, workspace.transmission_energy_spin.value(), places=3)
-            self.assertAlmostEqual(0.1, workspace.parameters().transmission_photon_energy_kev, places=6)
+            self.assertAlmostEqual(0.354240567, workspace.transmission_energy_spin.value(), places=5)
+            self.assertAlmostEqual(12.3984198433, workspace.transmission_energy_spin.maximum(), places=5)
+            self.assertAlmostEqual(35.0, workspace.parameters().transmission_photon_energy_kev, places=6)
             workspace.set_result(replace(result, transmission=transmission))
             workspace.result_tabs.setCurrentIndex(workspace.result_tabs.indexOf(workspace.transmission_tab))
             process_events(20)

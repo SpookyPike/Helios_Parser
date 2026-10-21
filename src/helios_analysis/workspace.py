@@ -194,7 +194,7 @@ def _wavefront_support_label(value: str) -> str:
 
 def _transmission_regime_label(value: str) -> str:
     labels = {
-        "xcom": "XCOM",
+        "xcom": "XCOM neutral-atom reference",
         "free_free_thomson": "Free-free + Thomson",
         "free_free": "Free-free",
         "thomson": "Thomson",
@@ -980,6 +980,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         super().__init__(parent)
         self._theme = LIGHT_THEME
         self._context = RunContext.empty()
+        self._transmission_energy_kev = 8.0
         self._preset_pool = QtCore.QThreadPool(self)
         self._preset_pool.setMaxThreadCount(1)
         self._preset_request_generation = 0
@@ -2047,15 +2048,15 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.transmission_mode_combo.addItem("Thomson", "thomson")
         self.transmission_mode_combo.addItem("Free-free", "free_free")
         self.transmission_mode_combo.addItem("Free-free + Thomson", "free_free_thomson")
-        self.transmission_mode_combo.addItem("XCOM", "xcom")
+        self.transmission_mode_combo.addItem("XCOM neutral-atom reference", "xcom")
         self.transmission_mode_combo.setCurrentIndex(max(0, self.transmission_mode_combo.findData("thomson")))
-        self.transmission_model_label = QtWidgets.QLabel("Model used: Thomson quick-look")
+        self.transmission_model_label = QtWidgets.QLabel("Model: Thomson quick-look")
         self.transmission_model_label.setWordWrap(True)
-        self.transmission_backend_label = QtWidgets.QLabel("Backend: not yet probed")
+        self.transmission_backend_label = QtWidgets.QLabel("Coefficient data: not needed for this model")
         self.transmission_backend_label.setWordWrap(True)
-        self.transmission_applicability_label = QtWidgets.QLabel("Applicability: estimated on apply")
+        self.transmission_applicability_label = QtWidgets.QLabel("Validity: estimated when calculated")
         self.transmission_applicability_label.setWordWrap(True)
-        self.transmission_refinement_label = QtWidgets.QLabel("Status: Thomson quick-look estimate.")
+        self.transmission_refinement_label = QtWidgets.QLabel("Status: Ready to calculate.")
         self.transmission_refinement_label.setWordWrap(True)
         self.transmission_energy_unit_combo = QtWidgets.QComboBox()
         self.transmission_energy_unit_combo.addItem("eV", "eV")
@@ -2065,12 +2066,12 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.transmission_energy_spin = QtWidgets.QDoubleSpinBox()
         self.transmission_energy_unit_combo.setCurrentIndex(max(0, self.transmission_energy_unit_combo.findData("eV")))
         self.transmission_energy_spin.setKeyboardTracking(False)
-        self.transmission_refine_button = QtWidgets.QPushButton("Apply Transmission Model")
+        self.transmission_refine_button = QtWidgets.QPushButton("Calculate transmission")
         set_button_icon(self.transmission_refine_button, "refresh")
         self.transmission_refine_button.clicked.connect(self.transmission_refine_requested)
         self.transmission_mode_combo.currentIndexChanged.connect(self._on_transmission_controls_changed)
         self.transmission_energy_unit_combo.currentIndexChanged.connect(self._on_transmission_energy_unit_changed)
-        self.transmission_energy_spin.valueChanged.connect(self._on_transmission_controls_changed)
+        self.transmission_energy_spin.valueChanged.connect(self._on_transmission_energy_changed)
         transmission_refinement_layout.addWidget(QtWidgets.QLabel("Mode"), 0, 0)
         transmission_refinement_layout.addWidget(self.transmission_mode_combo, 0, 1)
         transmission_refinement_layout.addWidget(QtWidgets.QLabel("Photon energy"), 0, 2)
@@ -2082,6 +2083,15 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         transmission_refinement_layout.addWidget(self.transmission_applicability_label, 3, 0, 1, 6)
         transmission_refinement_layout.addWidget(self.transmission_refinement_label, 4, 0, 1, 6)
         transmission_layout.addWidget(self.transmission_refinement_group)
+        self.transmission_mode_combo.setAccessibleName("Transmission model")
+        self.transmission_energy_spin.setAccessibleName("Photon energy")
+        self.transmission_energy_unit_combo.setAccessibleName("Photon energy unit")
+        self.transmission_refine_button.setAccessibleName("Calculate transmission")
+        self.transmission_energy_spin.setToolTip(
+            "The XCOM neutral-atom reference covers elements Z=1–100 and photon energies from 1 to 35 keV; "
+            "it does not apply ionization-state corrections. "
+            "Other transmission models use their own validity limits."
+        )
         self.transmission_status_pane = QtWidgets.QTextBrowser()
         self.transmission_status_pane.setOpenExternalLinks(False)
         self.transmission_status_pane.setMinimumHeight(120)
@@ -2339,6 +2349,9 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             if energy_kev is not None and math.isfinite(float(energy_kev))
             else self._transmission_display_to_kev(float(self.transmission_energy_spin.value() or 0.0))
         )
+        if self.selected_transmission_mode() == "xcom":
+            native_kev = min(35.0, max(1.0, native_kev))
+        self._transmission_energy_kev = native_kev
         self.transmission_energy_spin.blockSignals(True)
         try:
             self.transmission_energy_spin.setSuffix(f" {_photon_unit_label(unit)}")
@@ -2358,6 +2371,14 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
                 self.transmission_energy_spin.setDecimals(5)
                 self.transmission_energy_spin.setRange(1.0e-3, 1.0e3)
                 self.transmission_energy_spin.setSingleStep(0.1)
+            if self.selected_transmission_mode() == "xcom":
+                xcom_display_edges = (
+                    self._display_photon_energy_from_kev(1.0, unit=unit),
+                    self._display_photon_energy_from_kev(35.0, unit=unit),
+                )
+                self.transmission_energy_spin.setRange(
+                    min(xcom_display_edges), max(xcom_display_edges)
+                )
             self.transmission_energy_spin.setValue(self._display_photon_energy_from_kev(native_kev, unit=unit))
             self.transmission_energy_spin.setProperty("display_unit", unit)
         finally:
@@ -2365,13 +2386,16 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
 
     def _on_transmission_energy_unit_changed(self, *args) -> None:
         del args
-        previous_unit = _normalize_photon_unit(str(self.transmission_energy_spin.property("display_unit") or "eV"))
-        current_kev = float(self._photon_display_to_kev(float(self.transmission_energy_spin.value()), unit=previous_unit))
+        current_kev = float(self._transmission_energy_kev)
         self._configure_transmission_energy_spin(energy_kev=current_kev)
         self._on_transmission_controls_changed()
 
+    def _on_transmission_energy_changed(self, value: float) -> None:
+        self._transmission_energy_kev = float(self._transmission_display_to_kev(float(value)))
+        self._on_transmission_controls_changed()
+
     def _selected_transmission_energy_kev(self) -> float:
-        return float(self._transmission_display_to_kev(float(self.transmission_energy_spin.value())))
+        return float(self._transmission_energy_kev)
 
     @staticmethod
     def _transmission_mode_supports_energy(mode: str) -> bool:
@@ -2395,8 +2419,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             result_energy = transmission.photon_energy_kev
             if result_energy is None or not math.isfinite(float(result_energy)):
                 return False
-            tolerance = max(1.0e-6, abs(float(result_energy)) * 1.0e-6)
-            if abs(float(result_energy) - self._selected_transmission_energy_kev()) > tolerance:
+            if float(result_energy).hex() != self._selected_transmission_energy_kev().hex():
                 return False
         return True
 
@@ -3114,15 +3137,17 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
     def _on_transmission_controls_changed(self, *args) -> None:
         del args
         mode = self.selected_transmission_mode()
+        if mode == "xcom":
+            self._configure_transmission_energy_spin(energy_kev=self._transmission_energy_kev)
         energy_enabled = self._transmission_mode_supports_energy(mode)
         self.transmission_energy_spin.setEnabled(energy_enabled)
         self.transmission_energy_unit_combo.setEnabled(energy_enabled)
         if self._current_result is None:
             return
         if self._transmission_request_matches_result():
-            self.transmission_refine_button.setText("Apply Transmission Model")
+            self.transmission_refine_button.setText("Calculate transmission")
             return
-        self.transmission_refine_button.setText("Apply Selected Transmission")
+        self.transmission_refine_button.setText("Calculate selected model")
         if self.transmission_requested():
             requested = _transmission_mode_label(mode)
             self.transmission_refinement_label.setText(f"Status: Pending apply for {requested}.")
@@ -4536,12 +4561,12 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.xrd_summary_label.setText("-")
         self.plasmon_summary_label.setText("-")
         self.transmission_summary_label.setText("-")
-        self.transmission_model_label.setText("Requested: Thomson | Applied: Thomson (baseline)")
-        self.transmission_backend_label.setText("Backend: not yet probed")
-        self.transmission_applicability_label.setText("Applicability: estimated on apply")
-        self.transmission_refinement_label.setText("Status: Thomson quick-look estimate.")
+        self.transmission_model_label.setText("Model: Thomson quick-look")
+        self.transmission_backend_label.setText("Coefficient data: not needed for this model")
+        self.transmission_applicability_label.setText("Validity: estimated when calculated")
+        self.transmission_refinement_label.setText("Status: Ready to calculate.")
         self.transmission_status_pane.clear()
-        self.transmission_refine_button.setText("Apply Transmission Model")
+        self.transmission_refine_button.setText("Calculate transmission")
         self.transmission_refine_button.setEnabled(False)
         self.spectroscopy_summary_label.setText("-")
         self.plasmon_metrics.clear()
@@ -5767,14 +5792,14 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             backend_text = "not used in Free-free quick-look modes"
             applicability_text = "weak-coupling plasma quick look"
         request_matches = self._transmission_request_matches_result(transmission)
-        self.transmission_model_label.setText(f"Requested: {requested_text} | Applied: {applied_text} ({source_text})")
-        self.transmission_backend_label.setText(f"Backend: {backend_text}")
-        self.transmission_applicability_label.setText(f"Applicability: {applicability_text}")
+        self.transmission_model_label.setText(f"Model: {requested_text} | Applied: {applied_text}")
+        self.transmission_backend_label.setText(f"Coefficient data: {backend_text} ({source_text})")
+        self.transmission_applicability_label.setText(f"Validity: {applicability_text}")
         if request_matches:
             self.transmission_refinement_label.setText(f"Status: {refinement_text}")
         else:
             self.transmission_refinement_label.setText(
-                f"Status: Showing last computed {applied_text} result. Click Apply to recompute {requested_text}."
+                f"Status: Showing the previous {applied_text} result. Calculate to update it to {requested_text}."
             )
         self.transmission_refine_button.setEnabled(not self.activity_progress.isVisible())
         selected_tau = transmission.selected_tau if transmission.selected_tau is not None else transmission.thomson_tau

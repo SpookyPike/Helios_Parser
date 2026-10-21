@@ -20,6 +20,19 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      - name: Install GNU Fortran for the native XCOM provider
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          add-msys2-to-path: true
+          install: mingw-w64-x86_64-gcc-fortran
+      - name: Build and configure native XCOM
+        shell: pwsh
+        run: |
+          $bundle = Join-Path $env:RUNNER_TEMP "helios-xcom-native\windows-x86_64"
+          python scripts/build_xcom_native.py --output-dir $bundle
+          "HELIOS_XCOM_BUNDLE_DIR=$bundle" | Out-File -FilePath $env:GITHUB_ENV -Append
       - name: Install desktop and packaging dependencies
         run: |
           python -m pip install --upgrade pip
@@ -39,6 +52,9 @@ jobs:
         run: |
           $report = Join-Path $env:RUNNER_TEMP "helios-windows-test-runs"
           python scripts/run_test_suite.py --profile core `
+            --only test_xcom_composition.py `
+            --only test_xcom_native.py `
+            --only test_xcom_table_precision.py `
             --only test_conversion_atomicity.py `
             --only test_run_revision.py `
             --only test_qt_lifecycle.py `
