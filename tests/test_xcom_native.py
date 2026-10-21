@@ -2,6 +2,7 @@
 import shutil
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,8 +19,12 @@ from helios.services.derived.xcom_hook import (
     HeliosXcomBackend,
     describe_optional_cold_backend,
 )
-from build_xcom_native import build
 from helios.cancellation import AnalysisCancelled
+
+_SCRIPT_DIRECTORY = str(Path(__file__).resolve().parents[1] / "scripts")
+if _SCRIPT_DIRECTORY not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIRECTORY)
+from build_xcom_native import build
 
 
 @unittest.skipUnless(shutil.which("gfortran"), "native XCOM integration requires gfortran")
