@@ -1,4 +1,4 @@
-"""Rebuild the cold 1–12 keV table from the bundled NIST XCOM 3.1 source.
+"""Rebuild the cold 1–35 keV table from the bundled NIST XCOM 3.1 source.
 
 Requires gfortran at generation time only. Uses binary64 arithmetic, full-precision
 text output, explicit two-sided absorption edges, and adaptive log-log sampling.
@@ -16,8 +16,14 @@ from pathlib import Path
 import re
 import random
 import subprocess
+import sys
 import tarfile
 import tempfile
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+from helios.services.derived.xcom_composition import element_symbols
 
 MATERIALS = [
     ("al", "Al", "element", "Al", "aluminium"),
@@ -40,7 +46,7 @@ COLUMNS = (
 )
 NUMBER = re.compile(r"[-+]?\d+\.\d+[EeDd][-+]\d+")
 COMPILE_FLAGS = ["-std=legacy", "-O2", "-fdefault-real-8", "-fdefault-double-8"]
-MIN_EV, MAX_EV = 1000.0, 12000.0
+MIN_EV, MAX_EV = 1000.0, 35000.0
 BATCH_SIZE = 64
 
 
@@ -87,6 +93,22 @@ def precision_source(source: str) -> str:
             lines.append(line)
         source = "\n".join(lines) + "\n"
     return source
+
+
+def read_atomic_weights(path: Path, archive_hash: str) -> dict[str, object]:
+    values: list[float] = []
+    for line in path.read_text(encoding="ascii").splitlines():
+        fields = line.split(maxsplit=1)
+        if fields and fields[0].isdigit() and len(fields) > 1:
+            values.extend(float(value) for value in re.findall(r"\d+(?:\.\d+)?", fields[1]))
+    symbols = element_symbols()
+    if len(values) != len(symbols):
+        raise ValueError(f"Expected {len(symbols)} XCOM atomic weights; found {len(values)}.")
+    return {
+        "source": "XCOM 3.1 bundled ATWTS.DAT",
+        "source_archive_sha256": archive_hash,
+        "weights": dict(zip(symbols, values)),
+    }
 
 
 class NativeXcom:
@@ -148,7 +170,7 @@ def build_material(native: NativeXcom, mode: str, identifier: str, tolerance: fl
             for row in native.query(mode, identifier, missing[start:start + BATCH_SIZE]):
                 sampled[row["energy_eV"]] = row
 
-    seeds = [float(e) for e in range(1000, 12001, 500) if float(e) not in nodes]
+    seeds = [float(e) for e in range(1000, int(MAX_EV) + 1, 500) if float(e) not in nodes]
     sample(seeds)
     nodes.update({e: [sampled[e]] for e in seeds})
     for iteration in range(14):
@@ -220,6 +242,7 @@ def main() -> None:
     archive = repo / "XCOM.tar.gz"
     source_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
     materials = {}
+    atomic_weight_payload = None
     # Compile and execute on a Linux-native filesystem; the repo may live on NTFS.
     with tempfile.TemporaryDirectory(prefix="helios-xcom-table-") as temporary:
         root = Path(temporary)
@@ -229,9 +252,13 @@ def main() -> None:
         source = root / "XCOM" / "XCOM.f"
         patched = precision_source(source.read_text())
         source.write_text(patched)
+        atomic_weight_payload = read_atomic_weights(root / "XCOM" / "ATWTS.DAT", source_hash)
         native = NativeXcom(source.parent, args.compiler)
         if args.verify_only:
             payload = json.loads((here / "xcom_fallback_1keV_12keV_extended.json").read_text())
+            expected_range = [MIN_EV, MAX_EV]
+            if payload["metadata"].get("energy_range_eV") != expected_range:
+                raise ValueError("Committed table energy range does not match this generator")
             tolerance = float(payload["metadata"]["relative_interpolation_tolerance"])
             validation = {}
             for key, material in payload["materials"].items():
@@ -258,7 +285,7 @@ def main() -> None:
         "precision_source_sha256": hashlib.sha256(patched.encode()).hexdigest(),
         "compiler_flags": COMPILE_FLAGS,
         "arithmetic": "IEEE binary64; 17 significant digits serialized",
-        "energy_range_eV": [1000, 12000],
+        "energy_range_eV": [MIN_EV, MAX_EV],
         "sampling": "adaptive log-log with explicit below/above absorption-edge pairs",
         "relative_interpolation_tolerance": args.relative_tolerance,
         "refinement_probe_tolerance": args.relative_tolerance * .5,
@@ -271,6 +298,11 @@ def main() -> None:
     name = "xcom_fallback_1keV_12keV_extended"
     (here / f"{name}.json").write_text(text, encoding="utf-8")
     (repo / "src/helios/services/derived/resources" / f"{name}.json").write_text(text, encoding="utf-8")
+    atomic_weight_text = json.dumps(atomic_weight_payload, indent=2, allow_nan=False) + "\n"
+    (here / "xcom_atomic_weights.json").write_text(atomic_weight_text, encoding="utf-8")
+    (repo / "src/helios/services/derived/resources" / "xcom_atomic_weights.json").write_text(
+        atomic_weight_text, encoding="utf-8"
+    )
     with (here / f"{name}.csv").open("w", newline="", encoding="utf-8") as output:
         fields = ["material_key", "display_name", "mode", "identifier", "note", "energy_eV", *COLUMNS, "edge_side", "edge_label"]
         writer = csv.DictWriter(output, fieldnames=fields, lineterminator="\n")

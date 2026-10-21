@@ -64,16 +64,17 @@ class XcomTablePrecisionTests(unittest.TestCase):
             self.assertGreaterEqual(material["validation"]["holdout_probes"], 200)
             xs = [r["energy_eV"] for r in material["rows"]]
             self.assertEqual(sorted(xs), xs)
-            self.assertEqual((1000., 12000.), (xs[0], xs[-1]))
+            self.assertEqual((1000., 35000.), (xs[0], xs[-1]))
             for row in material["rows"]:
                 total = sum(row[c] for c in ("coherent_cm2_g", "incoherent_cm2_g", "photoelectric_cm2_g", "pair_nuclear_cm2_g", "pair_electron_cm2_g"))
                 with self.subTest(material=key, energy=row["energy_eV"]):
                     self.assertTrue(math.isclose(total, row["mu_rho_total_cm2_g"], rel_tol=1e-12))
 
     def test_default_lookup_rejects_unvalidated_domain(self):
-        for energy in (.9, 12.01, 0., -1., float("nan"), float("inf")):
+        for energy in (.9, 35.01, 0., -1., float("nan"), float("inf")):
             with self.subTest(energy=energy), self.assertRaises(ValueError):
                 lookup_fallback_mu_rho("Cu", energy)
+        self.assertGreater(lookup_fallback_mu_rho("Cu", 35.0).mu_rho_cm2_g, 0.0)
 
     def test_repeated_calculations_hash_the_immutable_table_once(self):
         request = ColdAttenuationRequest(0, "front", 1., (8.,),
