@@ -34,7 +34,7 @@ class XcomNativeTests(unittest.TestCase):
         cls._root = None
         if os.environ.get("HELIOS_XCOM_BUNDLE_DIR"):
             cls._provider_dir = Path(os.environ["HELIOS_XCOM_BUNDLE_DIR"])
-            cls.client = NativeXcomClient(resolve_provider())
+            cls.client = NativeXcomClient(resolve_provider_for(cls._provider_dir))
         else:
             cls._root = tempfile.TemporaryDirectory(prefix="helios-xcom-test-")
             cls._provider_dir = Path(cls._root.name) / "provider"
