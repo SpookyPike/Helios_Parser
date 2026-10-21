@@ -16,14 +16,8 @@ from pathlib import Path
 import re
 import random
 import subprocess
-import sys
 import tarfile
 import tempfile
-
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(ROOT / "src"))
-from helios.services.derived.xcom_composition import element_symbols
 
 MATERIALS = [
     ("al", "Al", "element", "Al", "aluminium"),
@@ -45,6 +39,12 @@ COLUMNS = (
     "mu_rho_total_cm2_g", "mu_rho_no_coherent_cm2_g",
 )
 NUMBER = re.compile(r"[-+]?\d+\.\d+[EeDd][-+]\d+")
+_ELEMENT_SYMBOLS = (
+    "H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn "
+    "Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce "
+    "Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At "
+    "Rn Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr"
+).split()[:100]
 COMPILE_FLAGS = ["-std=legacy", "-O2", "-fdefault-real-8", "-fdefault-double-8"]
 MIN_EV, MAX_EV = 1000.0, 35000.0
 BATCH_SIZE = 64
@@ -101,7 +101,7 @@ def read_atomic_weights(path: Path, archive_hash: str) -> dict[str, object]:
         fields = line.split(maxsplit=1)
         if fields and fields[0].isdigit() and len(fields) > 1:
             values.extend(float(value) for value in re.findall(r"\d+(?:\.\d+)?", fields[1]))
-    symbols = element_symbols()
+    symbols = _ELEMENT_SYMBOLS
     if len(values) != len(symbols):
         raise ValueError(f"Expected {len(symbols)} XCOM atomic weights; found {len(values)}.")
     return {
