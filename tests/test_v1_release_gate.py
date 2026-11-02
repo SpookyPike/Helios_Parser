@@ -13,6 +13,7 @@ except ModuleNotFoundError:  # pragma: no cover
     QtWidgets = None  # type: ignore
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 
 from helios.services.derived import analysis as analysis_module
 from helios.services.derived.analysis import DerivedAnalysisParameters
@@ -33,6 +34,7 @@ def _tab_labels(workspace: "HeliosDerivedWorkspace") -> list[str]:
 
 
 @unittest.skipIf(QtWidgets is None, "PySide6 is not available in this environment")
+@slow("drives a real Qt event loop")
 class V1FeatureGateTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -69,6 +71,7 @@ class V1FeatureGateTests(unittest.TestCase):
                 process_events(20)
 
 
+@slow("drives a real Qt event loop")
 class V1PhysicalSanityTests(unittest.TestCase):
     def test_no_shock_detection_is_a_valid_empty_result(self) -> None:
         no_detection = SimpleNamespace(
@@ -107,6 +110,7 @@ class V1PhysicalSanityTests(unittest.TestCase):
             validate_spectroscopy_result(result)
 
 
+@slow("drives a real Qt event loop")
 class V1BackendFeatureGateTests(unittest.TestCase):
     def _compute_with_fake_contracts(self) -> list[str]:
         calls: list[str] = []

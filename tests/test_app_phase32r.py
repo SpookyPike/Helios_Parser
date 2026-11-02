@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest import mock
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 import h5py
 from PySide6 import QtCore, QtWidgets
 
@@ -53,6 +54,7 @@ def _has_2d_payload(field_map_widget) -> bool:
     return field_map_widget.last_display_image is not None or field_map_widget.last_mesh_z is not None
 
 
+@slow("drives a real Qt event loop")
 class AppPhase32RTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

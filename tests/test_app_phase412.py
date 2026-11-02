@@ -7,6 +7,7 @@ from unittest import mock
 import unittest
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from PySide6 import QtCore, QtTest
 
 from _viewer_test_utils import get_app, process_events, reset_test_settings, wait_until, combo_set_data
@@ -19,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HDF5_ROOT = ROOT / "outputs" / "hdf5"
 
 
+@slow("drives a real Qt event loop")
 class AppPhase412Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

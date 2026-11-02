@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from PySide6 import QtWidgets
 
 from _viewer_test_utils import get_app, process_events, reset_test_settings
@@ -10,6 +11,7 @@ from helios_app.main_app import HeliosParseViewMainWindow
 from helios_app.session_state import reset_session_state
 
 
+@slow("drives a real Qt event loop")
 class AppPhase41Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

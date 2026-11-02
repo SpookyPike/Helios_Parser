@@ -10,6 +10,7 @@ import numpy as np
 from PySide6 import QtCore, QtWidgets
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 
 from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_settings, wait_until
 from helios.runtime import RunContext, RunRevision
@@ -383,6 +384,7 @@ def _bundle(key: str, title: str, values: tuple[float, ...]) -> DerivedPlotBundl
     )
 
 
+@slow("drives a real Qt event loop")
 class Wave6DerivedTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

@@ -6,12 +6,14 @@ import unittest
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from _viewer_test_utils import ROOT, get_app, process_events, reset_test_settings, wait_until
 
 from helios_app.main_app import HeliosParseViewMainWindow
 from helios_app.session_state import reset_session_state
 
 
+@slow("drives a real Qt event loop")
 class AppBpfWorkflowTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

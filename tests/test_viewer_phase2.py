@@ -8,6 +8,7 @@ from PySide6 import QtGui
 from _viewer_test_utils import HDF5_ROOT, combo_set_data, get_app, process_events, reset_test_settings, wait_until
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from helios_viewer.main_window import HeliosViewerMainWindow
 from helios_viewer.settings import ViewerSettingsDialog, default_viewer_settings
 
@@ -31,6 +32,7 @@ def contrast_ratio(color_a: QtGui.QColor, color_b: QtGui.QColor) -> float:
     return (light + 0.05) / (dark + 0.05)
 
 
+@slow("drives a real Qt event loop")
 class ViewerPhase2Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

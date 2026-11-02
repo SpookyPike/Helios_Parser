@@ -8,6 +8,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from _viewer_test_utils import HDF5_ROOT, combo_set_data, find_row_by_data, get_app, process_events, reset_test_settings, wait_until
 from helios_viewer.main_window import HeliosViewerMainWindow
 
@@ -35,6 +36,7 @@ def _select_field(window: HeliosViewerMainWindow, field_name: str) -> None:
     wait_until(lambda: window.current_field_payload is not None and window.current_field_payload.field_name == field_name, 30.0)
 
 
+@slow("drives a real Qt event loop")
 class ViewerPhase33Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

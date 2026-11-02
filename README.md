@@ -172,6 +172,36 @@ The v1.3.0 release provides the source bundle, Debian package, Linux portable ta
 - made smoke/BPF tests rely on tracked fixtures instead of untracked root-level logs
 - refreshed release packaging to include tracked sample inputs and a schema-2.0 BPF-derived HDF5 example
 
+## Running the tests
+
+Two gates, because one number cannot serve both purposes.
+
+**The commit gate: about 25 s.** The Qt and event-loop modules are skipped, so
+the portable core runs fast enough to use on every change.
+
+```bash
+cd tests && python -m unittest discover -p "test_*.py"
+```
+
+**The milestone gate: about 14 min, with a 70 % coverage floor.** Every module
+runs in its own process, which is what keeps the suite at minutes rather than
+the hour it takes when the Qt modules share one process and pile up event loops.
+
+```bash
+python scripts/run_test_suite.py --profile full --coverage
+```
+
+It writes per-entry logs, a JSON outcome manifest and `coverage.txt` to the
+report directory, and exits 3 when coverage is under the floor. The floor is
+`fail_under = 70` in `pyproject.toml`; the measured value on the reference host
+is 72.7 %. Raise the floor at a milestone boundary, deliberately: a floor pinned
+just under today's number fails on the next commit that adds a module before its
+tests, and then it gets lowered rather than met.
+
+Both gates pin to the six P-cores (`taskset -c 0-11`, the SMT siblings included)
+and cap the BLAS and OpenMP pools at 12 threads. The reference host is a hybrid
+12th-gen Intel; on the E-cores the same suite roughly doubles.
+
 ## Changelog 1.3.1
 
 - HELIOS 12.0.0 support: every snapshot of a 12.0.0 log is parsed. The release prints a whole `Time Step Controller` block and a `Run Time:` line between the cycle line and the state table, and a reader that assumes the table follows the cycle line immediately reads **zero** state dumps while still reporting a successful parse.
@@ -180,6 +210,8 @@ The v1.3.0 release provides the source bundle, Debian package, Linux portable ta
 - `.exo` is now an accepted input suffix rather than an unsupported-type error.
 - added `tests/test_v12_outputs.py` with real 12.0.0 fixtures: a ten-snapshot log prefix and a ten-step Exodus slice cut from the same run, so the log path and the Exodus path are checked against each other rather than against themselves.
 - the Exodus container does not record the HELIOS version, so `helios_version` is written empty rather than guessed.
+- the test suite is split into a ~25 s commit gate and a ~14 min milestone gate with a 70 % coverage floor; see *Running the tests*.
+- fixed five tests that failed only because they resolved paths against the working directory instead of the repository root (`scripts.*` imports, `README.md`, `docs/*.html`). They read as broken tests and were a path miss.
 
 ## Changelog 1.1.0
 

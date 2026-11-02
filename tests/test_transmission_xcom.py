@@ -13,6 +13,7 @@ import unittest
 import numpy as np
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 
 from _viewer_test_utils import HDF5_ROOT
 from helios.runtime import RunContext
@@ -125,6 +126,7 @@ class _FakeTableBackend:
         )
 
 
+@slow("drives a real Qt event loop")
 class TransmissionXcomTests(unittest.TestCase):
     def _fallback_table_json(self) -> dict[str, object]:
         path = Path(__file__).resolve().parents[1] / "x-com_fallback" / "xcom_fallback_1keV_12keV_extended.json"

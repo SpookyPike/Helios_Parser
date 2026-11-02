@@ -7,6 +7,7 @@ import numpy as np
 from _viewer_test_utils import HDF5_ROOT, combo_set_data, find_row_by_data, get_app, process_events, reset_test_settings, wait_until
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from helios_parser import HeliosRun
 from helios_viewer.main_window import HeliosViewerMainWindow
 from helios_viewer.units import EV_TO_K
@@ -71,6 +72,7 @@ def apply_display_units(
     process_events()
 
 
+@slow("drives a real Qt event loop")
 class ViewerPhase2bTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

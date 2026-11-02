@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 
 from _viewer_test_utils import HDF5_ROOT, ROOT, get_app, process_events, reset_test_settings
 from helios.runtime import RunContext
@@ -36,6 +37,7 @@ def _context_from_dataset(path: Path, dataset) -> RunContext:
     )
 
 
+@slow("drives a real Qt event loop")
 class DerivedPhase41Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

@@ -6,6 +6,7 @@ import unittest
 import numpy as np
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 
 from _viewer_test_utils import combo_set_data, get_app, process_events, reset_test_settings, wait_until
 from helios.runtime import RunContext
@@ -45,6 +46,7 @@ def _context_from_dataset(path: Path, dataset, *, snapshot_index: int | None = N
     )
 
 
+@slow("drives a real Qt event loop")
 class SnapshotRefreshServiceTests(unittest.TestCase):
     def test_snapshot_refresh_reuses_full_time_traces_and_updates_snapshot_profiles(self) -> None:
         path = _resolve_existing_path(ROOT / "Cu_0166_stabilized.h5", ROOT / "outputs" / "hdf5" / "Cu_0166_stabilized.h5")
@@ -114,6 +116,7 @@ class SnapshotRefreshServiceTests(unittest.TestCase):
             workspace.close()
 
 
+@slow("drives a real Qt event loop")
 class SnapshotRefreshAppTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

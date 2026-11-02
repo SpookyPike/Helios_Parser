@@ -30,6 +30,12 @@ CORE_NAMES = {
     "test_test_runner.py",
 }
 TIMEOUT_SECONDS = 120
+# The reference host is a hybrid 12th-gen Intel: CPUs 0-11 are the six P-cores
+# with their SMT siblings, 12-19 the E-cores. Running the suite on the E-cores
+# roughly doubles it, so pin to the P-cores and give the BLAS pools their width.
+PINNED_CPUS = "0-11"
+THREAD_LIMIT = 12
+COVERAGE_FLOOR = 70.0
 TIMEOUT_OVERRIDES = {
     "test_app_phase412.py": 300,
     "test_validation.py": 300,
@@ -204,12 +210,30 @@ def reset_isolated_outputs(root: Path, protected: set[str]) -> None:
             path.rmdir()
 
 
-def build_env(entry: TestEntry, isolated_dir: Path, root: Path = ROOT) -> dict[str, str]:
+def build_env(
+    entry: TestEntry,
+    isolated_dir: Path,
+    root: Path = ROOT,
+    *,
+    coverage_file: Path | None = None,
+    profile: str = "core",
+) -> dict[str, str]:
     env = dict(os.environ)
     env.setdefault("QT_QPA_PLATFORM", "offscreen")
+    # `root` itself is on the path because several tests import `scripts.*`
+    # (the validators and the payload audit). Without it they fail at import with
+    # ModuleNotFoundError, which reads as a broken test rather than a path miss.
     env["PYTHONPATH"] = os.pathsep.join(
-        value for value in (str(root / "src"), str(root / "tests"), env.get("PYTHONPATH", "")) if value
+        value
+        for value in (str(root / "src"), str(root / "tests"), str(root), env.get("PYTHONPATH", ""))
+        if value
     )
+    # The `core` profile leaves the Qt/event-loop modules skipped so the gate stays
+    # seconds rather than an hour; `full` opts them back in. Without this the full
+    # profile silently measures a gated run and reports a coverage number for code
+    # it never executed.
+    if profile == "full":
+        env["HELIOS_RUN_SLOW_TESTS"] = "1"
     env["HELIOS_ENABLE_EXPERIMENTAL"] = "" if entry.name in PRODUCTION_ENTRIES else "1"
     env["HELIOS_DEV_MODE"] = "" if entry.name in PRODUCTION_ENTRIES else env.get("HELIOS_DEV_MODE", "")
     for name in ("XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME"):
@@ -220,6 +244,18 @@ def build_env(entry: TestEntry, isolated_dir: Path, root: Path = ROOT) -> dict[s
     (isolated_dir / "settings").mkdir(exist_ok=True)
     (root / "outputs").mkdir(exist_ok=True)
     env["HELIOS_TEST_OUTPUT_DIR"] = str(root / "outputs")
+    # The suite is single-threaded Python plus numpy; a BLAS or OpenMP pool that
+    # sizes itself to every core oversubscribes the P-cores and turns a 20 s
+    # module into a 90 s one. Pin the pools to the same width as the CPU set.
+    for variable in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+                     "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+        env[variable] = str(THREAD_LIMIT)
+    if coverage_file is not None:
+        # Each entry runs in its own temporary tree, which is deleted when the
+        # entry finishes. Coverage data written to the default `.coverage` in the
+        # cwd therefore disappeared before it could be combined, so point it at
+        # the report directory instead.
+        env["COVERAGE_FILE"] = str(coverage_file)
     return env
 
 
@@ -240,7 +276,16 @@ def environment_summary() -> dict[str, str | None]:
     }
 
 
-def run_entry(entry: TestEntry, report_dir: Path, root: Path = ROOT) -> dict[str, Any]:
+def run_entry(
+    entry: TestEntry,
+    report_dir: Path,
+    root: Path = ROOT,
+    *,
+    coverage_enabled: bool = False,
+    pin_cpus: str | None = None,
+    coverage_file: Path | None = None,
+    profile: str = "core",
+) -> dict[str, Any]:
     timeout = TIMEOUT_OVERRIDES.get(entry.name, TIMEOUT_SECONDS)
     log_path = report_dir / f"{entry.name}.log"
     started = time.perf_counter()
@@ -248,10 +293,18 @@ def run_entry(entry: TestEntry, report_dir: Path, root: Path = ROOT) -> dict[str
     returncode: int | None = None
     with tempfile.TemporaryDirectory(prefix="helios-test-") as scratch:
         isolated_dir = Path(scratch)
-        env = build_env(entry, isolated_dir, root)
+        env = build_env(entry, isolated_dir, root, coverage_file=coverage_file, profile=profile)
         command = list(entry.command)
+        if coverage_enabled and command[0] == sys.executable:
+            # `--parallel-mode` writes one data file per process; they are combined
+            # once at the end. A single shared file would be overwritten by each of
+            # the ~80 subprocesses and measure only the last one.
+            command = [sys.executable, "-m", "coverage", "run", "--parallel-mode",
+                       "--source=src", *command[1:]]
         if command[0] == sys.executable:
             command[0] = sys.executable
+        if pin_cpus and os.name == "posix" and shutil.which("taskset"):
+            command = ["taskset", "-c", pin_cpus, *command]
         popen_options: dict[str, Any] = {}
         if os.name == "posix":
             popen_options["start_new_session"] = True
@@ -353,6 +406,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--only", action="append", default=[], help="Run a discovered entry; may be repeated.")
     parser.add_argument("--report-dir", type=Path, help="Directory for per-entry logs and the JSON outcome manifest.")
     parser.add_argument("--fixture-manifest", type=Path, default=FIXTURE_MANIFEST)
+    parser.add_argument(
+        "--coverage",
+        action="store_true",
+        help=f"measure line coverage across every entry and fail under {COVERAGE_FLOOR:.0f} %.",
+    )
+    parser.add_argument(
+        "--cpus",
+        default=PINNED_CPUS,
+        help=f"taskset CPU list for each entry (default {PINNED_CPUS}, the P-cores).",
+    )
+    parser.add_argument("--no-pin", action="store_true", help="Do not pin entries to a CPU set.")
     args = parser.parse_args(argv)
     entries = discover_entries()
     try:
@@ -406,10 +470,21 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             reset_isolated_outputs(execution_root, protected)
             print(f"=== {entry.name} ===", flush=True)
-            outcome = run_entry(entry, report_dir, execution_root)
+            outcome = run_entry(
+                entry,
+                report_dir,
+                execution_root,
+                coverage_enabled=args.coverage,
+                pin_cpus=None if args.no_pin else args.cpus,
+                coverage_file=(report_dir / ".coverage") if args.coverage else None,
+                profile=args.profile,
+            )
             outcomes.append(outcome)
             label = "TIMEOUT" if outcome["timed_out"] else ("PASS" if outcome["return_code"] == 0 else "FAIL")
             print(f"--- {entry.name}: {label}, {outcome['runtime_seconds']:.2f}s; log={outcome['log']}", flush=True)
+        # Combined inside the try: the coverage data records absolute paths into
+        # the materialized tree, so the tree must still exist when the report runs.
+        coverage_outcome = finish_coverage(execution_root, report_dir) if args.coverage else None
     finally:
         if temporary is not None:
             temporary.cleanup()
@@ -417,6 +492,7 @@ def main(argv: list[str] | None = None) -> int:
     result = {
         "schema_version": 1,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "coverage": coverage_outcome,
         "profile": args.profile,
         "selected": [entry.name for entry in selected],
         "environment": environment_summary(),
@@ -428,7 +504,43 @@ def main(argv: list[str] | None = None) -> int:
     manifest_path = report_dir / "manifest.json"
     manifest_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"Manifest: {manifest_path}")
+    if coverage_outcome is not None and not coverage_outcome["passed"]:
+        print(
+            f"COVERAGE FLOOR FAILED: {coverage_outcome['percent']:.1f} % < {COVERAGE_FLOOR:.0f} %",
+            file=sys.stderr,
+        )
+        return 3
     return 0 if result["failed"] == 0 else (2 if result["not_executed"] else 1)
+
+
+def finish_coverage(root: Path, report_dir: Path) -> dict[str, Any]:
+    """Combine the per-process data files and enforce the floor.
+
+    Every entry ran in its own process with `--parallel-mode`, so the tree is
+    measured once even though the suite is executed eighty times.
+    """
+    combine = subprocess.run(
+        [sys.executable, "-m", "coverage", "combine"],
+        cwd=report_dir, capture_output=True, text=True,
+    )
+    report = subprocess.run(
+        [sys.executable, "-m", "coverage", "report", "--show-missing"],
+        cwd=root, capture_output=True, text=True,
+        env={**os.environ, "COVERAGE_FILE": str(report_dir / ".coverage")},
+    )
+    print(report.stdout, flush=True)
+    percent = 0.0
+    for line in report.stdout.splitlines():
+        if line.startswith("TOTAL"):
+            percent = float(line.split()[-1].rstrip("%"))
+    (report_dir / "coverage.txt").write_text(report.stdout + report.stderr, encoding="utf-8")
+    return {
+        "percent": percent,
+        "floor": COVERAGE_FLOOR,
+        "passed": report.returncode == 0 and percent >= COVERAGE_FLOOR,
+        "combine_return_code": combine.returncode,
+        "report_return_code": report.returncode,
+    }
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from _viewer_test_utils import HDF5_ROOT, ROOT, get_app, process_events, reset_test_settings, wait_until
 
 from helios_app.main_app import HeliosParseViewMainWindow
@@ -15,6 +16,7 @@ from helios_app.session_state import reset_session_state
 LOG_ROOT = ROOT
 
 
+@slow("drives a real Qt event loop")
 class AppPhase3Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

@@ -9,6 +9,7 @@ import h5py
 import numpy as np
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from helios_parser import HeliosParser, HeliosPreview, inspect, parse, preview, write_hdf5
 from helios_parser.document import normalize_diagnostic_value, reconcile_diagnostic_width
 
@@ -113,6 +114,7 @@ EXPECTED_COUNTS = {
 }
 
 
+@slow("parses the multi-hundred-megabyte operator fixtures")
 class ValidationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

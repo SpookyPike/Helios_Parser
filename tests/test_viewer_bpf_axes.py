@@ -9,11 +9,13 @@ import unittest
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
+@slow("drives a real Qt event loop")
 class ViewerBpfAxesSmokeTests(unittest.TestCase):
     def test_bpf_non_zone_axes_viewer_smoke(self) -> None:
         script = textwrap.dedent(

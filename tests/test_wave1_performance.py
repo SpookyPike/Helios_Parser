@@ -6,6 +6,7 @@ import unittest
 import numpy as np
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 
 from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_settings
 from helios.instrumentation import format_metrics_summary, reset_metrics, snapshot_metrics
@@ -36,6 +37,7 @@ def _context_from_dataset(path: Path, dataset) -> RunContext:
     )
 
 
+@slow("drives a real Qt event loop")
 class Wave1PerformanceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

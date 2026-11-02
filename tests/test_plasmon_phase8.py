@@ -552,9 +552,10 @@ class PlasmonPhase8Tests(unittest.TestCase):
         self.assertEqual(cut.benchmark_status, 'valid')
 
     def test_docs_describe_applicability_limits_and_warnings(self) -> None:
-        readme = Path('README.md').read_text(encoding='utf-8').lower()
-        notes = Path('docs/release-notes.html').read_text(encoding='utf-8').lower()
-        user = Path('docs/user-guide.html').read_text(encoding='utf-8').lower()
+        readme = (Path(__file__).resolve().parents[1] / 'README.md').read_text(encoding='utf-8').lower()
+        docs = Path(__file__).resolve().parents[1] / 'docs'
+        notes = (docs / 'release-notes.html').read_text(encoding='utf-8').lower()
+        user = (docs / 'user-guide.html').read_text(encoding='utf-8').lower()
         combined = readme + '\n' + notes + '\n' + user
         self.assertIn('warning', combined)
         self.assertIn('degenerate', combined)

@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest import mock
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from _viewer_test_utils import get_app, process_events, reset_test_settings
 from PySide6 import QtCore, QtGui
 from test_viewer_wave2 import _build_open_run_payload
@@ -41,6 +42,7 @@ def _contrast_ratio(foreground: str, background: str) -> float:
     return (high + 0.05) / (low + 0.05)
 
 
+@slow("drives a real Qt event loop")
 class W11ThemeCopyTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

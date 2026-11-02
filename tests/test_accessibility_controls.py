@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from _viewer_test_utils import get_app, process_events, reset_test_settings
 from PySide6 import QtGui, QtWidgets
 
@@ -12,6 +13,7 @@ from helios_app.session_state import reset_session_state
 from helios_viewer.main_window import HeliosViewerMainWindow
 
 
+@slow("drives a real Qt event loop")
 class AccessibilityControlsTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

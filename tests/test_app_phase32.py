@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest import mock
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from PySide6 import QtWidgets
 
 from _viewer_test_utils import HDF5_ROOT, ROOT, get_app, process_events, reset_test_settings, wait_until
@@ -34,6 +35,7 @@ class _StubExportDialog:
         return dict(self._options)
 
 
+@slow("drives a real Qt event loop")
 class AppPhase32Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

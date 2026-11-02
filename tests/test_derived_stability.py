@@ -8,6 +8,7 @@ import unittest
 import numpy as np
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 
 from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_settings, wait_until
 from helios.runtime import RunContext
@@ -39,6 +40,8 @@ def _context_from_dataset(path: Path, dataset) -> RunContext:
     )
 
 
+@slow("runs the full derived analysis stack")
+@slow("drives a real Qt event loop")
 class DerivedStabilityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

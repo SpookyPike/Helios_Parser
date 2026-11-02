@@ -11,6 +11,7 @@ import h5py
 import numpy as np
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 
 from _viewer_test_utils import HDF5_ROOT
 from helios.cache import clear_session_raw_data_cache
@@ -61,6 +62,7 @@ def _resolve_existing_path(*candidates: Path) -> Path:
     return candidates[0]
 
 
+@slow("drives a real Qt event loop")
 class DerivedBackendOptimizationTests(unittest.TestCase):
     def tearDown(self) -> None:
         clear_session_raw_data_cache(reason="test_cleanup")

@@ -9,6 +9,7 @@ from unittest import mock
 import numpy as np
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 
 from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_settings, wait_until
 from helios_parser import HeliosRun
@@ -73,6 +74,7 @@ def _build_diagnostic_payload(path: Path, diagnostic_path: str, generation: int)
         )
 
 
+@slow("drives a real Qt event loop")
 class ViewerWave2Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

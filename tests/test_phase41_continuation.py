@@ -10,6 +10,7 @@ import zipfile
 import numpy as np
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from _viewer_test_utils import HDF5_ROOT, get_app
 from helios.platform.archive_utils import ARCHIVE_TAR_GZ, ARCHIVE_ZIP, archive_type_for_path, extract_archive, inspect_archive
 from helios.platform.registry import _inspect_hdf5, _inspect_log, build_dataset_registry
@@ -41,6 +42,7 @@ class _FakeHdf5Run:
         raise KeyError("regions missing")
 
 
+@slow("drives a real Qt event loop")
 class Phase41ContinuationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

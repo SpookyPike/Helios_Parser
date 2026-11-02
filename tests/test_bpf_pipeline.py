@@ -14,6 +14,7 @@ import h5py
 import numpy as np
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from helios_parser import HeliosRun, write_hdf5
 from helios_parser.bpf import BpfFile
 from helios_parser.hdf5 import _stage_aligned_log_companion
@@ -36,6 +37,7 @@ def _assert_scale_close(testcase: unittest.TestCase, actual: np.ndarray, expecte
     testcase.assertLessEqual(float(np.nanmax(diff)), atol + rtol * scale)
 
 
+@slow("converts whole BPF fixtures to HDF5")
 class BpfPipelineTests(unittest.TestCase):
     def test_bpf_layout_and_integrity_checks(self) -> None:
         with BpfFile(BPF_SAMPLE) as bpf:

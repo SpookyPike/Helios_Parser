@@ -9,6 +9,7 @@ from PySide6 import QtGui, QtWidgets
 from _viewer_test_utils import HDF5_ROOT, combo_set_data, find_row_by_data, get_app, process_events, reset_test_settings, set_checked_values, wait_until
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from helios_parser import HeliosRun
 from helios_viewer.main_window import HeliosViewerMainWindow
 
@@ -88,6 +89,7 @@ def edge_rows_to_corner_grid(values: np.ndarray) -> np.ndarray:
     return corners
 
 
+@slow("drives a real Qt event loop")
 class ViewerInteractionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

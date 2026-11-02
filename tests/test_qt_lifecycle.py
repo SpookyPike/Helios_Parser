@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 from _viewer_test_utils import ROOT, get_app
 from PySide6 import QtCore
 from helios_parser import write_hdf5
@@ -29,6 +30,7 @@ class _ShortTask(QtCore.QRunnable):
         self.finished.append(True)
 
 
+@slow("drives a real Qt event loop")
 class QtLifecycleTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

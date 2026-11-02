@@ -62,3 +62,32 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+
+[tool.coverage.run]
+# Measure the package and the gate scripts together. Measuring only `src` would
+# report a healthy number while `scripts/run_test_suite.py` -- the thing that
+# decides whether the suite passed at all -- went unmeasured.
+source = ["src", "scripts"]
+branch = true
+parallel = true
+omit = [
+  "*/tests/*",
+  "*/__pycache__/*",
+  "*/__init__.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+precision = 1
+
+# The floor sits under today's measured value on purpose. A floor pinned just
+# below the current number fails on the next commit that adds a module before its
+# tests, and what happens then is that the floor gets lowered rather than met.
+# Raise it at a milestone boundary, deliberately.
+fail_under = 70
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.",
+  "if TYPE_CHECKING:",
+]

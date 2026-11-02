@@ -11,6 +11,7 @@ except ModuleNotFoundError:  # pragma: no cover
     QtWidgets = None  # type: ignore
 
 import _test_bootstrap  # noqa: F401
+from _slow_tests import slow
 
 if QtWidgets is not None:
     from _viewer_test_utils import get_app, process_events, reset_test_settings
@@ -22,6 +23,7 @@ if QtWidgets is not None:
 
 
 @unittest.skipIf(QtWidgets is None, 'PySide6 is not available in this environment')
+@slow("drives a real Qt event loop")
 class PlasmonUiPhase7Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

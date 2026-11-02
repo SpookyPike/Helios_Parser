@@ -10,6 +10,7 @@ import time
 import unittest
 from pathlib import Path
 
+import _test_bootstrap  # noqa: F401
 from scripts import run_test_suite
 
 
