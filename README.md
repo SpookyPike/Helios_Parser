@@ -3,13 +3,13 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `1.3.0`
-- Release date: `2026-10-21`
+- Release: `1.3.1`
+- Release date: `2026-11-02`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
 Top-level application modes:
 
-- `Parser`: preview HELIOS `.log` / `.bpf` files and convert them to stabilized HDF5
+- `Parser`: preview HELIOS `.log` / `.bpf` / `.exo` files and convert them to stabilized HDF5
 - `Viewer`: inspect stabilized HDF5 runs with explicit center/edge coordinate semantics
 - `Derived / Analysis`: fast legacy Shock plus lazy WaveFront, interface-event, Preheat, XRD, and Spectroscopy diagnostics
 
@@ -19,7 +19,7 @@ This is no longer a minimal parser prototype. The current tree includes:
 
 - explicit center/edge coordinate semantics across parser, HDF5, runtime, viewer, and derived analysis
 - streaming HDF5 conversion with partial-final-block protection and run-status metadata
-- BPF-primary full-data parsing with LOG metadata/fallback support and optional EXO validation
+- BPF-primary full-data parsing with LOG metadata/fallback support, and direct reading of the Exodus II (`.exo`) plot output that HELIOS 12 writes by default
 - self-describing HDF5/H5D field metadata for dynamic reader/viewer discovery
 - bounded caches and shared raw-data reuse between viewer and derived mode
 - persistent background task execution with cooperative cancellation and latest-wins UI apply
@@ -172,6 +172,15 @@ The v1.3.0 release provides the source bundle, Debian package, Linux portable ta
 - made smoke/BPF tests rely on tracked fixtures instead of untracked root-level logs
 - refreshed release packaging to include tracked sample inputs and a schema-2.0 BPF-derived HDF5 example
 
+## Changelog 1.3.1
+
+- HELIOS 12.0.0 support: every snapshot of a 12.0.0 log is parsed. The release prints a whole `Time Step Controller` block and a `Run Time:` line between the cycle line and the state table, and a reader that assumes the table follows the cycle line immediately reads **zero** state dumps while still reporting a successful parse.
+- added the Exodus II plot-output reader (`helios_to_hdf5 run.exo run.h5`). HELIOS 12 writes `.exo` by default (`Plot file type = 0`) and only writes `.bpf` when that control is changed, so an upgrade silently changes the output format. The reader maps the core hydrodynamic fields onto the same names and units as the log path, so a converted file is interchangeable downstream.
+- documented the one non-obvious Exodus mapping: `fluid_velocity` is stored at the **nodes** while every other field is zone-centred, and the zone velocity the log prints is `fluid_velocity[:, 1:]`, the zone's upper node. The two-node mean is 27 % off, which would bias rear-face velocities and therefore breakout times.
+- `.exo` is now an accepted input suffix rather than an unsupported-type error.
+- added `tests/test_v12_outputs.py` with real 12.0.0 fixtures: a ten-snapshot log prefix and a ten-step Exodus slice cut from the same run, so the log path and the Exodus path are checked against each other rather than against themselves.
+- the Exodus container does not record the HELIOS version, so `helios_version` is written empty rather than guessed.
+
 ## Changelog 1.1.0
 
 - added production BPF parsing and BPF-primary HDF5 conversion with transparent `.log` / `.bpf` routing
@@ -196,7 +205,8 @@ The v1.3.0 release provides the source bundle, Debian package, Linux portable ta
 ## Important current behavior
 
 - `.bpf` is the primary full-data source when present; `.log` remains the setup metadata, diagnostics, and fallback path.
-- `.exo` remains optional validation/subset support, not a requirement for full parsing.
+- `.exo` (Exodus II, which is NetCDF-4 and therefore HDF5) is read directly: the core hydrodynamic fields are mapped onto the log path's names and units. Frequency-resolved radiation arrays are not mapped.
+- `.exo` files do not record the HELIOS version, so a converted `.exo` carries an empty `helios_version` and `metadata/run_status/state = exodus_container` instead of a claimed completion state.
 - HDF5/H5D outputs are self-describing: readers discover available fields, units, axes, labels, and source provenance from metadata.
 - Some BPF records are still preserved as raw `bpf_record_XX` fields when the evidence is insufficient for a physics name.
 - `Shock` is the fast default derived path.

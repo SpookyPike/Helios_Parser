@@ -19,12 +19,13 @@ import numpy as np
 from helios.instrumentation import record_duration
 from .bpf import LOG_COMPATIBLE_BPF_ALIASES, BpfFile, alias_metadata, field_metadata_for_bpf_key
 from .document import diagnostic_value_width, flatten_snapshot_diagnostics, normalize_diagnostic_value, reconcile_diagnostic_width
+from .exodus import ExodusRun, looks_like_exodus, read_exodus
 from .parser import DEFAULT_TOKENIZER, HeliosParser, SnapshotDomainError
 
 LOGGER = logging.getLogger(__name__)
 STRING_DTYPE = h5py.string_dtype(encoding="utf-8")
 H5D_SCHEMA_VERSION = "2.1"
-SUPPORTED_INPUT_SUFFIXES = {".log", ".bpf"}
+SUPPORTED_INPUT_SUFFIXES = {".log", ".bpf", ".exo"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -294,7 +295,9 @@ def resolve_parse_sources(input_path: str | Path) -> ParseSourceSelection:
     requested = Path(input_path)
     suffix = requested.suffix.lower()
     if suffix not in SUPPORTED_INPUT_SUFFIXES:
-        raise ValueError(f"Unsupported HELIOS input type '{requested.suffix}'. Expected one of: .log, .bpf.")
+        raise ValueError(
+            f"Unsupported HELIOS input type '{requested.suffix}'. Expected one of: .log, .bpf, .exo."
+        )
     if not requested.exists():
         raise FileNotFoundError(requested)
 
@@ -894,6 +897,132 @@ def _write_hdf5_from_bpf_validated(
     return target
 
 
+def _write_hdf5_from_exodus(
+    run: ExodusRun,
+    target: Path,
+    *,
+    compression: str | None,
+) -> None:
+    """Publish an Exodus II plot file in the same schema the log path writes.
+
+    Kept deliberately small: the Exodus container already holds the arrays in
+    memory-shaped form, so this writes them straight through instead of
+    streaming.  Group names, field names and units match the log path so a
+    consumer cannot tell which source produced the file -- apart from
+    `helios_version`, which the Exodus container does not record.
+    """
+    with h5py.File(target, "w") as handle:
+        handle.attrs["source_file"] = str(run.source)
+        # The Exodus container carries no code version.  Left empty on purpose:
+        # a guessed version is worse than a missing one.
+        handle.attrs["helios_version"] = ""
+        handle.attrs["format"] = "HELIOS Exodus II plot file converted to HDF5"
+        handle.attrs["schema_version"] = H5D_SCHEMA_VERSION
+        handle.attrs["geometry"] = run.geometry
+
+        grid_group = handle.create_group("grid")
+        edge0 = np.asarray(run.coordinate_edge_cm[0], dtype=np.float64)
+        center0 = np.asarray(run.coordinate_center_cm[0], dtype=np.float64)
+        for name, values, unit, location, dynamic, legacy, role in (
+            ("coordinate_center", center0, "cm", "center", False, False, "coordinate"),
+            ("coordinate_edge", edge0, "cm", "edge", False, False, "coordinate"),
+            ("x", center0, "cm", "center", False, True, "coordinate"),
+            ("zone_width", np.diff(edge0), "cm", "cell", False, False, "width"),
+        ):
+            _write_array_dataset(grid_group, name, values, unit, compression=compression)
+            _annotate_coordinate_dataset(
+                grid_group[name],
+                coordinate_name=run.coordinate_name,
+                location=location,
+                dynamic=dynamic,
+                legacy_alias=legacy,
+                role=role,
+            )
+        _write_array_dataset(grid_group, "zone_id", np.arange(1, run.n_zones + 1, dtype=np.int32), "", compression=None)
+        _write_array_dataset(grid_group, "zone_region_id", np.ones(run.n_zones, dtype=np.int32), "", compression=None)
+        _write_array_dataset(grid_group, "zone_material_index", np.ones(run.n_zones, dtype=np.int32), "", compression=None)
+        if run.zone_mass_g is not None:
+            _write_array_dataset(grid_group, "zone_mass", np.asarray(run.zone_mass_g[0], dtype=np.float64), "g", compression=compression)
+
+        regions_group = handle.create_group("regions")
+        _write_array_dataset(regions_group, "region_index", np.asarray([1], dtype=np.int32), "", compression=None)
+        _write_array_dataset(regions_group, "min_zone_index", np.asarray([1], dtype=np.int32), "", compression=None)
+        _write_array_dataset(regions_group, "max_zone_index", np.asarray([run.n_zones], dtype=np.int32), "", compression=None)
+        _write_array_dataset(regions_group, "material_index", np.asarray([1], dtype=np.int32), "", compression=None)
+        _write_array_dataset(regions_group, "material_table_index", np.asarray([1], dtype=np.int32), "", compression=None)
+        if "density" in run.fields:
+            _write_array_dataset(regions_group, "initial_mass_density", np.asarray(run.fields["density"][0], dtype=np.float64), "g/cm3", compression=compression)
+
+        materials_group = handle.create_group("materials")
+        _write_array_dataset(materials_group, "index", np.asarray([1], dtype=np.int32), "", compression=None)
+        for name in ("eos_model", "opacity_model", "eos_file_path", "opacity_file_path"):
+            _write_array_dataset(materials_group, name, np.asarray([""], dtype=object), "", compression=None)
+
+        time_group = handle.create_group("time")
+        _write_array_dataset(time_group, "time", run.time_s, "s", compression=compression)
+        _write_array_dataset(time_group, "cycle", np.asarray(run.cycle, dtype=np.int64), "", compression=None)
+        if run.time_step_s is not None:
+            _write_array_dataset(time_group, "time_step", run.time_step_s, "s", compression=compression)
+        _write_array_dataset(
+            time_group,
+            "time_step_control",
+            np.asarray([""] * run.n_snapshots, dtype=object),
+            "",
+            compression=None,
+        )
+
+        fields_group = handle.create_group("fields")
+        field_metadata_group = handle.create_group("field_metadata")
+        for name, values in run.fields.items():
+            unit = run.field_units.get(name, "")
+            _write_array_dataset(fields_group, name, values, unit, compression=compression)
+            metadata = {
+                "field_name": name,
+                "source": "exodus",
+                "dimensions": ("time", "zone"),
+                "unit": unit,
+                "label": name,
+                "status": "validated",
+            }
+            _set_field_metadata(fields_group[name], metadata)
+            _write_field_metadata_group(field_metadata_group, name, metadata)
+
+        # No per-snapshot diagnostics: the Exodus container has energy bookkeeping
+        # arrays, but mapping them is a separate job and an empty group is honest.
+        handle.create_group("diagnostics")
+
+        # metadata/run_status is required by the publish validator.  An Exodus
+        # file carries no footer, so the state is reported as what it is: the
+        # container itself is complete, and no completion marker was read.
+        metadata_group = handle.create_group("metadata")
+        for name, value in (
+            ("n_snapshots", run.n_snapshots),
+            ("n_zones", run.n_zones),
+            ("n_regions", 1),
+            ("n_materials", 1),
+            ("helios_version", ""),
+            ("schema_version", H5D_SCHEMA_VERSION),
+            ("geometry", run.geometry),
+            ("parse_mode", "exodus_hdf5"),
+            ("source_file", str(run.source)),
+            ("simulation_name", run.source.stem),
+        ):
+            if isinstance(value, int):
+                metadata_group.create_dataset(name, data=np.int64(value))
+            else:
+                metadata_group.create_dataset(name, data=str(value), dtype=STRING_DTYPE)
+        metadata_group.create_dataset(
+            "available_fields",
+            data=np.asarray(sorted(run.fields), dtype=object).astype(STRING_DTYPE),
+            dtype=STRING_DTYPE,
+        )
+        run_status_group = metadata_group.create_group("run_status")
+        run_status_group.create_dataset("state", data="exodus_container", dtype=STRING_DTYPE)
+        run_status_group.create_dataset("source", data="exodus", dtype=STRING_DTYPE)
+        run_status_group.create_dataset("valid_snapshot_count", data=np.int64(run.n_snapshots))
+        run_status_group.create_dataset("indexed_snapshot_count", data=np.int64(run.n_snapshots))
+
+
 def _write_hdf5_unpublished(
     input_path: str | Path,
     output_path: str | Path,
@@ -908,6 +1037,27 @@ def _write_hdf5_unpublished(
     active_parser = parser or HeliosParser(active_logger)
     source = Path(input_path)
     target = Path(output_path)
+    if looks_like_exodus(source):
+        run = read_exodus(source)
+        active_logger.info(
+            "Reading %s as a HELIOS Exodus II plot file: %d snapshots, %d zones, %s geometry.",
+            source.name,
+            run.n_snapshots,
+            run.n_zones,
+            run.geometry,
+        )
+        _write_hdf5_from_exodus(run, target, compression=compression)
+        if progress_callback is not None:
+            progress_callback(
+                WriteProgress(
+                    stage="write",
+                    current=run.n_snapshots,
+                    total=max(1, run.n_snapshots),
+                    fraction=1.0,
+                    message=f"Wrote {run.n_snapshots} snapshots from {source.name}",
+                )
+            )
+        return target
     selection = resolve_parse_sources(source)
     if selection.bpf_path is not None:
         return _write_hdf5_from_bpf(

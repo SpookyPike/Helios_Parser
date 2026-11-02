@@ -22,6 +22,11 @@ _tmp_*/
 # Large local raw datasets and derived HDF5 work products
 *.log
 *.h5
+# The v12 regression fixtures are small, cut from a real run, and are the only
+# tracked .log: the parser's 12.0.0 snapshot handling is a silent-failure class
+# and needs a real log to test against.
+!tests/fixtures/v12/*.log
+!tests/fixtures/v12/*.exo
 outputs/hdf5/
 
 # Keep release ZIP archives, but do not track expanded release trees
