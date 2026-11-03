@@ -58,6 +58,58 @@ def _time_edges(times: np.ndarray) -> np.ndarray:
     return np.concatenate(([times[0] - (midpoints[0] - times[0])], midpoints, [times[-1] + (times[-1] - midpoints[-1])]))
 
 
+def _grid_moves(edges: np.ndarray) -> bool:
+    """True when the per-dump photon grid is not identical across dumps.
+
+    Regrouping moves the edges, and a `pcolormesh` has one y axis, so a map built
+    from `edges[0]` would draw every later dump at the first dump's energies.
+    """
+    return edges.shape[0] > 1 and not np.array_equal(edges, np.broadcast_to(edges[:1], edges.shape))
+
+
+def _spectral_panel(
+    figure,
+    axes,
+    times: np.ndarray,
+    edges: np.ndarray,
+    values: np.ndarray,
+    *,
+    cmap: str,
+    title: str,
+    x_label: str,
+    colour_label: str,
+) -> None:
+    """Draw a photon-energy map, or a per-dump waterfall when the grid moves."""
+    magnitude = np.abs(values)
+    positive = magnitude[magnitude > 0]
+    floor = float(positive.min()) if positive.size else 1.0
+    scaled = np.log10(np.maximum(magnitude, floor))
+    if _grid_moves(edges):
+        colours = plt.get_cmap(cmap)(np.linspace(0.15, 0.92, values.shape[0]))
+        for row in range(values.shape[0]):
+            centre = np.sqrt(edges[row, :-1] * edges[row, 1:])
+            axes.plot(centre, scaled[row], color=colours[row], lw=1.1, label=f"{times[row]:.4g}")
+        axes.set_xscale("log")
+        axes.set_xlabel("photon energy [eV]")
+        axes.set_ylabel(colour_label)
+        axes.set_title(f"{title.split(',')[0]} (per-dump grid, one line per dump)")
+        axes.legend(fontsize=6, title=x_label, ncol=2)
+        return
+    mesh = axes.pcolormesh(
+        _time_edges(times),
+        edges[0],
+        scaled.T,
+        shading="flat",
+        cmap=cmap,
+    )
+    axes.set_yscale("log")
+    axes.set_xlabel(x_label)
+    axes.set_ylabel("photon energy [eV]")
+    axes.set_title(title)
+    colour = figure.colorbar(mesh, ax=axes)
+    colour.set_label(colour_label)
+
+
 def _dataset_for(side: str, quantity: str) -> str:
     return "net_interface" if quantity == "net" else SIDE_DATASETS[side]
 
@@ -99,25 +151,20 @@ def _plot_spectrum_map(target: Path, path: Path, side: str, quantity: str) -> No
     with h5py.File(path, "r") as handle:
         flux_unit = _unit(handle, f"flux/{_dataset_for(side, quantity)}")
         time_unit = _unit(handle, "flux/time")
-    # The flux spans many decades, so the colour axis is the log of the magnitude
-    # with a sign split: Rmin carries negative rows on some dumps.
-    magnitude = np.abs(values)
-    floor = magnitude[magnitude > 0].min() if np.any(magnitude > 0) else 1.0
+    # The flux spans many decades, so the colour axis is the log of the magnitude.
     figure, axes = plt.subplots(figsize=(7.5, 4.5), dpi=140)
     try:
-        mesh = axes.pcolormesh(
-            _time_edges(time_s),
-            edges[0],
-            np.log10(np.maximum(magnitude, floor)).T,
-            shading="flat",
+        _spectral_panel(
+            figure,
+            axes,
+            time_s,
+            edges,
+            values,
             cmap="magma",
+            title=f"{side} {quantity} spectrum versus time [{flux_unit}], log10 magnitude",
+            x_label=f"time [{time_unit or 's'}]",
+            colour_label="log10 |flux|",
         )
-        axes.set_yscale("log")
-        axes.set_xlabel(f"time [{time_unit or 's'}]")
-        axes.set_ylabel("photon energy [eV]")
-        axes.set_title(f"{side} {quantity} spectrum versus time [{flux_unit}], log10 magnitude")
-        colour = figure.colorbar(mesh, ax=axes)
-        colour.set_label("log10 |flux|")
         figure.tight_layout()
         figure.savefig(target)
     finally:
@@ -134,24 +181,19 @@ def _plot_energy_density_map(target: Path, path: Path, zone: int) -> None:
         unit = _unit(handle, "radiation/energy_density")
         time_unit = _unit(handle, "radiation/time")
     zone = int(np.clip(zone, 0, values.shape[1] - 1))
-    magnitude = values[:, zone, :]
-    positive = magnitude[magnitude > 0]
-    floor = float(positive.min()) if positive.size else 1.0
     figure, axes = plt.subplots(figsize=(7.5, 4.5), dpi=140)
     try:
-        mesh = axes.pcolormesh(
-            _time_edges(times),
-            edges[0],
-            np.log10(np.maximum(magnitude, floor)).T,
-            shading="flat",
+        _spectral_panel(
+            figure,
+            axes,
+            times,
+            edges,
+            values[:, zone, :],
             cmap="viridis",
+            title=f"zone {zone + 1} spectral energy density [{unit}], log10",
+            x_label=f"time [{time_unit or 's'}]",
+            colour_label=f"log10 [{unit}]",
         )
-        axes.set_yscale("log")
-        axes.set_xlabel(f"time [{time_unit or 's'}]")
-        axes.set_ylabel("photon energy [eV]")
-        axes.set_title(f"zone {zone + 1} spectral energy density [{unit}], log10")
-        colour = figure.colorbar(mesh, ax=axes)
-        colour.set_label(f"log10 [{unit}]")
         figure.tight_layout()
         figure.savefig(target)
     finally:
