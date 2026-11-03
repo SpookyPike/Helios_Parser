@@ -367,6 +367,9 @@ def _classify_zone_regimes(
     density_ratio = _safe_density_ratio(density, density_reference)
     regimes = np.full(active_zone_indices.shape, _REGIME_THOMSON_FALLBACK, dtype=object)
     unresolved_materials: list[str] = []
+    # Membership set alongside the ordered list: the per-zone loop below ran a
+    # linear scan of the list for every unresolved zone.
+    unresolved_seen: set[str] = set()
     notes: list[str] = []
     thresholds = TRANSMISSION_AUTO_THRESHOLDS
     xcom_count = 0
@@ -396,7 +399,8 @@ def _classify_zone_regimes(
         fallback_count += 1
         if not has_xcom_material:
             unresolved = f"material {int(abs(dataset.zone_material_index[int(zone_index)]))}"
-            if unresolved not in unresolved_materials:
+            if unresolved not in unresolved_seen:
+                unresolved_seen.add(unresolved)
                 unresolved_materials.append(unresolved)
     notes.append(
         "Auto hybrid is XCOM-first for cold condensed resolved materials, switches to Free-free + Thomson for clearly plasma-like or expanded zones, and uses Thomson only as a last-resort fallback."
