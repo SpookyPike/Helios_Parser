@@ -105,10 +105,17 @@ class LeastSquaresTanhFitTest(unittest.TestCase):
         assert fit is not None
         self.assertAlmostEqual(fit.position_cm, reference[0], delta=1.0e-9)
         self.assertAlmostEqual(fit.width_cm, reference[1], delta=1.0e-9)
-        # And the control: without the patch the batched path is what runs.
+
+        # The control: without the patch the batched path runs. Comparing the
+        # fallback against it covers the derived scalars too, so a fallback that
+        # picked the right window but reported a wrong quality or confidence
+        # cannot pass.
         batched = _least_squares_tanh_fit(x, (field,), 2.0, 1.0)
         assert batched is not None
         self.assertAlmostEqual(batched.position_cm, reference[0], delta=1.0e-9)
+        self.assertAlmostEqual(fit.fit_quality, batched.fit_quality, delta=1.0e-9)
+        self.assertAlmostEqual(fit.confidence, batched.confidence, delta=1.0e-9)
+        self.assertTrue(math.isfinite(fit.fit_quality))
         del real_solve
 
     def test_non_finite_coordinate_is_ignored(self) -> None:
