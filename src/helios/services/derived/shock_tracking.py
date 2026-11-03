@@ -197,10 +197,19 @@ def _build_interface_position_grid(dataset: DerivedRunData) -> np.ndarray:
     return np.broadcast_to(static_positions, (n_snapshots, static_positions.size))
 
 
+@lru_cache(maxsize=8)
+def _interface_index_axis(size: int) -> np.ndarray:
+    """Read-only 0..size-1 axis reused by every interface interpolation."""
+
+    axis = np.arange(int(size), dtype=np.float64)
+    axis.flags.writeable = False
+    return axis
+
+
 def _position_from_interface_index(interface_positions: np.ndarray, interface_index: float) -> float:
     if interface_positions.size == 0 or not np.isfinite(interface_index):
         return float("nan")
-    grid = np.arange(interface_positions.size, dtype=np.float64)
+    grid = _interface_index_axis(int(interface_positions.size))
     return float(np.interp(float(interface_index), grid, interface_positions))
 
 
@@ -759,9 +768,9 @@ def _localize_candidate(
     total_pressure: np.ndarray | None,
     *,
     use_tanh_fit: bool,
+    interface_positions: np.ndarray,
 ) -> _LocalizedFit:
     centers, edges = _candidate_window_positions(dataset, snapshot_index, interface_index)
-    interface_positions = _build_interface_position_grid(dataset)[snapshot_index]
     initial_xf = _position_from_interface_index(interface_positions, float(interface_index))
     widths = np.diff(edges)
     positive_widths = widths[np.isfinite(widths) & (widths > 0.0)]
@@ -872,6 +881,7 @@ def _extract_frame_candidates(dataset: DerivedRunData, snapshot_index: int, payl
                 score_row,
                 total_pressure,
                 use_tanh_fit=(family != "contact_like" and family_rank == 0 and score_value >= 1.25 * float(payload.candidate_thresholds[family])),
+                interface_positions=payload.interface_position_grid[snapshot_index],
             )
             confidence = float(np.clip(0.55 * min(score_value / max(float(payload.candidate_thresholds[family]), 1.0e-12), 1.5) / 1.5 + 0.45 * fit.confidence, 0.0, 1.0))
             interface_crossed = bool(np.any(np.diff(dataset.zone_region_id[: interface_index + 2]) != 0)) if interface_index + 1 < dataset.zone_region_id.size else False
