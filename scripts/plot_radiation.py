@@ -37,7 +37,6 @@ from _script_bootstrap import ROOT  # noqa: E402
 
 from helios.services.derived.radiation import (  # noqa: E402
     SIDE_DATASETS,
-    integrate_over_groups,
     spectrum_at,
     spectrum_map,
 )
@@ -129,11 +128,13 @@ def _plot_spectrum(target: Path, path: Path, side: str, quantity: str, time_s: f
         axes.set_ylabel(f"{quantity} flux at {side} [{flux_unit}]")
         axes.set_title(f"{side} {quantity} spectrum, sampled at {sample_time:.4g} {time_unit or 's'}")
         axes.grid(True, which="both", alpha=0.25, lw=0.5)
-        total = float(integrate_over_groups(spectrum, edges))
+        # A plain group sum, not a width-weighted integral: the boundary spectra
+        # are per-group bin contents (the sum reproduces TotalFluxRmin/Rmax
+        # exactly), so weighting by dE would overstate the total by ~1e4.
         axes.text(
             0.02,
             0.96,
-            f"group integral: {total:.4g}",
+            f"group sum: {float(np.sum(spectrum)):.4g}",
             transform=axes.transAxes,
             va="top",
             fontsize=8,
