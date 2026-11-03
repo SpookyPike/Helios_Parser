@@ -762,13 +762,33 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         self.derived_controller.set_default_profile_coordinate_mode(self.viewer_controller.default_profile_coordinate_mode())
         self._update_global_snapshot_controls(self.viewer_controller.current_run_context())
 
+    @staticmethod
+    def _plasma_backend_line() -> str:
+        """Report the active plasma dispersion backend for this install.
+
+        The quadrature fallback is 282x slower than scipy's ``wofz``, so an
+        install that lost scipy looks correct but is slow. Naming the backend
+        in About makes that visible. Imported lazily because About is rarely
+        opened and this pulls numpy and scipy into an otherwise light shell.
+        """
+
+        try:
+            from helios.services.derived.plasmon_spectrum import plasma_dispersion_backend_name
+
+            backend = plasma_dispersion_backend_name()
+        except Exception:  # pragma: no cover - About must never fail to open
+            return "Plasma dispersion backend: unavailable\n"
+        note = "" if backend == "scipy_wofz" else "  (slow fallback: install scipy)"
+        return f"Plasma dispersion backend: {backend}{note}\n"
+
     def _show_about_dialog(self) -> None:
         QtWidgets.QMessageBox.about(
             self,
             "About HELIOS Parse / View",
             f"HELIOS Parse / View {RELEASE_VERSION}\n"
             f"Release date: {RELEASE_DATE}\n"
-            f"Code developed by {AUTHOR_NAME} at {AUTHOR_AFFILIATION}.\n\n"
+            f"Code developed by {AUTHOR_NAME} at {AUTHOR_AFFILIATION}.\n"
+            f"{self._plasma_backend_line()}\n"
             "Parser Mode previews and converts HELIOS .log and .bpf files to stabilized HDF5.\n"
             "Viewer Mode opens stabilized HDF5 files with the production scientific viewer.\n"
             "Derived / Analysis adds quick-look Shock diagnostics plus lazy advanced WaveFront, interface-event, and Preheat analysis.",
