@@ -35,7 +35,7 @@ TIMEOUT_SECONDS = 120
 # roughly doubles it, so pin to the P-cores and give the BLAS pools their width.
 PINNED_CPUS = "0-11"
 THREAD_LIMIT = 12
-COVERAGE_FLOOR = 70.0
+COVERAGE_FLOOR = 75.0
 TIMEOUT_OVERRIDES = {
     "test_app_phase412.py": 300,
     "test_validation.py": 300,

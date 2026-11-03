@@ -380,7 +380,6 @@ def _classify_zone_regimes(
     for offset, zone_index in enumerate(active_zone_indices.tolist()):
         label = material_labels.get(int(zone_index))
         te_value = float(te[offset]) if np.isfinite(te[offset]) else float("nan")
-        float(zbar[offset]) if np.isfinite(zbar[offset]) else float("nan")
         density_ratio_value = float(density_ratio[offset]) if np.isfinite(density_ratio[offset]) else float("nan")
         has_xcom_material = bool(label)
         if _xcom_like_zone(te_value, density_ratio_value, material_resolved=has_xcom_material) and not _plasma_like_zone(te_value, density_ratio_value):
@@ -1070,8 +1069,6 @@ def apply_transmission_model(
     electron_density = np.asarray(dataset.electron_density_cm3[int(snapshot_index)], dtype=np.float64)
     temperature_e = np.asarray(dataset.temperature_e_ev[int(snapshot_index)], dtype=np.float64)
     mean_charge = np.asarray(dataset.mean_charge[int(snapshot_index)], dtype=np.float64)
-    density_reference = _density_reference_profile(dataset)
-    _safe_density_ratio(density, density_reference)
     path = np.asarray(path_length_cm(dataset, snapshot_index, geometry, analysis_cache=analysis_cache), dtype=np.float64)
     active_zone_indices = np.flatnonzero(mask)
 

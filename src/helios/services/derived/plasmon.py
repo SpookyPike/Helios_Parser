@@ -1510,8 +1510,6 @@ def _build_los_integrated_spectrum_payload(
         )
         _accumulate_benchmark_issue_counts(cluster_issue_counts, _benchmark_domain_flags(state, parameters, _effective_backend_model(state, parameters, requested_model)))
     if cluster_count == 0:
-        energy = energy_axis_ev(float(parameters.plasmon_energy_window_ev), _resolved_energy_points(parameters))
-        np.zeros_like(energy, dtype=np.float64)
         return _invalid_benchmark_spectrum_payload(
             parameters,
             fallback_fraction=1.0,
@@ -2725,7 +2723,6 @@ def evaluate_plasmon_regime(
 
         def _build_derived_series() -> dict[str, np.ndarray]:
             te_series = np.asarray(mean_series["te_ev"], dtype=np.float64)
-            np.asarray(mean_series["ti_ev"], dtype=np.float64)
             ne_series = np.asarray(mean_series["ne_cm3"], dtype=np.float64)
             zbar_series = np.asarray(mean_series["zbar"], dtype=np.float64)
             debye_series = np.full(te_series.shape, np.nan, dtype=np.float64)

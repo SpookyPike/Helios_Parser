@@ -66,6 +66,10 @@ class _ComputedAnalysisPayload:
     result: object
     core_request_key: tuple[object, ...]
     update_kind: str
+    # Recorded so a later cache merge can tell whether a carried-over preheat
+    # summary belongs to the target this payload was computed for. The core key
+    # deliberately omits it.
+    preheat_target_region_id: int | None = None
 
 
 class DerivedController(QtCore.QObject):
@@ -309,12 +313,44 @@ class DerivedController(QtCore.QObject):
         return existing_region_id == requested_region_id
 
     @staticmethod
-    def _merge_cached_features(previous: DerivedAnalysisResult | None, current: DerivedAnalysisResult) -> DerivedAnalysisResult:
+    def _preheat_summary_matches_target(preheat: object | None, target_region_id: int | None) -> bool:
+        """Whether a preheat summary was computed for the requested target.
+
+        Mirrors `_can_reuse_preheat` in the analysis layer. Kept here because the
+        cache merge only has the summary and the target, not a whole result.
+        """
+
+        if preheat is None:
+            return False
+        requested = None if target_region_id is None else int(target_region_id)
+        existing = None
+        if str(getattr(preheat, "target_selection_mode", "auto") or "auto") == "user_selected":
+            raw = getattr(preheat, "target_region_id", None)
+            existing = None if raw is None else int(raw)
+        return existing == requested
+
+    @staticmethod
+    def _merge_cached_features(
+        previous: DerivedAnalysisResult | None,
+        current: DerivedAnalysisResult,
+        *,
+        preheat_target_region_id: int | None,
+    ) -> DerivedAnalysisResult:
         if previous is None:
             return current
+        # WaveFront and interface events are geometry-scoped, and the core key
+        # covers geometry and selection, so carrying them over is safe. Preheat
+        # is not: it depends on the requested target region, which the core key
+        # deliberately omits. Restoring an incompatible summary here would undo
+        # the guard in the compute path and pair a new module_key with the old
+        # target's numbers.
         wave_tracking = current.wave_tracking if current.wave_tracking is not None else previous.wave_tracking
         interface_events = current.interface_events if current.interface_events is not None else previous.interface_events
-        preheat = current.preheat if current.preheat is not None else previous.preheat
+        preheat = current.preheat
+        if preheat is None and DerivedController._preheat_summary_matches_target(
+            previous.preheat, preheat_target_region_id
+        ):
+            preheat = previous.preheat
         if wave_tracking is current.wave_tracking and interface_events is current.interface_events and preheat is current.preheat:
             return current
         return replace(
@@ -585,6 +621,7 @@ class DerivedController(QtCore.QObject):
                         ),
                         core_request_key=request.core_request_key,
                         update_kind="snapshot",
+                        preheat_target_region_id=request.parameters.preheat_target_region_id,
                     )
             if request.update_kind == "transmission_model":
                 base_result = self._analysis_cache.get(request.base_request_key) if request.base_request_key is not None else None
@@ -655,6 +692,7 @@ class DerivedController(QtCore.QObject):
                     result=updated_result,
                     core_request_key=request.core_request_key,
                     update_kind="transmission_model",
+                    preheat_target_region_id=request.parameters.preheat_target_region_id,
                 )
             base_result = displayed_base_result
             if base_result is None:
@@ -673,6 +711,7 @@ class DerivedController(QtCore.QObject):
                 ),
                 core_request_key=request.core_request_key,
                 update_kind=request.update_kind,
+                preheat_target_region_id=request.parameters.preheat_target_region_id,
             )
 
         cancellation_token = CancellationToken()
@@ -854,7 +893,11 @@ class DerivedController(QtCore.QObject):
             if isinstance(payload, _ComputedAnalysisPayload):
                 computed_result = self._validate_result(payload.result, request_key=result.context_key)
                 if payload.update_kind in {"full", "time_plots", "wavefront", "preheat"}:
-                    computed_result = self._merge_cached_features(self._analysis_core_cache.get(payload.core_request_key), computed_result)
+                    computed_result = self._merge_cached_features(
+                        self._analysis_core_cache.get(payload.core_request_key),
+                        computed_result,
+                        preheat_target_region_id=payload.preheat_target_region_id,
+                    )
                     self._analysis_core_cache[payload.core_request_key] = computed_result
                 self._last_completed_update_kind = payload.update_kind
             else:
