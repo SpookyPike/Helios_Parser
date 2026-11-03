@@ -91,6 +91,23 @@ class ModuleReuseGuardTest(unittest.TestCase):
         second = self._compute(self.base, base_result=first)
         self.assertIs(second.plasmon, first.plasmon)
 
+    def test_the_transmission_path_rejects_a_result_from_other_parameters(self) -> None:
+        """The controller's transmission path carries module payloads forward.
+
+        It reaches results through `_compatible_displayed_result` and the core
+        cache, both of which match on keys that omit module parameters, so it
+        must check provenance itself. A result with no module_key cannot be
+        proven compatible and is rejected too.
+        """
+
+        from helios_analysis.controller import DerivedController
+
+        first = self._compute(self.base)
+        self.assertTrue(DerivedController._module_key_matches(first, self.base))
+        changed = replace(self.base, plasmon_photon_energy_kev=7.5)
+        self.assertFalse(DerivedController._module_key_matches(first, changed))
+        self.assertFalse(DerivedController._module_key_matches(replace(first, module_key=None), self.base))
+
     def test_geometry_gating_is_owned_by_the_shock_predicate(self) -> None:
         # The module key deliberately ignores geometry: geometry reuse is decided
         # by _can_reuse_shock and _can_reuse_wave_tracking, which compare the
