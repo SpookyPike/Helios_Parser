@@ -99,12 +99,19 @@ class ChunkHelperTest(unittest.TestCase):
                 short = _create_bpf_field_dataset(fields, meta, "velocity", sample, 7, None, {"unit": "cm/s"})
                 self.assertEqual(tuple(short.chunks), (7, 50))
 
-    def test_a_production_spectral_chunk_stays_inside_a_chunk_cache(self) -> None:
-        # 1202 nodes x 250 groups float64. One dump must fit the 8 MiB rdcc the
-        # reader requests, otherwise a single-dump read still inflates a chunk.
+    def test_a_production_spectral_chunk_is_one_dump(self) -> None:
+        # 1202 nodes x 250 groups float64 is 2.4 MB, against 38.5 MB for the
+        # sixteen-dump chunk it replaced. The reader keeps HDF5's 1 MiB default
+        # cache, so this is not a residency claim: it is a claim that a
+        # single-dump read inflates one dump instead of sixteen.
         extent = _spectral_chunk_shape((1501, 1202, 250))
-        self.assertEqual(int(np.prod(extent)) * 8, 1202 * 250 * 8)
-        self.assertLess(int(np.prod(extent)) * 8, 8 * 1024 * 1024)
+        one_dump = 1202 * 250 * 8
+        old_chunk = 16 * one_dump
+        self.assertEqual(int(np.prod(extent)) * 8, one_dump)
+        self.assertEqual(tuple(extent), (1, 1202, 250))
+        # The extent this replaced was 38.5 MB, larger than any HDF5 block
+        # cache, so one dump read inflated sixteen.
+        self.assertGreater(old_chunk, 32 * 1024 * 1024)
 
 
 class ConvertedFieldChunkTest(unittest.TestCase):

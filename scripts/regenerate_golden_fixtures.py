@@ -68,6 +68,71 @@ DATASET_EXEMPT = {
 }
 
 
+def parse_log_edges(log_path: Path, limit: int = 2) -> list[np.ndarray]:
+    """Read the Radius column of the first few snapshots straight from the log.
+
+    The column has one row per zone boundary, so a snapshot with `n_zones` zones
+    yields `n_zones + 1` values. Parsing it here, rather than trusting the
+    converter, is what lets the coordinate exemption below be checked instead of
+    asserted.
+    """
+
+    lines = log_path.read_text(encoding="utf-8", errors="ignore").splitlines()
+    headers = [index for index, line in enumerate(lines) if line.strip().startswith("#    Radius")]
+    snapshots: list[np.ndarray] = []
+    for header in headers[:limit]:
+        radius: list[float] = []
+        for line in lines[header + 1 :]:
+            parts = line.split()
+            if not parts:
+                continue
+            if not parts[0].isdigit():
+                if radius:
+                    break
+                continue
+            if int(parts[0]) == 0 and radius:
+                break
+            radius.append(float(parts[1]))
+        if radius:
+            snapshots.append(np.asarray(radius, dtype=np.float64))
+    return snapshots
+
+
+def verify_old_coordinates_against_log(target: Path, log_path: Path) -> list[str]:
+    """Prove the OLD fixture stored edges where centres belong.
+
+    The exemption for `grid/x` and `fields/radius` is only honest if the old
+    file really is the one that was wrong. Compare the old fixture's edge grid
+    with the log's own Radius column: if it matches, the old file stored edges,
+    and `fields/radius` holding those same values is the defect being corrected.
+    """
+
+    problems: list[str] = []
+    edges = parse_log_edges(log_path)
+    if not edges:
+        return [f"could not parse a Radius column from {log_path.name}"]
+    with h5py.File(target, "r") as handle:
+        if "grid/dynamic_coordinate_edge" in handle:
+            stored = np.asarray(handle["grid/dynamic_coordinate_edge"][: len(edges)], dtype=np.float64)
+        elif "grid/x" in handle:
+            stored = np.asarray(handle["grid/x"][()], dtype=np.float64)[None, :]
+        else:
+            return problems
+        for index, log_edges in enumerate(edges):
+            if index >= stored.shape[0]:
+                break
+            scale = float(np.max(np.abs(log_edges))) or 1.0
+            if not np.allclose(stored[index], log_edges, rtol=0.0, atol=scale * 1e-3):
+                # Not a failure of the new writer: this only means the old file
+                # did not store raw edges, so the exemption needs re-deriving.
+                problems.append(
+                    f"{target.name}: old snapshot {index} does not match the log Radius column, "
+                    "so the edge-to-centre exemption needs re-checking"
+                )
+                break
+    return problems
+
+
 def verify_coordinate_contract(path: Path) -> list[str]:
     """The centre/edge contract the exemption above relies on.
 
@@ -181,7 +246,11 @@ def main(argv: list[str]) -> int:
             if not target.is_file():
                 print(f"  {target_name}: target missing, would create")
             else:
-                problems = verify(target, staged) + verify_coordinate_contract(staged)
+                problems = (
+                    verify(target, staged)
+                    + verify_old_coordinates_against_log(target, source)
+                    + verify_coordinate_contract(staged)
+                )
                 if problems:
                     failures += 1
                     print(f"  {target_name}: FAILED verification")

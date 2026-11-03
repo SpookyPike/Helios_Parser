@@ -292,14 +292,15 @@ rather than fixed because they could not move a millisecond-scale operation.
 
 Two gates, because one number cannot serve both purposes.
 
-**The commit gate: about 25 s.** The Qt and event-loop modules are skipped, so
-the portable core runs fast enough to use on every change.
+**The commit gate: about 8 s.** Five fixed entries that cover conversion, the
+on-disk layout, the CLI and the runner itself. Add an entry only if it runs in a
+second or two and would catch a mistake you would otherwise ship.
 
 ```bash
-cd tests && python -m unittest discover -p "test_*.py"
+.venv/bin/python scripts/run_test_suite.py --profile core
 ```
 
-**The milestone gate: about 14 min, with a 70 % coverage floor.** Every module
+**The milestone gate: about 6 min, with a 75 % coverage floor.** Every module
 runs in its own process, which is what keeps the suite at minutes rather than
 the hour it takes when the Qt modules share one process and pile up event loops.
 
@@ -309,7 +310,7 @@ python scripts/run_test_suite.py --profile full --coverage
 
 It writes per-entry logs, a JSON outcome manifest and `coverage.txt` to the
 report directory, and exits 3 when coverage is under the floor. The floor is
-`fail_under = 70` in `pyproject.toml`; the measured value on the reference host
+`fail_under = 75` in `pyproject.toml`; the measured value on the reference host
 is 72.7 %. Raise the floor at a milestone boundary, deliberately: a floor pinned
 just under today's number fails on the next commit that adds a module before its
 tests, and then it gets lowered rather than met.
