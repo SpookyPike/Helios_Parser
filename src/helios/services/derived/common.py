@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable
 
 import numpy as np
 
@@ -143,6 +143,33 @@ def _cached_array(run_key: tuple[object, ...], name: str) -> np.ndarray | None:
         return None
     increment_counter("shared_raw_cache.array.hit")
     return np.asarray(value)
+
+
+def cached_run_container(run_key: tuple[object, ...], name: str, factory: Callable[[], object]) -> object:
+    """Return a container cached per run revision, building it at most once.
+
+    Used for whole-file payloads that do not depend on the active snapshot, such
+    as the radiation flux block, so a snapshot scrub does not re-read them.
+    """
+
+    key = (run_key, str(name))
+    cached = _RUN_ARRAY_BUCKET.get(key)
+    if cached is not None:
+        increment_counter("shared_raw_cache.container.hit")
+        return cached
+    increment_counter("shared_raw_cache.container.miss")
+    value = factory()
+    _RUN_ARRAY_BUCKET[key] = value
+    return value
+
+
+def run_cache_key(dataset: object) -> tuple[object, ...]:
+    """Cache key for a loaded run: its revision when known, else path identity."""
+
+    revision = getattr(dataset, "revision", None)
+    if revision is not None:
+        return tuple(revision.cache_key)
+    return run_identity_for_path(Path(getattr(dataset, "path")))
 
 
 def shared_raw_cache_stats() -> dict[str, object]:
