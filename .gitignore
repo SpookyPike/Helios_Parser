@@ -48,6 +48,9 @@ _tmp_plasmon_fourth_pass/
 /docs/HELIOS_PERFORMANCE_*.json
 /docs/performance/
 /docs/v1_code_health_audit.md
+# Engineering records (audits, reviews, plans, specs). The repository ships the
+# user-facing documentation only; these stay on disk for local reference.
+/docs/internal/
 /docs/*[Aa][Uu][Dd][Ii][Tt]*.md
 /docs/*[Pp][Ll][Aa][Nn]*.md
 /docs/*[Rr][Ee][Vv][Ii][Ee][Ww]*.md

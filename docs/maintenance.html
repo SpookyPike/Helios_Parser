@@ -47,10 +47,17 @@
       <ul>
         <li><code>numpy</code></li>
         <li><code>h5py</code></li>
+        <li><code>scipy</code>, required since 2.0.0 for the plasma dispersion function</li>
         <li><code>PySide6</code></li>
         <li><code>pyqtgraph</code></li>
         <li><code>matplotlib</code> for validation/export-supporting paths</li>
       </ul>
+      <p>
+        Base dependencies carry upper bounds (<code>numpy&lt;3</code>, <code>h5py&lt;4</code>, <code>scipy&lt;2</code>) so a
+        major release cannot land silently. Do not move <code>scipy</code> back to an optional extra or back into the
+        packaging exclude list: without it the dispersion function runs a complex quadrature that is about 280 times
+        slower, and the build would look correct while being slow.
+      </p>
     </section>
 
     <section id="launch">
@@ -71,7 +78,9 @@
       <ol class="steps">
         <li>Update the relevant user/developer/testing/maintenance docs whenever visible behavior, workflow, or architecture changes.</li>
         <li>Refresh screenshots when the UI changes materially.</li>
-        <li>Keep release number, date, and About dialog metadata in sync.</li>
+        <li>Keep release number, date, and About dialog metadata in sync. <code>RELEASE_VERSION</code> and <code>RELEASE_DATE</code> in <code>src/helios_app/release.py</code> are the single source; every packaging script imports them. <code>pyproject.toml</code>, <code>README.md</code> and this guide are updated by hand.</li>
+        <li>The repository ships user-facing documentation only. Engineering records (audits, reviews, implementation plans, compose specs) live in the gitignored <code>docs/internal/</code> and are not part of the published set.</li>
+        <li>If the HDF5 layout or the schema version changes, update <code>docs/bpf_h5d_schema.md</code>, regenerate the golden fixtures with <code>scripts/regenerate_golden_fixtures.py</code>, and update the sizes and hashes in <code>tests/fixture_manifest.json</code> in the same commit. A mismatch makes the runner exit <code>125</code> and refuse the entry.</li>
         <li>Prefer a few clear screenshots to a giant stale archive.</li>
       </ol>
       <p>Current screenshot maintenance commands:</p>
