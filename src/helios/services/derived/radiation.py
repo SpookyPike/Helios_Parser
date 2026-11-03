@@ -32,6 +32,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 
+from helios.services.derived.common import cached_run_container, run_cache_key
 from helios.services.derived.models import DerivedPlotBundle, DerivedWarning, RadiationResult
 
 # Boundary side -> the flux dataset that carries its spectrum, and which row of
@@ -145,28 +146,46 @@ def evaluate_radiation(
     if time_s is not None and np.asarray(time_s).size > snapshot_index >= 0:
         requested_time_s = float(np.asarray(time_s)[snapshot_index])
 
-    try:
+    def _read_container() -> dict[str, object]:
         with h5py.File(path, "r") as handle:
             if "flux" not in handle or "radiation" not in handle:
-                return _unavailable_radiation(
-                    snapshot_index,
-                    requested_time_s,
-                    "This run carries no radiation output: the deck left "
-                    "`Write freq-dependent radiation output` off.",
-                )
-            flux_time = np.asarray(handle["flux/time"][()], dtype=np.float64)
-            group_edges = np.asarray(handle["flux/group_edges"][()], dtype=np.float64)
-            net_interface = np.asarray(handle["flux/net_interface"][()], dtype=np.float64)
-            integrated = {
-                name: np.asarray(handle[f"radiation/integrated/{name}"][()], dtype=np.float64)
-                for name in ("loss_rmax", "loss_rmin", "total_flux_rmax", "total_flux_rmin")
-                if f"radiation/integrated/{name}" in handle
+                return {"missing": True}
+            return {
+                "missing": False,
+                "flux_time": np.asarray(handle["flux/time"][()], dtype=np.float64),
+                "group_edges": np.asarray(handle["flux/group_edges"][()], dtype=np.float64),
+                "net_interface": np.asarray(handle["flux/net_interface"][()], dtype=np.float64),
+                "integrated": {
+                    name: np.asarray(handle[f"radiation/integrated/{name}"][()], dtype=np.float64)
+                    for name in ("loss_rmax", "loss_rmin", "total_flux_rmax", "total_flux_rmin")
+                    if f"radiation/integrated/{name}" in handle
+                },
+                "metadata": {
+                    name: int(handle[f"metadata/{name}"][()])
+                    for name in ("n_groups", "n_freq_snapshots", "n_boundaries", "n_regions")
+                    if f"metadata/{name}" in handle
+                },
             }
-            metadata = {
-                name: int(handle[f"metadata/{name}"][()])
-                for name in ("n_groups", "n_freq_snapshots", "n_boundaries", "n_regions")
-                if f"metadata/{name}" in handle
-            }
+
+    try:
+        # The container does not depend on the snapshot, so it is cached per run
+        # revision. Without this, every slider move re-opened the file and read
+        # the whole flux block to change one index.
+        container = cached_run_container(run_cache_key(dataset), "radiation_container", _read_container)
+        assert isinstance(container, dict)
+        if container.get("missing"):
+            return _unavailable_radiation(
+                snapshot_index,
+                requested_time_s,
+                "This run carries no radiation output: the deck left "
+                "`Write freq-dependent radiation output` off.",
+            )
+        flux_time = np.asarray(container["flux_time"], dtype=np.float64)
+        group_edges = np.asarray(container["group_edges"], dtype=np.float64)
+        net_interface = np.asarray(container["net_interface"], dtype=np.float64)
+        integrated = container["integrated"]
+        metadata = container["metadata"]
+        assert isinstance(integrated, dict) and isinstance(metadata, dict)
     except OSError as error:
         return _unavailable_radiation(
             snapshot_index,
