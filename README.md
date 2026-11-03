@@ -311,7 +311,7 @@ python scripts/run_test_suite.py --profile full --coverage
 It writes per-entry logs, a JSON outcome manifest and `coverage.txt` to the
 report directory, and exits 3 when coverage is under the floor. The floor is
 `fail_under = 75` in `pyproject.toml`; the measured value on the reference host
-is 72.7 %. Raise the floor at a milestone boundary, deliberately: a floor pinned
+is 82.7 %. Raise the floor at a milestone boundary, deliberately: a floor pinned
 just under today's number fails on the next commit that adds a module before its
 tests, and then it gets lowered rather than met.
 
