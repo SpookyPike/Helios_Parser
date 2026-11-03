@@ -103,7 +103,7 @@ This is a source-runtime portable bundle, not an AppImage. It does not require
 an editable checkout and does not run pip, but it expects Python 3.10+ and the
 runtime Python packages to be installed by the operating system:
 
-python3, numpy, h5py, matplotlib, pyqtgraph, and PySide6 QtCore/Gui/Widgets/Svg.
+python3, numpy, h5py, scipy, matplotlib, pyqtgraph, and PySide6 QtCore/Gui/Widgets/Svg.
 When an approved XCOM native bundle is supplied at package-build time, it
 supports neutral-element coefficients from 1 to 35 keV. The app continues to
 use precomputed tables first.
