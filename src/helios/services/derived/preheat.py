@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from pathlib import Path
-import math
 
 import numpy as np
 
@@ -879,7 +879,7 @@ def evaluate_preheat(
         observed_ion = _energy_areal_density(ion_energy, reference_areal_mass, target_mask, preheat_indices)
         observed_radiation = _energy_areal_density(radiation_energy, reference_areal_mass, target_mask, preheat_indices)
     else:
-        laser_cumulative = laser_source_cumulative = radiation_cumulative = None
+        laser_cumulative = radiation_cumulative = None
         laser_dep_budget = laser_source_budget = radiation_budget = None
         laser_dep_coverage = laser_source_coverage = radiation_coverage = None
         observed_internal = observed_electron = observed_ion = observed_radiation = None

@@ -7,15 +7,14 @@ model, viewer geometry semantics, and Derived workspace behavior.
 
 from __future__ import annotations
 
-from pathlib import Path
 import time
+from pathlib import Path
 
 import numpy as np
 from PySide6 import QtCore, QtWidgets
 
 from helios_app.main_app import HeliosParseViewMainWindow
 from helios_parser import write_hdf5
-
 
 ROOT = Path(__file__).resolve().parents[1]
 SCREENSHOT_DIR = ROOT / "docs" / "assets" / "screenshots"

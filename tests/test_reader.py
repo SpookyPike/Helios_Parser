@@ -4,14 +4,13 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
-
-import h5py
-import numpy as np
 from unittest.mock import patch
 
 import _test_bootstrap  # noqa: F401
-from helios_parser import HeliosRun
+import h5py
+import numpy as np
 
+from helios_parser import HeliosRun
 
 ROOT = Path(__file__).resolve().parents[1]
 HDF5_ROOT = ROOT / "outputs" / "hdf5"
@@ -269,7 +268,7 @@ class ReaderTests(unittest.TestCase):
                 regions.create_dataset("max_zone_index", data=np.asarray([2, 3], dtype=np.int32))
                 materials = handle.create_group("materials")
                 materials.create_dataset("index", data=np.asarray([1], dtype=np.int32))
-                diagnostics = handle.create_group("diagnostics")
+                handle.create_group("diagnostics")
                 metadata = handle.create_group("metadata")
                 metadata.create_dataset("available_fields", data=np.asarray(["density"], dtype=h5py.string_dtype("utf-8")))
             with HeliosRun(path) as run:

@@ -27,7 +27,6 @@ from helios.services.derived.common import load_run_data
 from helios.services.derived.selection import build_analysis_geometry
 from helios.services.derived.shock_tracking import track_shock_front
 
-
 DEFAULT_RUNS = (
     Path("outputs/hdf5/5Fe+4.9TW+light_stabilized.h5"),
     Path("outputs/hdf5/Cu_0166_stabilized.h5"),

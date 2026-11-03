@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import importlib
 import json
-from pathlib import Path
 import sys
 import tempfile
-
 from dataclasses import asdict
+from pathlib import Path
 
 from _validation_common import REPO_ROOT, VALIDATION_ROOT, build_registry, preferred_hdf5_records, save_json
 
@@ -14,10 +13,9 @@ if str(REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from helios.platform.archive_utils import extract_archive, inspect_archive
+from helios.runtime import RunContext
 from helios.services.derived import DerivedAnalysisParameters, build_cold_attenuation_request, load_run_data
 from helios.services.derived.selection import build_analysis_geometry
-from helios.runtime import RunContext
-
 
 OUTPUT_DIR = VALIDATION_ROOT / "xcom_adapter"
 

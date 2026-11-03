@@ -4,7 +4,6 @@ import unittest
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
-
 from _viewer_test_utils import HDF5_ROOT, ROOT, get_app, process_events, reset_test_settings, wait_until
 
 from helios_app.main_app import HeliosParseViewMainWindow

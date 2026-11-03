@@ -4,16 +4,19 @@ import hashlib
 import importlib.util
 import json
 import math
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import unittest
+from pathlib import Path
 from unittest import mock
 
 import _test_bootstrap  # noqa: F401
+
 from helios.services.derived.xcom_hook import (
-    ColdAttenuationRequest, ColdAttenuationZone, PrecomputedColdTableBackend,
+    ColdAttenuationRequest,
+    ColdAttenuationZone,
+    PrecomputedColdTableBackend,
     lookup_fallback_mu_rho,
 )
 

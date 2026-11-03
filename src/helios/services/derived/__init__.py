@@ -5,8 +5,8 @@ from .analysis import (
     analysis_result_time_plot_modules,
     compute_analysis_result,
     normalize_time_plot_modules,
-    registered_module_contracts,
     refresh_analysis_result_for_snapshot,
+    registered_module_contracts,
 )
 from .common import load_run_data
 from .plasmon import evaluate_plasmon_regime

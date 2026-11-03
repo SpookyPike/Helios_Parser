@@ -16,6 +16,7 @@ not misled about the fidelity level.
 from __future__ import annotations
 
 import math
+
 import numpy as np
 
 ESA_RS_MIN = 0.7

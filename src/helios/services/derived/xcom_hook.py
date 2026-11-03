@@ -16,23 +16,22 @@ already present in the parsed payload.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Callable
-from functools import cached_property
 import hashlib
 import importlib
-from importlib import resources
 import json
 import math
 import os
-from pathlib import Path
 import re
 import shutil
 import sqlite3
 import sys
 import threading
 import time
-from typing import Any, Protocol
+from dataclasses import dataclass
+from functools import cached_property
+from importlib import resources
+from pathlib import Path
+from typing import Any, Callable, Protocol
 
 import numpy as np
 
@@ -40,7 +39,6 @@ from helios.platform.archive_utils import extract_archive
 from helios.runtime import RunContext
 from helios.services.derived.models import DerivedRunData
 from helios.services.derived.selection import build_analysis_mask, path_length_cm
-
 
 _CACHE_SCHEMA_VERSION = 2
 _CACHE_MAX_SIZE_BYTES = 64 * 1024 * 1024

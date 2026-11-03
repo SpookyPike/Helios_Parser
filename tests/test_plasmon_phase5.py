@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import replace
-from pathlib import Path
 import unittest
-
-import numpy as np
+from dataclasses import replace
 
 import _test_bootstrap  # noqa: F401
+import numpy as np
+from test_plasmon_phase3 import _synthetic_dataset
 
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters
@@ -21,7 +20,6 @@ from helios.services.derived.plasmon import (
     evaluate_plasmon_regime,
 )
 from helios.services.derived.selection import AnalysisStateCache, build_analysis_geometry
-from test_plasmon_phase3 import _synthetic_dataset
 
 
 class PlasmonPhase5Tests(unittest.TestCase):

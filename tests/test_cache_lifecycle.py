@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import unittest
 import gc
 import threading
+import unittest
 from dataclasses import dataclass
 
 import numpy as np

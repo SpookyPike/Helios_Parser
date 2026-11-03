@@ -12,7 +12,6 @@ from _viewer_test_utils import HDF5_ROOT, ROOT, get_app, process_events, reset_t
 from helios_app.main_app import HeliosParseViewMainWindow
 from helios_app.session_state import reset_session_state
 
-
 LOG_ROOT = ROOT
 
 

@@ -1,26 +1,25 @@
 from __future__ import annotations
 
-import shutil
+import logging
 import re
+import shutil
 import struct
 import tempfile
 import unittest
-import logging
 from decimal import Decimal
-from unittest import mock
 from pathlib import Path
-
-import h5py
-import numpy as np
+from unittest import mock
 
 import _test_bootstrap  # noqa: F401
+import h5py
+import numpy as np
 from _slow_tests import slow
+
+from helios.services.derived.common import load_run_data
 from helios_parser import HeliosRun, write_hdf5
 from helios_parser.bpf import BpfFile
 from helios_parser.hdf5 import _stage_aligned_log_companion
 from helios_parser.parser import HeliosParser
-from helios.services.derived.common import load_run_data
-
 
 ROOT = Path(__file__).resolve().parents[1]
 BPF_SAMPLE = ROOT / "new_data" / "5Fe+4.9TW+light" / "5Fe+4.9TW+light.bpf"

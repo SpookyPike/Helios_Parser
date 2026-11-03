@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from functools import lru_cache
-import math
 from typing import TYPE_CHECKING, Callable
 
 import numpy as np

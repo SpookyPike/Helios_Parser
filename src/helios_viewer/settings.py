@@ -12,7 +12,6 @@ from PySide6 import QtCore, QtWidgets
 
 from .style import THEME_MODES, configure_combo_box_interaction
 
-
 DEFAULT_HOVER_INTERVAL_MS = 12
 
 

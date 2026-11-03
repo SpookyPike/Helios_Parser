@@ -8,9 +8,9 @@ individual service modules remain independently testable.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
 import logging
 import math
+from dataclasses import dataclass, replace
 from typing import Callable
 
 import numpy as np
@@ -19,7 +19,6 @@ from helios.feature_flags import production_feature_visible
 from helios.instrumentation import increment_counter, timed_block
 from helios.runtime import RunContext
 from helios.services.derived.common import aggregate_warnings
-from helios.services.derived.module_contract import DerivedModuleContract
 from helios.services.derived.models import (
     DerivedAnalysisResult,
     DerivedModuleAvailability,
@@ -32,11 +31,13 @@ from helios.services.derived.models import (
     TransmissionResult,
     XrdResult,
 )
+from helios.services.derived.module_contract import DerivedModuleContract
 from helios.services.derived.physical_sanity import (
     validate_shock_result,
     validate_spectroscopy_result,
     validate_xrd_result,
 )
+from helios.services.derived.plasmon import evaluate_plasmon_regime
 from helios.services.derived.plasmon_config import (
     PLASMON_AXIS_ANGLE_DEG,
     PLASMON_BENCHMARK_PRESET_NONE,
@@ -45,14 +46,18 @@ from helios.services.derived.plasmon_config import (
     PLASMON_INTEGRATION_MODE_EFFECTIVE_STATE,
     PLASMON_LFC_MODEL_NONE,
     PLASMON_MODEL_QUICKLOOK,
-    PLASMON_OBSERVABLE_MODE_DIELECTRIC,
     PLASMON_NORMALIZATION_PEAK,
+    PLASMON_OBSERVABLE_MODE_DIELECTRIC,
     PLASMON_STUDY_MODE_SPECTRUM,
 )
-from helios.services.derived.plasmon import evaluate_plasmon_regime
 from helios.services.derived.preheat import evaluate_preheat
 from helios.services.derived.radiation import evaluate_radiation
-from helios.services.derived.selection import AnalysisStateCache, build_analysis_geometry, build_analysis_mask, resolve_weighting_mode
+from helios.services.derived.selection import (
+    AnalysisStateCache,
+    build_analysis_geometry,
+    build_analysis_mask,
+    resolve_weighting_mode,
+)
 from helios.services.derived.shock_tracking import (
     build_interface_events_from_wave_tracking,
     track_shock_front,

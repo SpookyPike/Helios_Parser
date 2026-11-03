@@ -1,27 +1,31 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import gc
+import hashlib
 import json
 import os
-from pathlib import Path
 import platform
 import statistics
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from helios.cache import AnalyzerCacheSet, get_session_raw_data_cache, retire_run_revision
+from helios.cache import (
+    AnalyzerCacheSet,
+    clear_session_raw_data_cache,
+    estimate_nbytes,
+    get_session_raw_data_cache,
+    retire_run_revision,
+)
 from helios.runtime import RunContext, RunRevision
 from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
 from helios.services.derived.common import load_run_data
-from helios.cache import estimate_nbytes
-from helios.cache import clear_session_raw_data_cache
 
 
 def _rss_bytes() -> int | None:

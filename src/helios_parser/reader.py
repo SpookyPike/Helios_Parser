@@ -20,6 +20,7 @@ import h5py
 import numpy as np
 
 from helios.instrumentation import timed_block
+
 from .coordinates import (
     build_coordinate_edge_array,
     build_coordinate_edge_grid,

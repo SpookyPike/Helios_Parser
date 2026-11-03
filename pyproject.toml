@@ -53,15 +53,29 @@ helios_viewer = ["assets/fonts/*.ttf", "assets/*.png", "assets/*.ico", "assets/i
 ]
 
 [tool.black]
-line-length = 88
+line-length = 120
 target-version = ["py310"]
 
 [tool.ruff]
-line-length = 88
+# The codebase was written at roughly 120 columns; the previous 88 was declared
+# but never applied, so a formatter run at 88 rewrites about 45k lines. 120 is
+# the length the source actually uses.
+line-length = 120
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+# E501 is deliberately not selected: line width belongs to the formatter, and
+# selecting both makes every formatting decision a lint failure. E402 is not
+# selected globally because scripts and tests bootstrap sys.path before
+# importing the package; the per-file ignores below scope that exception, and
+# src is expected to be E402-clean.
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# These entries put the repository root on sys.path before importing the
+# package under test, which requires imports after executable statements.
+"scripts/*" = ["E402"]
+"tests/*" = ["E402"]
 
 [tool.coverage.run]
 # Measure the package and the gate scripts together. Measuring only `src` would

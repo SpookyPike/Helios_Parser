@@ -1,28 +1,26 @@
 from __future__ import annotations
 
-from dataclasses import replace
 import importlib
 import sys
 import time
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
-import numpy as np
-
 import _test_bootstrap  # noqa: F401
+import numpy as np
 from _slow_tests import slow
-
 from _viewer_test_utils import get_app, process_events, wait_until
+
 from helios.cache import AnalyzerCacheSet, BoundedCacheBucket
 from helios.cancellation import CancellationToken
 from helios.runtime import RunContext
-from helios.tasks import AnalysisTaskManager
 from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
 from helios.services.derived.common import load_run_data
 from helios.services.derived.models import DerivedAnalysisResult, DerivedPlotBundle
+from helios.tasks import AnalysisTaskManager
 from helios_analysis.controller import DerivedController
 from helios_viewer.plots import CurvePlotWidget
-
 
 HDF5_ROOT = Path(__file__).resolve().parents[1] / "outputs" / "hdf5"
 
@@ -142,7 +140,6 @@ class ResidualFixPassTests(unittest.TestCase):
 
     def test_task_manager_uses_single_persistent_pool_configuration(self) -> None:
         manager = AnalysisTaskManager()
-        completed: list[int] = []
         for value in (1, 2):
             manager.submit(context_key=("pool", value), fn=lambda value=value: value)
         wait_until(lambda: manager.stats().completed == 2, timeout_s=5.0)

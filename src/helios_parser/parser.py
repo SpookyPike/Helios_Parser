@@ -20,10 +20,11 @@ from typing import Any, Iterable, Iterator
 import numpy as np
 
 from helios.instrumentation import timed_block
+
 from .coordinates import CoordinateValidationIssue, build_coordinate_model, coordinate_name_for_geometry
 from .model import HeliosHeader, HeliosPreview, Simulation, Snapshot
-from .tokenizer import RegexTokenizer
 from .quantities import plasma_pressure, total_pressure
+from .tokenizer import RegexTokenizer
 
 LOGGER = logging.getLogger(__name__)
 

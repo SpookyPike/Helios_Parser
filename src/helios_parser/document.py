@@ -12,7 +12,6 @@ from .indexing import StructuralIndexer
 from .model import HeliosBlockIndex, HeliosHeader, HeliosPreview, RunStatusInfo, Simulation, Snapshot
 from .parser import HeaderSemanticParser, SnapshotBlockSemanticParser, SnapshotDomainError
 
-
 RUN_COMPLETED_RE = re.compile(r"#\s*Simulation completed on\s*:\s*(.+)", re.IGNORECASE)
 RUN_ABORTED_RE = re.compile(r"#\s*Simulation (?:aborted|terminated|stopped|ended)(?:\s+on|\s+at)?\s*:?\s*(.+)?", re.IGNORECASE)
 

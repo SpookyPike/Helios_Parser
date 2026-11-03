@@ -12,7 +12,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-
 EV_TO_K = 11604.518121550082
 
 TIME_FACTORS = {

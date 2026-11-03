@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from types import SimpleNamespace
 import unittest
+from types import SimpleNamespace
 
 from helios.services.derived.common import _optional_zone_material_property
 from helios.services.derived.module_contract import DerivedModuleContract

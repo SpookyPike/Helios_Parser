@@ -7,7 +7,7 @@ stay lazy here so backend-only users do not pull Qt into the import graph
 unless they explicitly need the GUI task runner.
 """
 
-from .cache import AnalyzerCacheSet, CacheCoordinator, CacheLayer, DEFAULT_AGGREGATE_CACHE_BYTE_LIMIT
+from .cache import DEFAULT_AGGREGATE_CACHE_BYTE_LIMIT, AnalyzerCacheSet, CacheCoordinator, CacheLayer
 from .runtime import RunContext
 
 __all__ = [

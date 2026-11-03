@@ -1,0 +1,33 @@
+{
+  "//": "Project-level Python language-server config. Read by pyright, Pylance and basedpyright. Lint rules live in pyproject.toml under [tool.ruff].",
+  "include": ["src", "scripts", "tests"],
+  "exclude": [
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "**/.ruff_cache",
+    ".venv",
+    "build",
+    "dist",
+    "outputs",
+    "release_assets",
+    "packaging",
+    "x-com_fallback",
+    "**/*_old.py"
+  ],
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": ["src", "scripts", "tests"],
+  "pythonVersion": "3.10",
+  "pythonPlatform": "All",
+  "typeCheckingMode": "basic",
+  "useLibraryCodeForTypes": true,
+  "reportMissingImports": "warning",
+  "reportMissingTypeStubs": "none",
+  "reportUnusedImport": "none",
+  "reportUnusedVariable": "none",
+  "reportPrivateImportUsage": "warning",
+  "reportAttributeAccessIssue": "warning",
+  "reportOptionalMemberAccess": "warning",
+  "reportOptionalSubscript": "warning",
+  "reportGeneralTypeIssues": "warning"
+}

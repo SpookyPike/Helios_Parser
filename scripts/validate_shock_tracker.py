@@ -2,19 +2,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import numpy as np
 import matplotlib.pyplot as plt
-
+import numpy as np
 from _validation_common import (
     VALIDATION_ROOT,
     build_registry,
     compute_result_for_record,
     interface_zone_positions,
     preferred_hdf5_records,
-    save_json,
     save_figure,
+    save_json,
 )
-
 
 OUTPUT_DIR = VALIDATION_ROOT / "shock_tracker"
 

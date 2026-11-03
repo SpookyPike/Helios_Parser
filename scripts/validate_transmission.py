@@ -11,7 +11,6 @@ from _validation_common import (
     save_json,
 )
 
-
 OUTPUT_DIR = VALIDATION_ROOT / "transmission"
 
 

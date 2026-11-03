@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import unittest
 
-from PySide6 import QtCore
-from _viewer_test_utils import EXPECTED, HDF5_ROOT, find_row_by_data, get_app, reset_test_settings, wait_until
-
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
+from _viewer_test_utils import EXPECTED, HDF5_ROOT, find_row_by_data, get_app, reset_test_settings, wait_until
+from PySide6 import QtCore
+
 from helios_viewer.main_window import HeliosViewerMainWindow
 
 

@@ -4,12 +4,20 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import _test_bootstrap  # noqa: F401
 import numpy as np
+from _slow_tests import slow
+from _viewer_test_utils import (
+    HDF5_ROOT,
+    combo_set_data,
+    find_row_by_data,
+    get_app,
+    process_events,
+    reset_test_settings,
+    wait_until,
+)
 from PySide6 import QtCore, QtGui
 
-import _test_bootstrap  # noqa: F401
-from _slow_tests import slow
-from _viewer_test_utils import HDF5_ROOT, combo_set_data, find_row_by_data, get_app, process_events, reset_test_settings, wait_until
 from helios_viewer.main_window import HeliosViewerMainWindow
 
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -13,14 +12,12 @@ from pathlib import Path
 
 import h5py
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from helios_app.release import RELEASE_VERSION  # noqa: E402
-
 
 ZIP_PATH = ROOT / "outputs" / "distributables" / f"helios-parser-viewer-v{RELEASE_VERSION}-windows-portable.zip"
 ROOT_MARKERS = ("PYTHONPATH",)

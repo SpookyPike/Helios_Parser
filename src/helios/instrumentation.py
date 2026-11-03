@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from collections import Counter
-from contextlib import contextmanager
-from dataclasses import dataclass
 import logging
 import threading
 import time
+from collections import Counter
+from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import Iterator
 
 

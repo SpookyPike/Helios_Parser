@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import replace
 import math
-from pathlib import Path
 import unittest
-
-import numpy as np
+from dataclasses import replace
+from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+import numpy as np
 from _slow_tests import slow
-
 from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_settings, wait_until
+
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
 from helios.services.derived.common import load_run_data

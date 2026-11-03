@@ -6,9 +6,9 @@ import unittest
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+
 from helios_parser import HeliosParser
 from helios_parser.parser import SnapshotDomainError
-
 
 ROOT = Path(__file__).resolve().parents[1]
 SAMPLE = ROOT / "5Fe+4.9TW+light.log"

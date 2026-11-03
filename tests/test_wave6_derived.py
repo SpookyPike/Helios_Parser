@@ -1,18 +1,17 @@
 from __future__ import annotations
 
+import unittest
 from dataclasses import dataclass, replace
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
-import unittest
-
-import numpy as np
-from PySide6 import QtCore, QtWidgets
 
 import _test_bootstrap  # noqa: F401
+import numpy as np
 from _slow_tests import slow
-
 from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_settings, wait_until
+from PySide6 import QtCore, QtWidgets
+
 from helios.runtime import RunContext, RunRevision
 from helios.services.derived.analysis import (
     DerivedAnalysisParameters,
@@ -22,27 +21,31 @@ from helios.services.derived.analysis import (
     registered_module_contracts,
 )
 from helios.services.derived.common import load_run_data
-from helios.services.derived.module_contract import DerivedModuleContract
 from helios.services.derived.models import (
     DerivedPlotBundle,
     InterfaceEventRecord,
     InterfaceEventsResult,
-    TransmissionPartitionSummary,
-    TransmissionColdRefinement,
-    TransmissionRegionBudget,
-    TransmissionRegimeSummary,
     PreheatBudgetRow,
     PreheatOnsetMarker,
     PreheatProfileField,
     PreheatStateMetric,
     PreheatSummary,
     PreheatThresholds,
+    TransmissionColdRefinement,
+    TransmissionPartitionSummary,
+    TransmissionRegimeSummary,
+    TransmissionRegionBudget,
     WaveBranchSummary,
     WaveTrackingResult,
 )
+from helios.services.derived.module_contract import DerivedModuleContract
 from helios.services.derived.plasmon import evaluate_plasmon_regime
 from helios.services.derived.selection import AnalysisStateCache, build_analysis_geometry
-from helios.services.derived.shock_tracking import build_shock_tracking_compatibility_result, track_shock_front, track_wave_branches
+from helios.services.derived.shock_tracking import (
+    build_shock_tracking_compatibility_result,
+    track_shock_front,
+    track_wave_branches,
+)
 from helios_analysis.controller import DerivedController
 from helios_analysis.workspace import DerivedPlotPanel, HeliosDerivedWorkspace
 from helios_viewer.main_window import HeliosViewerMainWindow
@@ -1091,7 +1094,6 @@ class Wave6DerivedTests(unittest.TestCase):
             core_key = controller._build_core_request_key(workspace.parameters())
             controller._analysis_core_cache[core_key] = partial
 
-            original_launch = controller._launch_request
 
             def _capture(request) -> None:
                 captured["request"] = request

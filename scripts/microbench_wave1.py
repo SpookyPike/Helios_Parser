@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 import statistics
 import sys
 import time
+from pathlib import Path
 
 import numpy as np
-
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 

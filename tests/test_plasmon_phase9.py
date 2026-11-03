@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import replace
 import unittest
+from dataclasses import replace
 from unittest import mock
 
-import numpy as np
-
 import _test_bootstrap  # noqa: F401
+import numpy as np
+from test_plasmon_phase3 import _synthetic_dataset
 
 from helios.services.derived.analysis import DerivedAnalysisParameters
 from helios.services.derived.plasmon import evaluate_plasmon_regime
@@ -15,10 +15,8 @@ from helios.services.derived.plasmon_spectrum import (
     epsilon_lindhard,
     epsilon_lindhard_mermin,
     epsilon_lindhard_mermin_static_lfc,
-    epsilon_lindhard_static_lfc,
 )
 from helios.services.derived.selection import AnalysisStateCache, build_analysis_geometry
-from test_plasmon_phase3 import _synthetic_dataset
 
 
 def _geometry(dataset, context, params):

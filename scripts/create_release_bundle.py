@@ -5,7 +5,6 @@ import sys
 import zipfile
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
@@ -13,7 +12,6 @@ if str(SRC) not in sys.path:
 
 from helios_app.release import APP_NAME, RELEASE_DATE, RELEASE_VERSION  # noqa: E402
 from helios_parser import write_hdf5  # noqa: E402
-
 
 OUTPUT_ROOT = ROOT / "outputs" / "release"
 BUNDLE_NAME = f"helios-parser-viewer-v{RELEASE_VERSION}"

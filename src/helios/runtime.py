@@ -10,10 +10,9 @@ reader payloads; `RunContext` only tracks the currently selected view of a run.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from dataclasses import replace
-from pathlib import Path
 import secrets
+from dataclasses import dataclass, field, replace
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import numpy as np

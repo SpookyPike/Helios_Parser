@@ -1,21 +1,20 @@
 from __future__ import annotations
 
-from dataclasses import replace
 import json
 import math
-from pathlib import Path
 import tempfile
 import time
+import unittest
+from dataclasses import replace
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
-import unittest
-
-import numpy as np
 
 import _test_bootstrap  # noqa: F401
+import numpy as np
 from _slow_tests import slow
-
 from _viewer_test_utils import HDF5_ROOT
+
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters
 from helios.services.derived.common import load_run_data
@@ -31,15 +30,14 @@ from helios.services.derived.xcom_hook import (
     ColdAttenuationRequest,
     ColdAttenuationResult,
     ColdAttenuationZone,
-    HeliosXcomBackend,
     PersistentColdAttenuationCache,
     PrecomputedColdTableBackend,
     build_cold_attenuation_request,
     canonical_fallback_table_key,
-    load_precomputed_cold_backend,
     describe_optional_cold_backend,
-    lookup_fallback_mu_rho,
     load_optional_cold_backend,
+    load_precomputed_cold_backend,
+    lookup_fallback_mu_rho,
     material_display_labels_by_id,
     normalize_material_key,
     resolve_material_identities,

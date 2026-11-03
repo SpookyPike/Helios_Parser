@@ -8,8 +8,8 @@ from ctypes import wintypes
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
-from helios_parser import write_hdf5
 
+from helios_parser import write_hdf5
 
 ROOT = Path(__file__).resolve().parents[1]
 BPF_SAMPLE = ROOT / "new_data" / "5Fe+4.9TW+light" / "5Fe+4.9TW+light.bpf"

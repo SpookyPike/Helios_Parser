@@ -13,27 +13,45 @@ state. Shell-level workflow routing lives elsewhere.
 
 from __future__ import annotations
 
-from pathlib import Path
 import logging
 import re
 import time
+from pathlib import Path
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
+
+from helios.cache import AnalyzerCacheSet
+from helios.runtime import RunContext
+from helios.services.derived.xcom_hook import material_display_labels_by_id
 
 from .controller import RunController
 from .icon import load_ui_icon, set_button_icon
 from .models import DiagnosticPayload, FieldPayload, OpenRunPayload
 from .plots import CurvePlotWidget, FieldMapWidget
+from .settings import (
+    ViewerSettingsDialog,
+    load_viewer_settings,
+    reset_viewer_settings,
+    save_viewer_settings,
+)
 from .slider import apply_absolute_click_slider_behavior
-from .settings import ViewerSettingsDialog, default_viewer_settings, load_viewer_settings, reset_viewer_settings, save_viewer_settings
-from .style import LIGHT_THEME, THEME_MODES, ViewerTheme, apply_theme, build_mono_font, configure_application, configure_combo_box_interaction
-from .units import DisplayUnitChoices, convert_field_values, convert_length_values, convert_time_values, display_unit_for_field, unit_options_for_field
+from .style import (
+    THEME_MODES,
+    ViewerTheme,
+    apply_theme,
+    build_mono_font,
+    configure_application,
+    configure_combo_box_interaction,
+)
+from .units import (
+    DisplayUnitChoices,
+    convert_field_values,
+    convert_length_values,
+    convert_time_values,
+    display_unit_for_field,
+)
 from .workspace import HeliosViewerWorkspace
-from helios.cache import AnalyzerCacheSet
-from helios.runtime import RunContext
-from helios.services.derived.xcom_hook import material_display_labels_by_id
-
 
 FIELD_LABELS = {
     "artificial_viscosity": "Artificial viscosity",

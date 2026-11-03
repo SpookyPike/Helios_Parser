@@ -1,6 +1,6 @@
 """Native integration checks; these deliberately compile and exercise XCOM."""
-import shutil
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -8,18 +8,18 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from helios.services.derived.xcom_native import (
-    NativeXcomClient,
-    compute_multizone_transmission,
-    resolve_provider,
-)
+from helios.cancellation import AnalysisCancelled
 from helios.services.derived.xcom_hook import (
     ColdAttenuationRequest,
     ColdAttenuationZone,
     HeliosXcomBackend,
     describe_optional_cold_backend,
 )
-from helios.cancellation import AnalysisCancelled
+from helios.services.derived.xcom_native import (
+    NativeXcomClient,
+    compute_multizone_transmission,
+    resolve_provider,
+)
 
 _SCRIPT_DIRECTORY = str(Path(__file__).resolve().parents[1] / "scripts")
 if _SCRIPT_DIRECTORY not in sys.path:

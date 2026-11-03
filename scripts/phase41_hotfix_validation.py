@@ -7,8 +7,7 @@ import time
 from pathlib import Path
 
 import numpy as np
-from PySide6 import QtCore, QtWidgets, QtTest
-
+from PySide6 import QtCore, QtTest, QtWidgets
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -18,7 +17,6 @@ if str(SRC) not in sys.path:
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from helios_app.main_app import HeliosParseViewMainWindow  # noqa: E402
-
 
 HDF5_ROOT = ROOT / "outputs" / "hdf5"
 SCREENSHOT_ROOT = ROOT / "outputs" / "screenshots"

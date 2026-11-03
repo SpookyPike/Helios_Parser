@@ -13,10 +13,10 @@ visualization stays in ``helios_viewer``.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import logging
 import os
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import h5py
@@ -27,11 +27,10 @@ from helios_viewer.slider import apply_absolute_click_slider_behavior
 from helios_viewer.style import THEME_MODES, build_mono_font, configure_application, configure_combo_box_interaction
 
 from .derived_controller import DerivedController
-from .parser_controller import ParsePreviewPayload, ParseProgressPayload, ParseResultPayload, ParserController
+from .parser_controller import ParsePreviewPayload, ParseProgressPayload, ParserController, ParseResultPayload
 from .release import AUTHOR_AFFILIATION, AUTHOR_NAME, RELEASE_DATE, RELEASE_VERSION
-from .session_state import AppSessionState, add_recent_file, load_session_state, save_session_state
+from .session_state import add_recent_file, load_session_state, save_session_state
 from .viewer_controller import ViewerController
-
 
 MODE_PARSER = "parser"
 MODE_VIEWER = "viewer"

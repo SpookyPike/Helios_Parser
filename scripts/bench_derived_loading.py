@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import fields, is_dataclass
 import inspect
 import json
 import os
-from pathlib import Path
 import sys
 import threading
 import time
+from dataclasses import fields, is_dataclass
+from pathlib import Path
 
 import numpy as np
 
@@ -16,8 +16,9 @@ ROOT = Path(os.environ.get("HELIOS_PERF_SOURCE_ROOT", Path(__file__).resolve().p
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from helios.services.derived.common import load_run_data
 from helios.cache import clear_session_raw_data_cache
+from helios.services.derived.common import load_run_data
+
 try:
     from helios.runtime import RunRevision
 except ImportError:  # baseline revisions before explicit run tokens

@@ -12,7 +12,6 @@ from pathlib import Path
 
 from PySide6 import QtCore
 
-
 APP_ORGANIZATION = "HeliosViewer"
 APP_NAME = "HELIOS Parse View"
 MAX_RECENT_FILES = 10

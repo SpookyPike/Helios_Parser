@@ -30,12 +30,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import _test_bootstrap  # noqa: F401
 import h5py
 import numpy as np
 
-import _test_bootstrap  # noqa: F401
 from helios_parser.exodus import (
-    EDGE_DATASET,
     VELOCITY_DATASET,
     ExodusFormatError,
     looks_like_exodus,

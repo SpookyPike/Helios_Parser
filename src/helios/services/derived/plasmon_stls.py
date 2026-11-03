@@ -17,8 +17,8 @@ polarization as the ideal-gas baseline.
 
 from __future__ import annotations
 
-from functools import lru_cache
 import math
+from functools import lru_cache
 
 import numpy as np
 
@@ -244,7 +244,6 @@ def _solve_static_stls_cached(
     g_grid = np.zeros(q_grid.shape, dtype=np.float64)
     s_grid = np.ones(q_grid.shape, dtype=np.float64)
     mixing = float(params["mixing"])
-    converged = False
     residual = float("inf")
     relative_residual = float("inf")
     for iteration in range(1, int(params["max_iter"]) + 1):
@@ -300,7 +299,6 @@ def _solve_static_stls_cached(
             (math.isfinite(residual) and residual <= float(params["tol"]))
             or (math.isfinite(relative_residual) and relative_residual <= float(params["relative_tol"]))
         ):
-            converged = True
             return (
                 tuple(float(value) for value in q_grid.tolist()),
                 tuple(float(value) for value in g_grid.tolist()),

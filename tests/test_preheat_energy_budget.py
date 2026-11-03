@@ -6,9 +6,13 @@ from unittest import mock
 
 import _test_bootstrap  # noqa: F401
 import numpy as np
-from helios.services.derived.preheat import _cumulative_energy_difference_budget, _rate_integration_budget
-from helios.services.derived.preheat import evaluate_preheat
 from test_derived_services_phase4 import _synthetic_dataset
+
+from helios.services.derived.preheat import (
+    _cumulative_energy_difference_budget,
+    _rate_integration_budget,
+    evaluate_preheat,
+)
 
 
 class PreheatEnergyBudgetTests(unittest.TestCase):

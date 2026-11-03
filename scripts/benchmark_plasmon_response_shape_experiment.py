@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import math
 from pathlib import Path
 
@@ -23,11 +22,10 @@ try:
     from benchmark_plasmon_article_cases import (
         ARTICLE_DRIVEN_DENSITY_GRID,
         ARTICLE_DRIVEN_TEMPERATURE_EV,
-        build_report,
         _uniform_policy_state_summary,
+        build_report,
     )
     from benchmark_plasmon_experimental_response_model import (
-        FROZEN_BASELINE_DIR,
         PRIMARY_CASE_POLICIES,
         _decorate_rows,
         _equivalence_rows,
@@ -41,11 +39,10 @@ except ModuleNotFoundError:  # pragma: no cover
     from scripts.benchmark_plasmon_article_cases import (  # type: ignore
         ARTICLE_DRIVEN_DENSITY_GRID,
         ARTICLE_DRIVEN_TEMPERATURE_EV,
-        build_report,
         _uniform_policy_state_summary,
+        build_report,
     )
     from scripts.benchmark_plasmon_experimental_response_model import (  # type: ignore
-        FROZEN_BASELINE_DIR,
         PRIMARY_CASE_POLICIES,
         _decorate_rows,
         _equivalence_rows,

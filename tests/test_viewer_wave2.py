@@ -1,22 +1,27 @@
 from __future__ import annotations
 
-from pathlib import Path
-from types import SimpleNamespace
 import threading
 import unittest
+from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
-import numpy as np
-
 import _test_bootstrap  # noqa: F401
+import numpy as np
 from _slow_tests import slow
-
 from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_settings, wait_until
-from helios_parser import HeliosRun
+
 from helios.runtime import RunRevision
+from helios_parser import HeliosRun
 from helios_viewer.controller import RunController
-from helios_viewer.main_window import HeliosViewerMainWindow, _REFRESH_FIELD_MAP, _REFRESH_LINE
-from helios_viewer.models import DiagnosticPayload, FieldPayload, FieldTracePayload, OpenRunPayload, SnapshotFieldPayload
+from helios_viewer.main_window import _REFRESH_FIELD_MAP, _REFRESH_LINE, HeliosViewerMainWindow
+from helios_viewer.models import (
+    DiagnosticPayload,
+    FieldPayload,
+    FieldTracePayload,
+    OpenRunPayload,
+    SnapshotFieldPayload,
+)
 
 
 def _build_open_run_payload(path: Path, generation: int) -> OpenRunPayload:

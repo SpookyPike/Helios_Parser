@@ -10,8 +10,8 @@ workspace task so opening its defaults never reads HDF5 on the UI thread.
 from __future__ import annotations
 
 import math
-from pathlib import Path
 import time
+from pathlib import Path
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -20,13 +20,24 @@ from helios.feature_flags import production_feature_visible
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters
 from helios.services.derived.common import load_run_data
-from helios.services.derived.plasmon_export import plasmon_export_is_ready, write_plasmon_spectrum_csv
+from helios.services.derived.models import (
+    DerivedAnalysisResult,
+    DerivedPlotBundle,
+    InterfaceEventsResult,
+    PlasmonResult,
+    PreheatSummary,
+    RadiationResult,
+    ShockTrackingResult,
+    SpectroscopyResult,
+    TransmissionResult,
+    WaveBranchSummary,
+    WaveTrackingResult,
+    XrdResult,
+)
 from helios.services.derived.plasmon_config import (
     PLASMON_AXIS_ANGLE_DEG,
     PLASMON_AXIS_CHOICES,
     PLASMON_AXIS_K_ANGSTROM_INV,
-    PLASMON_MODEL_AUTO_BEST,
-    PLASMON_BENCHMARK_PRESET_AL_AMBIENT_ARTICLE,
     PLASMON_BENCHMARK_PRESET_AL_DRIVEN_ARTICLE,
     PLASMON_BENCHMARK_PRESET_CHOICES,
     PLASMON_BENCHMARK_PRESET_NONE,
@@ -43,10 +54,10 @@ from helios.services.derived.plasmon_config import (
     PLASMON_LFC_MODEL_NONE,
     PLASMON_MODEL_CHOICES,
     PLASMON_MODEL_QUICKLOOK,
-    PLASMON_OBSERVABLE_MODE_CHOICES,
-    PLASMON_OBSERVABLE_MODE_DIELECTRIC,
     PLASMON_NORMALIZATION_CHOICES,
     PLASMON_NORMALIZATION_PEAK,
+    PLASMON_OBSERVABLE_MODE_CHOICES,
+    PLASMON_OBSERVABLE_MODE_DIELECTRIC,
     PLASMON_STUDY_MODE_CHOICES,
     PLASMON_STUDY_MODE_DISPERSION,
     PLASMON_STUDY_MODE_SPECTRUM,
@@ -57,33 +68,40 @@ from helios.services.derived.plasmon_electron_policy import (
     PLASMON_ELECTRON_POLICY_ARTICLE_AL_BENCHMARK,
     PLASMON_ELECTRON_POLICY_ARTICLE_AL_DRIVEN_INCREMENT,
     PLASMON_ELECTRON_POLICY_RAW,
-    PLASMON_BENCHMARK_POLICY_COMPARISON,
-    policy_choices as plasmon_electron_policy_choices,
-    policy_label as plasmon_electron_policy_label,
-    policy_scope as plasmon_electron_policy_scope,
     resolved_material_formula_map,
 )
+from helios.services.derived.plasmon_electron_policy import (
+    policy_choices as plasmon_electron_policy_choices,
+)
+from helios.services.derived.plasmon_electron_policy import (
+    policy_label as plasmon_electron_policy_label,
+)
+from helios.services.derived.plasmon_electron_policy import (
+    policy_scope as plasmon_electron_policy_scope,
+)
+from helios.services.derived.plasmon_export import plasmon_export_is_ready, write_plasmon_spectrum_csv
 from helios.services.derived.plasmon_units import plasmon_probe_wavelength_angstrom
 from helios.services.derived.plasmon_validation import shocked_al_slab_summary
-from helios.services.derived.models import (
-    DerivedAnalysisResult,
-    DerivedPlotBundle,
-    InterfaceEventsResult,
-    PlasmonResult,
-    PreheatSummary,
-    RadiationResult,
-    ShockTrackingResult,
-    SpectroscopyResult,
-    TransmissionResult,
-    WaveBranchSummary,
-    WaveTrackingResult,
-    XrdResult,
-)
-from helios_viewer.icon import load_ui_icon, set_button_icon
 from helios.services.units.conversions import (
     photon_energy_ev_from_wavelength_nm,
     photon_energy_kev_to_wavelength_angstrom,
     wavelength_shift_nm_to_energy_ev,
+)
+from helios_viewer.icon import load_ui_icon, set_button_icon
+from helios_viewer.plots import CurvePlotWidget
+from helios_viewer.settings import ViewerSettings, default_viewer_settings
+from helios_viewer.slider import apply_absolute_click_slider_behavior
+from helios_viewer.style import LIGHT_THEME, ViewerTheme, build_mono_font, configure_combo_box_interaction
+from helios_viewer.units import (
+    DENSITY_FACTORS,
+    LENGTH_FACTORS,
+    NUMBER_DENSITY_FACTORS,
+    PRESSURE_FACTORS,
+    RATE_FACTORS,
+    SPECIFIC_ENERGY_FACTORS,
+    TEMPERATURE_FACTORS,
+    TIME_FACTORS,
+    VELOCITY_FACTORS,
 )
 
 
@@ -138,21 +156,6 @@ class _PlasmonPresetTask(QtCore.QRunnable):
             )
         except Exception as exc:
             self.signals.failed.emit(self.request_key, str(exc))
-from helios_viewer.plots import CurvePlotWidget
-from helios_viewer.settings import ViewerSettings, default_viewer_settings
-from helios_viewer.slider import apply_absolute_click_slider_behavior
-from helios_viewer.style import LIGHT_THEME, ViewerTheme, build_mono_font, configure_combo_box_interaction
-from helios_viewer.units import (
-    DENSITY_FACTORS,
-    LENGTH_FACTORS,
-    NUMBER_DENSITY_FACTORS,
-    PRESSURE_FACTORS,
-    RATE_FACTORS,
-    SPECIFIC_ENERGY_FACTORS,
-    TEMPERATURE_FACTORS,
-    TIME_FACTORS,
-    VELOCITY_FACTORS,
-)
 
 
 def _format_optional(value: float | None, fmt: str = "{:.3g}", *, suffix: str = "-") -> str:

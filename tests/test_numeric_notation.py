@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 import _test_bootstrap  # noqa: F401
+
 from helios_parser.tokenizer import RegexTokenizer
 
 

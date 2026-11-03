@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore
 
 from helios_viewer.main_window import HeliosViewerMainWindow
 from helios_viewer.workspace import HeliosViewerWorkspace

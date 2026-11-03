@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-import numpy as np
-
 import _test_bootstrap  # noqa: F401
+import numpy as np
 
 from helios.services.derived.plasmon_reference_data import (
     GAWNE_2024_AMBIENT_AL_DISPERSION_FIGS5,
@@ -12,9 +11,9 @@ from helios.services.derived.plasmon_reference_data import (
 )
 from scripts.validate_plasmon_step8_dispersion import (
     _all_q_points,
+    _compute_model_grid,
     _metric_row,
     _series_points,
-    _compute_model_grid,
 )
 
 

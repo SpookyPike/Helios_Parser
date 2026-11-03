@@ -15,7 +15,6 @@ from helios_parser import write_hdf5
 from helios_viewer.main_window import HeliosViewerMainWindow
 from helios_viewer.style import DARK_THEME, LIGHT_THEME
 
-
 TRACKED_BPF = (
     Path(__file__).resolve().parents[1]
     / "new_data"

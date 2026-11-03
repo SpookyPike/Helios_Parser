@@ -11,6 +11,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - package import path
     from scripts import _script_bootstrap  # type: ignore  # noqa: F401
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np

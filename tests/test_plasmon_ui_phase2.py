@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import replace
-from pathlib import Path
 import threading
 import unittest
+from dataclasses import replace
+from pathlib import Path
 from unittest import mock
 
 import numpy as np
@@ -22,13 +22,13 @@ if QtWidgets is not None:
     from _viewer_test_utils import get_app, process_events, reset_test_settings, wait_until
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
+from helios.services.derived.models import DerivedFieldCapabilities, DerivedRunData, DerivedWarning
 from helios.services.derived.plasmon_config import (
     PLASMON_MODEL_FINITE_T_STLS,
     PLASMON_MODEL_QUANTUM_HYDRODYNAMIC,
     PLASMON_OBSERVABLE_MODE_XRTS,
     PLASMON_OBSERVABLE_MODE_XRTS_ARTICLE_NATIVE,
 )
-from helios.services.derived.models import DerivedFieldCapabilities, DerivedRunData, DerivedWarning
 from helios.services.derived.plasmon_validation import q_to_angle_deg, uniform_al_dataset
 
 if QtWidgets is not None:

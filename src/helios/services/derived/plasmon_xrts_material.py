@@ -14,8 +14,8 @@ article-facing Al observable layer that remains explicit about its limits.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 import numpy as np
 

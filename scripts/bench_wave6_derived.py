@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
 import json
 import sys
 import time
+from pathlib import Path
 
 import numpy as np
 from PySide6 import QtWidgets

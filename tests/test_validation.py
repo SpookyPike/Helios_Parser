@@ -5,14 +5,13 @@ import unittest
 import warnings
 from pathlib import Path
 
+import _test_bootstrap  # noqa: F401
 import h5py
 import numpy as np
-
-import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
+
 from helios_parser import HeliosParser, HeliosPreview, inspect, parse, preview, write_hdf5
 from helios_parser.document import normalize_diagnostic_value, reconcile_diagnostic_width
-
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE_FIELDS = {"density", "pressure", "velocity", "temperature_e", "temperature_i"}
