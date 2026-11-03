@@ -812,7 +812,14 @@ def _compute_module_results(
                     progress_check=progress_check,
                 )
         contract.validate(module_result)
-        if existing is not None:
+        if existing is not None and _base_module_key_matches(base_result, parameters):
+            # Only carry traces over from a result computed with the same module
+            # parameters. include_time_plots is False whenever the old result
+            # already had plots, so an unguarded merge would pair a recomputed
+            # snapshot profile with traces from the previous parameter set: a new
+            # plasmon energy would show new profiles against old-energy traces.
+            # Dropping them instead makes the workspace request the plots for the
+            # active module, which recomputes them under the current parameters.
             module_result = contract.merge_time_plots(existing, module_result)
         computed[contract.name] = module_result
     return (
