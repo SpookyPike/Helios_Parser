@@ -33,25 +33,39 @@ from helios_parser import write_hdf5
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "5Fe+4.9TW+light.log"
 
-# Column order after `Radius` in the per-snapshot table header.
+# Every numeric column the log prints, mapped to the field dataset it becomes.
+# Order in the row after the zone index and the radius, i.e. parts[2 + index]:
+# width, Mass dens, Velocity, Rad temp, Ion temp, Elec temp, Ion press,
+# Elec press, Rad press, Compression, Elec Dens, Mean Chg, Art. Visc.
 FIELD_COLUMNS = {
+    "zone_width": "Zone width",
     "density": "Mass dens",
     "velocity": "Velocity",
-    "temperature_e": "Elec temp",
+    "temperature_radiation": "Rad temp",
     "temperature_i": "Ion temp",
+    "temperature_e": "Elec temp",
+    "pressure_i": "Ion press",
+    "pressure_e": "Elec press",
+    "pressure_radiation": "Rad press",
+    "compression": "Compression",
     "electron_density": "Elec Dens",
     "mean_charge": "Mean Chg",
+    "artificial_viscosity": "Art. Visc.",
 }
-# Index into the row after the zone index and the radius, i.e. parts[2 + index].
-# Order in the table: width, Mass dens, Velocity, Rad temp, Ion temp, Elec temp,
-# Ion press, Elec press, Rad press, Compression, Elec Dens, Mean Chg, Art. Visc.
 COLUMN_INDEX = {
+    "zone_width": 0,
     "density": 1,
     "velocity": 2,
+    "temperature_radiation": 3,
     "temperature_i": 4,
     "temperature_e": 5,
+    "pressure_i": 6,
+    "pressure_e": 7,
+    "pressure_radiation": 8,
+    "compression": 9,
     "electron_density": 10,
     "mean_charge": 11,
+    "artificial_viscosity": 12,
 }
 
 
@@ -116,16 +130,28 @@ class LogIsTheOracleTests(unittest.TestCase):
     def test_every_physics_column_is_copied_verbatim(self) -> None:
         """The strongest statement available: no rounding, no reinterpretation."""
 
-        for snapshot in (0, len(self.headers) - 1):
+        checked = 0
+        for snapshot in range(len(self.headers)):
             radius, columns = _parse_snapshot(self.lines, self.headers[snapshot])
             n_zones = int(self.handle["fields/density"].shape[1])
             self.assertEqual(radius.size, n_zones + 1, "a snapshot has one radius row per boundary")
             for field_name in FIELD_COLUMNS:
+                if f"fields/{field_name}" not in self.handle:
+                    continue
+                checked += 1
                 with self.subTest(snapshot=snapshot, field=field_name):
                     stored = np.asarray(self.handle[f"fields/{field_name}"][snapshot], dtype=np.float64)
                     expected = columns[field_name]
                     self.assertEqual(stored.shape, expected.shape)
                     np.testing.assert_array_equal(stored, expected)
+
+        # Every mapped column must actually have been compared, so a rename
+        # cannot silently shrink this test's coverage to nothing.
+        self.assertEqual(
+            checked,
+            len(FIELD_COLUMNS) * len(self.headers),
+            f"compared {checked} column-snapshots, expected {len(FIELD_COLUMNS) * len(self.headers)}",
+        )
 
     def test_the_log_radius_column_is_the_stored_edge_grid(self) -> None:
         for snapshot in (0, len(self.headers) - 1):
