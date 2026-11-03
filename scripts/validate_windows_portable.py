@@ -109,7 +109,7 @@ def main() -> int:
         with h5py.File(output, "r") as handle:
             schema = handle.attrs.get("schema_version")
             field_count = len(handle["fields"].keys())
-        if str(schema) != "2.1" or field_count < 20:
+        if str(schema) != "2.2" or field_count < 20:
             raise RuntimeError(f"unexpected portable output schema={schema!r} fields={field_count}")
         env["QT_QPA_PLATFORM"] = "offscreen"
         process = subprocess.Popen([str(gui), str(output)], cwd=tmp, env=env)

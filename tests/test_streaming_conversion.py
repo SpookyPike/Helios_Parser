@@ -91,7 +91,7 @@ class StreamingConversionTests(unittest.TestCase):
                 self.assertEqual(run.get_field_metadata("pressure").quantity, "total_pressure")
 
             with h5py.File(output, "r") as handle:
-                self.assertEqual(handle.attrs["schema_version"], "2.1")
+                self.assertEqual(handle.attrs["schema_version"], "2.2")
                 self.assertEqual(handle["fields/pressure"].id, handle["fields/total_pressure_j_cm3"].id)
 
             self.assertTrue(any(stage == "snapshots" and current == 1 for stage, current, _ in progress_events))

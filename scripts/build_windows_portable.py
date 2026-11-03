@@ -48,7 +48,7 @@ Writable outputs are created wherever the user chooses in the app or CLI. The
 application does not require administrator privileges and does not need a source
 checkout or `pip install`.
 
-Sample inputs are in `sample_data/`. A schema-2.1 BPF-derived HDF5 example is
+Sample inputs are in `sample_data/`. A schema-2.2 BPF-derived HDF5 example is
 in `examples/`.
 {native_note}
 """

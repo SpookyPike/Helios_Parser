@@ -30,7 +30,7 @@ from .parser import DEFAULT_TOKENIZER, HeliosParser, SnapshotDomainError
 
 LOGGER = logging.getLogger(__name__)
 STRING_DTYPE = h5py.string_dtype(encoding="utf-8")
-H5D_SCHEMA_VERSION = "2.1"
+H5D_SCHEMA_VERSION = "2.2"
 SUPPORTED_INPUT_SUFFIXES = {".log", ".bpf", ".exo"}
 
 
@@ -104,7 +104,9 @@ def _field_chunk_shape(n_snapshots: int, n_zones: int) -> tuple[int, int]:
     # and short sequential scrubs dominate. Keep each chunk row-complete and
     # only span a small number of snapshots so snapshot reads touch one chunk
     # while zone-column access stays acceptable as a secondary pattern.
-    time_chunk = min(max(1, n_snapshots), 16)
+    # 32 matches the writer flush size, so one flush lands in exactly one chunk
+    # instead of splitting across two and forcing a read-modify-write.
+    time_chunk = min(max(1, n_snapshots), 32)
     zone_chunk = max(1, n_zones)
     return (time_chunk, zone_chunk)
 
@@ -341,19 +343,34 @@ def resolve_parse_sources(input_path: str | Path) -> ParseSourceSelection:
     )
 
 
-def _time_major_chunk_shape(shape: tuple[int, ...]) -> tuple[int, ...]:
+def _time_major_chunk_shape(shape: tuple[int, ...], *, time_chunk: int = 16) -> tuple[int, ...]:
     """Chunk a time-major array so one dump is one chunk.
 
     Viewer and analysis access is snapshot-major: a single dump is read whole,
     sequential scrubs touch neighbouring dumps.  Sixteen dumps per chunk keeps a
     scrub cheap without letting a chunk outgrow the block cache.
+
+    ``time_chunk`` overrides the snapshot extent for families whose flush batch
+    is larger, so the writer lands whole chunks instead of half chunks.
     """
     if not shape:
         return ()
-    time_chunk = min(max(1, shape[0]), 16)
+    extent = min(max(1, shape[0]), max(1, time_chunk))
     if len(shape) == 1:
-        return (time_chunk,)
-    return (time_chunk,) + tuple(max(1, width) for width in shape[1:])
+        return (extent,)
+    return (extent,) + tuple(max(1, width) for width in shape[1:])
+
+
+def _spectral_chunk_shape(shape: tuple[int, ...]) -> tuple[int, ...]:
+    """Chunk a radiation array so one spectral dump is exactly one chunk.
+
+    A production dump is 1202 nodes x 250 groups, about 2.4 MB.  Sixteen dumps
+    per chunk is 38.5 MB, which no HDF5 chunk cache can hold, so reading one
+    dump inflates sixteen.  One dump per chunk keeps that read proportional.
+    """
+    if not shape:
+        return ()
+    return (1,) + tuple(max(1, width) for width in shape[1:])
 
 
 def _create_bpf_field_dataset(
@@ -372,7 +389,7 @@ def _create_bpf_field_dataset(
         shape=shape,
         dtype=array.dtype,
         compression=compression if array.dtype.kind == "f" else None,
-        chunks=_time_major_chunk_shape(shape),
+        chunks=_time_major_chunk_shape(shape, time_chunk=32),
     )
     _set_field_metadata(dataset, metadata)
     _write_field_metadata_group(field_metadata_group, name, metadata)
@@ -983,7 +1000,7 @@ def _write_radiation_groups(
             values,
             "eV",
             compression=compression,
-            chunks=_time_major_chunk_shape(values.shape),
+            chunks=_spectral_chunk_shape(values.shape),
         )
     _write_array_dataset(radiation_group, "node_axis", spectral.node_axis_cm, "cm", compression=compression)
     for name, values in spectral.fields.items():
@@ -995,7 +1012,7 @@ def _write_radiation_groups(
             values,
             spectral.field_units.get(name, ""),
             compression=compression,
-            chunks=_time_major_chunk_shape(values.shape),
+            chunks=_spectral_chunk_shape(values.shape),
         )
 
     integrated_group = radiation_group.create_group("integrated")
