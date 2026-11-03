@@ -110,8 +110,8 @@
     },
     "local_h5_cu1e17_cyl": {
       "path": "Cu1e17_cyl_stabilized.h5",
-      "size_bytes": 15610896,
-      "sha256": "de47ad95045487514da6e00c4406c9ab220e1358a2dc1f5424a27d864466b061",
+      "size_bytes": 9696032,
+      "sha256": "3348a63ce9a1627dafb35480597e223140e6283a68b0af4e7064463d8dff4472",
       "format": "HELIOS HDF5",
       "dimensions": {
         "zones": 400,
@@ -134,8 +134,8 @@
     },
     "local_h5_fe": {
       "path": "outputs/hdf5/5Fe+4.9TW+light_stabilized.h5",
-      "size_bytes": 1188400,
-      "sha256": "1887eaa88529dc0b66c4aec528d52ba9be4b4a99b969fd32715807e48ce49d7c",
+      "size_bytes": 1360952,
+      "sha256": "759ec5ae77c9f6b15e702598700b2caa2f1e0dc6bdf64d0c534946507d1bf3e9",
       "format": "HELIOS HDF5",
       "dimensions": {
         "zones": 500,
@@ -147,8 +147,8 @@
     },
     "local_h5_cu": {
       "path": "outputs/hdf5/Cu_0166_stabilized.h5",
-      "size_bytes": 57246408,
-      "sha256": "a4f46d7ddd8ea16b905e609e3cb7eecf6d95e3d21ba21d84be87ffbfdf1e660f",
+      "size_bytes": 35277248,
+      "sha256": "3ba416dc80f145af52d259a5cf810283e77d6c5628879049b3993e0e2084a702",
       "format": "HELIOS HDF5",
       "dimensions": {
         "zones": 300,
@@ -160,8 +160,8 @@
     },
     "local_h5_cu_root": {
       "path": "Cu_0166_stabilized.h5",
-      "size_bytes": 57246408,
-      "sha256": "65825e5281600ccb7983ac9a8042e9b4bd088439b748e2cc4c7240a84b174723",
+      "size_bytes": 35277248,
+      "sha256": "3ba416dc80f145af52d259a5cf810283e77d6c5628879049b3993e0e2084a702",
       "format": "HELIOS HDF5",
       "dimensions": {
         "zones": 300,
@@ -173,8 +173,8 @@
     },
     "local_h5_50al_root": {
       "path": "50Al+10E+25CH+3.5TW_stabilized.h5",
-      "size_bytes": 246382488,
-      "sha256": "a48f98adc437f2a9b8590541461ae539820ff345a09f2f72bc5e6cbcc774bdd7",
+      "size_bytes": 232628416,
+      "sha256": "5751ccc88fab811b2d5a008200f336e55963d2eb948f2114f783376f22ed5dfa",
       "format": "HELIOS HDF5",
       "dimensions": {
         "zones": 1300,
@@ -186,8 +186,8 @@
     },
     "local_h5_si": {
       "path": "outputs/hdf5/10ns+10Si+60Al+15Si+4.27TW_stabilized.h5",
-      "size_bytes": 225897264,
-      "sha256": "8d3242b8d48f302e5ad821f9fb42b3121c38b8b15563fdd01fdbe905b3fe1fc9",
+      "size_bytes": 213295304,
+      "sha256": "a1939d377b02c5aa4b2ea925589cc3b22631df0e8618ce0bc9513e8c858bbcb0",
       "format": "HELIOS HDF5",
       "dimensions": {
         "zones": 1300,
@@ -317,6 +317,9 @@
       "local_fe_log"
     ],
     "test_snapshot_numeric_domains.py": [
+      "local_fe_log"
+    ],
+    "test_log_truth.py": [
       "local_fe_log"
     ],
     "test_residual_fix_pass.py": [

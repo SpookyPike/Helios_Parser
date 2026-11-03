@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import re
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+import h5py
 
 from helios_parser import HeliosParser, HeliosRun, write_hdf5
 
@@ -83,8 +85,20 @@ class RunStatusTests(unittest.TestCase):
                 self.assertAlmostEqual(float(run.get_time()[-1]), float(status["last_valid_snapshot_time_s"]))
 
     def test_legacy_hdf5_defaults_to_unknown_status_without_silent_completion_claim(self) -> None:
-        with HeliosRun(HDF5_ROOT / "Cu_0166_stabilized.h5") as run:
-            status = run.get_run_status()
+        # Build the legacy file rather than relying on a stale golden. A
+        # current fixture carries a run_status record, which is exactly the
+        # thing this test needs absent, so removing it states the premise.
+        with tempfile.TemporaryDirectory() as tmpdir:
+            legacy = Path(tmpdir) / "legacy.h5"
+            shutil.copy2(HDF5_ROOT / "Cu_0166_stabilized.h5", legacy)
+            legacy.chmod(0o600)  # copy2 keeps the fixture's read-only mode
+            with h5py.File(legacy, "r+") as handle:
+                if "run_status" in handle:
+                    del handle["run_status"]
+                if "run_status" in handle["metadata"]:
+                    del handle["metadata"]["run_status"]
+            with HeliosRun(legacy) as run:
+                status = run.get_run_status()
         self.assertEqual(status["state"], "unknown")
         self.assertEqual(status["source"], "legacy_hdf5")
         self.assertFalse(bool(status["dropped_partial_final_block"]))
