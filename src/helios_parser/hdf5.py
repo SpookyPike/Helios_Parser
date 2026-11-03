@@ -849,22 +849,60 @@ def _write_hdf5_from_bpf_validated(
             laser_cumulative = np.zeros(layout.n_zones, dtype=np.float64)
             previous_laser_deposition: np.ndarray | None = None
             previous_time_s: float | None = None
+
+            # Buffer the writes. One h5py assignment per field per snapshot was
+            # 81,090 calls and 68% of a BPF conversion, most of it hyperslab and
+            # weakref bookkeeping rather than data movement. Flushing in blocks
+            # of 32 matches the LOG writer's batch size.
+            _batch = 32
+            _field_buffers = {
+                _name: np.empty((_batch,) + tuple(int(_size) for _size in _dataset.shape[1:]), dtype=np.float64)
+                for _name, _dataset in field_datasets.items()
+            }
+            _center_buffer = np.empty((_batch, int(dynamic_center.shape[1])), dtype=np.float64)
+            _edge_buffer = np.empty((_batch, int(dynamic_edge.shape[1])), dtype=np.float64)
+            _sampled_buffer = np.empty((_batch, int(bpf_sampled_source_dataset.shape[1])), dtype=np.float64)
+            _source_buffer = np.empty((_batch, int(laser_source_dataset.shape[1])), dtype=np.float64)
+            _time_buffer = np.empty(_batch, dtype=np.float64)
+            _cycle_buffer = np.empty(_batch, dtype=np.int64)
+            _batch_start = 0
+            _batch_count = 0
+
+            def _flush_bpf_batch(_start: int, _count: int) -> None:
+                if _count <= 0:
+                    return
+                _stop = _start + _count
+                time_dataset[_start:_stop] = _time_buffer[:_count]
+                cycle_dataset[_start:_stop] = _cycle_buffer[:_count]
+                dynamic_center[_start:_stop, :] = _center_buffer[:_count, :]
+                dynamic_edge[_start:_stop, :] = _edge_buffer[:_count, :]
+                bpf_sampled_source_dataset[_start:_stop, :] = _sampled_buffer[:_count, :]
+                laser_source_dataset[_start:_stop, :] = _source_buffer[:_count, :]
+                for _name, _dataset in field_datasets.items():
+                    _dataset[_start:_stop, ...] = _field_buffers[_name][:_count, ...]
+
             for written_index, snapshot in enumerate(snapshot_iter()):
-                time_dataset[written_index] = snapshot.time_s
-                cycle_dataset[written_index] = snapshot.cycle
-                dynamic_center[written_index, :] = snapshot.fields["zone_center_cm"]
-                dynamic_edge[written_index, :] = snapshot.fields["node_position_cm"]
-                for name, dataset in field_datasets.items():
-                    dataset[written_index, ...] = snapshot.fields[name]
+                _local = _batch_count
+                _time_buffer[_local] = snapshot.time_s
+                _cycle_buffer[_local] = snapshot.cycle
+                _center_buffer[_local, :] = snapshot.fields["zone_center_cm"]
+                _edge_buffer[_local, :] = snapshot.fields["node_position_cm"]
+                for name in field_datasets:
+                    _field_buffers[name][_local, ...] = snapshot.fields[name]
                 laser_deposition = np.asarray(snapshot.fields["laser_deposition_j_g_s"], dtype=np.float64)
                 if previous_time_s is not None and previous_laser_deposition is not None:
                     dt = max(0.0, float(snapshot.time_s) - float(previous_time_s))
                     laser_cumulative += 0.5 * (previous_laser_deposition + laser_deposition) * dt
-                bpf_sampled_source_dataset[written_index, :] = laser_cumulative
+                _sampled_buffer[_local, :] = laser_cumulative
                 if log_source_dataset is not None:
-                    laser_source_dataset[written_index, :] = log_source_dataset[written_index]
+                    _source_buffer[_local, :] = log_source_dataset[written_index]
                 else:
-                    laser_source_dataset[written_index, :] = laser_cumulative
+                    _source_buffer[_local, :] = laser_cumulative
+                _batch_count += 1
+                if _batch_count == _batch:
+                    _flush_bpf_batch(_batch_start, _batch_count)
+                    _batch_start += _batch_count
+                    _batch_count = 0
                 previous_time_s = float(snapshot.time_s)
                 previous_laser_deposition = laser_deposition.copy()
                 emit_progress(
@@ -874,6 +912,7 @@ def _write_hdf5_from_bpf_validated(
                     0.10 + 0.84 * ((written_index + 1) / max(1, layout.n_snapshots)),
                     f"Writing BPF snapshots ({written_index + 1}/{layout.n_snapshots})",
                 )
+            _flush_bpf_batch(_batch_start, _batch_count)
 
             for canonical, alias in LOG_COMPATIBLE_BPF_ALIASES.items():
                 if canonical in fields_group and alias not in fields_group:
