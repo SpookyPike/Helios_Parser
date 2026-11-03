@@ -1,6 +1,6 @@
 # HELIOS Parse / View Architecture Reference
 
-This is the concise code-facing architecture note for the current 0.9.0 tree.
+This is the concise code-facing architecture note for the current 2.0.0 tree.
 Use it together with:
 
 - [Documentation index](index.html)
@@ -11,7 +11,10 @@ Use it together with:
 
 The application is intentionally split into layers:
 
-- [`src/helios_parser/`](../src/helios_parser/): HELIOS log parser, schema normalization, HDF5 writing, lazy HDF5 reader
+- [`src/helios_parser/`](../src/helios_parser/): HELIOS log parser, schema normalization, HDF5 writing, lazy HDF5 reader.
+  The writer owns the chunk layout for schema `2.2` and the centre/edge coordinate contract; see
+  [the H5D schema](bpf_h5d_schema.md). The reader never reads `schema_version`, only the required group set, so older
+  files stay readable and no version gate may be added.
 - [`src/helios/`](../src/helios/): shared runtime context, cache buckets, task utilities, units, and derived services
 - [`src/helios_viewer/`](../src/helios_viewer/): production HDF5 viewer, plotting, settings, and viewer controller
 - [`src/helios_analysis/`](../src/helios_analysis/): Derived / Analysis workspace and controller

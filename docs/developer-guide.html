@@ -14,7 +14,7 @@
         <h1>Developer Guide</h1>
         <p>
           Architecture and implementation guide for engineers working on parser, runtime, viewer,
-          derived analysis, WaveFront, Preheat, BPF-primary parsing, production feature gates, packaging, and experimental Transmission/XCOM integration in HELIOS Parse / View 1.4.0.
+          derived analysis, WaveFront, Preheat, BPF-primary parsing, production feature gates, packaging, and experimental Transmission/XCOM integration in HELIOS Parse / View 2.0.0.
         </p>
       </div>
     </div>
@@ -81,8 +81,20 @@
           <tr><td>viewer display caches</td><td>viewer session</td><td>converted display arrays, field bundles, moving-mesh helpers</td><td>input array identity + display units + mode</td></tr>
           <tr><td>analysis state cache</td><td>derived request scope</td><td>selection masks, weights, shared weighted moments, time-series payloads</td><td>run + geometry + selection + compute parameters</td></tr>
           <tr><td>derived result cache</td><td>controller/workspace</td><td>reuse base result, WaveFront, and Preheat across tab switches and lightweight updates</td><td>request key with active advanced need and snapshot scope</td></tr>
+          <tr><td>derived core cache</td><td>controller</td><td>geometry and the shock/wave selection, so a plasmon or XRD edit does not discard wavefront state</td><td><code>core_key()</code>: geometry plus selection only</td></tr>
         </tbody>
       </table>
+      <p>
+        <strong>The two derived levels must not share a key shape.</strong> <code>key()</code> covers every parameter and
+        <code>core_key()</code> covers only geometry and the shock/wave selection. Because the full request key derives from the
+        core key, the split needs guards rather than a key edit: cached results carry a <code>module_key</code> and are reused only
+        when it matches, and <code>_can_reuse_preheat</code> runs on every reuse path. Shrinking <code>core_key()</code> without
+        those guards serves stale plasmon, XRD or spectroscopy results.
+      </p>
+      <p>
+        Display caches that key on <code>id(array)</code> must also hold a reference to that array in the entry. Otherwise a freed
+        array's id can be recycled by a different array with the same shape and endpoints, and the stale conversion is returned.
+      </p>
       <p>
         Caches are bounded and intentionally observable. Hits, misses, evictions, and clear counts are lightweight engineering signals,
         not a production telemetry system.
@@ -201,7 +213,27 @@
         <li>Prefer cached arrays and typed result reuse over rebuilding HDF5-backed objects.</li>
         <li>Keep plot updates local to already-computed results whenever possible.</li>
         <li>Do not re-probe XCOM backend health or re-open the fallback table on every trivial UI repaint; both are session-cached.</li>
+        <li>Do not scan text you are about to parse. A regex pre-check over the log tables cost 1.70 s of a 3.72 s conversion; a
+          <code>try/except</code> around the parse replaced it. <code>np.fromstring</code> raises on a malformed token, so a size
+          comparison alone is not a guard.</li>
+        <li>Do not write HDF5 one field at a time. One write per field per snapshot was 81,090 calls per conversion and 68 % of the
+          profile; buffer 32 snapshots and size each buffer from that dataset's own trailing shape, because node, group-boundary
+          and per-material fields are not all the same width.</li>
+        <li>Do not call <code>np.linalg.lstsq</code> in a loop over small systems. It rejects stacked input, so batch the normal
+          equations and use <code>np.linalg.solve</code>, with a <code>LinAlgError</code> fallback because squaring the condition
+          number loses the rank truncation a saturated window needs.</li>
+        <li>Do not resolve or reapply a colormap whose name has not changed. Render-path transitions are the exception and call
+          <code>_apply_active_colormap</code> directly.</li>
+        <li>Do not let a slider emit per intermediate drag value. <code>setTracking(False)</code> removes them at the source;
+          deferring the handler instead adds latency to keyboard and programmatic paths that were never slow.</li>
       </ul>
+      <p>
+        Measure before fixing. Several audit findings in this area were measured and deliberately left alone because they could not
+        move a millisecond-scale operation: a per-snapshot coordinate memo bought 1.7 % of a 79 ms scrub whose real cost was a
+        coordinate validation that has to stay, an 8 MiB HDF5 chunk cache measured neutral to slightly worse on uncompressed
+        datasets, and an HDF5 readiness probe costs 0.28 ms even on a 225 MB file because it reads group metadata rather than data.
+        A/B on the same machine with a warm page cache, report medians, and record absolute milliseconds alongside any ratio.
+      </p>
       <p>
         Instrumentation already exists. Use it. Any feature that changes derived orchestration should be checked against timing counters,
         cache reuse, and busy/progress behavior.

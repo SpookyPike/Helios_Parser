@@ -44,6 +44,9 @@
         </thead>
         <tbody>
           <tr><td>parser and schema</td><td><code>test_coordinate_semantics.py</code>, <code>test_run_status.py</code>, <code>test_reader.py</code></td><td>protect explicit center/edge semantics, run status, and compatibility loading</td></tr>
+          <tr><td>source fidelity</td><td><code>test_log_truth.py</code></td><td>parses the log's own tables and compares them with the HDF5, so the writer is checked against the source rather than against itself</td></tr>
+          <tr><td>on-disk layout</td><td><code>test_chunk_layout.py</code></td><td>pins the chunk extent of each dataset family under schema 2.2; chunk geometry is invisible through the HDF5 API, so nothing else would notice a revert</td></tr>
+          <tr><td>UI interaction cost</td><td><code>test_ui_interaction_perf.py</code></td><td>drives the real widgets offscreen and asserts call counts, which are stable on any machine, rather than millisecond thresholds</td></tr>
           <tr><td>viewer UI</td><td><code>test_viewer_*.py</code>, <code>test_app_phase412.py</code></td><td>protect geometry, overlays, settings propagation, snapshot sync, and shell integration</td></tr>
           <tr><td>derived backend</td><td><code>test_derived_backend_optimization.py</code>, <code>test_derived_services_phase4.py</code></td><td>protect shared caches, result models, and backend correctness seams</td></tr>
           <tr><td>plasmon staged models</td><td><code>test_plasmon_phase*.py</code>, <code>test_plasmon_ui_phase*.py</code></td><td>protect spectral branches, benchmark gating, LOS integration, export, and workspace wiring</td></tr>
@@ -54,21 +57,38 @@
     </section>
 
     <section id="commands">
-      <h2>Core commands</h2>
-      <pre><code>python -m unittest discover -v -s tests -p "test_coordinate_semantics.py"
-python -m unittest discover -v -s tests -p "test_run_status.py"
-python -m unittest discover -v -s tests -p "test_reader.py"
-python -m unittest discover -v -s tests -p "test_viewer_phase34.py"
-python -m unittest discover -v -s tests -p "test_viewer_phase4.py"
-python -m unittest discover -v -s tests -p "test_app_phase412.py"
-python -m unittest discover -v -s tests -p "test_derived_phase41.py"
-python -m unittest discover -v -s tests -p "test_derived_services_phase4.py"
-python -m unittest discover -v -s tests -p "test_derived_backend_optimization.py"
-python -m unittest discover -v -s tests -p "test_derived_stability.py"
-python -m unittest discover -v -s tests -p "test_plasmon_phase*.py"
-python -m unittest discover -v -s tests -p "test_plasmon_ui_phase*.py"
-python -m unittest discover -v -s tests -p "test_wave6_derived.py"
-python tests\smoke_test.py</code></pre>
+      <h2>The two-tier gate</h2>
+      <p>
+        The suite is driven by <code>scripts/run_test_suite.py</code>, not by test discovery. It has exactly two profiles and they exist for
+        different moments:
+      </p>
+      <pre><code># commit gate: five entries, about 8 s
+.venv/bin/python scripts/run_test_suite.py --profile core
+
+# milestone gate: every discovered entry, about 17 min, with the coverage floor
+.venv/bin/python scripts/run_test_suite.py --profile full --coverage
+
+# one entry while iterating
+.venv/bin/python scripts/run_test_suite.py --profile full --only test_reader.py</code></pre>
+      <p>
+        The core gate is a fixed list in <code>CORE_NAMES</code>: <code>smoke_test.py</code>, <code>test_bpf_pipeline.py</code>,
+        <code>test_chunk_layout.py</code>, <code>test_cli_errors.py</code> and <code>test_test_runner.py</code>. Add an entry there only if it
+        runs in a second or two and would catch a mistake you would otherwise ship.
+      </p>
+      <p>
+        <code>--only</code> overrides <code>--profile</code>, so <code>--only</code> without <code>--profile full</code> leaves
+        <code>HELIOS_RUN_SLOW_TESTS</code> unset and silently skips every slow class. Use <code>--profile full --only</code>.
+      </p>
+      <p>
+        Exit codes: <code>0</code> pass, <code>1</code> failure, <code>2</code> failure with entries not executed, <code>3</code> coverage floor
+        missed, <code>124</code> per-entry timeout, <code>125</code> fixture hash or size mismatch, where the entry never runs. A <code>125</code>
+        means the manifest and the file on disk disagree; regenerate the fixture rather than editing the hash.
+      </p>
+      <p>
+        Each entry runs in a materialised copy of the tree that contains only the fixtures declared for it in
+        <code>tests/fixture_manifest.json</code>. A fixture that is not declared is simply absent there, so the entry errors instead of
+        skipping. <code>pytest</code> is not installed: run a module directly from inside <code>tests/</code>, or through the runner.
+      </p>
       <p>
         Use targeted runs for the area you touched before falling back to broad suite execution. When a change affects shell/viewer/derived routing,
         you usually need both a focused derived test and at least one shell-level test.
@@ -81,6 +101,14 @@ python tests\smoke_test.py</code></pre>
         <div class="card">
           <h3>Parser, reader, schema</h3>
           <p>Run coordinate, run-status, reader, and smoke coverage. Use at least one real damaged/truncated or legacy-style file if the parser changed.</p>
+        </div>
+        <div class="card">
+          <h3>Conversion output or chunk layout</h3>
+          <p>Run <code>test_chunk_layout.py</code> and <code>test_log_truth.py</code>, then the streaming and BPF pipeline entries. If the chunk extent or the schema version moved, <code>scripts/regenerate_golden_fixtures.py</code> verifies a fixture against the source log and refuses to replace it unless every value and the centre/edge contract survive.</p>
+        </div>
+        <div class="card">
+          <h3>UI interaction cost</h3>
+          <p>Run <code>test_ui_interaction_perf.py</code> with <code>--profile full</code>. It asserts call counts rather than timings, so it does not flake on a loaded runner. For the visual half, <code>scripts/capture_ui_evidence.py</code> writes PNGs and an HTML contact sheet under <code>outputs/screenshots/perf2/</code>.</p>
         </div>
         <div class="card">
           <h3>Viewer layout or settings</h3>
@@ -136,6 +164,17 @@ python scripts\validate_plasmon_step11_lindhard_hydro.py</code></pre>
 python scripts\microbench_wave1.py
 python scripts\bench_streaming_conversion.py
 python scripts\bench_hdf5_access.py</code></pre>
+      <p>
+        A/B on the same machine with a warm page cache, three runs, report the median, and digest the output so a faster wrong answer is
+        visible. On a hybrid CPU, pin to the P-cores: the reference host is a 12th-gen Intel where CPUs 0-11 are the six P-cores and
+        their SMT siblings, and running on the E-cores roughly doubles a conversion. <code>run_test_suite.py</code> already pins itself;
+        do the same for a hand-run benchmark with <code>taskset -c 0-11</code>.
+      </p>
+      <p>
+        Report absolute milliseconds alongside any ratio. Several 2.0 audit findings were measured and dropped for exactly this reason: a
+        per-snapshot coordinate memo bought 1.7 % of a 79 ms scrub, an 8 MiB HDF5 chunk cache measured neutral to slightly worse on
+        uncompressed datasets, and a snapshot re-read costs 6.6 us. A ratio on a microsecond operation is not a win worth carrying.
+      </p>
     </section>
 
     <section id="done">

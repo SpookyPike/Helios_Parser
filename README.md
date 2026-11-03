@@ -3,7 +3,7 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `1.4.0`
+- Release: `2.0.0`
 - Release date: `2026-11-03`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
@@ -87,7 +87,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parser-viewer-v1.4.0.zip`
+- `outputs/release/helios-parser-viewer-v2.0.0.zip`
 
 The bundle includes:
 
@@ -117,11 +117,113 @@ python scripts\build_linux_portable_tarball.py
 
 Expected artifact names:
 
-- `outputs/distributables/helios-parser-viewer-v1.4.0-windows-portable.zip`
-- `outputs/distributables/helios-parser-viewer_1.4.0_all.deb`
-- `outputs/distributables/helios-parser-viewer-v1.4.0-linux-portable.tar.gz`
+- `outputs/distributables/helios-parser-viewer-v2.0.0-windows-portable.zip`
+- `outputs/distributables/helios-parser-viewer_2.0.0_all.deb`
+- `outputs/distributables/helios-parser-viewer-v2.0.0-linux-portable.tar.gz`
 
-The v1.4.0 release provides the source bundle, Debian package, Linux portable tarball, standalone lookup tables, and checksums. Windows users can run the source bundle or build the portable ZIP locally using the instructions in the packaging guide. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+The v2.0.0 release provides the source bundle, Debian package, Linux portable tarball, standalone lookup tables, and checksums. Windows users can run the source bundle or build the portable ZIP locally using the instructions in the packaging guide. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+
+## Changelog 2.0.0
+
+This release is a performance and correctness pass over the converter, the
+reader, the derived analysis and the viewer. Three changes alter what ships:
+`scipy` is now a required dependency, the HDF5 chunk layout changed under schema
+`2.2`, and the golden fixtures were regenerated because they predated the
+centre/edge coordinate contract.
+
+### Measured
+
+Per stage on the largest tracked deck, `10ns+10Si+60Al+15Si+4.27TW`
+(268 MB log, 701 snapshots, 1300 zones, 213 MB HDF5). Medians of three runs, warm
+page cache, pinned to the six P-cores, same machine, `origin/master` against this
+branch:
+
+| stage | before | after | speedup |
+|---|---|---|---|
+| `.log` to HDF5 | 16.84 s | 6.01 s | 2.8x |
+| `.bpf` to HDF5 | 4.72 s | 0.87 s | 5.4x |
+| derived analysis | 12.41 s | 1.94 s | 6.4x |
+| full `.log` to analysis | 29.25 s | 7.95 s | 3.7x |
+
+Reader operations on the same file (open, 701-snapshot scrub, whole-field read,
+dynamic-coordinate scrub) are between 1 and 8 ms before and after. They are
+unchanged, and several reader findings from the audit were measured and dropped
+rather than fixed because they could not move a millisecond-scale operation.
+
+### Converter
+
+- the `.log` table parser no longer scans every block with a regex before parsing
+  it. The scan cost 1.70 s of a 3.72 s conversion; a `try/except ValueError`
+  around the parse produces byte-identical output. `np.fromstring` raises on a
+  malformed token rather than truncating, so the guard has to be an exception.
+- the `.bpf` writer buffers 32 snapshots and writes them in one call instead of
+  one dataset write per field per snapshot. That was 81,090 `__setitem__` calls
+  per conversion, 68 % of the profile. Buffers are sized from each dataset's own
+  trailing shape, because node, group-boundary and per-material fields are not all
+  the same width.
+- field, dynamic-coordinate and `laser_source_*` datasets now span 32 snapshots
+  per chunk, matching the writer's flush batch. Radiation spectral datasets span
+  one dump per chunk instead of 16, which cuts the bytes a single-dump read
+  inflates from 38.5 MB to 2.4 MB at production size. `flux/*` and `time/*` are
+  unchanged. Axis order never changes, only extent, so schema `2.2` is a minor
+  bump and the reader needs no change: chunk layout is invisible through the HDF5
+  API.
+
+### Derived analysis
+
+- the wavefront grid search batched 55,200 `np.linalg.lstsq` calls on 5x2 systems
+  into stacked normal equations solved with `np.linalg.solve`, and hoisted an
+  amplitude that was recomputed 20 times per field. `lstsq` cannot take stacked
+  input, and 2x2 normal equations square the condition number, so a
+  `LinAlgError` fallback to the original per-window solve keeps a saturated
+  window from aborting the run. 148 of 149 payload values are bit-identical; the
+  one that moved did so by 4.1e-16 relative.
+- the interface position grid is built once per run instead of once per candidate
+  snapshot, and the candidate maxima scan is vectorised.
+- the derived cache key split in two. `core_key` covers geometry and the
+  shock/wave selection, so a plasmon or XRD edit reuses the wavefront work
+  instead of recomputing it. Because the full request key derives from the core
+  key, the split needed explicit guards: cached results carry a module key and are
+  reused only on equality, and `_can_reuse_preheat` now runs on all three reuse
+  paths. A plasmon-only edit drops from 0.94 s to 0.002 s.
+- the radiation container is cached per run revision, and the primary propagation
+  direction no longer copies a finite-masked array to answer a question about
+  ordering.
+- plasmon cluster aggregation uses `np.bincount` and two computations whose
+  results were discarded are gone.
+
+### Viewer
+
+- an unchanged colormap name no longer re-resolves and reapplies the map on every
+  refresh: 0.564 ms to 0.075 ms per push. Render-path transitions still reapply
+  directly, because there the map is unchanged and the item that needs it is new.
+- automatic clipping no longer builds a full-field finite mask that only the
+  percentile branch reads.
+- the snapshot slider emits once per drag instead of once per intermediate value.
+  The index, the label and the run context stay synchronous; only the repaint was
+  ever the problem.
+- the display caches pin their source array, so a freed array's `id()` cannot be
+  recycled by a different array and served a stale conversion. Two write-only
+  cache-key attributes are removed.
+
+### Dependencies and fixtures
+
+- `scipy` is now a required dependency. It was preferred but undeclared, so a
+  clean install silently ran a 1537-point complex quadrature at 25.4 ms per call
+  instead of `wofz` at 0.090 ms. It was also in the packaging exclude list, so the
+  Windows portable would have shipped without it while the metadata claimed
+  otherwise. **This changes plasmon numeric values for anyone who was on the
+  fallback.** The About dialog now names the active backend.
+- the six golden fixtures were regenerated. They stored the log's `Radius` column
+  where zone centres belong; that column is a zone edge. Verified against the
+  source logs rather than against the old files: every physics column matches
+  exactly, and the old value is recovered as centre plus half the outer zone
+  width, to the digit, on `Cu_0166`. `tests/test_log_truth.py` now parses the log
+  itself and makes it the oracle.
+- `ruff` is configured and enforced. The tree went from 9,463 findings to zero
+  under `select = ["E4","E7","E9","F","I"]` at `line-length = 120`. Two real
+  misplaced-import defects surfaced in `src`. `ruff format` is deliberately not
+  applied.
 
 ## Changelog 1.4.0
 

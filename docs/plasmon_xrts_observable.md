@@ -3,6 +3,19 @@
 This note documents the observable reconstruction layers that sit above the
 existing plasmon dielectric backends.
 
+## Numerical backend
+
+`scipy` is a required dependency from 2.0.0. The plasma dispersion function uses
+`scipy.special.wofz`; without it the code falls back to a 1537-point complex
+quadrature that costs 25.4 ms per call against 0.090 ms, and allocates a 29.5 MB
+temporary. The `try/except ModuleNotFoundError` shims remain so the modules stay
+importable in a stripped environment, and `plasma_dispersion_backend_name()`
+reports which path an install is on. The About dialog prints that name, so a slow
+install is visible instead of merely slow.
+
+Users who previously ran the fallback will see different plasmon numeric values
+after upgrading. That is a numerics change, not a bug fix.
+
 ## Purpose
 
 The historical plasmon benchmark path compared a peak extracted directly from the

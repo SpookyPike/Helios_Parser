@@ -1,6 +1,6 @@
 # BPF Primary H5D/HDF5 Schema
 
-Date: 2026-05-10
+Date: 2026-11-03 (schema 2.2)
 
 ## Source Precedence
 
@@ -15,8 +15,9 @@ required for full BPF parsing.
 
 The H5D file keeps the existing reader-compatible layout:
 
-- `/grid`: static mesh, material IDs, region IDs, and optional photon-energy
-  boundaries.
+- `/grid`: static mesh, material IDs, region IDs, optional photon-energy
+  boundaries, and the explicit coordinate grids `coordinate_center`,
+  `coordinate_edge`, `dynamic_coordinate_center`, `dynamic_coordinate_edge`.
 - `/time`: time and cycle arrays.
 - `/fields/<field_name>`: the actual numeric datasets.
 - `/field_metadata/<field_name>`: per-field metadata attributes.
@@ -37,6 +38,29 @@ inflates sixteen. Axis order and every stored value are unchanged, so this is a
 minor bump and readers need no change: chunk layout is invisible through the
 HDF5 API. Files written by 1.4.0 and earlier stay readable because the reader
 requires the group set, not the version attribute.
+
+## Coordinate semantics
+
+HELIOS prints a `Radius` column per snapshot with one row per zone **boundary**,
+so a snapshot with `n_zones` zones has `n_zones + 1` radius rows. The converter
+stores those rows in `grid/dynamic_coordinate_edge`, which therefore has shape
+`(n_snapshots, n_zones + 1)`, and stores the zone centres in
+`grid/dynamic_coordinate_center`, shape `(n_snapshots, n_zones)`.
+
+`fields/radius` is the centre grid, not the edge grid. Every other field is
+zone-centred, so this keeps `radius` broadcastable against them. A consumer that
+needs boundaries reads `dynamic_coordinate_edge`; a consumer that subtracts
+`radius` from `radius` shifted by one is comparing centres with centres and gets
+the wrong zone width.
+
+The static pair follows the same rule: `coordinate_center` and `coordinate_edge`
+hold the initial grid, and `coordinate_edge` has one more entry than
+`coordinate_center`.
+
+This distinction is checked by `tests/test_log_truth.py`, which parses the
+source log's tables directly and confirms that `dynamic_coordinate_edge`
+reproduces the printed `Radius` column and that `dynamic_coordinate_center` is
+the midpoint of adjacent edges.
 
 ## Field Metadata
 

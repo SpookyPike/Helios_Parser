@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "helios-parser"
-version = "1.4.0"
+version = "2.0.0"
 description = "Cross-platform HELIOS Parse / View desktop workflow for parser, viewer, and derived analysis."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,8 +12,8 @@ authors = [
   {name = "Dmitrii Bespalov"},
 ]
 dependencies = [
-  "numpy",
-  "h5py",
+  "numpy>=1.24,<3",
+  "h5py>=3.8,<4",
   "scipy>=1.11,<2",
 ]
 
@@ -100,7 +100,7 @@ precision = 1
 # below the current number fails on the next commit that adds a module before its
 # tests, and what happens then is that the floor gets lowered rather than met.
 # Raise it at a milestone boundary, deliberately.
-fail_under = 70
+fail_under = 75
 exclude_lines = [
   "pragma: no cover",
   "if __name__ == .__main__.",

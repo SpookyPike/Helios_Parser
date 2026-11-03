@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HELIOS Parse / View Release Notes 1.4.0</title>
+  <title>HELIOS Parse / View Release Notes 2.0.0</title>
   <link rel="stylesheet" href="assets/manual.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>Release Notes</h1>
         <p>
-          HELIOS Parse / View 1.4.0, released 2026-11-03.
+          HELIOS Parse / View 2.0.0, released 2026-11-03.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
       </div>
@@ -27,6 +27,35 @@
   </header>
 
   <main>
+    <section>
+      <h2>Why 2.0.0</h2>
+      <p>
+        The converter, the reader and the derived analysis were slow in ways that were measurable but not
+        visible: a regex scan that cost half a log conversion, one HDF5 write per field per snapshot, and a
+        grid search that called a least-squares solver 55,200 times. This release fixes those, and three of
+        the fixes are large enough to change how the application feels on a real deck.
+      </p>
+      <p>
+        It also corrects a fixture problem. The golden HDF5 files shipped with the tests stored the log's
+        <code>Radius</code> column, which is a zone edge, where zone centres belong. Every reader test compared
+        the writer with itself, so nothing caught it. The fixtures were regenerated and checked against the
+        source logs rather than against the previous files.
+      </p>
+    </section>
+
+    <section>
+      <h2>Highlights in this release</h2>
+      <ul>
+        <li>per stage on the largest tracked deck, 701 snapshots by 1300 zones: log conversion 16.84 s to 6.01 s, BPF conversion 4.72 s to 0.87 s, derived analysis 12.41 s to 1.94 s, so the full log-to-analysis path 29.25 s to 7.95 s</li>
+        <li>HDF5 schema <code>2.2</code> changes chunk geometry only: field chunks span 32 snapshots so one writer flush fills one chunk, and radiation chunks span one dump so a single-dump read no longer inflates sixteen</li>
+        <li><code>scipy</code> is a required dependency. It was preferred but undeclared, so a clean install silently ran a 1537-point complex quadrature at 25.4 ms per call instead of <code>wofz</code> at 0.090 ms. <strong>This moves plasmon numeric values for anyone who was on the fallback.</strong> The About dialog names the active backend</li>
+        <li>the derived cache key split in two, so a plasmon or XRD edit reuses the shock and wavefront work instead of recomputing it: a plasmon-only edit drops from 0.94 s to 0.002 s</li>
+        <li>the snapshot slider emits once per drag instead of once per intermediate value, and an unchanged colormap is no longer re-resolved on every repaint</li>
+        <li>the six golden fixtures were regenerated and are now validated against the source logs by <code>tests/test_log_truth.py</code></li>
+        <li>the tree is ruff-clean under an enforced rule set, which surfaced two real misplaced-import defects</li>
+      </ul>
+    </section>
+
     <section>
       <h2>Why 1.4.0</h2>
       <p>
@@ -71,6 +100,22 @@
 
     <section>
       <h2>Changelog</h2>
+      <h3>2.0.0</h3>
+      <ul>
+        <li>removed the per-block regex pre-scan from the log parser, which cost 1.70 s of a 3.72 s conversion; the parse now guards with <code>try/except ValueError</code> because <code>np.fromstring</code> raises on a malformed token rather than truncating</li>
+        <li>batched the BPF writer into 32-snapshot blocks instead of one dataset write per field per snapshot, which was 81,090 writes per conversion</li>
+        <li>batched the wavefront grid search into stacked normal equations, with a <code>LinAlgError</code> fallback to the original solve so a saturated window cannot abort the analysis; 148 of 149 payload values are bit-identical and the one that moved moved by 4.1e-16 relative</li>
+        <li>built the interface position grid once per run instead of once per candidate snapshot, and vectorised the candidate maxima scan</li>
+        <li>split the derived cache key so <code>core_key</code> covers geometry and the shock/wave selection; cached results carry a module key and are reused only on equality, and <code>_can_reuse_preheat</code> now runs on all three reuse paths</li>
+        <li>cached the radiation container per run revision, and stopped copying a finite-masked array to answer an ordering question</li>
+        <li>replaced the per-cluster rescan in plasmon aggregation with <code>np.bincount</code>, and removed two computations whose results were discarded</li>
+        <li>chunked field, dynamic-coordinate and <code>laser_source_*</code> datasets at 32 snapshots, and radiation spectral datasets at one dump, under schema <code>2.2</code></li>
+        <li>stopped re-resolving an unchanged colormap (0.564 ms to 0.075 ms per push), stopped building a finite mask that only the percentile branch reads, and made the snapshot slider emit once per drag</li>
+        <li>pinned the viewer display caches to their source array, so a recycled <code>id()</code> cannot serve a stale conversion, and removed two write-only cache-key attributes</li>
+        <li>declared <code>scipy</code> as a required dependency and removed it from the packaging exclude list, so the Windows portable no longer ships without the backend its metadata claims</li>
+        <li>regenerated the six golden fixtures, which stored zone edges where centres belong, and added <code>tests/test_log_truth.py</code> to validate the converter against the source logs</li>
+        <li>adopted an enforced ruff configuration at <code>line-length = 120</code> with <code>select = [E4, E7, E9, F, I]</code>; <code>ruff format</code> is deliberately not applied</li>
+      </ul>
       <h3>1.4.0</h3>
       <ul>
         <li>read the frequency-resolved radiation output from <code>.exo</code> and publish it as <code>radiation/</code>, <code>flux/</code> and <code>radiation/integrated/</code></li>
@@ -187,7 +232,7 @@
         <li>selected demo HDF5 examples under <code>examples/</code></li>
       </ul>
       <p>
-        The 1.4.0 bundle intentionally omits tests, internal audit and validation reports, old release outputs, legacy shadow source files, the vendor XCOM archive, and compiled native payloads. Experimental Transmission/XCOM support remains behind development flags.
+        The 2.0.0 bundle intentionally omits tests, internal audit and validation reports, old release outputs, legacy shadow source files, the vendor XCOM archive, and compiled native payloads. Experimental Transmission/XCOM support remains behind development flags.
       </p>
     </section>
 
@@ -209,7 +254,7 @@
       <ul>
         <li>Author: Dmitrii Bespalov</li>
         <li>Organization: European XFEL</li>
-        <li>Release: 1.4.0</li>
+        <li>Release: 2.0.0</li>
         <li>Date: 2026-10-21</li>
       </ul>
     </section>
