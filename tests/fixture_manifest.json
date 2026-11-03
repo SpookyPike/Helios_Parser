@@ -319,6 +319,9 @@
     "test_snapshot_numeric_domains.py": [
       "local_fe_log"
     ],
+    "test_residual_fix_pass.py": [
+      "local_h5_fe"
+    ],
     "test_run_status.py": [
       "local_fe_log",
       "local_cu1e17_log",
