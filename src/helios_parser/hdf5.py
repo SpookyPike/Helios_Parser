@@ -370,6 +370,11 @@ def _spectral_chunk_shape(shape: tuple[int, ...]) -> tuple[int, ...]:
     """
     if not shape:
         return ()
+    if len(shape) == 1:
+        # No dump axis to isolate. One-element chunks would turn a scalar read
+        # into thousands of tiny chunk reads, so fall back to the time-major
+        # extent instead of honouring the one-per-dump rule literally.
+        return _time_major_chunk_shape(shape)
     return (1,) + tuple(max(1, width) for width in shape[1:])
 
 

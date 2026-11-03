@@ -571,7 +571,17 @@ def refresh_analysis_result_for_snapshot(
             spectroscopy=spectroscopy,
             wave_tracking=base_result.wave_tracking,
             interface_events=base_result.interface_events,
-            preheat=base_result.preheat,
+            # This path reuses full-run traces, so preheat is not recomputed.
+            # Reusing it unconditionally would return the previous target
+            # region's summary while module_key records the new parameters, and
+            # the other compute path already guards exactly this with the same
+            # predicate. None means "not loaded for this target", which the
+            # workspace turns into a refresh request.
+            preheat=(
+                base_result.preheat
+                if _can_reuse_preheat(base_result.preheat, target_region_id=parameters.preheat_target_region_id)
+                else None
+            ),
             module_availability=module_availability,
             warnings=warnings,
             radiation=radiation,

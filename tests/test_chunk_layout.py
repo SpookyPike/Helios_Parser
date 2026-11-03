@@ -71,7 +71,10 @@ class ChunkHelperTest(unittest.TestCase):
     def test_spectral_chunks_hold_exactly_one_dump(self) -> None:
         self.assertEqual(_spectral_chunk_shape((40, 1202, 250)), (1, 1202, 250))
         self.assertEqual(_spectral_chunk_shape((5, 251)), (1, 251))
-        self.assertEqual(_spectral_chunk_shape((9,)), (1,))
+        # A 1-D array has no dump axis, so one-element chunks would be
+        # pathological; it falls back to the time-major extent.
+        self.assertEqual(_spectral_chunk_shape((9,)), (9,))
+        self.assertEqual(_spectral_chunk_shape((900,)), (16,))
 
     def test_field_chunk_shape_spans_32_snapshots(self) -> None:
         """The log writer and the dynamic-coordinate writer both route here."""
