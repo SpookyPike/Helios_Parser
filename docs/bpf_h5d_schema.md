@@ -29,6 +29,15 @@ corrects the legacy `pressure` alias to mean total pressure. This is a versioned
 semantic correction for BPF-derived files. The existing `pressure_j_cm3` field
 continues to mean plasma pressure.
 
+Schema version `2.2` changes chunk geometry only. Field, dynamic-coordinate and
+`laser_source_*` datasets span 32 snapshots per chunk instead of 16, matching the
+writer's flush batch so one flush fills one chunk. Radiation spectral datasets
+span one dump per chunk instead of 16, so reading a single dump no longer
+inflates sixteen. Axis order and every stored value are unchanged, so this is a
+minor bump and readers need no change: chunk layout is invisible through the
+HDF5 API. Files written by 1.4.0 and earlier stay readable because the reader
+requires the group set, not the version attribute.
+
 ## Field Metadata
 
 Every new field dataset stores:
