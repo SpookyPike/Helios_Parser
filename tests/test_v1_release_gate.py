@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
-import unittest
 
 import numpy as np
 
@@ -26,6 +26,7 @@ from helios.services.derived.physical_sanity import (
 
 if QtWidgets is not None:
     from _viewer_test_utils import get_app, process_events, reset_test_settings
+
     from helios_analysis.workspace import HeliosDerivedWorkspace
 
 

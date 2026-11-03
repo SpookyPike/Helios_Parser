@@ -8,7 +8,6 @@ from pathlib import Path
 
 from PySide6 import QtCore, QtWidgets
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
@@ -18,7 +17,6 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from helios_app.main_app import HeliosParseViewMainWindow  # noqa: E402
 from helios_app.session_state import reset_session_state  # noqa: E402
-
 
 REPORT_ROOT = ROOT / "outputs" / "reports"
 SCREENSHOT_ROOT = ROOT / "outputs" / "screenshots"

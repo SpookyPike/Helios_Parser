@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 import math
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 

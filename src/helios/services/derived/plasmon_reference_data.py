@@ -12,7 +12,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 _DATA_DIR = Path(__file__).resolve().parent / "reference_data" / "plasmon"
 
 

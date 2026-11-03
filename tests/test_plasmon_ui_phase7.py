@@ -16,6 +16,7 @@ from _slow_tests import slow
 if QtWidgets is not None:
     from _viewer_test_utils import get_app, process_events, reset_test_settings
     from test_plasmon_ui_phase3 import _synthetic_dataset
+
     from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
     from helios.services.derived.models import PreheatSummary
     from helios_analysis.controller import DerivedController

@@ -15,9 +15,13 @@ import numpy as np
 from helios.instrumentation import increment_counter
 from helios.runtime import RunContext
 from helios.services.derived.common import validate_derived_run_shapes
-from helios.services.derived.models import AnalysisGeometryMetadata, AnalysisSelectionMetadata, DerivedRunData, DerivedWarning
+from helios.services.derived.models import (
+    AnalysisGeometryMetadata,
+    AnalysisSelectionMetadata,
+    DerivedRunData,
+    DerivedWarning,
+)
 from helios.services.geometry.coordinates import subset_mask
-
 
 WEIGHTING_SIMPLE_MEAN = "simple_mean"
 WEIGHTING_WIDTH = "width"

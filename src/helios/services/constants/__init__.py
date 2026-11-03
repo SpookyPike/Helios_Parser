@@ -8,13 +8,13 @@ from .nrl import (
     EV_TO_ERG,
     EV_TO_J,
     EV_TO_K,
-    FormulaReference,
     HBAR_CGS,
     HBAR_EV_S,
     PLANCK_EV_S,
     PROTON_MASS_G,
     THOMSON_CROSS_SECTION_CM2,
     WAVELENGTH_ANGSTROM_KEV,
+    FormulaReference,
 )
 
 __all__ = [

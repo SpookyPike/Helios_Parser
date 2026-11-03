@@ -15,8 +15,8 @@ without hiding new benchmark heuristics inside the electron-policy code.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -26,12 +26,11 @@ from helios.services.derived.plasmon_units import (
     HBAR_EV_S,
     HBAR_J_S,
     coulomb_logarithm_ei_nrl_piecewise,
-    electron_density_m3_from_cm3,
     electron_collision_rate_s,
+    electron_density_m3_from_cm3,
     electron_fermi_wavevector_m_inv,
     electron_thermal_speed_m_s,
 )
-
 
 PLASMON_DRIVEN_RESPONSE_MODEL_NONE = "none"
 PLASMON_DRIVEN_RESPONSE_MODEL_SCALAR_CONTROL = "scalar_increment_control"

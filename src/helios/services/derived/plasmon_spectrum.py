@@ -9,8 +9,8 @@ finite-temperature Lindhard/Mermin stack without another architectural pass.
 
 from __future__ import annotations
 
-from functools import lru_cache
 import math
+from functools import lru_cache
 
 import numpy as np
 
@@ -21,9 +21,12 @@ except ModuleNotFoundError:  # pragma: no cover - optional numerical fallback
 
 from helios.services.constants.nrl import HBAR_EV_S
 from helios.services.derived.plasmon_lfc import esa_static_local_field_correction
-from helios.services.derived.plasmon_lindhard import finite_t_lindhard_backend_name, finite_t_lindhard_susceptibility
-from helios.services.derived.plasmon_units import electron_debye_length_m, electron_k_over_kf, electron_thermal_speed_m_s
-
+from helios.services.derived.plasmon_lindhard import finite_t_lindhard_susceptibility
+from helios.services.derived.plasmon_units import (
+    electron_debye_length_m,
+    electron_k_over_kf,
+    electron_thermal_speed_m_s,
+)
 
 _DEF_NUMERICAL_IMAG_SHIFT_EV = 1.0e-9
 

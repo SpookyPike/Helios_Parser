@@ -126,8 +126,8 @@ def build_audit(out_dir: Path) -> int:
 
     classical_rows = [row for row in decomposition_rows if str(row["family_bucket"]) == "classical_family"]
     lindhard_rows = [row for row in decomposition_rows if str(row["family_bucket"]) == "lindhard_proxy_family"]
-    collision_classical = [row for row in collision_rows if str(row["published_branch"]) in {"rpa", "lfc"}]
-    collision_quantum = [row for row in collision_rows if str(row["published_branch"]) == "tddft"]
+    [row for row in collision_rows if str(row["published_branch"]) in {"rpa", "lfc"}]
+    [row for row in collision_rows if str(row["published_branch"]) == "tddft"]
 
     lines = [
         "# Driven Al framework audit",

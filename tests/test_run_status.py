@@ -6,8 +6,8 @@ import unittest
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
-from helios_parser import HeliosParser, HeliosRun, write_hdf5
 
+from helios_parser import HeliosParser, HeliosRun, write_hdf5
 
 ROOT = Path(__file__).resolve().parents[1]
 HDF5_ROOT = ROOT / "outputs" / "hdf5"

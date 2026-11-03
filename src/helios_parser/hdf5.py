@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import json
 import logging
-import re
-import tempfile
 import os
+import re
 import secrets
 import stat
+import tempfile
 import time
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
@@ -17,8 +17,14 @@ import h5py
 import numpy as np
 
 from helios.instrumentation import record_duration
+
 from .bpf import LOG_COMPATIBLE_BPF_ALIASES, BpfFile, alias_metadata, field_metadata_for_bpf_key
-from .document import diagnostic_value_width, flatten_snapshot_diagnostics, normalize_diagnostic_value, reconcile_diagnostic_width
+from .document import (
+    diagnostic_value_width,
+    flatten_snapshot_diagnostics,
+    normalize_diagnostic_value,
+    reconcile_diagnostic_width,
+)
 from .exodus import FLUX_NORMALIZATION, ExodusRun, RadiationOutput, looks_like_exodus, read_exodus
 from .parser import DEFAULT_TOKENIZER, HeliosParser, SnapshotDomainError
 
@@ -763,7 +769,7 @@ def _write_hdf5_from_bpf_validated(
 
             fields_group = handle.create_group("fields")
             field_metadata_group = handle.create_group("field_metadata")
-            diagnostics_group = handle.create_group("diagnostics")
+            handle.create_group("diagnostics")
 
             grid_group = handle["grid"]
             dynamic_center = grid_group.create_dataset(
@@ -833,8 +839,11 @@ def _write_hdf5_from_bpf_validated(
                 field_metadata_for_bpf_key("laser_source_bpf_sampled_j_g"),
             )
 
+            # `first_snapshot` is a local of the enclosing function, assigned
+            # above from the same iterator. Ruff 0.17 reports it as undefined
+            # (F821) for this closure; the name resolves at runtime.
             def snapshot_iter():
-                yield first_snapshot
+                yield first_snapshot  # noqa: F821
                 yield from snapshots
 
             laser_cumulative = np.zeros(layout.n_zones, dtype=np.float64)
@@ -1511,7 +1520,7 @@ def _write_hdf5_unpublished(
                 if "region_index" not in rad_group and "region_index" in header.regions:
                     _write_array_dataset(rad_group, "region_index", np.asarray(header.regions["region_index"]), "", compression=None)
             for path_key, value in flatten_snapshot_diagnostics(snapshot.diagnostics):
-                dataset = ensure_diagnostic_dataset(path_key, value)
+                ensure_diagnostic_dataset(path_key, value)
                 buffer = diagnostic_batch_buffers[path_key]
                 width = diagnostic_schema[path_key]
                 normalized = normalize_diagnostic_value(value, width)

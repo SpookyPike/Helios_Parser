@@ -1,19 +1,22 @@
 from __future__ import annotations
 
-from pathlib import Path
 import unittest
-
-import numpy as np
+from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+import numpy as np
+from test_plasmon_phase3 import _synthetic_dataset
+from test_plasmon_phase9 import _compute as _plasmon_compute
 
 from helios.runtime import RunContext
-from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result, refresh_analysis_result_for_snapshot
+from helios.services.derived.analysis import (
+    DerivedAnalysisParameters,
+    compute_analysis_result,
+    refresh_analysis_result_for_snapshot,
+)
 from helios.services.derived.common import load_run_data
-from helios.services.derived.selection import AnalysisStateCache, build_analysis_geometry
 from helios.services.derived.plasmon import evaluate_plasmon_regime
-from test_plasmon_phase9 import _compute as _plasmon_compute
-from test_plasmon_phase3 import _synthetic_dataset
+from helios.services.derived.selection import AnalysisStateCache, build_analysis_geometry
 
 
 def _context_from_dataset(path: Path, dataset, *, snapshot_index: int) -> RunContext:

@@ -7,11 +7,10 @@ zip/tar.gz-distributed auxiliary bundles such as optional XCOM adapters.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
 import tarfile
 import zipfile
-
+from dataclasses import dataclass
+from pathlib import Path, PurePosixPath
 
 ARCHIVE_ZIP = "zip"
 ARCHIVE_TAR_GZ = "tar.gz"

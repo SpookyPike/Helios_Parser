@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from pathlib import Path
 import unittest
-
-import numpy as np
+from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+import numpy as np
 from _slow_tests import slow
-
 from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_settings
+
 from helios.instrumentation import format_metrics_summary, reset_metrics, snapshot_metrics
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters

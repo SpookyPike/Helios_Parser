@@ -1,25 +1,30 @@
 from __future__ import annotations
 
 import math
-from pathlib import Path
 import shutil
 import tempfile
-from unittest import mock
 import unittest
-
-import h5py
-import numpy as np
+from pathlib import Path
+from unittest import mock
 
 import _test_bootstrap  # noqa: F401
+import h5py
+import numpy as np
 from _slow_tests import slow
-
 from _viewer_test_utils import HDF5_ROOT
+
 from helios.cache import clear_session_raw_data_cache
 from helios.runtime import RunContext, RunRevision
-from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
-from helios.services.derived.common import _OPTIONAL_FIELD_DTYPES, _build_field_capabilities, field_capability_summary, load_run_data, publish_field_payload, publish_open_run_payload
 from helios.services.derived import common
-from helios.services.derived.transmission import evaluate_transmission
+from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
+from helios.services.derived.common import (
+    _OPTIONAL_FIELD_DTYPES,
+    _build_field_capabilities,
+    field_capability_summary,
+    load_run_data,
+    publish_field_payload,
+    publish_open_run_payload,
+)
 from helios.services.derived.selection import (
     AnalysisStateCache,
     build_analysis_geometry,
@@ -30,9 +35,10 @@ from helios.services.derived.selection import (
     weighted_average,
     weighted_means,
 )
-from helios_parser import HeliosRun
+from helios.services.derived.transmission import evaluate_transmission
 from helios.services.derived.xrd import estimate_xrd
 from helios.services.units.conversions import photon_energy_kev_to_wavelength_angstrom
+from helios_parser import HeliosRun
 
 
 def _context_from_dataset(path: Path, dataset, *, snapshot_index: int | None = None) -> RunContext:

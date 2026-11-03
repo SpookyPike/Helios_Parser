@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
-from typing import TYPE_CHECKING
 import math
+from dataclasses import replace
 from time import perf_counter
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
@@ -25,34 +24,35 @@ from helios.services.derived.plasmon_config import (
     PLASMON_EXECUTION_MODE_QUICKLOOK,
     PLASMON_INTEGRATION_MODE_LOS_INTEGRATED,
     PLASMON_MODEL_AUTO_BEST,
+    PLASMON_MODEL_FINITE_T_STLS,
     PLASMON_MODEL_LINDHARD,
     PLASMON_MODEL_LINDHARD_MERMIN,
     PLASMON_MODEL_LINDHARD_MERMIN_STATIC_LFC,
     PLASMON_MODEL_LINDHARD_STATIC_LFC,
     PLASMON_MODEL_MERMIN,
     PLASMON_MODEL_MERMIN_STATIC_LFC,
-    PLASMON_MODEL_FINITE_T_STLS,
     PLASMON_MODEL_QUANTUM_HYDRODYNAMIC,
     PLASMON_MODEL_QUICKLOOK,
     PLASMON_MODEL_RPA,
     PLASMON_MODEL_RPA_STATIC_LFC,
     PLASMON_OBSERVABLE_MODE_DIELECTRIC,
-    PLASMON_OBSERVABLE_MODE_XRTS_ARTICLE_NATIVE,
     PLASMON_OBSERVABLE_MODE_XRTS,
+    PLASMON_OBSERVABLE_MODE_XRTS_ARTICLE_NATIVE,
     PLASMON_STUDY_MODE_DISPERSION,
     PLASMON_STUDY_MODE_SPECTRUM,
 )
-from helios.services.derived.plasmon_hydrodynamic import epsilon_quantum_hydrodynamic
 from helios.services.derived.plasmon_electron_policy import (
     PLASMON_BENCHMARK_POLICY_COMPARISON,
     PLASMON_ELECTRON_POLICY_ARTICLE_AL_BENCHMARK,
     PLASMON_ELECTRON_POLICY_RAW,
     ElectronPolicyPayload,
-    policy_label as plasmon_electron_policy_label,
     resolve_effective_electron_fields,
 )
+from helios.services.derived.plasmon_electron_policy import (
+    policy_label as plasmon_electron_policy_label,
+)
+from helios.services.derived.plasmon_hydrodynamic import epsilon_quantum_hydrodynamic
 from helios.services.derived.plasmon_lfc import esa_domain_contains, esa_domain_message
-from helios.services.derived.plasmon_stls import epsilon_finite_t_stls
 from helios.services.derived.plasmon_spectrum import (
     dsf_from_loss,
     energy_axis_ev,
@@ -69,23 +69,15 @@ from helios.services.derived.plasmon_spectrum import (
     loss_function_from_epsilon,
     normalize_spectrum,
 )
-from helios.services.derived.plasmon_xrts_observable import (
-    build_minimal_xrts_components,
-    finalize_xrts_observable,
-    normalize_observable_mode,
-)
-from helios.services.derived.plasmon_xrts_material import (
-    build_article_native_al_components,
-    finalize_article_native_observable,
-)
+from helios.services.derived.plasmon_stls import epsilon_finite_t_stls
 from helios.services.derived.plasmon_units import (
     ELECTRON_MASS_KG,
     HBAR_J_S,
     coulomb_logarithm_ei,
     coulomb_logarithm_ei_nrl_piecewise,
     electron_collision_rate_s,
-    electron_density_m3_from_cm3,
     electron_debye_length_cm,
+    electron_density_m3_from_cm3,
     electron_fermi_energy_ev,
     electron_fermi_wavevector_m_inv,
     electron_plasma_energy_ev,
@@ -98,6 +90,15 @@ from helios.services.derived.plasmon_units import (
     plasmon_probe_wavelength_cm,
     scattering_wavevector_cm_inv,
     scattering_wavevector_m_inv,
+)
+from helios.services.derived.plasmon_xrts_material import (
+    build_article_native_al_components,
+    finalize_article_native_observable,
+)
+from helios.services.derived.plasmon_xrts_observable import (
+    build_minimal_xrts_components,
+    finalize_xrts_observable,
+    normalize_observable_mode,
 )
 from helios.services.derived.selection import (
     AnalysisStateCache,
@@ -1502,7 +1503,7 @@ def _build_los_integrated_spectrum_payload(
         _accumulate_benchmark_issue_counts(cluster_issue_counts, _benchmark_domain_flags(state, parameters, _effective_backend_model(state, parameters, requested_model)))
     if cluster_count == 0:
         energy = energy_axis_ev(float(parameters.plasmon_energy_window_ev), _resolved_energy_points(parameters))
-        empty = np.zeros_like(energy, dtype=np.float64)
+        np.zeros_like(energy, dtype=np.float64)
         return _invalid_benchmark_spectrum_payload(
             parameters,
             fallback_fraction=1.0,
@@ -2716,7 +2717,7 @@ def evaluate_plasmon_regime(
 
         def _build_derived_series() -> dict[str, np.ndarray]:
             te_series = np.asarray(mean_series["te_ev"], dtype=np.float64)
-            ti_series = np.asarray(mean_series["ti_ev"], dtype=np.float64)
+            np.asarray(mean_series["ti_ev"], dtype=np.float64)
             ne_series = np.asarray(mean_series["ne_cm3"], dtype=np.float64)
             zbar_series = np.asarray(mean_series["zbar"], dtype=np.float64)
             ion_mass_series = np.asarray(mean_series["ion_mass_mu"], dtype=np.float64)
@@ -2732,7 +2733,7 @@ def evaluate_plasmon_regime(
                 zbar_value = float(zbar_series[time_index])
                 ion_mass_value = float(ion_mass_series[time_index])
                 debye_cm = electron_debye_length_cm(te_value, ne_value)
-                omega_pe = electron_plasma_frequency_rad_s(ne_value)
+                electron_plasma_frequency_rad_s(ne_value)
                 ln_lambda = coulomb_logarithm_ei(te_value, ne_value, max(zbar_value, 1.0))
                 collision = electron_collision_rate_s(ne_value, te_value, ln_lambda)
                 _ = ion_sound_speed_cm_s(te_value, max(zbar_value, 1.0), ion_mass_value, parameters.plasmon_adiabatic_index)

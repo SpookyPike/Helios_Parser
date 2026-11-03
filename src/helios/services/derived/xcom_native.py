@@ -1,14 +1,10 @@
 """Bounded subprocess adapter for the bundled NIST XCOM 3.1 program."""
 from __future__ import annotations
 
-from dataclasses import dataclass
-from collections import OrderedDict
-from functools import lru_cache
 import hashlib
 import json
 import math
 import os
-from pathlib import Path
 import re
 import shutil
 import subprocess
@@ -16,13 +12,16 @@ import sys
 import tempfile
 import threading
 import time
+from collections import OrderedDict
+from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
 
 from helios.cancellation import AnalysisCancelled
 from helios.services.derived.xcom_composition import composition_from_formula
-
 
 _BATCH_SIZE = 64
 _COEFFICIENT_CACHE_LIMIT = 65536

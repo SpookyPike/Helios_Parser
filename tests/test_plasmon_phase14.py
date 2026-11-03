@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import unittest
 
+import _test_bootstrap  # noqa: F401
 import numpy as np
 
-import _test_bootstrap  # noqa: F401
-
-from helios.services.derived.plasmon_lindhard import clear_finite_t_lindhard_cache, finite_t_lindhard_cache_info, finite_t_lindhard_susceptibility
+from helios.services.derived.plasmon_lindhard import (
+    clear_finite_t_lindhard_cache,
+    finite_t_lindhard_cache_info,
+    finite_t_lindhard_susceptibility,
+)
 from helios.services.derived.plasmon_validation import compute_plasmon, uniform_al_dataset
 
 

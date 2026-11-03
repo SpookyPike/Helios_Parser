@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 import math
+import unittest
 from dataclasses import replace
 from pathlib import Path
-import unittest
-
-import numpy as np
 
 import _test_bootstrap  # noqa: F401
+import numpy as np
 
 from helios.runtime import RunContext
+from helios.services.derived.analysis import (
+    DerivedAnalysisParameters,
+    compute_analysis_result,
+    refresh_analysis_result_for_snapshot,
+)
 from helios.services.derived.models import DerivedFieldCapabilities, DerivedRunData
-from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result, refresh_analysis_result_for_snapshot
 from helios.services.derived.plasmon import electron_debye_length_cm, electron_plasma_frequency_rad_s
+from helios.services.derived.plasmon_validation import uniform_al_dataset
 from helios.services.derived.selection import (
     WEIGHTING_MASS,
     build_analysis_geometry,
@@ -24,7 +28,6 @@ from helios.services.derived.selection import (
 from helios.services.derived.shock_tracking import _smooth_track, track_shock_front
 from helios.services.derived.spectroscopy import doppler_width_fraction, doppler_width_fraction_array
 from helios.services.derived.xrd import _region_metrics_for_snapshot, _zone_region_dense_index
-from helios.services.derived.plasmon_validation import uniform_al_dataset
 
 
 def _synthetic_dataset() -> tuple[DerivedRunData, RunContext]:

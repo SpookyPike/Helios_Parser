@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 import logging
 import time
 import traceback
+from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
 from PySide6 import QtCore
 
-from helios_parser import HeliosRun
 from helios.runtime import RunRevision
+from helios_parser import HeliosRun
 
 from .models import DiagnosticPayload, FieldPayload, FieldTracePayload, OpenRunPayload, SnapshotFieldPayload
-
 
 LOGGER = logging.getLogger(__name__)
 

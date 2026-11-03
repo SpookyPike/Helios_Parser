@@ -28,10 +28,13 @@ from helios.services.derived.plasmon_config import (
     PLASMON_MODEL_FINITE_T_STLS,
     PLASMON_MODEL_QUANTUM_HYDRODYNAMIC,
     PLASMON_MODEL_QUICKLOOK,
-    PLASMON_OBSERVABLE_MODE_DIELECTRIC,
-    PLASMON_OBSERVABLE_MODE_XRTS,
-    PLASMON_OBSERVABLE_MODE_XRTS_ARTICLE_NATIVE,
     PLASMON_NORMALIZATION_NONE,
+    PLASMON_OBSERVABLE_MODE_DIELECTRIC,
+)
+from helios.services.derived.plasmon_driven_response import (
+    PLASMON_DRIVEN_RESPONSE_MODEL_NONE,
+    driven_response_model_label,
+    normalize_driven_response_model,
 )
 from helios.services.derived.plasmon_electron_policy import (
     PLASMON_ELECTRON_POLICY_ARTICLE_AL_BENCHMARK,
@@ -39,24 +42,26 @@ from helios.services.derived.plasmon_electron_policy import (
     PLASMON_ELECTRON_POLICY_BENCHMARK_VALENCE_AWARE,
     PLASMON_ELECTRON_POLICY_RAW,
     PLASMON_ELECTRON_POLICY_VALENCE_LOCKED,
-    policy_label as electron_policy_label,
-    policy_scope as electron_policy_scope,
-    resolved_material_formula_map,
     resolve_effective_electron_fields,
+    resolved_material_formula_map,
 )
-from helios.services.derived.plasmon_driven_response import (
-    PLASMON_DRIVEN_RESPONSE_MODEL_NONE,
-    PLASMON_DRIVEN_RESPONSE_MODEL_RESPONSE_ENSEMBLE,
-    driven_response_model_label,
-    normalize_driven_response_model,
+from helios.services.derived.plasmon_electron_policy import (
+    policy_label as electron_policy_label,
+)
+from helios.services.derived.plasmon_electron_policy import (
+    policy_scope as electron_policy_scope,
 )
 from helios.services.derived.plasmon_reference_data import (
     GAWNE_2024_AMBIENT_AL_DISPERSION_FIGS5,
     USER_DRIVEN_AL_DISPERSION_REFERENCE,
 )
-from helios.services.derived.plasmon_spectrum import dsf_from_loss, estimate_peak_metrics, gaussian_convolve, loss_function_from_epsilon
-from helios.services.derived.plasmon_spectrum import classical_response_cache_info
-from helios.services.derived.plasmon_xrts_observable import normalize_observable_mode, observable_mode_label
+from helios.services.derived.plasmon_spectrum import (
+    classical_response_cache_info,
+    dsf_from_loss,
+    estimate_peak_metrics,
+    gaussian_convolve,
+    loss_function_from_epsilon,
+)
 from helios.services.derived.plasmon_validation import (
     compute_plasmon,
     make_run_context,
@@ -64,8 +69,8 @@ from helios.services.derived.plasmon_validation import (
     shocked_al_slab_summary,
     uniform_al_dataset,
 )
+from helios.services.derived.plasmon_xrts_observable import normalize_observable_mode, observable_mode_label
 from helios.services.derived.selection import AnalysisStateCache
-
 
 PHOTON_ENERGY_KEV = float(USER_DRIVEN_AL_DISPERSION_REFERENCE["photon_energy_kev"])
 ARTICLE_INSTRUMENT_FWHM_EV = 3.5
@@ -2066,7 +2071,7 @@ def build_report(
 
     time_ns = np.asarray(dataset.time_s, dtype=np.float64) * 1.0e9
     ambient_snapshot = 0
-    ambient_time_ns = float(time_ns[ambient_snapshot])
+    float(time_ns[ambient_snapshot])
     ambient_zone_lower, ambient_zone_upper = _material_span(dataset, material_id=al_material_id)
     ambient_context = make_run_context(dataset, hydro_path, snapshot_index=ambient_snapshot)
 

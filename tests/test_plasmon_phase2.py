@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from pathlib import Path
 import unittest
-
-import numpy as np
+from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+import numpy as np
 
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters

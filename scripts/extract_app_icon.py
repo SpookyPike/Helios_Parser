@@ -4,7 +4,6 @@ from pathlib import Path
 
 from PIL import Image
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SOURCE_CANDIDATES = (
     REPO_ROOT / "app_icon.png",

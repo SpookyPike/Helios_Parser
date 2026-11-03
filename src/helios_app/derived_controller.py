@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore
 
 from helios.runtime import RunContext
 from helios_analysis.controller import DerivedController as _DerivedController

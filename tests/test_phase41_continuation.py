@@ -1,23 +1,34 @@
 from __future__ import annotations
 
-from pathlib import Path
 import tarfile
 import tempfile
 import unittest
-from unittest import mock
 import zipfile
-
-import numpy as np
+from pathlib import Path
+from unittest import mock
 
 import _test_bootstrap  # noqa: F401
+import numpy as np
 from _slow_tests import slow
 from _viewer_test_utils import HDF5_ROOT, get_app
-from helios.platform.archive_utils import ARCHIVE_TAR_GZ, ARCHIVE_ZIP, archive_type_for_path, extract_archive, inspect_archive
+
+from helios.platform.archive_utils import (
+    ARCHIVE_TAR_GZ,
+    ARCHIVE_ZIP,
+    archive_type_for_path,
+    extract_archive,
+    inspect_archive,
+)
 from helios.platform.registry import _inspect_hdf5, _inspect_log, build_dataset_registry
 from helios.runtime import RunContext
 from helios.services.derived import DerivedAnalysisParameters, build_cold_attenuation_request, load_run_data
 from helios.services.derived.selection import build_analysis_geometry
-from helios_viewer.icon import application_icon_path, canonical_icon_png_path, ensure_packaging_icon, load_application_icon
+from helios_viewer.icon import (
+    application_icon_path,
+    canonical_icon_png_path,
+    ensure_packaging_icon,
+    load_application_icon,
+)
 
 
 class _FakeHdf5Run:

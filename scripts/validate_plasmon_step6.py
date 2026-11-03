@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import replace
 from pathlib import Path
-import math
 
 try:
     import _script_bootstrap  # type: ignore  # noqa: F401

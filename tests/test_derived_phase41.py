@@ -1,20 +1,19 @@
 from __future__ import annotations
 
-from pathlib import Path
 import tempfile
 import unittest
-
-import numpy as np
+from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+import numpy as np
 from _slow_tests import slow
-
 from _viewer_test_utils import HDF5_ROOT, ROOT, get_app, process_events, reset_test_settings
+
 from helios.runtime import RunContext
-from helios_parser import write_hdf5
 from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
 from helios.services.derived.common import load_run_data
 from helios_analysis.workspace import HeliosDerivedWorkspace
+from helios_parser import write_hdf5
 
 
 def _context_from_dataset(path: Path, dataset) -> RunContext:

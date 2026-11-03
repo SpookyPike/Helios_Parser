@@ -14,7 +14,6 @@ except ModuleNotFoundError:  # pragma: no cover
 import numpy as np
 
 from helios.services.derived.plasmon_config import (
-    PLASMON_MODEL_CHOICES,
     PLASMON_MODEL_FINITE_T_STLS,
     PLASMON_MODEL_QUANTUM_HYDRODYNAMIC,
     PLASMON_MODEL_RPA,
@@ -242,7 +241,7 @@ def _component_breakdown_rows(spectrum_rows: list[dict[str, object]]) -> list[di
             bound = np.zeros_like(energy, dtype=np.float64)
         if elastic.size != energy.size:
             elastic = np.zeros_like(energy, dtype=np.float64)
-        total = free + bound + elastic
+        free + bound + elastic
         free_area = _integral_area(energy, free)
         bound_area = _integral_area(energy, bound)
         elastic_area = _integral_area(energy, elastic)

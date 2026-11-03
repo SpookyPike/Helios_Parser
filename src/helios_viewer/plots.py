@@ -3,14 +3,15 @@ from __future__ import annotations
 import logging
 import math
 import time
-from typing import Sequence
 import warnings
+from typing import Sequence
 
 import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtSvg, QtWidgets
 
 from helios.instrumentation import increment_counter, record_duration
+
 from .style import LIGHT_THEME, ViewerTheme
 
 LOGGER = logging.getLogger(__name__)
@@ -690,7 +691,7 @@ class FieldMapWidget(QtWidgets.QWidget):
         self._plot.getViewBox().setBackgroundColor(theme.plot_background)
         self._plot.showGrid(x=True, y=True, alpha=0.18)
         axis_pen = pg.mkPen(theme.text_color)
-        grid_pen = pg.mkPen(theme.grid_color)
+        pg.mkPen(theme.grid_color)
         for axis_name in ("left", "bottom"):
             axis = self._plot.getAxis(axis_name)
             axis.setTextPen(axis_pen)
@@ -1195,16 +1196,16 @@ class FieldMapWidget(QtWidgets.QWidget):
             self.current_render_mode = "image"
             if orientation == "time_x_coord_y":
                 display = image.T
-                x_values = np.asarray(time_values, dtype=np.float64)
-                y_values = np.asarray(coordinate_values, dtype=np.float64)
+                np.asarray(time_values, dtype=np.float64)
+                np.asarray(coordinate_values, dtype=np.float64)
                 self._snapshot_line.setAngle(90)
                 self.current_time_marker_angle = 90.0
                 boundary_angle = 0
                 reference_angle = 0
             else:
                 display = image
-                x_values = np.asarray(coordinate_values, dtype=np.float64)
-                y_values = np.asarray(time_values, dtype=np.float64)
+                np.asarray(coordinate_values, dtype=np.float64)
+                np.asarray(time_values, dtype=np.float64)
                 self._snapshot_line.setAngle(0)
                 self.current_time_marker_angle = 0.0
                 boundary_angle = 90

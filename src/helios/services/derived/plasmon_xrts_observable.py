@@ -17,19 +17,18 @@ provenance instead of inventing hidden atomic physics.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 import numpy as np
 
 from helios.services.derived.plasmon_config import (
     PLASMON_OBSERVABLE_MODE_DIELECTRIC,
-    PLASMON_OBSERVABLE_MODE_XRTS_ARTICLE_NATIVE,
     PLASMON_OBSERVABLE_MODE_XRTS,
+    PLASMON_OBSERVABLE_MODE_XRTS_ARTICLE_NATIVE,
 )
 from helios.services.derived.plasmon_electron_policy import material_atomic_number
 from helios.services.derived.plasmon_spectrum import estimate_peak_metrics, gaussian_convolve
-
 
 _AL_L_SHELL_ONSET_EV = 72.0
 _DEFAULT_ELASTIC_INTRINSIC_FWHM_EV = 0.18

@@ -11,6 +11,7 @@ import unittest
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+
 from scripts import run_test_suite
 
 
@@ -116,8 +117,9 @@ class TestSuiteRunnerTests(unittest.TestCase):
         self.assertIn("AssertionError", output)
 
     def test_payload_wrapper_uses_unittest_method_discovery(self) -> None:
-        from scripts.run_payload_audit import TEST_NAMES
         from test_viewer_payloads import ViewerPayloadTests
+
+        from scripts.run_payload_audit import TEST_NAMES
 
         expected = unittest.defaultTestLoader.getTestCaseNames(ViewerPayloadTests)
         self.assertEqual(TEST_NAMES, expected)
@@ -191,7 +193,7 @@ class TestSuiteRunnerTests(unittest.TestCase):
                 "import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); "
                 f"time.sleep(3); open({str(marker)!r}, 'w').write('late')"
             )
-            entry = run_test_suite.TestEntry("resistant.py", (sys.executable, "-c", code), "test")
+            run_test_suite.TestEntry("resistant.py", (sys.executable, "-c", code), "test")
             original = run_test_suite.TIMEOUT_OVERRIDES.get("resistant.py")
             run_test_suite.TIMEOUT_OVERRIDES["resistant.py"] = 0.15
             try:

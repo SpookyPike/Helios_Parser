@@ -11,7 +11,6 @@ from pathlib import Path
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

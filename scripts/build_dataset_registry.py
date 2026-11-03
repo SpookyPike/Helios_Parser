@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
-
-from _validation_common import REPORT_ROOT, REPO_ROOT, build_registry, preferred_hdf5_records, write_markdown_table
+from _validation_common import REPORT_ROOT, build_registry, preferred_hdf5_records, write_markdown_table
 
 
 def main() -> int:

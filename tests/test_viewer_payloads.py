@@ -2,12 +2,21 @@ from __future__ import annotations
 
 import unittest
 
-import numpy as np
-
-from _viewer_test_utils import EXPECTED, HDF5_ROOT, combo_set_data, find_row_by_data, get_app, process_events, reset_test_settings, set_checked_values, wait_until
-
 import _test_bootstrap  # noqa: F401
+import numpy as np
 from _slow_tests import slow
+from _viewer_test_utils import (
+    EXPECTED,
+    HDF5_ROOT,
+    combo_set_data,
+    find_row_by_data,
+    get_app,
+    process_events,
+    reset_test_settings,
+    set_checked_values,
+    wait_until,
+)
+
 from helios_parser import HeliosRun
 from helios_viewer.controller import RunController
 from helios_viewer.main_window import HeliosViewerMainWindow

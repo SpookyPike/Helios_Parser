@@ -32,7 +32,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
-
 from _script_bootstrap import ROOT  # noqa: E402
 
 from helios.services.derived.radiation import (  # noqa: E402

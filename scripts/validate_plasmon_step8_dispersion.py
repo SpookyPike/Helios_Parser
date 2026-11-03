@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import replace
-from pathlib import Path
 import math
+from pathlib import Path
 
 try:
     import _script_bootstrap  # type: ignore  # noqa: F401
 except ModuleNotFoundError:  # pragma: no cover - package import path
     from scripts import _script_bootstrap  # type: ignore  # noqa: F401
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np

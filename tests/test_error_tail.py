@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+
 from helios_app.parser_controller import _tail_snippet
 
 

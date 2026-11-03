@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from pathlib import Path
 import argparse
 import math
 import time
+from pathlib import Path
 
 try:
     import _script_bootstrap  # type: ignore  # noqa: F401
 except ModuleNotFoundError:  # pragma: no cover - package import path
     from scripts import _script_bootstrap  # type: ignore  # noqa: F401
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,7 +18,12 @@ import numpy as np
 from helios.services.derived.common import load_run_data
 from helios.services.derived.plasmon_lindhard import clear_finite_t_lindhard_cache, finite_t_lindhard_cache_info
 from helios.services.derived.plasmon_reference_data import USER_DRIVEN_AL_DISPERSION_REFERENCE
-from helios.services.derived.plasmon_validation import compute_plasmon, make_run_context, q_to_angle_deg, shocked_al_slab_summary
+from helios.services.derived.plasmon_validation import (
+    compute_plasmon,
+    make_run_context,
+    q_to_angle_deg,
+    shocked_al_slab_summary,
+)
 from helios.services.derived.selection import AnalysisStateCache
 
 PHOTON_ENERGY_KEV = float(USER_DRIVEN_AL_DISPERSION_REFERENCE["photon_energy_kev"])
@@ -220,7 +226,7 @@ def build_report(hydro_path: Path, *, out_dir: Path) -> int:
         "Selected slab:",
         f"- requested time: **{target_time_ns:.3f} ns**",
         f"- actual snapshot time: **{summary['time_ns']:.4f} ns**",
-        f"- material filter: **Al only (material ID 1)**",
+        "- material filter: **Al only (material ID 1)**",
         f"- density floor inside Al: **{summary['density_floor_g_cm3']:.2f} g/cm^3**",
         f"- zone clip: **{summary['zone_index_lower']}-{summary['zone_index_upper']}** ({summary['zone_count']} zones)",
         f"- path-weighted state: **rho = {summary['rho_weighted_g_cm3']:.3f} g/cm^3**, **Te = {summary['te_weighted_ev']:.3f} eV**, raw HELIOS **Zbar = {summary['zbar_weighted']:.4f}**, raw HELIOS **ne = {summary['ne_weighted_cm3']:.3e} cm^-3**",

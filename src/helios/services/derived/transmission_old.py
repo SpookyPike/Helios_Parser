@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING
 import math
-from typing import Callable
+from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
@@ -38,8 +37,8 @@ from helios.services.derived.xcom_hook import (
     build_cold_attenuation_request,
     cold_attenuation_cache_key,
     describe_optional_cold_backend,
-    load_precomputed_cold_backend,
     load_optional_cold_backend,
+    load_precomputed_cold_backend,
     normalize_material_key,
     persistent_cold_attenuation_cache,
 )
@@ -377,7 +376,7 @@ def _classify_zone_regimes(
     for offset, zone_index in enumerate(active_zone_indices.tolist()):
         label = material_labels.get(int(zone_index))
         te_value = float(te[offset]) if np.isfinite(te[offset]) else float("nan")
-        zbar_value = float(zbar[offset]) if np.isfinite(zbar[offset]) else float("nan")
+        float(zbar[offset]) if np.isfinite(zbar[offset]) else float("nan")
         density_ratio_value = float(density_ratio[offset]) if np.isfinite(density_ratio[offset]) else float("nan")
         has_xcom_material = bool(label)
         if _xcom_like_zone(te_value, density_ratio_value, material_resolved=has_xcom_material) and not _plasma_like_zone(te_value, density_ratio_value):
@@ -1013,7 +1012,7 @@ def apply_transmission_model(
     temperature_e = np.asarray(dataset.temperature_e_ev[int(snapshot_index)], dtype=np.float64)
     mean_charge = np.asarray(dataset.mean_charge[int(snapshot_index)], dtype=np.float64)
     density_reference = _density_reference_profile(dataset)
-    density_ratio = _safe_density_ratio(density, density_reference)
+    _safe_density_ratio(density, density_reference)
     path = np.asarray(path_length_cm(dataset, snapshot_index, geometry, analysis_cache=analysis_cache), dtype=np.float64)
     active_zone_indices = np.flatnonzero(mask)
 
@@ -1031,7 +1030,7 @@ def apply_transmission_model(
         photon_energies_kev=((energy_kev,) if _mode_supports_energy(mode) else ()),
     )
     zone_material_metadata = _cold_zone_metadata(cold_request)
-    material_labels = {zone_index: metadata[0] for zone_index, metadata in zone_material_metadata.items()}
+    {zone_index: metadata[0] for zone_index, metadata in zone_material_metadata.items()}
     material_canonical_keys = {zone_index: metadata[3] for zone_index, metadata in zone_material_metadata.items()}
     auto_regimes, unresolved_materials, classification_notes = _classify_zone_regimes(
         dataset,

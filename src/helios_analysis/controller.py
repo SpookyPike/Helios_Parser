@@ -8,16 +8,15 @@ discarded safely.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
-from pathlib import Path
 import logging
 import time
+from dataclasses import dataclass, replace
+from pathlib import Path
 
 import numpy as np
 from PySide6 import QtCore
 
-from helios.cache import AnalyzerCacheSet, retire_run_revision
-from helios.cache import run_identity_for_path
+from helios.cache import AnalyzerCacheSet, retire_run_revision, run_identity_for_path
 from helios.cancellation import CancellationToken
 from helios.feature_flags import production_feature_visible
 from helios.instrumentation import increment_counter, snapshot_metrics
@@ -38,7 +37,6 @@ from helios.tasks import AnalysisTaskManager, AnalysisTaskResult
 from helios_viewer.style import resolve_theme
 
 from .workspace import HeliosDerivedWorkspace
-
 
 LOGGER = logging.getLogger(__name__)
 _BASE_DERIVED_OPTIONAL_FIELDS = frozenset(

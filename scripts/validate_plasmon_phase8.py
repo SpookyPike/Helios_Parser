@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import time
 from dataclasses import replace
 from pathlib import Path
-import time
 
 try:
     import _script_bootstrap  # type: ignore  # noqa: F401
@@ -126,8 +126,12 @@ def main() -> int:
     checks.append(('invalid Mermin is flagged for benchmark use', invalid_mermin.benchmark_status == 'invalid_for_benchmark' and not invalid_mermin.model_executed_fully and invalid_mermin.spectrum_energy_ev.size == 0, f'status={invalid_mermin.benchmark_status}, fallback={invalid_mermin.fallback_fraction:.3f}'))
 
     # deselection sensitivity
-    te = np.asarray(dataset.temperature_e_ev, dtype=np.float64).copy(); ne = np.asarray(dataset.electron_density_cm3, dtype=np.float64).copy()
-    te[:, :3] = 90.0; te[:, 3:] = 260.0; ne[:, :3] = 9.0e20; ne[:, 3:] = 2.5e20
+    te = np.asarray(dataset.temperature_e_ev, dtype=np.float64).copy()
+    ne = np.asarray(dataset.electron_density_cm3, dtype=np.float64).copy()
+    te[:, :3] = 90.0
+    te[:, 3:] = 260.0
+    ne[:, :3] = 9.0e20
+    ne[:, 3:] = 2.5e20
     dataset2 = replace(dataset, temperature_e_ev=te, electron_density_cm3=ne)
     full = compute(dataset2, context, plasmon_model='rpa', plasmon_integration_mode='los_integrated', plasmon_photon_energy_kev=0.5, plasmon_scattering_angle_deg=1.0, plasmon_energy_window_ev=30.0, plasmon_energy_points=501, plasmon_normalization='none', plasmon_instrument_fwhm_ev=0.0)
     subset = compute(dataset2, replace(context, selected_region_ids=(1,), selected_material_ids=(1,)), plasmon_model='rpa', plasmon_integration_mode='los_integrated', plasmon_photon_energy_kev=0.5, plasmon_scattering_angle_deg=1.0, plasmon_energy_window_ev=30.0, plasmon_energy_points=501, plasmon_normalization='none', plasmon_instrument_fwhm_ev=0.0)
@@ -135,8 +139,12 @@ def main() -> int:
 
     cache = AnalysisStateCache()
     params = dict(plasmon_model='mermin_static_lfc', plasmon_photon_energy_kev=7.5, plasmon_scattering_angle_deg=20.0, plasmon_energy_window_ev=80.0, plasmon_energy_points=1201, plasmon_collision_model='manual_constant', plasmon_manual_collision_rate_s=8.0e14, plasmon_lfc_model='esa_static', plasmon_integration_mode='los_integrated')
-    start = time.perf_counter(); first = compute(dataset2, context, analysis_cache=cache, **params); cold_s = time.perf_counter() - start
-    start = time.perf_counter(); second = compute(dataset2, context, analysis_cache=cache, **params); warm_s = time.perf_counter() - start
+    start = time.perf_counter()
+    first = compute(dataset2, context, analysis_cache=cache, **params)
+    cold_s = time.perf_counter() - start
+    start = time.perf_counter()
+    second = compute(dataset2, context, analysis_cache=cache, **params)
+    warm_s = time.perf_counter() - start
     checks.append(('cache buckets reuse identical request', warm_s < cold_s and np.allclose(first.spectrum_intensity, second.spectrum_intensity, equal_nan=True), f'{cold_s*1e3:.2f} ms -> {warm_s*1e3:.2f} ms'))
 
     example_lines = []

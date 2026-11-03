@@ -2,15 +2,20 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 import math
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
 from helios.runtime import RunContext
 from helios.services.derived.common import picosecond_drive_warning
-from helios.services.derived.models import DerivedPlotBundle, DerivedRunData, DerivedWarning, XrdLayerEstimate, XrdResult
+from helios.services.derived.models import (
+    DerivedPlotBundle,
+    DerivedRunData,
+    DerivedWarning,
+    XrdLayerEstimate,
+    XrdResult,
+)
 from helios.services.derived.selection import (
     AnalysisStateCache,
     build_analysis_mask,

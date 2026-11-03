@@ -3,9 +3,9 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+import _test_bootstrap  # noqa: F401
 import numpy as np
 
-import _test_bootstrap  # noqa: F401
 from helios.cache import AnalyzerCacheSet
 from helios.runtime import RunContext
 from helios_viewer.models import OpenRunPayload

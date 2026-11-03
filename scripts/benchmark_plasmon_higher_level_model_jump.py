@@ -21,7 +21,6 @@ from helios.services.derived.plasmon_driven_response import (
 try:
     from benchmark_plasmon_article_cases import build_report
     from benchmark_plasmon_experimental_response_model import (
-        FROZEN_BASELINE_DIR,
         PRIMARY_CASE_POLICIES,
         _decorate_rows,
         _equivalence_rows,
@@ -34,7 +33,6 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     from scripts.benchmark_plasmon_article_cases import build_report  # type: ignore
     from scripts.benchmark_plasmon_experimental_response_model import (  # type: ignore
-        FROZEN_BASELINE_DIR,
         PRIMARY_CASE_POLICIES,
         _decorate_rows,
         _equivalence_rows,

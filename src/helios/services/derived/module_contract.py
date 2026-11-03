@@ -11,7 +11,6 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Callable, Generic, TypeVar
 
-
 ResultT = TypeVar("ResultT")
 
 

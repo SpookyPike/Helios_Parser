@@ -5,14 +5,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import _test_bootstrap  # noqa: F401
 import h5py
 
-import _test_bootstrap  # noqa: F401
 from helios.cache import clear_session_raw_data_cache
 from helios.runtime import RunRevision
 from helios.services.derived.common import load_run_data
 from helios_parser import write_hdf5
-
 
 TRACKED_BPF = (
     Path(__file__).resolve().parents[1]

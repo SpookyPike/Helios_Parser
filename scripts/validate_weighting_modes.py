@@ -1,8 +1,14 @@
 from __future__ import annotations
 
-from _validation_common import VALIDATION_ROOT, build_registry, compute_result_for_record, preferred_hdf5_records, save_json
-from helios.services.derived import DerivedAnalysisParameters
+from _validation_common import (
+    VALIDATION_ROOT,
+    build_registry,
+    compute_result_for_record,
+    preferred_hdf5_records,
+    save_json,
+)
 
+from helios.services.derived import DerivedAnalysisParameters
 
 OUTPUT_DIR = VALIDATION_ROOT / "weighting_modes"
 WEIGHTING_MODES = ("simple_mean", "width", "mass", "electron_density", "electron_column")

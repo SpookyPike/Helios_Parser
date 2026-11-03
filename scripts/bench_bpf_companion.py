@@ -3,10 +3,10 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from pathlib import Path
 import sys
 import threading
 import time
+from pathlib import Path
 
 import h5py
 import numpy as np

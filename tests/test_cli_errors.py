@@ -1,14 +1,13 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
-import os
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
-
 
 ROOT = Path(__file__).resolve().parents[1]
 BPF_SAMPLE = ROOT / "new_data" / "5Fe+4.9TW+light" / "5Fe+4.9TW+light.bpf"

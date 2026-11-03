@@ -6,7 +6,6 @@ import math
 
 import numpy as np
 
-
 _MAX_REASONABLE_SPEED_CM_S = 1.0e10
 
 

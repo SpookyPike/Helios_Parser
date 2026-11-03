@@ -9,17 +9,17 @@ for benchmark and auto-selected plasmon models.
 
 from __future__ import annotations
 
-from functools import lru_cache
 import math
+from functools import lru_cache
 
 import numpy as np
+
 try:
     from scipy.optimize import brentq as _scipy_brentq
 except ModuleNotFoundError:  # pragma: no cover - optional numerical helper
     _scipy_brentq = None
 
 from helios.services.derived.plasmon_units import (
-    BOHR_RADIUS_M,
     ELECTRON_CHARGE_C,
     ELECTRON_MASS_KG,
     EPSILON_0_F_M,

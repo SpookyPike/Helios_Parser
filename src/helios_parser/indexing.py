@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 
 from .buffer import HeliosBuffer
 from .model import HeliosBlockIndex, SnapshotBlock, TextSpan
 from .tokenizer import RegexTokenizer
-
 
 HEADER_END_MARKER = b"END OF INPUT PARAMETERS"
 BLOCK_DELIMITER = b"--------------------------------------------------------------------"

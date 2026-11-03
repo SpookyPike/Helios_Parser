@@ -13,7 +13,6 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import platform
 import random
 import re
@@ -22,8 +21,8 @@ import subprocess
 import sys
 import tempfile
 import time
+from pathlib import Path
 from typing import Any
-
 
 SCHEMA_VERSION = 1
 DEFAULT_SAMPLES = 10

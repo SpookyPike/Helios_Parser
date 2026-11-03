@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-from pathlib import Path
 import unittest
-
-import numpy as np
+from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+import numpy as np
 
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters
 from helios.services.derived.models import DerivedRunData
-from helios.services.derived.plasmon import evaluate_plasmon_regime, electron_debye_length_cm
+from helios.services.derived.plasmon import electron_debye_length_cm, evaluate_plasmon_regime
 from helios.services.derived.plasmon_units import electron_debye_length_cm as electron_debye_length_cm_units
 from helios.services.derived.selection import build_analysis_geometry
 

@@ -4,6 +4,7 @@ import unittest
 
 import _test_bootstrap  # noqa: F401
 import numpy as np
+
 from helios_parser.bpf import field_metadata_for_bpf_key
 from helios_parser.quantities import plasma_pressure, total_pressure
 from helios_viewer.units import DisplayUnitChoices, convert_field_values

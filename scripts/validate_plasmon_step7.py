@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import math
 from dataclasses import replace
 from pathlib import Path
-import math
 
 try:
     import _script_bootstrap  # type: ignore  # noqa: F401
@@ -12,7 +12,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from helios.runtime import RunContext
-from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result, refresh_analysis_result_for_snapshot
+from helios.services.derived.analysis import (
+    DerivedAnalysisParameters,
+    compute_analysis_result,
+    refresh_analysis_result_for_snapshot,
+)
 from helios.services.derived.common import load_run_data
 from helios.services.derived.models import DerivedRunData
 from helios.services.derived.plasmon import evaluate_plasmon_regime

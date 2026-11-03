@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import argparse
 import logging
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from .hdf5 import write_hdf5
 from .parser import HeliosParser

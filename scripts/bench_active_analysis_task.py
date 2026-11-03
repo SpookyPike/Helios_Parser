@@ -3,16 +3,15 @@ from __future__ import annotations
 """Measure process RSS while the real asynchronous derived-task worker runs."""
 
 import argparse
-import hashlib
 import gc
+import hashlib
 import json
 import os
-from pathlib import Path
 import platform
-import statistics
 import sys
 import threading
 import time
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -45,7 +44,7 @@ def sha256(path: Path) -> str:
 
 
 def run(path: Path, sample_interval_ms: int) -> dict[str, object]:
-    app = QtCore.QCoreApplication.instance() or QtCore.QCoreApplication([])
+    QtCore.QCoreApplication.instance() or QtCore.QCoreApplication([])
     baseline_rss = rss_bytes()
     peaks = [baseline_rss]
     stop_sampling = threading.Event()

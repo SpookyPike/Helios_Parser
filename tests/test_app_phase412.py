@@ -1,20 +1,19 @@
 from __future__ import annotations
 
+import unittest
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
-import unittest
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
+from _viewer_test_utils import combo_set_data, get_app, process_events, reset_test_settings, wait_until
 from PySide6 import QtCore, QtTest
 
-from _viewer_test_utils import get_app, process_events, reset_test_settings, wait_until, combo_set_data
 from helios_app.main_app import HeliosParseViewMainWindow
 from helios_app.session_state import reset_session_state
 from helios_viewer.settings import load_viewer_settings
-
 
 ROOT = Path(__file__).resolve().parents[1]
 HDF5_ROOT = ROOT / "outputs" / "hdf5"
@@ -52,7 +51,7 @@ class AppPhase412Tests(unittest.TestCase):
 
             workspace = window.derived_controller.widget()
             workspace.result_tabs.setCurrentIndex(workspace.result_tabs.indexOf(workspace.xrd_tab))
-            wait_until(lambda: f"snapshot 17" in workspace.xrd_plot_panel.profile_plot.current_title.lower(), 120.0)
+            wait_until(lambda: "snapshot 17" in workspace.xrd_plot_panel.profile_plot.current_title.lower(), 120.0)
             self.assertIn("snapshot 17", workspace.xrd_plot_panel.profile_plot.current_title.lower())
             self.assertIn("17", workspace.snapshot_label.text())
             self.assertIn(window.viewer_controller.current_time_unit(), window.global_snapshot_label.text())

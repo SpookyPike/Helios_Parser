@@ -12,10 +12,10 @@ import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
 from _viewer_test_utils import ROOT, get_app
 from PySide6 import QtCore
-from helios_parser import write_hdf5
 
 from helios_analysis.workspace import HeliosDerivedWorkspace
 from helios_app.main_app import HeliosParseViewMainWindow
+from helios_parser import write_hdf5
 from helios_viewer.main_window import HeliosViewerMainWindow
 
 

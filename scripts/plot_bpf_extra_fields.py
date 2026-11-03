@@ -11,10 +11,8 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import LogNorm, SymLogNorm
-
 from inspect_bpf import extract_common_snapshot, infer_layout, read_fortran_records
-
+from matplotlib.colors import LogNorm, SymLogNorm
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATA_ROOT = ROOT / "new_data"

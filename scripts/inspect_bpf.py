@@ -8,7 +8,6 @@ from typing import Iterable
 
 import numpy as np
 
-
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATA_ROOT = ROOT / "new_data"
 

@@ -12,14 +12,14 @@ lightweight observability via size/capacity/hit/miss/eviction counters.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, fields, is_dataclass
+import threading
+import weakref
 from collections import OrderedDict
 from collections.abc import Iterator, MutableMapping
+from contextlib import nullcontext
+from dataclasses import dataclass, field, fields, is_dataclass
 from pathlib import Path
 from typing import Any
-import weakref
-import threading
-from contextlib import nullcontext
 
 import numpy as np
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Reusable helpers for plasmon validation scripts.
 
 These functions intentionally keep benchmark plumbing separate from the main
@@ -8,9 +6,10 @@ uniform states, and literature digitizations without mutating the production UI
 or dispatch layer.
 """
 
-from dataclasses import asdict
-from pathlib import Path
+from __future__ import annotations
+
 import math
+from pathlib import Path
 from typing import Any
 
 import numpy as np

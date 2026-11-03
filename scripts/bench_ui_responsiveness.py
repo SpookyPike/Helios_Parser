@@ -12,11 +12,11 @@ import importlib.util
 import json
 import os
 import platform
-from pathlib import Path
 import statistics
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 
 def percentile(values: list[float], fraction: float) -> float:
@@ -38,9 +38,10 @@ def main() -> int:
     root = args.code_root.resolve()
     sys.path.insert(0, str(root / "src"))
 
-    from PySide6 import QtCore, QtWidgets
     import h5py
     import numpy as np
+    from PySide6 import QtCore, QtWidgets
+
     from helios_viewer.main_window import HeliosViewerMainWindow
 
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(["helios-ui-benchmark"])

@@ -23,7 +23,6 @@ from helios_parser import HeliosParser, write_hdf5
 from helios_parser.bpf import BPF_FIXED_RECORD_SPECS, BpfFile
 from helios_parser.hdf5 import WriteProgress, resolve_parse_sources
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -239,7 +238,7 @@ class ParserWorker(QtCore.QObject):
             self.preview_ready.emit((request_id, payload))
             LOGGER.info("Previewed %s in %.3f s", path.name, time.perf_counter() - started_at)
             self.status.emit(f"Preview ready: {path.name}")
-        except Exception as exc:
+        except Exception:
             details = traceback.format_exc()
             snippet = _tail_snippet(path)
             if snippet:
@@ -297,7 +296,7 @@ class ParserWorker(QtCore.QObject):
             self.parse_succeeded.emit(ParseResultPayload(source=source, output=output, elapsed_s=elapsed_s, warnings=warnings))
             LOGGER.info("Parsed %s to %s in %.3f s", source.name, output.name, time.perf_counter() - started_perf)
             self.status.emit(f"Parse complete: {output.name}")
-        except Exception as exc:
+        except Exception:
             details = traceback.format_exc()
             snippet = _tail_snippet(source)
             if snippet:

@@ -7,11 +7,10 @@ from pathlib import Path
 from unittest import mock
 
 import _test_bootstrap  # noqa: F401
-from _slow_tests import slow
 import h5py
-from PySide6 import QtCore, QtWidgets
-
+from _slow_tests import slow
 from _viewer_test_utils import HDF5_ROOT, ROOT, get_app, process_events, reset_test_settings, wait_until
+from PySide6 import QtWidgets
 
 from helios_app.main_app import HeliosParseViewMainWindow
 from helios_app.session_state import reset_session_state

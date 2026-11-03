@@ -13,13 +13,13 @@ HELIOS fields and reports the unresolved material explicitly.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from functools import lru_cache
 import json
 import math
+import re
+from dataclasses import dataclass
+from functools import lru_cache
 from importlib import resources
 from pathlib import Path
-import re
 from typing import Any
 
 import numpy as np

@@ -1,13 +1,12 @@
 """Canonical neutral-element mass fractions for XCOM coefficient queries."""
 from __future__ import annotations
 
-from dataclasses import dataclass
-from functools import lru_cache
-from importlib import resources
 import hashlib
 import json
 import re
-
+from dataclasses import dataclass
+from functools import lru_cache
+from importlib import resources
 
 _SYMBOLS = (
     "H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn "

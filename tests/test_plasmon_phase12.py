@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from pathlib import Path
 import os
 import unittest
-
-import numpy as np
+from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+import numpy as np
 
 from helios.services.derived.common import load_run_data
 from helios.services.derived.plasmon_validation import (

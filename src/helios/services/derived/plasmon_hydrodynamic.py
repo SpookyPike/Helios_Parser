@@ -36,7 +36,6 @@ from helios.services.derived.plasmon_units import (
     electron_thermal_speed_m_s,
 )
 
-
 _DEF_NUMERICAL_IMAG_SHIFT_EV = 1.0e-9
 
 

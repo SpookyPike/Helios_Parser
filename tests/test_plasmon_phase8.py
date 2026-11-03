@@ -1,24 +1,25 @@
 from __future__ import annotations
 
+import unittest
 from dataclasses import replace
 from pathlib import Path
-import unittest
 from unittest import mock
 
 import numpy as np
+
 try:
     from scipy.special import wofz
 except ModuleNotFoundError:  # pragma: no cover - optional reference backend
     wofz = None
 
 import _test_bootstrap  # noqa: F401
+from test_plasmon_phase3 import _synthetic_dataset
 
+import helios.services.derived.plasmon as plasmon_module
 from helios.cancellation import AnalysisCancelled
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters
 from helios.services.derived.common import load_run_data
-from helios.services.derived.models import DerivedRunData
-import helios.services.derived.plasmon as plasmon_module
 from helios.services.derived.plasmon import evaluate_plasmon_regime
 from helios.services.derived.plasmon_config import plasmon_ui_capabilities
 from helios.services.derived.plasmon_electron_policy import PLASMON_BENCHMARK_POLICY_COMPARISON
@@ -32,7 +33,6 @@ from helios.services.derived.plasmon_spectrum import (
 )
 from helios.services.derived.plasmon_validation import q_to_angle_deg, uniform_al_dataset
 from helios.services.derived.selection import build_analysis_geometry
-from test_plasmon_phase3 import _synthetic_dataset
 
 
 def _geometry(dataset, context, params):

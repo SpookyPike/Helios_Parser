@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-from pathlib import Path
 import unittest
-
-import numpy as np
+from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+import numpy as np
 from _slow_tests import slow
+from _viewer_test_utils import combo_set_data, get_app, process_events, reset_test_settings
 
-from _viewer_test_utils import get_app, process_events, reset_test_settings, combo_set_data
 from helios.runtime import RunContext
 from helios.services.derived.analysis import DerivedAnalysisParameters, compute_analysis_result
 from helios.services.derived.common import load_run_data
 from helios_analysis.workspace import HeliosDerivedWorkspace
-
 
 ROOT = Path(__file__).resolve().parents[1]
 

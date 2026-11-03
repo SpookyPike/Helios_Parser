@@ -3,12 +3,11 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
+import _test_bootstrap  # noqa: F401
 import h5py
 import numpy as np
 
-import _test_bootstrap  # noqa: F401
 from helios_parser import HeliosParser, HeliosPreview, inspect, parse, preview, write_hdf5
-
 
 ROOT = Path(__file__).resolve().parents[1]
 TRACKED_SAMPLE = ROOT / "new_data" / "25Cu+1.87TW" / "25Cu+1.87TW.log"

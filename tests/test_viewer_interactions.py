@@ -1,15 +1,22 @@
 from __future__ import annotations
 
-import math
 import unittest
 
+import _test_bootstrap  # noqa: F401
 import numpy as np
+from _slow_tests import slow
+from _viewer_test_utils import (
+    HDF5_ROOT,
+    combo_set_data,
+    find_row_by_data,
+    get_app,
+    process_events,
+    reset_test_settings,
+    set_checked_values,
+    wait_until,
+)
 from PySide6 import QtGui, QtWidgets
 
-from _viewer_test_utils import HDF5_ROOT, combo_set_data, find_row_by_data, get_app, process_events, reset_test_settings, set_checked_values, wait_until
-
-import _test_bootstrap  # noqa: F401
-from _slow_tests import slow
 from helios_parser import HeliosRun
 from helios_viewer.main_window import HeliosViewerMainWindow
 

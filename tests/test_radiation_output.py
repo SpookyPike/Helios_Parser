@@ -37,29 +37,35 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import _test_bootstrap  # noqa: F401
 import h5py
 import numpy as np
-
-import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
 
 try:
     from PySide6 import QtWidgets  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover
     QtWidgets = None  # type: ignore
-from helios.services.derived import integrate_over_groups, spectrum_at, spectrum_map
+from helios.runtime import RunContext
+from helios.services.derived import (
+    DerivedAnalysisParameters,
+    compute_analysis_result,
+    integrate_over_groups,
+    load_run_data,
+    spectrum_at,
+    spectrum_map,
+)
 from helios_parser.exodus import (
     GROUP_BOUNDS_DATASET,
     RADIATION_TIME_DATASET,
     ExodusFormatError,
     read_exodus,
 )
-from helios.runtime import RunContext
-from helios.services.derived import DerivedAnalysisParameters, compute_analysis_result, load_run_data
 from helios_parser.hdf5 import write_hdf5
 
 if QtWidgets is not None:
     from _viewer_test_utils import get_app, process_events, reset_test_settings
+
     from helios_analysis.workspace import HeliosDerivedWorkspace
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
