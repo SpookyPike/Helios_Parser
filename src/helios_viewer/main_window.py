@@ -447,8 +447,6 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self._moving_mesh_cache_misses = 0
         self._laser_entry_info: dict[str, object] | None = None
         self._mouse_plot_auto_range_pending = True
-        self._display_field_cache_key: tuple[object, ...] | None = None
-        self._display_field_cache_value: tuple[np.ndarray, str] | None = None
         self._prefer_primary_coordinates_on_open = False
         self._viewer_settings = load_viewer_settings()
         self._theme_mode = self._viewer_settings.theme_mode if self._viewer_settings.theme_mode in THEME_MODES else "system"
@@ -1202,10 +1200,13 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         cache = self.cache_layers.view_cache.bucket("display_axes", max_items=12)
         key = ("time", id(array), array.shape, self._viewer_settings.time_unit, float(array.flat[0]), float(array.flat[-1]))
         cached = cache.get(key)
-        if cached is not None:
-            return cached
+        if cached is not None and cached[0] is array:
+            return cached[1]
         converted = np.asarray(convert_time_values(array, self._viewer_settings.time_unit), dtype=np.float64)
-        cache[key] = converted
+        # Hold the source array in the entry. Keying on id() alone would let a
+        # freed array's id be reused by a different array with the same shape
+        # and endpoints, which would then be served this stale conversion.
+        cache[key] = (array, converted)
         return converted
 
     def _display_time_value(self, value: float) -> float:
@@ -1218,10 +1219,10 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         cache = self.cache_layers.view_cache.bucket("display_axes", max_items=12)
         key = ("length", id(array), array.shape, self._viewer_settings.length_unit, float(array.flat[0]), float(array.flat[-1]))
         cached = cache.get(key)
-        if cached is not None:
-            return cached
+        if cached is not None and cached[0] is array:
+            return cached[1]
         converted = np.asarray(convert_length_values(array, self._viewer_settings.length_unit), dtype=np.float64)
-        cache[key] = converted
+        cache[key] = (array, converted)
         return converted
 
     def _display_length_value(self, value: float) -> float:
@@ -1256,18 +1257,15 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             self._viewer_settings.number_density_unit,
         )
         cached = cache.get(key)
-        if cached is not None:
-            self._display_field_cache_key = key
-            self._display_field_cache_value = cached
-            return cached
+        if cached is not None and cached[0] is data:
+            return cached[1], cached[2]
         converted, display_unit = convert_field_values(
             field_name, data, unit, self._display_units(),
             quantity=quantity or None, alias_of=alias_of or None,
         )
-        self._display_field_cache_key = key
-        self._display_field_cache_value = (np.asarray(converted, dtype=np.float64), display_unit)
-        cache[key] = self._display_field_cache_value
-        return self._display_field_cache_value
+        entry = (data, np.asarray(converted, dtype=np.float64), display_unit)
+        cache[key] = entry
+        return entry[1], entry[2]
 
     def _display_field_unit(self, field_name: str, native_unit: str) -> str:
         metadata = self._metadata_for_field(field_name)
@@ -1578,8 +1576,6 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
 
     def _apply_viewer_settings(self, updated) -> None:
         self._viewer_settings = updated
-        self._display_field_cache_key = None
-        self._display_field_cache_value = None
         self.cache_layers.view_cache.clear()
         self._hover_timer.setInterval(max(0, int(updated.hover_interval_ms)))
         self._wheel_guard.set_enabled(bool(updated.wheel_guard_enabled))
@@ -1597,8 +1593,6 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
     def _reset_preferences_to_defaults(self) -> None:
         self._viewer_settings = reset_viewer_settings()
         self._theme_mode = self._viewer_settings.theme_mode
-        self._display_field_cache_key = None
-        self._display_field_cache_value = None
         self.cache_layers.view_cache.clear()
         self._suppress_preference_persist = True
         try:
@@ -2105,8 +2099,6 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         self.radius_payload = None
         self.current_diagnostic_payload = None
         self.current_diagnostic_path = None
-        self._display_field_cache_key = None
-        self._display_field_cache_value = None
         self.cache_layers.view_cache.clear()
         self._invalidate_combined_zone_mask_cache()
         self._invalidate_moving_mesh_cache()
@@ -4350,8 +4342,6 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
             return
         initial_field_render = self.current_field_payload is None
         self.current_field_payload = payload
-        self._display_field_cache_key = None
-        self._display_field_cache_value = None
         self._mouse_plot_auto_range_pending = True
         self._update_map_control_state()
         self._update_slice_control_state()

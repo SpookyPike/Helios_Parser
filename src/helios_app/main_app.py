@@ -121,6 +121,11 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         self._global_snapshot_slider_drag_active = False
         self._breakout_snapshot_index: int | None = None
         self._breakout_run_identity: str | None = None
+        # Path.resolve() stats every component, about 90 us, and the breakout
+        # button state is recomputed on each snapshot tick. Only one run is
+        # active at a time, so caching the last raw->resolved pair is enough.
+        self._resolved_identity_raw: str | None = None
+        self._resolved_identity: str | None = None
         self._breakout_reason = "Breakout is unavailable until a derived Shock result is ready."
         self._pending_auto_open_path: Path | None = None
         self._pending_auto_open_attempts = 0
@@ -554,10 +559,16 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
         path = getattr(context, "path", None)
         if path is None:
             return None
+        raw = str(path)
+        if self._resolved_identity_raw == raw:
+            return self._resolved_identity
         try:
-            return str(Path(path).resolve())
+            resolved = str(Path(path).resolve())
         except Exception:
-            return str(Path(path))
+            resolved = raw
+        self._resolved_identity_raw = raw
+        self._resolved_identity = resolved
+        return resolved
 
     def _update_breakout_button_state(self) -> None:
         active_run_identity = self._active_run_identity()
