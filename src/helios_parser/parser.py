@@ -260,13 +260,6 @@ def _parse_field_table_rows(
                     return None
         return None
 
-    def block_requires_normalization(block_text: str) -> bool:
-        return (
-            DEFAULT_TOKENIZER.malformed_exponent_pattern.search(block_text) is not None
-            or "D" in block_text
-            or "d" in block_text
-        )
-
     layout_key = "secondary" if "Ion energy" in header_line else "primary"
     if layout_key == "primary":
         known_layout = KNOWN_TABLE_LAYOUTS.get(("primary", 14))
@@ -333,14 +326,23 @@ def _parse_field_table_rows(
 
     if filtered_lines:
         block_text = "\n".join(filtered_lines)
+        expected_size = len(filtered_lines) * expected_row_width
+        # Parse first, normalise only if the fast path fails. `np.fromstring`
+        # raises on unmatched trailing data (a malformed exponent such as
+        # `1.234-123`), so the exception is the detector; the size check below
+        # still catches a short parse. Pre-scanning every block with the
+        # malformed-exponent regex cost about 45% of a conversion because its
+        # negative lookbehind defeats the engine's literal scan.
         parsed_block = np.empty(0, dtype=np.float64)
-        if not block_requires_normalization(block_text):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            try:
                 parsed_block = np.fromstring(block_text, sep=" ", dtype=np.float64)
-        if parsed_block.size != len(filtered_lines) * expected_row_width:
+            except ValueError:
+                parsed_block = np.empty(0, dtype=np.float64)
+        if parsed_block.size != expected_size:
             parsed_block = np.fromstring(normalize_numeric_text(block_text), sep=" ", dtype=np.float64)
-        if parsed_block.size == len(filtered_lines) * expected_row_width:
+        if parsed_block.size == expected_size:
             rows = parsed_block.reshape((-1, expected_row_width))
             zone_indices = rows[:, 0].astype(np.int32)
             valid = (zone_indices >= 1) & (zone_indices <= n_zones)
