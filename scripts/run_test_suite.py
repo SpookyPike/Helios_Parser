@@ -25,6 +25,7 @@ FIXTURE_MANIFEST = ROOT / "tests" / "fixture_manifest.json"
 CORE_NAMES = {
     "smoke_test.py",
     "test_bpf_pipeline.py",
+    "test_chunk_layout.py",
     "test_cli_errors.py",
     "test_test_runner.py",
 }
