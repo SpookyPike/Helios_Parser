@@ -672,22 +672,64 @@ def _least_squares_tanh_fit(
     best_error = math.inf
     best_xf = float(initial_xf)
     best_width = max(float(initial_width), cell_width)
-    for x_f in x_candidates:
-        for width in width_candidates:
-            basis = np.column_stack((np.ones(x.size, dtype=np.float64), np.tanh((x - float(x_f)) / max(float(width), 1.0e-12))))
-            total_error = 0.0
-            for field in valid_fields:
-                finite = np.isfinite(field) & np.all(np.isfinite(basis), axis=1)
-                if np.count_nonzero(finite) < 3:
-                    continue
-                solution, *_ = np.linalg.lstsq(basis[finite], field[finite], rcond=None)
-                residual = field[finite] - basis[finite] @ solution
-                amplitude = max(float(np.nanstd(field[finite])), 1.0e-12)
-                total_error += float(np.sqrt(np.mean((residual / amplitude) ** 2)))
-            if total_error < best_error:
-                best_error = total_error
-                best_xf = float(x_f)
-                best_width = float(width)
+
+    # One batched solve for all 20 grid points. numpy's lstsq rejects stacked
+    # input, so the previous loop paid LAPACK setup 55,200 times per analysis
+    # on 5x2 systems. The amplitude depends only on the field, not the grid
+    # point, so it is hoisted as well.
+    x_array = np.asarray(x, dtype=np.float64)
+    grid = np.array(
+        [(float(x_f), max(float(width), 1.0e-12)) for x_f in x_candidates for width in width_candidates],
+        dtype=np.float64,
+    )
+    bases = np.empty((grid.shape[0], x_array.size, 2), dtype=np.float64)
+    bases[:, :, 0] = 1.0
+    bases[:, :, 1] = np.tanh((x_array[None, :] - grid[:, 0:1]) / grid[:, 1:2])
+    prepared = []
+    # Finiteness depends only on x and the field, never on the grid point,
+    # so one mask per field serves every candidate pair.
+    basis_finite = np.all(np.isfinite(bases), axis=(0, 2))
+    for field in valid_fields:
+        finite = np.isfinite(field) & basis_finite
+        if np.count_nonzero(finite) < 3:
+            continue
+        prepared.append((bases[:, finite, :], field[finite], max(float(np.nanstd(field[finite])), 1.0e-12)))
+    if prepared:
+        try:
+            total_errors = np.zeros(grid.shape[0], dtype=np.float64)
+            for sub_basis, target, amplitude in prepared:
+                normal = np.einsum("cmi,cmj->cij", sub_basis, sub_basis)
+                rhs = np.einsum("cmi,m->ci", sub_basis, target)
+                solution = np.linalg.solve(normal, rhs[..., None])[..., 0]
+                residual = target[None, :] - np.einsum("cmi,ci->cm", sub_basis, solution)
+                total_errors += np.sqrt(np.mean((residual / amplitude) ** 2, axis=1))
+            best = int(np.argmin(total_errors))
+            if float(total_errors[best]) < best_error:
+                best_error = float(total_errors[best])
+                best_xf = float(grid[best, 0])
+                best_width = float(grid[best, 1])
+        except np.linalg.LinAlgError:
+            # Normal equations square the condition number and drop lstsq's
+            # rank truncation, so a near-collinear window can be singular.
+            # Fall back to the per-system solve for this call.
+            for x_f in x_candidates:
+                for width in width_candidates:
+                    basis = np.column_stack(
+                        (np.ones(x_array.size, dtype=np.float64), np.tanh((x_array - float(x_f)) / max(float(width), 1.0e-12)))
+                    )
+                    total_error = 0.0
+                    for field in valid_fields:
+                        finite = np.isfinite(field) & np.all(np.isfinite(basis), axis=1)
+                        if np.count_nonzero(finite) < 3:
+                            continue
+                        solution, *_ = np.linalg.lstsq(basis[finite], field[finite], rcond=None)
+                        residual = field[finite] - basis[finite] @ solution
+                        amplitude = max(float(np.nanstd(field[finite])), 1.0e-12)
+                        total_error += float(np.sqrt(np.mean((residual / amplitude) ** 2)))
+                    if total_error < best_error:
+                        best_error = total_error
+                        best_xf = float(x_f)
+                        best_width = float(width)
     if not np.isfinite(best_error):
         return None
     fit_quality = float(1.0 / (1.0 + best_error))
