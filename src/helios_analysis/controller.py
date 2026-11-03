@@ -244,6 +244,10 @@ class DerivedController(QtCore.QObject):
         requested_modules = self._requested_modules()
         return (
             *self._build_core_request_key(parameters),
+            # The core key is geometry-only so a module edit can reuse the shock
+            # and wavefront work; the full-result key must still cover the module
+            # parameters, or a cached result would be served for old settings.
+            *parameters.module_key(),
             tuple(sorted(requested_modules)),
             parameters.preheat_target_region_id,
             int(self._context.snapshot_index),

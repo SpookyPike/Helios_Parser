@@ -816,6 +816,10 @@ class DerivedAnalysisResult:
     preheat: PreheatSummary | None = None
     module_availability: tuple["DerivedModuleAvailability", ...] = ()
     radiation: RadiationResult | None = None
+    # Parameters the tab-local module results were computed under. A cached
+    # result may be reused as the base for a recompute, but its module payloads
+    # are only reusable when this matches the current module key.
+    module_key: tuple[object, ...] | None = None
 
 
 @dataclass(frozen=True, slots=True)

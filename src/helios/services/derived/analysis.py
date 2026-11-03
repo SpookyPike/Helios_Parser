@@ -134,14 +134,50 @@ class DerivedAnalysisParameters:
     preheat_target_region_id: int | None = None
 
     def key(self) -> tuple[object, ...]:
-        """Stable cache/task key for the baseline parameter set.
+        """Stable cache/task key for the full parameter set.
 
         Transmission mode/energy stay out of the baseline derived cache key so
         the Transmission tab can request model-aware snapshot overlays without
         forcing unrelated modules onto an energy-dependent path.
+
+        Composed of the geometry/selection key plus the module key, so a caller
+        that changes only a module parameter misses the full-result cache but
+        still hits the core cache and reuses the shock and wavefront work.
+        """
+
+        return (*self.core_key(), *self.module_key())
+
+    def core_key(self) -> tuple[object, ...]:
+        """Key for the geometry, selection and weighting state only.
+
+        This is exactly what `shock_tracking` and `build_analysis_mask` read, so
+        editing a plasmon or XRD control no longer discards shock and wavefront
+        results. Module results are protected separately by `module_key()`.
         """
 
         return (
+            "core",
+            str(self.observation_side),
+            float(self.line_of_sight_angle_deg),
+            float(self.line_of_sight_impact_parameter_cm),
+            str(self.profile_coordinate_mode),
+            bool(self.reuse_viewer_subset),
+            None if self.derived_region_ids is None else tuple(int(value) for value in self.derived_region_ids),
+            None if self.derived_material_ids is None else tuple(int(value) for value in self.derived_material_ids),
+            bool(self.exclude_entry_region),
+            bool(self.exclude_low_density),
+            float(self.min_density_g_cm3),
+            bool(self.exclude_opposite_velocity),
+            self.zone_index_lower,
+            self.zone_index_upper,
+            str(self.weighting_mode),
+        )
+
+    def module_key(self) -> tuple[object, ...]:
+        """Key for the tab-local module parameters (xrd, plasmon, spectroscopy, preheat)."""
+
+        return (
+            "modules",
             float(self.xrd_photon_energy_kev),
             float(self.xrd_initial_bragg_angle_deg),
             float(self.plasmon_photon_energy_kev),
@@ -176,27 +212,9 @@ class DerivedAnalysisParameters:
             None if self.plasmon_compare_model_names is None else tuple(str(value) for value in self.plasmon_compare_model_names),
             bool(self.plasmon_compare_policies),
             float(self.spectroscopy_line_wavelength_nm),
-            str(self.observation_side),
-            float(self.line_of_sight_angle_deg),
-            float(self.line_of_sight_impact_parameter_cm),
-            str(self.profile_coordinate_mode),
-            bool(self.reuse_viewer_subset),
-            None if self.derived_region_ids is None else tuple(int(value) for value in self.derived_region_ids),
-            None if self.derived_material_ids is None else tuple(int(value) for value in self.derived_material_ids),
-            bool(self.exclude_entry_region),
-            bool(self.exclude_low_density),
-            float(self.min_density_g_cm3),
-            bool(self.exclude_opposite_velocity),
-            self.zone_index_lower,
-            self.zone_index_upper,
-            str(self.weighting_mode),
             self.preheat_target_region_id,
         )
 
-    def core_key(self) -> tuple[object, ...]:
-        """Cache key for geometry/selection/science state excluding tab-local overlays."""
-
-        return self.key()[:-1]
 
 
 def _validate_xrd_module_result(result: object) -> None:
@@ -442,7 +460,8 @@ def compute_analysis_result(
         elif reusable_wavefront:
             wave_tracking = base_result.wave_tracking
             interface_events = base_result.interface_events
-            preheat = base_result.preheat
+            if _can_reuse_preheat(base_result.preheat, target_region_id=parameters.preheat_target_region_id):
+                preheat = base_result.preheat
         warnings = aggregate_warnings(
             geometry_warnings,
             selection_warnings,
@@ -474,6 +493,7 @@ def compute_analysis_result(
             module_availability=module_availability,
             warnings=warnings,
             radiation=radiation,
+            module_key=parameters.module_key(),
         )
     LOGGER.debug("Derived analysis cache stats: %s", analysis_cache.stats())
     return result
@@ -555,6 +575,7 @@ def refresh_analysis_result_for_snapshot(
             module_availability=module_availability,
             warnings=warnings,
             radiation=radiation,
+            module_key=parameters.module_key(),
         )
     LOGGER.debug("Derived snapshot-refresh cache stats: %s", analysis_cache.stats())
     return result
@@ -638,7 +659,7 @@ def _compute_module_results(
             continue
         if requested_modules is not None and contract.name not in requested_modules:
             existing = None if base_result is None else getattr(base_result, contract.name)
-            if existing is not None:
+            if existing is not None and _base_module_key_matches(base_result, parameters):
                 computed[contract.name] = existing
                 availability.append(base_availability.get(contract.name, DerivedModuleAvailability(contract.name, True)))
                 continue
@@ -718,7 +739,13 @@ def _compute_module_results(
         # enclosing result may already have advanced while this inactive
         # module was retained, so its index is the only safe reuse check.
         was_available = base_availability.get(contract.name, DerivedModuleAvailability(contract.name, False)).available
-        if existing is not None and was_available and not include_time_plots and int(getattr(existing, "snapshot_index", -1)) == int(snapshot_index):
+        if (
+            existing is not None
+            and was_available
+            and not include_time_plots
+            and int(getattr(existing, "snapshot_index", -1)) == int(snapshot_index)
+            and _base_module_key_matches(base_result, parameters)
+        ):
             computed[contract.name] = existing
             continue
         if progress_check is not None:
@@ -861,6 +888,7 @@ def _assemble_analysis_result(
     warnings: tuple[DerivedWarning, ...],
     module_availability=(),
     radiation=None,
+    module_key: tuple[object, ...] | None = None,
 ) -> DerivedAnalysisResult:
     return DerivedAnalysisResult(
         context_key=context_key,
@@ -881,6 +909,7 @@ def _assemble_analysis_result(
         preheat=preheat,
         module_availability=tuple(module_availability),
         radiation=radiation,
+        module_key=module_key,
     )
 
 
@@ -914,6 +943,28 @@ def _can_reuse_wave_tracking(
         and base_result.geometry == geometry
         and base_result.selection == selection
     )
+
+
+def _base_module_key_matches(
+    base_result: DerivedAnalysisResult | None,
+    parameters: DerivedAnalysisParameters,
+) -> bool:
+    """True when the base result's module payloads were computed under these parameters.
+
+    The core cache holds whole results so a snapshot refresh can reuse the shock
+    and wavefront work. Those payloads are geometry-scoped, but the module
+    results inside them are not, so reuse has to compare the module key.
+    """
+
+    if base_result is None:
+        return True
+    base_module_key = getattr(base_result, "module_key", None)
+    if base_module_key is None:
+        # Cannot be proven compatible, so recompute rather than display a stale
+        # module payload. Every result built by _assemble_analysis_result carries
+        # a key, so this only covers hand-built objects.
+        return False
+    return base_module_key == parameters.module_key()
 
 
 def _can_reuse_preheat(preheat: PreheatSummary | None, *, target_region_id: int | None) -> bool:
