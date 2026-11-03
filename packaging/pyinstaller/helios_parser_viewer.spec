@@ -45,7 +45,6 @@ COMMON_EXCLUDES = [
     "pandas",
     "pydantic",
     "pytest",
-    "scipy",
     "sklearn",
     "sympy",
     "tensorflow",

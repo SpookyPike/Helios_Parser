@@ -169,7 +169,7 @@ Section: science
 Priority: optional
 Architecture: all
 Maintainer: Dmitrii Bespalov <maintainer@example.invalid>
-Depends: python3 (>= 3.10), python3-numpy, python3-h5py, python3-matplotlib, python3-pyqtgraph, python3-pyside6.qtcore, python3-pyside6.qtgui, python3-pyside6.qtwidgets, python3-pyside6.qtsvg
+Depends: python3 (>= 3.10), python3-numpy, python3-h5py, python3-scipy, python3-matplotlib, python3-pyqtgraph, python3-pyside6.qtcore, python3-pyside6.qtgui, python3-pyside6.qtwidgets, python3-pyside6.qtsvg
 Description: HELIOS parser and scientific HDF5 viewer
  {APP_NAME} is a desktop parser/viewer workflow for HELIOS LOG/BPF data.
  It converts representative HELIOS outputs to schema-versioned HDF5 and
