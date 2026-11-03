@@ -3894,19 +3894,27 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         return display, "linear scale"
 
     def _current_map_levels(self, image: np.ndarray) -> tuple[tuple[float, float] | None, bool]:
-        finite = image[np.isfinite(image)]
-        if finite.size == 0:
-            return None, True
         mode = str(self.clip_mode_combo.currentData())
         if mode == "auto":
+            # Neither branch below runs, so building the finite copy here would
+            # allocate a full-field array once per repaint for a result that is
+            # discarded. Percentile is the only mode that needs the values.
             return None, True
         if mode == "percentile":
+            finite = image[np.isfinite(image)]
+            if finite.size == 0:
+                return None, True
             low = float(self.percentile_low_spin.value())
             high = float(self.percentile_high_spin.value())
             if high <= low:
                 high = min(100.0, low + 1.0)
             values = np.nanpercentile(finite, [low, high])
             return (float(values[0]), float(values[1])), False
+        # Manual levels are explicit, so the mask only decides whether there is
+        # anything to show. A boolean reduction keeps the same answer without
+        # copying the field.
+        if not np.isfinite(image).any():
+            return None, True
         min_text = self.level_min_edit.text().strip()
         max_text = self.level_max_edit.text().strip()
         if not min_text or not max_text:

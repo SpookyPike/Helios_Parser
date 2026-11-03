@@ -514,6 +514,9 @@ class FieldMapWidget(QtWidgets.QWidget):
         self._label_style = {"color": self._theme.text_color, "font-size": "11pt"}
         self._title_style = {"color": self._theme.text_color, "size": "13pt"}
         self._active_color_map = resolve_colormap(self.current_colormap)
+        # None until set_colormap first applies, so that initial push is never
+        # skipped by the unchanged-name guard.
+        self._applied_colormap: str | None = None
 
         self._graphics = pg.GraphicsLayoutWidget()
         self._graphics.setBackground(self._theme.plot_background)
@@ -596,9 +599,24 @@ class FieldMapWidget(QtWidgets.QWidget):
         layout.addWidget(self._colorbar, 0)
 
     def set_colormap(self, name: str) -> None:
+        """Select the colormap, resolving and applying it only when it changes.
+
+        The shell re-pushes the current colormap on every field-map refresh, so
+        an unguarded call re-resolved the same name and reassigned three items
+        per repaint. ``_applied_colormap`` is None until the first application,
+        so the constructor's initial push still applies.
+
+        Render-path transitions must not rely on this: they call
+        ``_apply_active_colormap`` directly, because the map has not changed but
+        the item that needs it has.
+        """
+
+        if name == self._applied_colormap:
+            return
         self.current_colormap = name
         self._active_color_map = resolve_colormap(name)
         self._apply_active_colormap()
+        self._applied_colormap = name
 
     def _apply_active_colormap(self) -> None:
         """Keep image and mesh rendering paths aligned on the same colormap.
