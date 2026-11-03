@@ -8,6 +8,7 @@ from _slow_tests import slow
 from _viewer_test_utils import (
     EXPECTED,
     HDF5_ROOT,
+    close_window,
     combo_set_data,
     find_row_by_data,
     get_app,
@@ -141,7 +142,7 @@ class ViewerPayloadTests(unittest.TestCase):
             self.assertIsNotNone(item)
             self.assertFalse(bool(item.isEnabled()))
         finally:
-            window.close()
+            close_window(window)
 
     def test_oversized_field_payload_is_delivered_without_cache_retention(self) -> None:
         controller = RunController()
@@ -234,7 +235,7 @@ class ViewerPayloadTests(unittest.TestCase):
                             expected_zone_boundaries(max_zones, active),
                         )
                 finally:
-                    window.close()
+                    close_window(window)
 
     def test_snapshot_lineouts_and_time_traces_match_reader(self) -> None:
         for name in EXPECTED:
@@ -302,7 +303,7 @@ class ViewerPayloadTests(unittest.TestCase):
                             window._display_length_value(float(static_x[int(resolved_zone)])),
                         )
                 finally:
-                    window.close()
+                    close_window(window)
 
     def test_region_and_material_masks_apply_only_along_coordinate_dimension(self) -> None:
         name = "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5"
@@ -399,7 +400,7 @@ class ViewerPayloadTests(unittest.TestCase):
                 self.assertIn("requested zone 500 -> nearest active zone 100", window.lineout_plot.current_title)
                 self.assertIn("requested zone 500 -> nearest active zone 100", window.trace_reference_label.text())
         finally:
-            window.close()
+            close_window(window)
 
     def test_boundary_overlays_and_scale_modes_match_expected_payloads(self) -> None:
         name = "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5"
@@ -447,7 +448,7 @@ class ViewerPayloadTests(unittest.TestCase):
                 allclose_nan(window.diagnostic_plot.last_y_series[0], expected_diag)
                 self.assertEqual(window.diagnostic_plot.value_scale_mode, "log10")
         finally:
-            window.close()
+            close_window(window)
 
     def test_new_helios_format_field_and_diagnostic_loading_remain_consistent(self) -> None:
         name = "Cu_0166_stabilized.h5"
@@ -464,7 +465,7 @@ class ViewerPayloadTests(unittest.TestCase):
                 self.assertEqual(expected_diag.shape, (run.n_snapshots, run.n_regions))
                 allclose_nan(window.diagnostic_plot.last_y_series[0], expected_diag[:, 0])
         finally:
-            window.close()
+            close_window(window)
 
 
 if __name__ == "__main__":

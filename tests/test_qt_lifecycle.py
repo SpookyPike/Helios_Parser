@@ -10,7 +10,11 @@ from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
-from _viewer_test_utils import ROOT, get_app
+from _viewer_test_utils import (
+    ROOT,
+    close_window,
+    get_app,
+)
 from PySide6 import QtCore
 
 from helios_analysis.workspace import HeliosDerivedWorkspace
@@ -71,8 +75,11 @@ class QtLifecycleTests(unittest.TestCase):
             QtCore.QThread.msleep(20)
 
             window.close()
-
+            # Read the thread state while the C++ objects still exist: closing
+            # must wait for the active conversion, and deleting the window
+            # would destroy the QThread before this assertion could run.
             self.assertFalse(window.parser_controller._thread.isRunning())
+            close_window(window)
 
     def test_repeated_workspace_and_viewer_close_process_exits_cleanly(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]

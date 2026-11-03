@@ -4,7 +4,12 @@ import unittest
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
-from _viewer_test_utils import get_app, process_events, reset_test_settings
+from _viewer_test_utils import (
+    close_window,
+    get_app,
+    process_events,
+    reset_test_settings,
+)
 from PySide6 import QtWidgets
 
 from helios_app.main_app import HeliosParseViewMainWindow
@@ -51,7 +56,7 @@ class AppPhase41Tests(unittest.TestCase):
             self.assertEqual(window._current_mode_id(), "parser")
             self.assertTrue(window.parser_mode_action.isChecked())
         finally:
-            window.close()
+            close_window(window)
 
 
 if __name__ == "__main__":

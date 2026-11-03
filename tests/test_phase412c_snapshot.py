@@ -6,7 +6,14 @@ from pathlib import Path
 import _test_bootstrap  # noqa: F401
 import numpy as np
 from _slow_tests import slow
-from _viewer_test_utils import combo_set_data, get_app, process_events, reset_test_settings, wait_until
+from _viewer_test_utils import (
+    close_window,
+    combo_set_data,
+    get_app,
+    process_events,
+    reset_test_settings,
+    wait_until,
+)
 
 from helios.runtime import RunContext
 from helios.services.derived import (
@@ -169,7 +176,7 @@ class SnapshotRefreshAppTests(unittest.TestCase):
             self.assertIn(f"snapshot {final_target}", workspace.plasmon_plot_panel.profile_plot.current_title.lower())
             self.assertTrue(workspace.plasmon_plot_panel.time_plot.current_cursor_visible)
         finally:
-            window.close()
+            close_window(window)
 
     def test_large_run_snapshot_changes_coalesce_and_finish_on_final_target(self) -> None:
         window = self.open_window()
@@ -226,7 +233,7 @@ class SnapshotRefreshAppTests(unittest.TestCase):
             self.assertIn(f"snapshot {targets[-1]}", workspace.transmission_plot_panel.profile_plot.current_title.lower())
             self.assertTrue(workspace.transmission_plot_panel.time_plot.current_cursor_visible)
         finally:
-            window.close()
+            close_window(window)
 
 
 if __name__ == "__main__":

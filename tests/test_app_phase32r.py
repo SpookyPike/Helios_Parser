@@ -9,7 +9,15 @@ from unittest import mock
 import _test_bootstrap  # noqa: F401
 import h5py
 from _slow_tests import slow
-from _viewer_test_utils import HDF5_ROOT, ROOT, get_app, process_events, reset_test_settings, wait_until
+from _viewer_test_utils import (
+    HDF5_ROOT,
+    ROOT,
+    close_window,
+    get_app,
+    process_events,
+    reset_test_settings,
+    wait_until,
+)
 from PySide6 import QtWidgets
 
 from helios_app.main_app import HeliosParseViewMainWindow
@@ -81,7 +89,7 @@ class AppPhase32RTests(unittest.TestCase):
             self.assertTrue(_has_2d_payload(viewer.field_map_widget))
             self.assertTrue(_view_covers_bounds(viewer.field_map_widget))
         finally:
-            window.close()
+            close_window(window)
 
     def test_opening_new_file_clears_stale_field_map_viewport(self) -> None:
         window = self.open_window()
@@ -108,7 +116,7 @@ class AppPhase32RTests(unittest.TestCase):
             )
             self.assertTrue(_view_covers_bounds(window.viewer_controller.window.field_map_widget))
         finally:
-            window.close()
+            close_window(window)
 
     def test_auto_open_after_parse_waits_for_ready_hdf5_and_visible_field(self) -> None:
         window = self.open_window()
@@ -136,7 +144,7 @@ class AppPhase32RTests(unittest.TestCase):
             self.assertEqual(viewer.current_field_payload.field_name, "density")
             self.assertTrue(_view_covers_bounds(viewer.field_map_widget))
         finally:
-            window.close()
+            close_window(window)
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_field_map_pdf_export_is_disabled_in_hotfix(self) -> None:
@@ -162,7 +170,7 @@ class AppPhase32RTests(unittest.TestCase):
             self.assertFalse(pdf_path.exists())
             self.assertTrue(information_mock.called)
         finally:
-            window.close()
+            close_window(window)
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 

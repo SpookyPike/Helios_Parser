@@ -7,7 +7,14 @@ from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
-from _viewer_test_utils import ROOT, get_app, process_events, reset_test_settings, wait_until
+from _viewer_test_utils import (
+    ROOT,
+    close_window,
+    get_app,
+    process_events,
+    reset_test_settings,
+    wait_until,
+)
 
 from helios_app.main_app import HeliosParseViewMainWindow
 from helios_app.session_state import reset_session_state
@@ -46,7 +53,7 @@ class AppBpfWorkflowTests(unittest.TestCase):
             self.assertIn("complete frame validation has not run", preview.validation_scope)
             self.assertTrue(window.parse_button.isEnabled())
         finally:
-            window.close()
+            close_window(window)
 
     def test_latest_input_preview_wins_and_bpf_log_pair_is_explicit(self) -> None:
         window = self.open_window()
@@ -69,7 +76,7 @@ class AppBpfWorkflowTests(unittest.TestCase):
             self.assertEqual(preview.companion_status, "alignment not checked")
             self.assertIn("full frame validation runs during conversion", " ".join(preview.warnings or []))
         finally:
-            window.close()
+            close_window(window)
 
     def test_bpf_only_input_can_convert_from_desktop_parser(self) -> None:
         source = ROOT / "new_data/5Fe+4.9TW+light/5Fe+4.9TW+light.bpf"
@@ -86,7 +93,7 @@ class AppBpfWorkflowTests(unittest.TestCase):
             self.assertEqual(window.last_parse_result.source, source)
             self.assertEqual(window.last_parse_result.output, output)
         finally:
-            window.close()
+            close_window(window)
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_malformed_optional_log_is_reported_after_bpf_fallback(self) -> None:
@@ -109,7 +116,7 @@ class AppBpfWorkflowTests(unittest.TestCase):
             wait_until(lambda: output.exists() and window.last_parse_result is not None, 60.0)
             self.assertTrue(any("could not be validated" in warning for warning in (window.last_parse_result.warnings or [])))
         finally:
-            window.close()
+            close_window(window)
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 

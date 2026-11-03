@@ -5,7 +5,15 @@ import unittest
 import _test_bootstrap  # noqa: F401
 import numpy as np
 from _slow_tests import slow
-from _viewer_test_utils import HDF5_ROOT, combo_set_data, get_app, process_events, reset_test_settings, wait_until
+from _viewer_test_utils import (
+    HDF5_ROOT,
+    close_window,
+    combo_set_data,
+    get_app,
+    process_events,
+    reset_test_settings,
+    wait_until,
+)
 from PySide6 import QtGui
 
 from helios_viewer.main_window import HeliosViewerMainWindow
@@ -84,7 +92,7 @@ class ViewerPhase2Tests(unittest.TestCase):
             )
             np.testing.assert_allclose(window.field_map_widget.current_laser_entry_curve, expected_curve, rtol=1e-12, atol=1e-12)
         finally:
-            window.close()
+            close_window(window)
 
     def test_moving_mesh_hover_reuses_mesh_and_does_not_rerender_map(self) -> None:
         window = self.open_window("10ns+10Si+60Al+15Si+4.27TW_stabilized.h5")
@@ -126,7 +134,7 @@ class ViewerPhase2Tests(unittest.TestCase):
             self.assertEqual(window._moving_mesh_cache_misses, misses_before)
             self.assertGreater(window._moving_mesh_cache_hits, hits_before)
         finally:
-            window.close()
+            close_window(window)
 
     def test_theme_switching_and_settings_persistence_work(self) -> None:
         reset_test_settings()
@@ -148,7 +156,7 @@ class ViewerPhase2Tests(unittest.TestCase):
             self.assertGreater(contrast_ratio(palette.color(QtGui.QPalette.Window), palette.color(QtGui.QPalette.WindowText)), 7.0)
             self.assertIn("#111827", self.app.styleSheet())
         finally:
-            window.close()
+            close_window(window)
 
         reopened = HeliosViewerMainWindow()
         try:

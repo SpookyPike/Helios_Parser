@@ -24,6 +24,7 @@ import numpy as np
 from _slow_tests import slow
 from _viewer_test_utils import (
     HDF5_ROOT,
+    close_window,
     combo_set_data,
     find_row_by_data,
     get_app,
@@ -85,7 +86,7 @@ class ColormapResolveTests(unittest.TestCase):
             self.assertEqual(calls, 0, "an unchanged colormap name must not be resolved again")
             self.assertIs(widget._active_color_map, resolved_after_first)
         finally:
-            window.close()
+            close_window(window)
             process_events(50)
 
     def test_a_changed_colormap_is_still_resolved_and_applied(self) -> None:
@@ -115,7 +116,7 @@ class ColormapResolveTests(unittest.TestCase):
             bar_lut = widget._colorbar._color_map.getLookupTable(nPts=256, alpha=True)
             np.testing.assert_array_equal(bar_lut, expected)
         finally:
-            window.close()
+            close_window(window)
             process_events(50)
 
     def test_the_first_application_is_never_skipped(self) -> None:
@@ -162,7 +163,7 @@ class DataBoundsTests(unittest.TestCase):
             )
             self.assertGreaterEqual(calls["n"], 1, "the control must observe at least one scan")
         finally:
-            window.close()
+            close_window(window)
             process_events(50)
 
 
@@ -197,7 +198,7 @@ class SnapshotDragTests(unittest.TestCase):
             process_events(50)
             self.assertGreaterEqual(refreshes["n"], 1, "setValue must still refresh synchronously")
         finally:
-            window.close()
+            close_window(window)
             process_events(50)
 
     def test_dragging_twelve_ticks_stays_under_the_budget(self) -> None:
@@ -235,7 +236,7 @@ class SnapshotDragTests(unittest.TestCase):
             )
             self.assertLess(elapsed, 5.0, f"a {ticks}-tick drag took {elapsed:.2f} s")
         finally:
-            window.close()
+            close_window(window)
             process_events(50)
 
 
@@ -276,7 +277,7 @@ class PercentileCopyTests(unittest.TestCase):
                     "percentile clipping should be the branch that builds the finite mask",
                 )
         finally:
-            window.close()
+            close_window(window)
             process_events(50)
 
 

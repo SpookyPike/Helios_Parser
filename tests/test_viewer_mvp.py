@@ -7,6 +7,7 @@ from _slow_tests import slow
 from _viewer_test_utils import (
     EXPECTED,
     HDF5_ROOT,
+    close_window,
     find_row_by_data,
     get_app,
     process_events,
@@ -92,7 +93,7 @@ class ViewerMVPTests(unittest.TestCase):
                         self.assertGreaterEqual(window.diagnostic_plot.current_curve_count, 1)
                         self.assertIn("Energy summary", window.diagnostic_plot.current_title)
                 finally:
-                    window.close()
+                    close_window(window)
 
 
 if __name__ == "__main__":

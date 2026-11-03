@@ -8,7 +8,14 @@ from unittest import mock
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
-from _viewer_test_utils import combo_set_data, get_app, process_events, reset_test_settings, wait_until
+from _viewer_test_utils import (
+    close_window,
+    combo_set_data,
+    get_app,
+    process_events,
+    reset_test_settings,
+    wait_until,
+)
 from PySide6 import QtCore, QtTest
 
 from helios_app.main_app import HeliosParseViewMainWindow
@@ -56,7 +63,7 @@ class AppPhase412Tests(unittest.TestCase):
             self.assertIn("17", workspace.snapshot_label.text())
             self.assertIn(window.viewer_controller.current_time_unit(), window.global_snapshot_label.text())
         finally:
-            window.close()
+            close_window(window)
 
     def test_fresh_start_uses_requested_defaults(self) -> None:
         window = self.open_window()
@@ -76,7 +83,7 @@ class AppPhase412Tests(unittest.TestCase):
             self.assertEqual(window.viewer_controller.theme_mode(), "system")
             self.assertEqual(window.viewer_controller.default_profile_coordinate_mode(), "viewer_follow")
         finally:
-            window.close()
+            close_window(window)
 
     def test_wheel_guard_setting_persists_and_updates_viewer_and_derived(self) -> None:
         window = self.open_window()
@@ -102,9 +109,9 @@ class AppPhase412Tests(unittest.TestCase):
                 self.assertFalse(reopened.viewer_controller.window._wheel_guard._enabled)
                 self.assertFalse(reopened.derived_controller.widget()._wheel_guard._enabled)
             finally:
-                reopened.close()
+                close_window(reopened)
         finally:
-            window.close()
+            close_window(window)
 
     def test_viewer_colorbar_survives_roundtrip_and_constant_field(self) -> None:
         window = self.open_window()
@@ -148,7 +155,7 @@ class AppPhase412Tests(unittest.TestCase):
             process_events(100)
             assert_colorbar_state()
         finally:
-            window.close()
+            close_window(window)
 
     def test_large_run_control_changes_stay_single_inflight(self) -> None:
         window = self.open_window()
@@ -178,7 +185,7 @@ class AppPhase412Tests(unittest.TestCase):
             self.assertIsNotNone(workspace._current_result)
             self.assertLessEqual(max_threads, 1)
         finally:
-            window.close()
+            close_window(window)
 
     def test_global_snapshot_slider_updates_large_run_viewer_and_derived(self) -> None:
         window = self.open_window()
@@ -200,7 +207,7 @@ class AppPhase412Tests(unittest.TestCase):
             wait_until(lambda: f"snapshot {target}" in workspace.xrd_plot_panel.profile_plot.current_title.lower(), 120.0)
             self.assertIn(f"snapshot {target}", workspace.xrd_plot_panel.profile_plot.current_title.lower())
         finally:
-            window.close()
+            close_window(window)
 
     def test_global_display_units_propagate_into_derived_without_reopen(self) -> None:
         window = self.open_window()
@@ -240,7 +247,7 @@ class AppPhase412Tests(unittest.TestCase):
             self.assertIn("[m/s]", workspace.shock_velocity_plot.current_y_label)
             self.assertIn("K", workspace._format_temperature(1.0))
         finally:
-            window.close()
+            close_window(window)
 
     def test_global_snapshot_slider_clicks_settle_to_latest_clicked_position(self) -> None:
         window = self.open_window()
@@ -261,7 +268,7 @@ class AppPhase412Tests(unittest.TestCase):
             wait_until(lambda: window.viewer_controller.current_run_context().snapshot_index == slider.value(), 30.0)
             self.assertNotIn("updating...", window.global_snapshot_label.text().lower())
         finally:
-            window.close()
+            close_window(window)
 
     def test_theme_switch_keeps_derived_plots_rendered(self) -> None:
         window = self.open_window()
@@ -291,7 +298,7 @@ class AppPhase412Tests(unittest.TestCase):
             self.assertTrue(workspace.plasmon_plot_panel.time_plot.current_x_label)
             self.assertTrue(workspace.spectroscopy_plot_panel.profile_plot.current_y_label)
         finally:
-            window.close()
+            close_window(window)
 
     def test_profile_coordinate_setting_persists_and_recomputes_follow_2d_map(self) -> None:
         dynamic_path = ROOT / "outputs" / "hdf5" / "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5"
@@ -333,7 +340,7 @@ class AppPhase412Tests(unittest.TestCase):
             )
             self.assertEqual(window.viewer_controller.default_profile_coordinate_mode(), "viewer_follow")
         finally:
-            window.close()
+            close_window(window)
 
         reopened = self.open_window()
         try:
@@ -349,7 +356,7 @@ class AppPhase412Tests(unittest.TestCase):
                 reopened.viewer_controller.current_run_context().slice_coordinate,
             )
         finally:
-            reopened.close()
+            close_window(reopened)
 
     def test_breakout_navigation_uses_canonical_snapshot_request_and_resets_on_run_change(self) -> None:
         window = self.open_window()
@@ -383,7 +390,7 @@ class AppPhase412Tests(unittest.TestCase):
             self.assertFalse(window.jump_breakout_button.isEnabled())
             self.assertIn("until derived Shock analysis completes", window.jump_breakout_button.toolTip())
         finally:
-            window.close()
+            close_window(window)
 
 
 if __name__ == "__main__":
