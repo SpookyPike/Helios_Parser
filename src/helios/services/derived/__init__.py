@@ -10,6 +10,7 @@ from .analysis import (
 )
 from .common import load_run_data
 from .plasmon import evaluate_plasmon_regime
+from .radiation import integrate_over_groups, spectrum_at, spectrum_map
 from .shock_tracking import track_shock_front
 from .spectroscopy import evaluate_spectroscopy
 from .transmission import evaluate_transmission
@@ -28,6 +29,9 @@ __all__ = [
     "evaluate_spectroscopy",
     "evaluate_transmission",
     "build_cold_attenuation_request",
+    "integrate_over_groups",
+    "spectrum_at",
+    "spectrum_map",
     "load_run_data",
     "track_shock_front",
 ]

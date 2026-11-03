@@ -1,0 +1,3 @@
+# 26 MB: above what belongs in a Git history. Local-only fixture, declared in
+# tests/fixture_manifest.json; regenerate with the .rhc deck beside it.
+cu_freqrad_t0p3ns.exo

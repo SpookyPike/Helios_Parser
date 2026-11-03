@@ -3,8 +3,8 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `1.3.1`
-- Release date: `2026-11-02`
+- Release: `1.4.0`
+- Release date: `2026-11-03`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
 Top-level application modes:
@@ -87,7 +87,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parser-viewer-v1.3.0.zip`
+- `outputs/release/helios-parser-viewer-v1.4.0.zip`
 
 The bundle includes:
 
@@ -117,11 +117,23 @@ python scripts\build_linux_portable_tarball.py
 
 Expected artifact names:
 
-- `outputs/distributables/helios-parser-viewer-v1.3.0-windows-portable.zip`
-- `outputs/distributables/helios-parser-viewer_1.3.0_all.deb`
-- `outputs/distributables/helios-parser-viewer-v1.3.0-linux-portable.tar.gz`
+- `outputs/distributables/helios-parser-viewer-v1.4.0-windows-portable.zip`
+- `outputs/distributables/helios-parser-viewer_1.4.0_all.deb`
+- `outputs/distributables/helios-parser-viewer-v1.4.0-linux-portable.tar.gz`
 
-The v1.3.0 release provides the source bundle, Debian package, Linux portable tarball, standalone lookup tables, and checksums. Windows users can run the source bundle or build the portable ZIP locally using the instructions in the packaging guide. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+The v1.4.0 release provides the source bundle, Debian package, Linux portable tarball, standalone lookup tables, and checksums. Windows users can run the source bundle or build the portable ZIP locally using the instructions in the packaging guide. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+
+## Changelog 1.4.0
+
+- the Exodus reader now reads the frequency-resolved radiation output, which it previously dropped. `Write freq-dependent radiation output = 1` adds 18 datasets to the `.exo`; a converted run used to carry none of them and no marker saying whether radiation was off or was discarded.
+- published them as two HDF5 groups, not one, because the arrays do not share a time axis: `radiation/` holds the four node-centred spectral arrays on the `time_freq` axis, `flux/` holds the boundary and interface spectra and the power losses on the `time_whole` axis. Flattening them would let a consumer index a boundary spectrum against the spectral axis and get a plausible wrong number. `radiation/hydro_index` records which hydro dump each spectral dump belongs to.
+- `radiation/integrated/` carries the ten scalars HELIOS writes per hydro dump: total radiation energy, the loss and flux per boundary, the interface fluxes, net cooling by region, and the electron-to-radiation integral.
+- `metadata/radiation_output` is `"on"` or `"off"` on every converted `.exo`, with `n_groups`, `n_freq_snapshots`, `n_boundaries` and `n_regions` when it is on. Absence is now distinguishable from a failed read.
+- the four spectral arrays are stored zone-centred, not with HELIOS's raw node dimension. The container writes `n_zones + 2` node rows and the two outer rows are exactly zero on every dump of every reference fixture; the interior rows are the zone centres in Rmin to Rmax order, which two measured identities confirm: the group sum of `energy_density` equals `rad_energy_density[interior]`, and that equals `3 * rad_pressure`. The padding is dropped so the spectral arrays index the same zones as every other field, and a file whose padding rows are not empty raises rather than losing data.
+- added `integrate_over_groups`, `spectrum_at` and `spectrum_map` to `helios.services.derived` for the three questions the campaign asks of this data: one integrated number per time, one spectrum at an instant, and the spectrum-versus-time map a contour plot needs. Group integration uses rectangle weights because that reproduces HELIOS's own integrated scalars to 1e-16, while trapezoid weights are off by 1.5 % on the Rmin boundary.
+- the spectral axis is never resampled onto the hydro axis. A consumer that wants a spectrum at a hydro time interpolates, with its own documented rule.
+- added `tests/test_radiation_output.py` with three real HELIOS 12.0.0 fixtures: 100 zones and one spectral dump for the commit gate, 184 zones over three regions for the interface ordering, and a 26 MB six-dump run behind the slow gate.
+- `Freq. resolved incident flux at Rmin` and `at Rmax` are mapped but are identically zero in all three fixtures, so they carry nothing there yet.
 
 ## Changelog 1.3.0
 
@@ -237,7 +249,8 @@ and cap the BLAS and OpenMP pools at 12 threads. The reference host is a hybrid
 ## Important current behavior
 
 - `.bpf` is the primary full-data source when present; `.log` remains the setup metadata, diagnostics, and fallback path.
-- `.exo` (Exodus II, which is NetCDF-4 and therefore HDF5) is read directly: the core hydrodynamic fields are mapped onto the log path's names and units. Frequency-resolved radiation arrays are not mapped.
+- `.exo` (Exodus II, which is NetCDF-4 and therefore HDF5) is read directly: the core hydrodynamic fields are mapped onto the log path's names and units, and the frequency-resolved radiation output is published under `radiation/` and `flux/` when the deck asked for it.
+- the spectral radiation arrays live on their own time axis. `radiation/` is sampled on `time_freq` and `flux/` on `time_whole`; `radiation/hydro_index` maps one onto the other, and nothing resamples between them.
 - `.exo` files do not record the HELIOS version, so a converted `.exo` carries an empty `helios_version` and `metadata/run_status/state = exodus_container` instead of a claimed completion state.
 - HDF5/H5D outputs are self-describing: readers discover available fields, units, axes, labels, and source provenance from metadata.
 - Some BPF records are still preserved as raw `bpf_record_XX` fields when the evidence is insufficient for a physics name.

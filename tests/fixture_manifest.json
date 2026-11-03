@@ -218,6 +218,72 @@
         "snapshots": 10
       },
       "provenance": "first ten time steps of the core hydrodynamic fields of the matching cu-bare-250um-6ns_eta0.1320.exo. Same run as v12_log_prefix, so the two are independent encodings of one set of numbers."
+    },
+    "radiation_tiny_exodus": {
+      "path": "tests/fixtures/radiation/cu_freqrad_tiny_t0p02ns.exo",
+      "size_bytes": 3997314,
+      "sha256": "bca8aff8df21af100b2e23aa296c84c903f2db4f34613f88be1d2109847345cc",
+      "format": "HELIOS EXODUS II (HDF5/NetCDF-4) with frequency-resolved radiation output",
+      "dimensions": {
+        "zones": 100,
+        "snapshots": 4,
+        "freq_snapshots": 1,
+        "regions": 1,
+        "boundaries": 2,
+        "groups": 250
+      },
+      "provenance": "cu_freqrad_tiny_t0p02ns.rhc beside it. The commit gate for the spectral path: one spectral dump on time_freq, four hydro dumps on time_whole, one region."
+    },
+    "radiation_tiny_deck": {
+      "path": "tests/fixtures/radiation/cu_freqrad_tiny_t0p02ns.rhc",
+      "size_bytes": 32867,
+      "sha256": "98e69c6060ea8846bff1453acc8e5831118e636d3d1874068e46bcd94d9eb38c",
+      "format": "HELIOS RHC deck",
+      "provenance": "the deck that produced radiation_tiny_exodus; carries Write freq-dependent radiation output = 1 and the plot cadence."
+    },
+    "radiation_stack_exodus": {
+      "path": "tests/fixtures/radiation/stack_freqrad_t0p2ns.exo",
+      "size_bytes": 7357327,
+      "sha256": "a3228ae309408ed6b0c2ca9a63a6366f1a42a688c9e5a3f5e16ffbf72c65a817",
+      "format": "HELIOS EXODUS II (HDF5/NetCDF-4) with frequency-resolved radiation output",
+      "dimensions": {
+        "zones": 184,
+        "snapshots": 6,
+        "freq_snapshots": 2,
+        "regions": 3,
+        "boundaries": 4,
+        "groups": 250
+      },
+      "provenance": "stack_freqrad_t0p2ns.rhc beside it. Three regions, so n_bd = 4 and the Rmin to Rmax interface ordering is testable."
+    },
+    "radiation_stack_deck": {
+      "path": "tests/fixtures/radiation/stack_freqrad_t0p2ns.rhc",
+      "size_bytes": 50183,
+      "sha256": "4c4896d42f4a2b43cf8e7f560eacabda65a9af76ba218b401a5111ded6b7139d",
+      "format": "HELIOS RHC deck",
+      "provenance": "the deck that produced radiation_stack_exodus."
+    },
+    "radiation_long_exodus": {
+      "path": "tests/fixtures/radiation/cu_freqrad_t0p3ns.exo",
+      "size_bytes": 26104140,
+      "sha256": "1f2fa70f54157ee5f81137ab8fcac0fdea5117ef511797e8dabe6729e45c3b3e",
+      "format": "HELIOS EXODUS II (HDF5/NetCDF-4) with frequency-resolved radiation output",
+      "dimensions": {
+        "zones": 300,
+        "snapshots": 31,
+        "freq_snapshots": 6,
+        "regions": 1,
+        "boundaries": 2,
+        "groups": 250
+      },
+      "provenance": "ignored local-only fixture (tests/fixtures/radiation/.gitignore): 26 MB is above what belongs in a Git history. Regenerate from cu_freqrad_t0p3ns.rhc beside it. Deliberately absent from entry_requirements, so its slow test skips rather than errors on a clean checkout."
+    },
+    "radiation_long_deck": {
+      "path": "tests/fixtures/radiation/cu_freqrad_t0p3ns.rhc",
+      "size_bytes": 42007,
+      "sha256": "8fb47e344983f9475d45d5b518a0e8a84e92fbc0eac89d13d273355917a16469",
+      "format": "HELIOS RHC deck",
+      "provenance": "the deck that produced radiation_long_exodus; the provenance record that makes the local-only fixture reproducible."
     }
   },
   "entry_requirements": {
@@ -304,6 +370,10 @@
     "test_wave6_derived.py": [
       "local_h5_50al_root",
       "local_h5_cu_root"
+    ],
+    "test_radiation_output.py": [
+      "radiation_tiny_exodus",
+      "radiation_stack_exodus"
     ]
   },
   "entry_prefix_requirements": {

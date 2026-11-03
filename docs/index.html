@@ -106,9 +106,10 @@
         <div class="card">
           <h3>1. Parse a HELIOS input</h3>
           <ol class="steps">
-            <li>Open Parser mode and select a <code>.log</code> or <code>.bpf</code> file.</li>
+            <li>Open Parser mode and select a <code>.log</code>, <code>.bpf</code>, or <code>.exo</code> file.</li>
             <li>Use the fast preview to inspect indexed snapshot count, expected fields, known metadata, and approximate data volume. BPF frame validity and companion alignment are checked during conversion.</li>
             <li>Convert to stabilized HDF5. The parser keeps explicit run-status metadata and drops only a damaged final block when necessary.</li>
+            <li>When the deck set <code>Write freq-dependent radiation output = 1</code>, the converted file also carries the spectral radiation field under <code>radiation/</code> and the boundary spectra under <code>flux/</code>. The two groups sit on different time axes; <code>radiation/hydro_index</code> maps one onto the other. A run without that output says so in <code>metadata/radiation_output</code>.</li>
           </ol>
         </div>
         <div class="card">

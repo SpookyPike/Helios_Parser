@@ -19,7 +19,7 @@ import numpy as np
 from helios.instrumentation import record_duration
 from .bpf import LOG_COMPATIBLE_BPF_ALIASES, BpfFile, alias_metadata, field_metadata_for_bpf_key
 from .document import diagnostic_value_width, flatten_snapshot_diagnostics, normalize_diagnostic_value, reconcile_diagnostic_width
-from .exodus import ExodusRun, looks_like_exodus, read_exodus
+from .exodus import ExodusRun, RadiationOutput, looks_like_exodus, read_exodus
 from .parser import DEFAULT_TOKENIZER, HeliosParser, SnapshotDomainError
 
 LOGGER = logging.getLogger(__name__)
@@ -182,12 +182,14 @@ def _write_array_dataset(
     values: np.ndarray,
     unit: str,
     compression: str | None = None,
+    *,
+    chunks: tuple[int, ...] | None = None,
 ) -> None:
     array = np.asarray(values)
     if array.dtype.kind in {"O", "U"}:
         dataset = group.create_dataset(name, data=array.astype(STRING_DTYPE), dtype=STRING_DTYPE)
     else:
-        dataset = group.create_dataset(name, data=array, compression=compression)
+        dataset = group.create_dataset(name, data=array, compression=compression, chunks=chunks)
     _set_unit_attrs(dataset, unit)
 
 
@@ -333,7 +335,13 @@ def resolve_parse_sources(input_path: str | Path) -> ParseSourceSelection:
     )
 
 
-def _bpf_chunk_shape(shape: tuple[int, ...]) -> tuple[int, ...]:
+def _time_major_chunk_shape(shape: tuple[int, ...]) -> tuple[int, ...]:
+    """Chunk a time-major array so one dump is one chunk.
+
+    Viewer and analysis access is snapshot-major: a single dump is read whole,
+    sequential scrubs touch neighbouring dumps.  Sixteen dumps per chunk keeps a
+    scrub cheap without letting a chunk outgrow the block cache.
+    """
     if not shape:
         return ()
     time_chunk = min(max(1, shape[0]), 16)
@@ -358,7 +366,7 @@ def _create_bpf_field_dataset(
         shape=shape,
         dtype=array.dtype,
         compression=compression if array.dtype.kind == "f" else None,
-        chunks=_bpf_chunk_shape(shape),
+        chunks=_time_major_chunk_shape(shape),
     )
     _set_field_metadata(dataset, metadata)
     _write_field_metadata_group(field_metadata_group, name, metadata)
@@ -897,6 +905,91 @@ def _write_hdf5_from_bpf_validated(
     return target
 
 
+def _write_radiation_groups(
+    handle: h5py.File,
+    radiation: RadiationOutput,
+    *,
+    compression: str | None,
+) -> None:
+    """Write the spectral field, the boundary fluxes and the integrated scalars.
+
+    Two groups, not one: `radiation/` sits on the `time_freq` axis and `flux/` on
+    `time_whole`.  Flattening them would let a consumer index a boundary array
+    against the spectral axis, which is the failure this split exists to prevent.
+    """
+    spectral = radiation.spectral
+    radiation_group = handle.create_group("radiation")
+    _write_array_dataset(radiation_group, "time", spectral.time_s, "s", compression=compression)
+    _write_array_dataset(radiation_group, "cycle", np.asarray(spectral.cycle, dtype=np.int64), "", compression=None)
+    _write_array_dataset(
+        radiation_group,
+        "hydro_index",
+        np.asarray(spectral.hydro_index, dtype=np.int64),
+        "",
+        compression=None,
+    )
+    for name, values in (("group_edges", spectral.group_edges_ev), ("group_centre", spectral.group_centre_ev)):
+        _write_array_dataset(
+            radiation_group,
+            name,
+            values,
+            "eV",
+            compression=compression,
+            chunks=_time_major_chunk_shape(values.shape),
+        )
+    _write_array_dataset(radiation_group, "node_axis", spectral.node_axis_cm, "cm", compression=compression)
+    for name, values in spectral.fields.items():
+        # (dump, node, group): one spectral dump per chunk, which is how a
+        # consumer reads it, and gzip gets the whole plane at once.
+        _write_array_dataset(
+            radiation_group,
+            name,
+            values,
+            spectral.field_units.get(name, ""),
+            compression=compression,
+            chunks=_time_major_chunk_shape(values.shape),
+        )
+
+    integrated_group = radiation_group.create_group("integrated")
+    for name, values in radiation.integrated.items():
+        _write_array_dataset(
+            integrated_group,
+            name,
+            values,
+            radiation.integrated_units.get(name, ""),
+            compression=compression,
+        )
+
+    flux = radiation.flux
+    flux_group = handle.create_group("flux")
+    _write_array_dataset(flux_group, "time", flux.time_s, "s", compression=compression)
+    _write_array_dataset(flux_group, "cycle", np.asarray(flux.cycle, dtype=np.int64), "", compression=None)
+    _write_array_dataset(
+        flux_group,
+        "group_edges",
+        flux.group_edges_ev,
+        "eV",
+        compression=compression,
+        chunks=_time_major_chunk_shape(flux.group_edges_ev.shape),
+    )
+    _write_array_dataset(
+        flux_group,
+        "region_boundary_node_index",
+        np.asarray(flux.region_boundary_node_index, dtype=np.int64),
+        "",
+        compression=None,
+    )
+    for name, values in flux.fields.items():
+        _write_array_dataset(
+            flux_group,
+            name,
+            values,
+            flux.field_units.get(name, ""),
+            compression=compression,
+            chunks=_time_major_chunk_shape(values.shape),
+        )
+
+
 def _write_hdf5_from_exodus(
     run: ExodusRun,
     target: Path,
@@ -991,14 +1084,31 @@ def _write_hdf5_from_exodus(
         # arrays, but mapping them is a separate job and an empty group is honest.
         handle.create_group("diagnostics")
 
+        # The radiation block is written only when the deck asked for it.  The
+        # metadata says which case this is, so a reader cannot mistake a
+        # radiation-free run for one whose radiation was dropped.
+        if run.radiation is not None:
+            _write_radiation_groups(handle, run.radiation, compression=compression)
+
         # metadata/run_status is required by the publish validator.  An Exodus
         # file carries no footer, so the state is reported as what it is: the
         # container itself is complete, and no completion marker was read.
         metadata_group = handle.create_group("metadata")
-        for name, value in (
+        radiation_metadata = (
+            (("radiation_output", "on"),
+             ("n_groups", run.radiation.n_groups),
+             ("n_freq_snapshots", run.radiation.n_freq_snapshots),
+             ("n_boundaries", run.radiation.n_boundaries))
+            if run.radiation is not None
+            else (("radiation_output", "off"),)
+        )
+        # The Exodus reader resolves the region count from the interface index,
+        # which is better than the placeholder single region used before.
+        n_regions = run.radiation.n_regions if run.radiation is not None else 1
+        for name, value in (*radiation_metadata, *(
             ("n_snapshots", run.n_snapshots),
             ("n_zones", run.n_zones),
-            ("n_regions", 1),
+            ("n_regions", n_regions),
             ("n_materials", 1),
             ("helios_version", ""),
             ("schema_version", H5D_SCHEMA_VERSION),
@@ -1006,7 +1116,7 @@ def _write_hdf5_from_exodus(
             ("parse_mode", "exodus_hdf5"),
             ("source_file", str(run.source)),
             ("simulation_name", run.source.stem),
-        ):
+        )):
             if isinstance(value, int):
                 metadata_group.create_dataset(name, data=np.int64(value))
             else:
