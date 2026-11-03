@@ -109,10 +109,13 @@ class ConvertedFieldChunkTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        # The tracked BPF fixture, not a local-only log: this test runs in the
+        # core gate, which materialises a tree containing only the fixtures
+        # declared for the entry.
         cls.parser = HeliosParser()
         cls._tmpdir = tempfile.TemporaryDirectory()
         cls.output = Path(cls._tmpdir.name) / "chunk_layout.h5"
-        write_hdf5(ROOT / "5Fe+4.9TW+light.log", cls.output, overwrite=True, parser=cls.parser)
+        write_hdf5(ROOT / "new_data" / "5Fe+4.9TW+light" / "5Fe+4.9TW+light.bpf", cls.output, overwrite=True)
         cls.handle = h5py.File(cls.output, "r")
         cls.helios_run = HeliosRun(cls.output)
 

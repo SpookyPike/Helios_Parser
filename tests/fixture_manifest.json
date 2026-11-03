@@ -307,6 +307,9 @@
       "tracked_cu_bpf",
       "tracked_fe_bpf"
     ],
+    "test_chunk_layout.py": [
+      "tracked_fe_bpf"
+    ],
     "test_cli_errors.py": [
       "tracked_fe_bpf"
     ],
