@@ -935,6 +935,12 @@ class HeliosViewerMainWindow(QtWidgets.QMainWindow):
         )
         self.snapshot_slider.setMinimumHeight(24)
         apply_absolute_click_slider_behavior(self.snapshot_slider)
+        # Every intermediate value of a drag ran the full synchronous refresh:
+        # line plot, mouse plots, run context, shell re-sync. Tracking off makes
+        # the slider emit once, on release, matching the global snapshot slider.
+        # setValue() still emits immediately, so keyboard and code paths are
+        # unchanged.
+        self.snapshot_slider.setTracking(False)
         self.snapshot_slider.valueChanged.connect(self._on_snapshot_changed)
         self.snapshot_spin = QtWidgets.QSpinBox()
         self.snapshot_spin.setAccessibleName("Snapshot index")

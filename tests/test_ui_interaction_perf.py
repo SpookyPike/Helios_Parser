@@ -174,6 +174,32 @@ class SnapshotDragTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.app = get_app()
 
+    def test_the_slider_does_not_emit_per_drag_step(self) -> None:
+        """Tracking off is what removes the intermediate values; assert it."""
+
+        window = _open_window()
+        try:
+            self.assertFalse(
+                window.snapshot_slider.hasTracking(),
+                "a tracked slider emits valueChanged for every intermediate drag value",
+            )
+            # The control: programmatic and keyboard paths must still emit.
+            refreshes = {"n": 0}
+            real_refresh = window._refresh_line_plot
+
+            def counting_refresh(*args, **kwargs):
+                refreshes["n"] += 1
+                return real_refresh(*args, **kwargs)
+
+            window._refresh_line_plot = counting_refresh
+            target = min(window.snapshot_slider.maximum(), window.snapshot_slider.value() + 1)
+            window.snapshot_slider.setValue(target)
+            process_events(50)
+            self.assertGreaterEqual(refreshes["n"], 1, "setValue must still refresh synchronously")
+        finally:
+            window.close()
+            process_events(50)
+
     def test_dragging_twelve_ticks_stays_under_the_budget(self) -> None:
         window = _open_window()
         try:
