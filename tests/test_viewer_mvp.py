@@ -4,7 +4,15 @@ import unittest
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
-from _viewer_test_utils import EXPECTED, HDF5_ROOT, find_row_by_data, get_app, reset_test_settings, wait_until
+from _viewer_test_utils import (
+    EXPECTED,
+    HDF5_ROOT,
+    find_row_by_data,
+    get_app,
+    process_events,
+    reset_test_settings,
+    wait_until,
+)
 from PySide6 import QtCore
 
 from helios_viewer.main_window import HeliosViewerMainWindow
@@ -39,6 +47,9 @@ class ViewerMVPTests(unittest.TestCase):
 
                     self.assertIn(f"Zones: {expected['zones']}", window.summary_text.toPlainText())
                     self.assertIn(f"Snapshots: {expected['snapshots']}", window.summary_text.toPlainText())
+                    # `pressure` is a compatibility alias, hidden by default.
+                    window.show_alias_fields_checkbox.setChecked(True)
+                    process_events()
                     listed_fields = {
                         str(window.field_list.item(index).data(QtCore.Qt.ItemDataRole.UserRole))
                         for index in range(window.field_list.count())
@@ -51,7 +62,17 @@ class ViewerMVPTests(unittest.TestCase):
                     ))
                     self.assertIn("pressure", listed_fields)
                     self.assertEqual(window.snapshot_slider.maximum(), expected["snapshots"] - 1)
-                    self.assertIn("density", window.field_label.text().casefold())
+                    # The label prefers the field's own metadata label when the
+                    # file records one ("Mass dens" for density), so assert that
+                    # the label identifies the selected field by either form.
+                    label_text = window.field_label.text().casefold()
+                    selected = window.current_field_payload.field_name
+                    metadata = window.run_payload.field_metadata.get(selected) or {}
+                    metadata_label = str(metadata.get("label", "") or "").strip().casefold()
+                    self.assertTrue(
+                        selected.casefold() in label_text or (metadata_label and metadata_label in label_text),
+                        f"field label {label_text!r} identifies neither {selected!r} nor {metadata_label!r}",
+                    )
                     self.assertEqual(window.field_map_widget.current_orientation, "time_x_coord_y")
                     self.assertIn("Time [", window.field_map_widget.current_x_label)
                     self.assertTrue(

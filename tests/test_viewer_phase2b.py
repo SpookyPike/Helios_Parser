@@ -40,6 +40,11 @@ def assert_field_map_payload(window: HeliosViewerMainWindow, expected: np.ndarra
 
 
 def select_field(window: HeliosViewerMainWindow, field_name: str) -> None:
+    # Compatibility aliases such as `pressure` are hidden until the filter is
+    # on, so turn it on rather than depending on which aliases a fixture has.
+    if not window.show_alias_fields_checkbox.isChecked():
+        window.show_alias_fields_checkbox.setChecked(True)
+        process_events()
     row = find_row_by_data(window.field_list, field_name)
     if row < 0:
         raise AssertionError(f"Field {field_name!r} not found.")

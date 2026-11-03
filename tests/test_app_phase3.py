@@ -8,6 +8,7 @@ from pathlib import Path
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
 from _viewer_test_utils import HDF5_ROOT, ROOT, get_app, process_events, reset_test_settings, wait_until
+from PySide6 import QtCore
 
 from helios_app.main_app import HeliosParseViewMainWindow
 from helios_app.session_state import reset_session_state
@@ -86,10 +87,18 @@ class AppPhase3Tests(unittest.TestCase):
             self.assertEqual(window.mode_stack.currentWidget(), window.viewer_page)
             available_fields = set(viewer.run_payload.fields)
             self.assertTrue({"density", "velocity", "temperature_e", "temperature_i"}.issubset(available_fields))
+            # Compatibility aliases (such as `pressure`) are hidden until the
+            # filter is on, so show them before comparing the two sets.
+            viewer.show_alias_fields_checkbox.setChecked(True)
+            process_events()
+            # Compare the item's field name, not its label. The label carries a
+            # provenance prefix such as "[validated LOG] " once the file records
+            # field status, so splitting the text compares display strings rather
+            # than the set of fields the viewer can actually show.
             displayed_fields = {
-                viewer.field_list.item(index).text().split(" [", 1)[0]
+                str(viewer.field_list.item(index).data(QtCore.Qt.UserRole))
                 for index in range(viewer.field_list.count())
-                if viewer.field_list.item(index).text() != "Physics and mapped fields"
+                if viewer.field_list.item(index).data(QtCore.Qt.UserRole)
             }
             self.assertSetEqual(available_fields, displayed_fields)
             self.assertEqual(viewer.plot_tabs.count(), 3)

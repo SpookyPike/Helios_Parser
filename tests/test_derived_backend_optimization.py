@@ -470,6 +470,12 @@ class DerivedBackendOptimizationTests(unittest.TestCase):
             with h5py.File(path, "r+") as handle:
                 radius = np.asarray(handle["fields/radius"])
                 del handle["fields/radius"]
+                # The premise is a centre-only file, so drop any coordinate
+                # datasets the fixture already carries before writing the one
+                # this test is about.
+                for name in ("dynamic_coordinate_center", "dynamic_coordinate_edge"):
+                    if name in handle["grid"]:
+                        del handle["grid"][name]
                 handle["grid"].create_dataset("dynamic_coordinate_center", data=radius)
             clear_session_raw_data_cache(reason="center-only-dynamic-coordinate-test")
             opens = 0
