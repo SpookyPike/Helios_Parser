@@ -7,6 +7,7 @@ stay consistent across XRD, plasmon, transmission, and spectroscopy.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Callable, Iterable, TypeVar
 
@@ -532,11 +533,14 @@ def infer_primary_propagation_direction(dataset: DerivedRunData, context: RunCon
         if str(entry.get("boundary_kind")) == "low":
             return "low_to_high", 1.0
     velocity = np.asarray(dataset.velocity_cm_s, dtype=np.float64)
-    finite = velocity[np.isfinite(velocity)]
-    if finite.size == 0:
+    # nanmedian already ignores NaN, so the full-array finite copy this used to
+    # build was 1.1 MB of allocation per geometry build for the same answer.
+    # The isfinite guard is kept so an all-NaN run still returns early instead
+    # of triggering nanmedian's All-NaN slice warning.
+    if velocity.size == 0 or not np.isfinite(velocity).any():
         return "high_to_low", -1.0
-    median_velocity = float(np.nanmedian(finite))
-    if median_velocity < 0.0:
+    median_velocity = float(np.nanmedian(velocity))
+    if not math.isfinite(median_velocity) or median_velocity < 0.0:
         return "high_to_low", -1.0
     return "low_to_high", 1.0
 
