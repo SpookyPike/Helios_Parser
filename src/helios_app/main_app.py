@@ -985,10 +985,9 @@ class HeliosParseViewMainWindow(QtWidgets.QMainWindow):
             )
             return
         try:
-            nearest = min(
-                range(int(context.time_values.size)),
-                key=lambda index: abs(float(context.time_values[index]) - float(breakout_time_s)),
-            )
+            # time_values is a read-only ndarray on RunContext; use its own
+            # argmin rather than importing numpy into the app shell.
+            nearest = int(abs(context.time_values - float(breakout_time_s)).argmin())
         except Exception:
             self._set_breakout_target(
                 None,

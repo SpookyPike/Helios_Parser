@@ -6,7 +6,7 @@ import unittest
 import _test_bootstrap  # noqa: F401
 import numpy as np
 
-from helios.services.derived.shock_tracking import _least_squares_tanh_fit
+from helios.services.derived.shock_tracking import _least_squares_tanh_fit, _local_maxima_indices
 
 
 def _reference_fit(x: np.ndarray, values: tuple[np.ndarray, ...], initial_xf: float, initial_width: float):
@@ -99,6 +99,50 @@ class LeastSquaresTanhFitTest(unittest.TestCase):
         x = np.array([0.0, 1.0, 2.0, 3.0, 4.0], dtype=np.float64)
         field = np.full(5, np.nan, dtype=np.float64)
         self.assertIsNone(_least_squares_tanh_fit(x, (field,), 2.0, 1.0))
+
+
+def _reference_maxima(values: np.ndarray, threshold: float) -> np.ndarray:
+    """The pre-2.0 per-zone scan, kept as the correctness oracle."""
+
+    row = np.asarray(values, dtype=np.float64)
+    if row.size == 0:
+        return np.empty(0, dtype=np.int32)
+    finite = np.where(np.isfinite(row), row, -np.inf)
+    maxima: list[int] = []
+    for index in range(row.size):
+        value = finite[index]
+        if not np.isfinite(value) or value < threshold:
+            continue
+        left = finite[index - 1] if index > 0 else -np.inf
+        right = finite[index + 1] if index + 1 < row.size else -np.inf
+        if value >= left and value >= right:
+            maxima.append(index)
+    return np.asarray(maxima, dtype=np.int32)
+
+
+class LocalMaximaIndicesTest(unittest.TestCase):
+    def test_matches_the_per_zone_reference(self) -> None:
+        rng = np.random.default_rng(7)
+        for _ in range(300):
+            size = int(rng.integers(0, 40))
+            row = rng.normal(0.0, 1.0, size)
+            # Sprinkle NaN and ties, which are the two cases the masks must keep.
+            if size and rng.random() < 0.6:
+                row[rng.integers(0, size)] = np.nan
+            if size > 2 and rng.random() < 0.6:
+                row[rng.integers(0, size - 1)] = row[rng.integers(0, size - 1)]
+            threshold = float(rng.uniform(-1.0, 1.0))
+            np.testing.assert_array_equal(
+                _local_maxima_indices(row, threshold),
+                _reference_maxima(row, threshold),
+            )
+
+    def test_boundary_elements_can_be_maxima(self) -> None:
+        row = np.array([5.0, 1.0, 2.0, 1.0, 9.0], dtype=np.float64)
+        np.testing.assert_array_equal(_local_maxima_indices(row, 0.0), np.array([0, 2, 4], dtype=np.int32))
+
+    def test_empty_input(self) -> None:
+        self.assertEqual(_local_maxima_indices(np.array([], dtype=np.float64), 0.0).size, 0)
 
 
 if __name__ == "__main__":
