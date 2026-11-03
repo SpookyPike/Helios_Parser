@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import unittest
+from unittest import mock
 
 import _test_bootstrap  # noqa: F401
 import numpy as np
@@ -78,6 +79,37 @@ class LeastSquaresTanhFitTest(unittest.TestCase):
         self.assertTrue(math.isfinite(fit.position_cm))
         self.assertTrue(math.isfinite(fit.width_cm))
         self.assertTrue(math.isfinite(fit.fit_quality))
+
+    def test_the_fallback_runs_and_matches_the_reference(self) -> None:
+        """Force the batched solve to fail and prove the fallback carries the fit.
+
+        The degenerate-window test above only asserts a finite result, which a
+        disabled fallback could still satisfy. Here the stacked solve is made to
+        raise, so the per-window lstsq path is the only way to get an answer, and
+        that answer is compared with the reference implementation.
+        """
+
+        x = np.linspace(0.0, 4.0, 40, dtype=np.float64)
+        field = np.tanh((x - 2.0) / 0.5)
+        reference = _reference_fit(x, (field,), 2.0, 1.0)
+        self.assertIsNotNone(reference)
+
+        real_solve = np.linalg.solve
+
+        def exploding_solve(*args, **kwargs):
+            raise np.linalg.LinAlgError("forced singular normal equations")
+
+        with mock.patch.object(np.linalg, "solve", exploding_solve):
+            fit = _least_squares_tanh_fit(x, (field,), 2.0, 1.0)
+        self.assertIsNotNone(fit, "the fallback did not produce a fit")
+        assert fit is not None
+        self.assertAlmostEqual(fit.position_cm, reference[0], delta=1.0e-9)
+        self.assertAlmostEqual(fit.width_cm, reference[1], delta=1.0e-9)
+        # And the control: without the patch the batched path is what runs.
+        batched = _least_squares_tanh_fit(x, (field,), 2.0, 1.0)
+        assert batched is not None
+        self.assertAlmostEqual(batched.position_cm, reference[0], delta=1.0e-9)
+        del real_solve
 
     def test_non_finite_coordinate_is_ignored(self) -> None:
         x = np.array([0.0, 1.0, np.nan, 3.0, 4.0], dtype=np.float64)
