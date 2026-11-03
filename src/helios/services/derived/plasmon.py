@@ -793,19 +793,27 @@ def _cluster_zone_plasmon_states(
         ion_mass_clusters = []
         weight_clusters = []
         signature = []
+        # One bincount pass per quantity instead of a boolean rescan of the whole
+        # zone array per cluster. The weighted means are unchanged: bincount
+        # accumulates weight*value per cluster and the total is divided out.
+        _n_clusters = int(inverse.max()) + 1 if inverse.size else 0
+        totals = np.bincount(inverse, weights=weights, minlength=_n_clusters)
+        weighted = {
+            _key: np.bincount(inverse, weights=weights * np.asarray(zone_states[_key], dtype=np.float64), minlength=_n_clusters)
+            for _key in ("te_ev", "ti_ev", "ne_cm3", "zbar", "ion_mass_mu")
+        }
         for ordered_index in order:
             cluster_index = int(ordered_index)
-            member_mask = inverse == cluster_index
-            member_weights = weights[member_mask]
-            total_weight = float(np.sum(member_weights, dtype=np.float64))
+            if cluster_index >= _n_clusters:
+                continue
+            total_weight = float(totals[cluster_index])
             if not math.isfinite(total_weight) or total_weight <= 0.0:
                 continue
-            normalized = member_weights / total_weight
-            te_value = float(np.sum(zone_states["te_ev"][member_mask] * normalized, dtype=np.float64))
-            ti_value = float(np.sum(zone_states["ti_ev"][member_mask] * normalized, dtype=np.float64))
-            ne_value = float(np.sum(zone_states["ne_cm3"][member_mask] * normalized, dtype=np.float64))
-            z_value = float(np.sum(zone_states["zbar"][member_mask] * normalized, dtype=np.float64))
-            ion_mass_value = float(np.sum(zone_states["ion_mass_mu"][member_mask] * normalized, dtype=np.float64))
+            te_value = float(weighted["te_ev"][cluster_index] / total_weight)
+            ti_value = float(weighted["ti_ev"][cluster_index] / total_weight)
+            ne_value = float(weighted["ne_cm3"][cluster_index] / total_weight)
+            z_value = float(weighted["zbar"][cluster_index] / total_weight)
+            ion_mass_value = float(weighted["ion_mass_mu"][cluster_index] / total_weight)
             te_clusters.append(te_value)
             ti_clusters.append(ti_value)
             ne_clusters.append(ne_value)
@@ -2720,7 +2728,6 @@ def evaluate_plasmon_regime(
             np.asarray(mean_series["ti_ev"], dtype=np.float64)
             ne_series = np.asarray(mean_series["ne_cm3"], dtype=np.float64)
             zbar_series = np.asarray(mean_series["zbar"], dtype=np.float64)
-            ion_mass_series = np.asarray(mean_series["ion_mass_mu"], dtype=np.float64)
             debye_series = np.full(te_series.shape, np.nan, dtype=np.float64)
             omega_series = np.full(te_series.shape, np.nan, dtype=np.float64)
             collision_series = np.full(te_series.shape, np.nan, dtype=np.float64)
@@ -2731,12 +2738,9 @@ def evaluate_plasmon_regime(
                 te_value = float(te_series[time_index])
                 ne_value = float(ne_series[time_index])
                 zbar_value = float(zbar_series[time_index])
-                ion_mass_value = float(ion_mass_series[time_index])
                 debye_cm = electron_debye_length_cm(te_value, ne_value)
-                electron_plasma_frequency_rad_s(ne_value)
                 ln_lambda = coulomb_logarithm_ei(te_value, ne_value, max(zbar_value, 1.0))
                 collision = electron_collision_rate_s(ne_value, te_value, ln_lambda)
-                _ = ion_sound_speed_cm_s(te_value, max(zbar_value, 1.0), ion_mass_value, parameters.plasmon_adiabatic_index)
                 debye_series[time_index] = debye_cm * 1.0e4 if math.isfinite(debye_cm) else np.nan
                 omega_series[time_index] = electron_plasma_energy_ev(ne_value)
                 collision_series[time_index] = float(collision)
