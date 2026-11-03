@@ -346,16 +346,12 @@ def _local_maxima_indices(values: np.ndarray, threshold: float) -> np.ndarray:
     if row.size == 0:
         return np.empty(0, dtype=np.int32)
     finite = np.where(np.isfinite(row), row, -np.inf)
-    maxima: list[int] = []
-    for index in range(row.size):
-        value = finite[index]
-        if not np.isfinite(value) or value < threshold:
-            continue
-        left = finite[index - 1] if index > 0 else -np.inf
-        right = finite[index + 1] if index + 1 < row.size else -np.inf
-        if value >= left and value >= right:
-            maxima.append(index)
-    return np.asarray(maxima, dtype=np.int32)
+    # Shifted-neighbour comparison instead of a per-zone Python loop: this ran
+    # three times per snapshot, about 415k interpreted iterations per analysis.
+    left = np.concatenate((np.array([-np.inf]), finite[:-1]))
+    right = np.concatenate((finite[1:], np.array([-np.inf])))
+    is_maximum = np.isfinite(finite) & (finite >= float(threshold)) & (finite >= left) & (finite >= right)
+    return np.nonzero(is_maximum)[0].astype(np.int32)
 
 
 def _family_threshold(score: np.ndarray, *, quantile: float, minimum: float) -> float:
