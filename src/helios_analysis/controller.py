@@ -449,6 +449,23 @@ class DerivedController(QtCore.QObject):
             return None
         return self._displayed_result
 
+    @staticmethod
+    def _module_key_matches(result: DerivedAnalysisResult, parameters: DerivedAnalysisParameters) -> bool:
+        """Whether a cached result was computed with these module parameters.
+
+        `_compatible_displayed_result` and the core cache both match on keys that
+        deliberately omit module parameters, so a result reached through them may
+        carry another parameter set's plasmon, XRD, spectroscopy or preheat. The
+        transmission path rewrites only the transmission payload and carries the
+        rest forward, so it has to check provenance itself.
+        """
+
+        existing = getattr(result, "module_key", None)
+        if existing is None:
+            # A result without provenance cannot be proven compatible.
+            return False
+        return tuple(existing) == tuple(parameters.module_key())
+
     def _schedule_transmission_refine(self) -> None:
         if not production_feature_visible("transmission"):
             self._set_busy(False, "Transmission is hidden in production mode.")
@@ -575,10 +592,16 @@ class DerivedController(QtCore.QObject):
                     base_result is None
                     and displayed_base_result is not None
                     and int(displayed_base_result.snapshot_index) == int(context_snapshot.snapshot_index)
+                    and self._module_key_matches(displayed_base_result, request.parameters)
                 ):
                     base_result = displayed_base_result
                 if base_result is None:
-                    base_result = self._analysis_core_cache.get(request.core_request_key)
+                    # The core cache is keyed on geometry and the shock/wave
+                    # selection only, so it must not supply the module payloads
+                    # this path carries forward.
+                    candidate = self._analysis_core_cache.get(request.core_request_key)
+                    if candidate is not None and self._module_key_matches(candidate, request.parameters):
+                        base_result = candidate
                 if base_result is None or not request.requested_time_plot_modules.issubset(analysis_result_time_plot_modules(base_result)):
                     base_result = compute_analysis_result(
                         dataset,
