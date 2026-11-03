@@ -7,7 +7,15 @@ from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
-from _viewer_test_utils import HDF5_ROOT, ROOT, get_app, process_events, reset_test_settings, wait_until
+from _viewer_test_utils import (
+    HDF5_ROOT,
+    ROOT,
+    close_window,
+    get_app,
+    process_events,
+    reset_test_settings,
+    wait_until,
+)
 from PySide6 import QtCore
 
 from helios_app.main_app import HeliosParseViewMainWindow
@@ -44,7 +52,7 @@ class AppPhase3Tests(unittest.TestCase):
             self.assertGreater(window.preview_field_list.count(), 0)
             self.assertTrue(window.parse_action.isEnabled())
         finally:
-            window.close()
+            close_window(window)
 
     def test_preview_parse_writes_hdf5_and_auto_opens_viewer(self) -> None:
         window = self.open_window()
@@ -70,7 +78,7 @@ class AppPhase3Tests(unittest.TestCase):
             self.assertEqual(int(viewer.run_payload.summary["n_zones"]), 500)
             self.assertTrue(window.open_viewer_action.isEnabled())
         finally:
-            window.close()
+            close_window(window)
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_open_existing_hdf5_loads_viewer_and_mode_switching_preserves_viewer_state(self) -> None:
@@ -111,7 +119,7 @@ class AppPhase3Tests(unittest.TestCase):
             self.assertIsNotNone(viewer.run_payload)
             self.assertEqual(viewer.run_payload.path, path)
         finally:
-            window.close()
+            close_window(window)
 
     def test_recent_files_and_heavy_hdf5_open_work(self) -> None:
         window = self.open_window()
@@ -131,7 +139,7 @@ class AppPhase3Tests(unittest.TestCase):
             self.assertIn(str(heavy_hdf5), recent)
             self.assertGreater(window.recent_files_menu.actions().__len__(), 0)
         finally:
-            window.close()
+            close_window(window)
 
 
 if __name__ == "__main__":

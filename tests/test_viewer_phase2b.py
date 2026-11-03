@@ -7,6 +7,7 @@ import numpy as np
 from _slow_tests import slow
 from _viewer_test_utils import (
     HDF5_ROOT,
+    close_window,
     combo_set_data,
     find_row_by_data,
     get_app,
@@ -171,7 +172,7 @@ class ViewerPhase2bTests(unittest.TestCase):
                     window._display_time_value(float(time[70])),
                 )
         finally:
-            window.close()
+            close_window(window)
 
     def test_display_unit_conversions_keep_map_slice_and_labels_consistent(self) -> None:
         window = self.open_window("5Fe+4.9TW+light_stabilized.h5")
@@ -214,7 +215,7 @@ class ViewerPhase2bTests(unittest.TestCase):
                 self.assertEqual(window.field_map_widget.current_colorbar_label, "Electron temperature [K]")
                 self.assertEqual(window.lineout_plot.current_y_label, "Electron temperature [K]")
         finally:
-            window.close()
+            close_window(window)
 
     def test_toolbar_dark_theme_and_disabled_transform_menus_are_consistent(self) -> None:
         window = self.open_window("Cu_0166_stabilized.h5")
@@ -243,7 +244,7 @@ class ViewerPhase2bTests(unittest.TestCase):
             self.assertTrue(window.plot_zoom_action.isEnabled())
             self.assertTrue(window.plot_home_action.isEnabled())
         finally:
-            window.close()
+            close_window(window)
 
     def test_laser_region_text_and_unit_settings_persist(self) -> None:
         reset_test_settings()
@@ -263,7 +264,7 @@ class ViewerPhase2bTests(unittest.TestCase):
             window._set_theme_mode("dark")
             window._save_current_preferences()
         finally:
-            window.close()
+            close_window(window)
 
         reopened = HeliosViewerMainWindow()
         try:

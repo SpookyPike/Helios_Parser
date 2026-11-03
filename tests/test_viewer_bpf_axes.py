@@ -107,6 +107,9 @@ class ViewerBpfAxesSmokeTests(unittest.TestCase):
                 result["unsupported_message"] = window.status_message.text()
                 result["errors"] = errors
                 window.controller.shutdown()
+                # Plain close: this runs inside the subprocess script below,
+                # which does not import the test helpers, and the process exits
+                # immediately so there is no widget tree to accumulate.
                 window.close()
                 process_events(8)
             finally:

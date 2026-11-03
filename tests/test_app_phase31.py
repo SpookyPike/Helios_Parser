@@ -8,7 +8,15 @@ from unittest import mock
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
-from _viewer_test_utils import HDF5_ROOT, ROOT, get_app, process_events, reset_test_settings, wait_until
+from _viewer_test_utils import (
+    HDF5_ROOT,
+    ROOT,
+    close_window,
+    get_app,
+    process_events,
+    reset_test_settings,
+    wait_until,
+)
 from PySide6 import QtWidgets
 
 from helios_app.main_app import HeliosParseViewMainWindow
@@ -71,7 +79,7 @@ class AppPhase31Tests(unittest.TestCase):
             self.assertTrue(window.export_action.isEnabled())
             self.assertEqual(window.viewer_controller.window.plot_tabs.count(), 3)
         finally:
-            window.close()
+            close_window(window)
 
     def test_shell_and_viewer_settings_persist_across_restart(self) -> None:
         window = self.open_window()
@@ -81,7 +89,7 @@ class AppPhase31Tests(unittest.TestCase):
             window.auto_open_checkbox.setChecked(False)
             window._set_theme_mode("dark")
             process_events()
-            window.close()
+            close_window(window)
 
             reopened = HeliosParseViewMainWindow()
             reopened.show()
@@ -99,8 +107,7 @@ class AppPhase31Tests(unittest.TestCase):
             finally:
                 reopened.close()
         finally:
-            if window.isVisible():
-                window.close()
+            close_window(window)
 
     def test_integrated_export_writes_png_pdf_and_transparent_png(self) -> None:
         window = self.open_window()
@@ -147,7 +154,7 @@ class AppPhase31Tests(unittest.TestCase):
             self.assertGreater(transparent_path.stat().st_size, 0)
             self.assertGreater(pdf_path.stat().st_size, 0)
         finally:
-            window.close()
+            close_window(window)
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_overwrite_disabled_reports_parse_error_without_crashing(self) -> None:
@@ -172,7 +179,7 @@ class AppPhase31Tests(unittest.TestCase):
             self.assertIn("Failed to parse", errors[0][0])
             self.assertIn("already exists", errors[0][1])
         finally:
-            window.close()
+            close_window(window)
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 

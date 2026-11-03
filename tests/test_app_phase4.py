@@ -4,7 +4,15 @@ import unittest
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
-from _viewer_test_utils import HDF5_ROOT, get_app, process_events, reset_test_settings, set_checked_values, wait_until
+from _viewer_test_utils import (
+    HDF5_ROOT,
+    close_window,
+    get_app,
+    process_events,
+    reset_test_settings,
+    set_checked_values,
+    wait_until,
+)
 
 from helios_app.main_app import HeliosParseViewMainWindow
 from helios_app.session_state import reset_session_state
@@ -44,7 +52,7 @@ class AppPhase4Tests(unittest.TestCase):
             self.assertEqual(window._current_mode_id(), "derived")
             self.assertIn("500 zones", window.derived_controller.widget().run_summary_label.text())
         finally:
-            window.close()
+            close_window(window)
 
     def test_derived_mode_follows_snapshot_and_subset_changes(self) -> None:
         window = self.open_window()
@@ -74,7 +82,7 @@ class AppPhase4Tests(unittest.TestCase):
             self.assertEqual(result.selected_zone_count, 300)
             self.assertGreaterEqual(len(result.shock.time_s), 1)
         finally:
-            window.close()
+            close_window(window)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ import numpy as np
 from _slow_tests import slow
 from _viewer_test_utils import (
     HDF5_ROOT,
+    close_window,
     combo_set_data,
     find_row_by_data,
     get_app,
@@ -112,7 +113,7 @@ class ViewerPhase2cTests(unittest.TestCase):
                 self.assertIn(f"zone {expected_zone}", window.trace_reference_label.text().lower())
                 self.assertIn(moving_label, window.lineout_plot.current_title.lower())
         finally:
-            window.close()
+            close_window(window)
 
     def test_mouse_mode_fine_adjustment_controls_resolve_nearest_samples_without_rerendering_map(self) -> None:
         name = "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5"
@@ -153,7 +154,7 @@ class ViewerPhase2cTests(unittest.TestCase):
             self.assertEqual(window.field_map_widget.mesh_render_count, mesh_count)
             self.assertIn("zone 334", window.mouse_adjustment_label.text().lower())
         finally:
-            window.close()
+            close_window(window)
 
     def test_snapshot_controls_are_slice_view_only_and_zoom_persists_across_benign_changes(self) -> None:
         window = self.open_window("5Fe+4.9TW+light_stabilized.h5")
@@ -195,7 +196,7 @@ class ViewerPhase2cTests(unittest.TestCase):
             process_events()
             self.assertFalse(np.allclose(np.asarray(field_view.viewRange(), dtype=np.float64), field_before))
         finally:
-            window.close()
+            close_window(window)
 
     def test_display_unit_coverage_and_colorbar_cleanup(self) -> None:
         window = self.open_window("Cu_0166_stabilized.h5")
@@ -267,7 +268,7 @@ class ViewerPhase2cTests(unittest.TestCase):
                 self.assertEqual(unit, "K")
                 np.testing.assert_allclose(converted, np.asarray([EV_TO_K], dtype=np.float64))
         finally:
-            window.close()
+            close_window(window)
 
     def test_export_png_pdf_and_transparent_background_work(self) -> None:
         window = self.open_window("5Fe+4.9TW+light_stabilized.h5")
@@ -292,7 +293,7 @@ class ViewerPhase2cTests(unittest.TestCase):
                 alpha = np.frombuffer(bits, dtype=np.uint8, count=transparent.sizeInBytes()).reshape((transparent.height(), transparent.width(), 4))[:, :, 3]
                 self.assertTrue(bool(np.any(alpha == 0)))
         finally:
-            window.close()
+            close_window(window)
 
 
 if __name__ == "__main__":

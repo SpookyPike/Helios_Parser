@@ -4,7 +4,15 @@ import unittest
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
-from _viewer_test_utils import HDF5_ROOT, ROOT, get_app, process_events, reset_test_settings, wait_until
+from _viewer_test_utils import (
+    HDF5_ROOT,
+    ROOT,
+    close_window,
+    get_app,
+    process_events,
+    reset_test_settings,
+    wait_until,
+)
 
 from helios_app.main_app import HeliosParseViewMainWindow
 from helios_app.session_state import reset_session_state
@@ -45,7 +53,7 @@ class AppPhase33Tests(unittest.TestCase):
             self.assertEqual(window._current_mode_id(), "parser")
             self.assertFalse(window.export_action.isEnabled())
         finally:
-            window.close()
+            close_window(window)
 
     def test_open_log_then_open_hdf5_keeps_mode_routing_stable(self) -> None:
         window = self.open_window()
@@ -64,7 +72,7 @@ class AppPhase33Tests(unittest.TestCase):
             self.assertEqual(window._current_mode_id(), "viewer")
             self.assertEqual(window.viewer_controller.window.plot_tabs.count(), 3)
         finally:
-            window.close()
+            close_window(window)
 
 
 if __name__ == "__main__":

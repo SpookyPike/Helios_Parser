@@ -8,7 +8,15 @@ from unittest import mock
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
-from _viewer_test_utils import HDF5_ROOT, ROOT, get_app, process_events, reset_test_settings, wait_until
+from _viewer_test_utils import (
+    HDF5_ROOT,
+    ROOT,
+    close_window,
+    get_app,
+    process_events,
+    reset_test_settings,
+    wait_until,
+)
 from PySide6 import QtWidgets
 
 from helios_app.main_app import HeliosParseViewMainWindow
@@ -71,7 +79,7 @@ class AppPhase32Tests(unittest.TestCase):
             self.assertEqual(window.parse_progress.value(), 1000)
             self.assertIn("100%", window.parse_progress.format())
         finally:
-            window.close()
+            close_window(window)
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_shell_embeds_workspace_widget_not_nested_mainwindow(self) -> None:
@@ -87,7 +95,7 @@ class AppPhase32Tests(unittest.TestCase):
             )
             self.assertEqual(window.viewer_controller.window.plot_tabs.count(), 3)
         finally:
-            window.close()
+            close_window(window)
 
     def test_vector_svg_and_pdf_export_for_slice_plot(self) -> None:
         window = self.open_window()
@@ -131,7 +139,7 @@ class AppPhase32Tests(unittest.TestCase):
             self.assertNotIn(b"/Subtype /Image", pdf_bytes)
             self.assertIn(b"/Font", pdf_bytes)
         finally:
-            window.close()
+            close_window(window)
             shutil.rmtree(temp_dir, ignore_errors=True)
 
 

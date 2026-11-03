@@ -4,7 +4,12 @@ import unittest
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
-from _viewer_test_utils import get_app, process_events, reset_test_settings
+from _viewer_test_utils import (
+    close_window,
+    get_app,
+    process_events,
+    reset_test_settings,
+)
 from PySide6 import QtGui, QtWidgets
 
 from helios_analysis.workspace import HeliosDerivedWorkspace
@@ -49,7 +54,7 @@ class AccessibilityControlsTests(unittest.TestCase):
             self.assertTrue(window.global_snapshot_spin.accessibleDescription())
             self.assertTrue(window.global_time_spin.accessibleDescription())
         finally:
-            window.close()
+            close_window(window)
             process_events()
 
     def test_density_and_zone_controls_have_named_buddies(self) -> None:
@@ -116,7 +121,7 @@ class AccessibilityControlsTests(unittest.TestCase):
                 with self.subTest(control=expected):
                     self.assert_accessible_name(control, expected)
         finally:
-            window.close()
+            close_window(window)
             process_events()
 
 

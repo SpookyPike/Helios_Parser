@@ -7,6 +7,7 @@ import numpy as np
 from _slow_tests import slow
 from _viewer_test_utils import (
     HDF5_ROOT,
+    close_window,
     combo_set_data,
     find_row_by_data,
     get_app,
@@ -122,7 +123,7 @@ class ViewerInteractionTests(unittest.TestCase):
             self.assertIn("QMenu", self.app.styleSheet())
             self.assertIn("QAbstractItemView", self.app.styleSheet())
         finally:
-            window.close()
+            close_window(window)
 
     def test_snapshot_slider_remains_functional_after_multiple_mode_switches(self) -> None:
         name = "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5"
@@ -163,7 +164,7 @@ class ViewerInteractionTests(unittest.TestCase):
                     window.snapshot_time_label.text(),
                 )
         finally:
-            window.close()
+            close_window(window)
 
     def test_mouse_mode_hover_freeze_and_resume_match_field_payloads(self) -> None:
         name = "Cu_0166_stabilized.h5"
@@ -201,7 +202,7 @@ class ViewerInteractionTests(unittest.TestCase):
                 self.assertEqual(window._probe_mode, "live")
                 self.assertFalse(window.field_map_widget.probe_frozen)
         finally:
-            window.close()
+            close_window(window)
 
     def test_moving_mesh_render_and_mouse_slices_use_radius_time_surface(self) -> None:
         name = "10ns+10Si+60Al+15Si+4.27TW_stabilized.h5"
@@ -251,7 +252,7 @@ class ViewerInteractionTests(unittest.TestCase):
                     or "moving-mesh x" in window.mouse_mode_probe_label.text().lower()
                 )
         finally:
-            window.close()
+            close_window(window)
 
     def test_titles_and_state_labels_stay_consistent_across_mode_switches(self) -> None:
         name = "5Fe+4.9TW+light_stabilized.h5"
@@ -274,7 +275,7 @@ class ViewerInteractionTests(unittest.TestCase):
             self.assertIn("mouse mode (frozen)", window.active_analysis_label.text().lower())
             self.assertIn("frozen", window.mouse_mode_state_label.text().lower())
         finally:
-            window.close()
+            close_window(window)
 
     def test_rapid_percentile_changes_coalesce_field_map_refresh(self) -> None:
         window = self.open_window("Cu_0166_stabilized.h5")
@@ -287,7 +288,7 @@ class ViewerInteractionTests(unittest.TestCase):
             self.assertAlmostEqual(window.percentile_low_spin.value(), 6.0, places=6)
             self.assertLessEqual(window.field_map_widget.render_call_count - render_before, 2)
         finally:
-            window.close()
+            close_window(window)
 
 
 if __name__ == "__main__":
