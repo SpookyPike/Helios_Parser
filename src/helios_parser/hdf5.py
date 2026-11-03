@@ -19,7 +19,7 @@ import numpy as np
 from helios.instrumentation import record_duration
 from .bpf import LOG_COMPATIBLE_BPF_ALIASES, BpfFile, alias_metadata, field_metadata_for_bpf_key
 from .document import diagnostic_value_width, flatten_snapshot_diagnostics, normalize_diagnostic_value, reconcile_diagnostic_width
-from .exodus import ExodusRun, RadiationOutput, looks_like_exodus, read_exodus
+from .exodus import FLUX_NORMALIZATION, ExodusRun, RadiationOutput, looks_like_exodus, read_exodus
 from .parser import DEFAULT_TOKENIZER, HeliosParser, SnapshotDomainError
 
 LOGGER = logging.getLogger(__name__)
@@ -988,6 +988,9 @@ def _write_radiation_groups(
             compression=compression,
             chunks=_time_major_chunk_shape(values.shape),
         )
+        note = FLUX_NORMALIZATION.get(name)
+        if note:
+            flux_group[name].attrs["normalization"] = note
 
 
 def _write_hdf5_from_exodus(

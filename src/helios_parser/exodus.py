@@ -100,7 +100,12 @@ SPECTRAL_NODE_FIELDS: dict[str, tuple[str, str]] = {
     "Freq. resolved Rosseland opacity for nodes [cm2 per g]": ("rosseland_opacity", "cm2/g"),
 }
 
-# Boundary and interface spectra, on the `time_whole` axis.
+# Boundary and interface spectra, on the `time_whole` axis.  These are per-group
+# BIN CONTENTS, not densities: the plain group sum of `net_interface` reproduces
+# `TotalFluxRmin`/`Rmax` exactly, while weighting by the group width is off by
+# 1e4.  `FdIntgPowerLoss*` is the opposite: it needs the group width and its plain
+# sum is off by 1e15.  The container labels both "per eV", which is why the
+# normalization is written into the dataset attributes instead of inferred.
 FLUX_FIELDS: dict[str, tuple[str, str]] = {
     "Freq. resolved incident flux at Rmax [J per (cm2.sec.eV)]": ("incident_rmax", "J/(cm2 s eV)"),
     "Freq. resolved incident flux at Rmin [J per (cm2.sec.eV)]": ("incident_rmin", "J/(cm2 s eV)"),
@@ -109,6 +114,18 @@ FLUX_FIELDS: dict[str, tuple[str, str]] = {
     "FdPowerLossRmin": ("power_loss_rmin", ""),
     "FdIntgPowerLossRmax": ("power_loss_rmax_integrated", ""),
     "FdIntgPowerLossRmin": ("power_loss_rmin_integrated", ""),
+}
+
+# Per-group normalization, so a consumer cannot integrate a bin content as if it
+# were a density.  Measured on all three fixtures; see the module docstring.
+FLUX_NORMALIZATION: dict[str, str] = {
+    "incident_rmax": "per-group bin content; the group sum is the boundary total (zero in every reference fixture)",
+    "incident_rmin": "per-group bin content; the group sum is the boundary total (zero in every reference fixture)",
+    "net_interface": "per-group bin content; the group sum reproduces TotalFluxRmin/TotalFluxRmax exactly",
+    "power_loss_rmax": "per-group rate",
+    "power_loss_rmin": "per-group rate",
+    "power_loss_rmax_integrated": "per-group density; weight by the group width (FdIntg * dE = FreqIntgRadEnLoss)",
+    "power_loss_rmin_integrated": "per-group density; weight by the group width (FdIntg * dE = FreqIntgRadEnLoss)",
 }
 
 # One row per hydro dump.  Units are set only where the container dataset name

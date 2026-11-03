@@ -112,17 +112,24 @@ that layout, and the reader raises instead of discarding data.
 
 ### S2.4 Group integration convention
 
-`FdIntgPowerLossRmin` integrated over groups reproduces `FreqIntgRadEnLossRmin`
-exactly, with **rectangle weights** (`sum(value * dE)`), on all three fixtures and
-every dump. Trapezoid weights do not reproduce it. The vendor therefore treats the
-per-group arrays as bin contents and integrates with the bin width, so
-`integrate_over_groups` does the same and the cross-check becomes the test that
-catches a flipped group axis.
+Two per-group families in the same container use opposite normalizations, and the
+dataset names label both "per eV". Measured on all three fixtures, every dump:
+
+| family | convention | measured identity | error if the other rule is used |
+|---|---|---|---|
+| `FdIntgPowerLoss*` | density, weight by `dE` | `sum(FdIntgPowerLossRmin * dE)` = `FreqIntgRadEnLossRmin`, 1e-16 | plain sum off by 1e15 |
+| `net_interface` | bin content, plain sum | `sum(net_interface[:, 0, :])` = `-TotalFluxRmin`, exact | `dE` weighting off by 1e4 |
+
+Trapezoid weights on the density family are off by 1.5 % on the Rmin boundary,
+where the grid is coarse next to the 10 keV split. `integrate_over_groups` uses
+the rectangle rule for that family, and the writer records the convention in a
+`normalization` dataset attribute so a consumer does not have to know the
+measurement.
 
 The requirement document proposes trapezoid weights and cross-checks against
-`TotalFluxRmin`. Both are wrong against these containers: `Freq. resolved incident
-flux at Rmin` and `at Rmax` are identically zero in all three fixtures, so no
-integral of them reproduces `TotalFluxRmin`.
+`TotalFluxRmin`. Neither holds against these containers: the incident flux arrays
+are identically zero in all three fixtures, and the array that does reproduce
+`TotalFluxRmin` needs a plain sum rather than any integral.
 
 ### S2.5 Interface ordering
 
@@ -154,10 +161,17 @@ built from them is blank.
 
 Each raises `ValueError` when the file carries no radiation output.
 
-`scripts/plot_radiation.py` renders the three figures these questions need: the
-spectrum at one dump, the spectrum-versus-time map, and the spectral energy
-density of one zone against time. It is the current way to look at the data,
-because the Viewer plots a 2-D `(time, zone)` field and a spectrum is 3-D.
+`evaluate_radiation(dataset, snapshot_index=...)` builds the bundles the
+Radiation tab renders. It reads only `flux/` and the integrated scalars, never the
+`(dump, zone, group)` spectral field, so moving the snapshot slider does not
+re-read a 26 MB container. The tab gets one profile bundle per flux dump (Rmin and
+Rmax in one frame) and two time bundles, `total_flux` and `loss`, which plot the
+stored scalars rather than a re-integration of the spectra.
+
+`scripts/plot_radiation.py` renders the same three figures to PNG for a report:
+the spectrum at one dump, the spectrum-versus-time map, and one zone's spectral
+energy density against time. It is the only way to see the node-centred spectral
+field today.
 
 ### S2.7 Tests
 
@@ -197,9 +211,14 @@ history.
   per-dump edges are written and the consumer decides.
 - Collisional-radiative runs. `num_cr_freq_groups_for_time` is constant in these
   non-CR files and the CR grid is documented to change per time step.
-- A Viewer surface for the spectra. The Viewer's field model is `(time, zone)`;
-  a spectrum is `(dump, zone, group)` and needs a group selector and a new plot
-  mode. `scripts/plot_radiation.py` covers use cases B and D in the meantime.
+- A Viewer surface for the spectra. The Derived tab covers the boundary spectra
+  (use cases B and D). The Viewer's field model is `(time, zone)` and a spectral
+  energy density is `(dump, zone, group)`, so showing it there needs a group
+  selector and a new plot mode; `scripts/plot_radiation.py` renders it in the
+  meantime.
+- A side or quantity selector in the Radiation tab. The tab shows both boundaries
+  at once, which covers the comparison the campaign asks for; a selector would add
+  parameter plumbing for no new information.
 - A `.bpf` route. HELIOS 12 writes no plot file when `Plot file type = 1`.
 
 ## Tasks
@@ -211,6 +230,7 @@ history.
 - [ ] T5: derived helpers — acceptance: `integrate_over_groups` reproduces `radiation/integrated/loss_rmin` from `flux/power_loss_rmin_integrated`; `spectrum_at` returns the sample time (covers: S2.4, S2.6)
 - [ ] T6: commit-gate tests — acceptance: `python tests/test_radiation_output.py` passes (covers: S2.7)
 - [ ] T7: milestone test on the 26 MB fixture — acceptance: passes locally with the fixture present, skips without it (covers: S2.7)
+- [ ] T7b: Radiation tab in Derived / Analysis — acceptance: the tab lists one profile per flux dump with Rmin and Rmax, shows the two time bundles, and reports a reason for a run without radiation (covers: S2.6)
 - [ ] T8: docs, changelog, version 1.4.0 — acceptance: `pyproject.toml`, `helios_app/release.py`, README and `docs/packaging.md` agree on 1.4.0 (covers: S2.3)
 - [ ] T9: release v1.4.0 — acceptance: tag pushed, GitHub release carries the source ZIP, Debian package, Linux portable tarball and checksums (covers: S2.3)
 

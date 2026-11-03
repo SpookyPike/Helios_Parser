@@ -770,6 +770,33 @@ class SpectroscopyResult:
 
 
 @dataclass(frozen=True, slots=True)
+class RadiationResult:
+    """The frequency-resolved radiation output of one snapshot.
+
+    Spectra do not fit the zone-field model: one dump is
+    `(n_zones, n_groups)`, so the panel shows one profile bundle per dump and a
+    time trace of the group-integrated flux. `available` is False, with a
+    reason, for a run whose deck left `Write freq-dependent radiation output` off.
+    """
+
+    snapshot_index: int
+    available: bool
+    summary: str
+    n_groups: int
+    n_flux_dumps: int
+    n_freq_snapshots: int
+    n_boundaries: int
+    n_regions: int
+    sample_time_s: float
+    requested_time_s: float
+    total_flux_rmin: float
+    total_flux_rmax: float
+    time_plots: tuple[DerivedPlotBundle, ...]
+    profile_plots: tuple[DerivedPlotBundle, ...]
+    warnings: tuple[DerivedWarning, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class DerivedAnalysisResult:
     context_key: tuple[object, ...]
     dataset_path: Path
@@ -788,6 +815,7 @@ class DerivedAnalysisResult:
     interface_events: InterfaceEventsResult | None = None
     preheat: PreheatSummary | None = None
     module_availability: tuple["DerivedModuleAvailability", ...] = ()
+    radiation: RadiationResult | None = None
 
 
 @dataclass(frozen=True, slots=True)

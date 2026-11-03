@@ -27,6 +27,7 @@ from helios.services.derived.models import (
     DerivedWarning,
     PlasmonResult,
     PreheatSummary,
+    RadiationResult,
     SpectroscopyResult,
     TransmissionResult,
     XrdResult,
@@ -50,6 +51,7 @@ from helios.services.derived.plasmon_config import (
 )
 from helios.services.derived.plasmon import evaluate_plasmon_regime
 from helios.services.derived.preheat import evaluate_preheat
+from helios.services.derived.radiation import evaluate_radiation
 from helios.services.derived.selection import AnalysisStateCache, build_analysis_geometry, build_analysis_mask, resolve_weighting_mode
 from helios.services.derived.shock_tracking import (
     build_interface_events_from_wave_tracking,
@@ -380,6 +382,11 @@ def compute_analysis_result(
             analysis_cache=analysis_cache,
             progress_check=progress_check,
         )
+        radiation, module_availability = _compute_radiation_result(
+            dataset,
+            snapshot_index=snapshot_index,
+            module_availability=module_availability,
+        )
         availability_warnings = tuple(
             DerivedWarning(item.module, item.reason, severity="warning")
             for item in module_availability
@@ -461,6 +468,7 @@ def compute_analysis_result(
             preheat=preheat,
             module_availability=module_availability,
             warnings=warnings,
+            radiation=radiation,
         )
     LOGGER.debug("Derived analysis cache stats: %s", analysis_cache.stats())
     return result
@@ -501,6 +509,11 @@ def refresh_analysis_result_for_snapshot(
             analysis_cache=analysis_cache,
             progress_check=progress_check,
         )
+        radiation, module_availability = _compute_radiation_result(
+            dataset,
+            snapshot_index=snapshot_index,
+            module_availability=module_availability,
+        )
         availability_warnings = tuple(
             DerivedWarning(item.module, item.reason, severity="warning")
             for item in module_availability
@@ -536,9 +549,59 @@ def refresh_analysis_result_for_snapshot(
             preheat=base_result.preheat,
             module_availability=module_availability,
             warnings=warnings,
+            radiation=radiation,
         )
     LOGGER.debug("Derived snapshot-refresh cache stats: %s", analysis_cache.stats())
     return result
+
+
+def _compute_radiation_result(
+    dataset: DerivedRunData,
+    *,
+    snapshot_index: int,
+    module_availability: tuple[DerivedModuleAvailability, ...],
+) -> tuple[RadiationResult, tuple[DerivedModuleAvailability, ...]]:
+    """Compute the radiation tab's bundles and record why they are absent.
+
+    Radiation is not a `DerivedModuleContract`: it needs no zone-field
+    capability, it has no lazy time-plot pass, and its absence is a property of
+    the deck rather than of the run's fields.  It is appended here instead of
+    widening the contract chain, which is shared by the four zone-field modules.
+    """
+    if not production_feature_visible("radiation"):
+        result = _unavailable_radiation_result(
+            snapshot_index,
+            "The radiation tab is disabled in this build.",
+        )
+        return result, (*module_availability, DerivedModuleAvailability("radiation", False, result.summary))
+    with timed_block("derived.compute.radiation", logger=LOGGER):
+        result = evaluate_radiation(dataset, snapshot_index=snapshot_index)
+    availability = DerivedModuleAvailability(
+        "radiation",
+        bool(result.available),
+        None if result.available else str(result.summary),
+    )
+    return result, (*module_availability, availability)
+
+
+def _unavailable_radiation_result(snapshot_index: int, reason: str) -> RadiationResult:
+    return RadiationResult(
+        snapshot_index=int(snapshot_index),
+        available=False,
+        summary=reason,
+        n_groups=0,
+        n_flux_dumps=0,
+        n_freq_snapshots=0,
+        n_boundaries=0,
+        n_regions=0,
+        sample_time_s=float("nan"),
+        requested_time_s=float("nan"),
+        total_flux_rmin=float("nan"),
+        total_flux_rmax=float("nan"),
+        time_plots=(),
+        profile_plots=(),
+        warnings=(DerivedWarning("radiation", reason, severity="info"),),
+    )
 
 
 def _compute_module_results(
@@ -792,6 +855,7 @@ def _assemble_analysis_result(
     preheat,
     warnings: tuple[DerivedWarning, ...],
     module_availability=(),
+    radiation=None,
 ) -> DerivedAnalysisResult:
     return DerivedAnalysisResult(
         context_key=context_key,
@@ -811,6 +875,7 @@ def _assemble_analysis_result(
         interface_events=interface_events,
         preheat=preheat,
         module_availability=tuple(module_availability),
+        radiation=radiation,
     )
 
 

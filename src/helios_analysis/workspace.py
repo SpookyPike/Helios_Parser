@@ -71,6 +71,7 @@ from helios.services.derived.models import (
     InterfaceEventsResult,
     PlasmonResult,
     PreheatSummary,
+    RadiationResult,
     ShockTrackingResult,
     SpectroscopyResult,
     TransmissionResult,
@@ -2144,6 +2145,22 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self._module_tab_names[
             self._add_scrollable_result_tab(self.spectroscopy_tab, "Spectroscopy")
         ] = "spectroscopy"
+
+        self.radiation_tab = QtWidgets.QWidget()
+        radiation_layout = QtWidgets.QVBoxLayout(self.radiation_tab)
+        radiation_layout.setContentsMargins(6, 6, 6, 6)
+        radiation_layout.setSpacing(6)
+        self.radiation_summary_label = QtWidgets.QLabel("-")
+        self.radiation_summary_label.setWordWrap(True)
+        radiation_layout.addWidget(self.radiation_summary_label)
+        self.radiation_metrics = QtWidgets.QTextBrowser()
+        self.radiation_metrics.setFont(build_mono_font())
+        radiation_layout.addWidget(self.radiation_metrics)
+        self.radiation_plot_panel = DerivedPlotPanel()
+        radiation_layout.addWidget(self.radiation_plot_panel, 1)
+        self._module_tab_names[
+            self._add_scrollable_result_tab(self.radiation_tab, "Radiation")
+        ] = "radiation"
 
         self.warnings_tab = QtWidgets.QWidget()
         warnings_layout = QtWidgets.QVBoxLayout(self.warnings_tab)
@@ -4323,6 +4340,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             self.plasmon_plot_panel,
             self.transmission_plot_panel,
             self.spectroscopy_plot_panel,
+            self.radiation_plot_panel,
         )
         for panel in panels:
             panel.apply_theme(theme)
@@ -4569,8 +4587,10 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self.transmission_refine_button.setText("Calculate transmission")
         self.transmission_refine_button.setEnabled(False)
         self.spectroscopy_summary_label.setText("-")
+        self.radiation_summary_label.setText("-")
         self.plasmon_metrics.clear()
         self.spectroscopy_metrics.clear()
+        self.radiation_metrics.clear()
         self.shock_position_plot.clear_plot()
         self.shock_velocity_plot.clear_plot()
         self.wavefront_position_plot.clear_plot()
@@ -4583,6 +4603,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self._update_plasmon_recompute_ui()
         self.transmission_plot_panel.clear()
         self.spectroscopy_plot_panel.clear()
+        self.radiation_plot_panel.clear()
         self.shock_interface_table.setRowCount(0)
         self.wavefront_branch_table.setRowCount(0)
         self.wavefront_event_table.setRowCount(0)
@@ -4650,6 +4671,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
         self._populate_plasmon(result.plasmon)
         self._populate_transmission(result.transmission)
         self._populate_spectroscopy(result.spectroscopy)
+        self._populate_radiation(result.radiation)
         self._populate_warnings(result)
         self._update_snapshot_markers(result.snapshot_time_s)
         self._handle_result_tab_changed(self.result_tabs.currentIndex())
@@ -4661,6 +4683,7 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             self.plasmon_plot_panel,
             self.transmission_plot_panel,
             self.spectroscopy_plot_panel,
+            self.radiation_plot_panel,
         ):
             panel.set_snapshot_marker(display_time)
         preheat_display_time = None
@@ -5956,6 +5979,39 @@ class HeliosDerivedWorkspace(QtWidgets.QWidget):
             tuple(transformed_time_bundles),
             self._with_snapshot_titles(tuple(transformed_profile_bundles), snapshot_index=spectroscopy.snapshot_index),
             view_scope="spectroscopy",
+        )
+
+    def _populate_radiation(self, radiation: RadiationResult | None) -> None:
+        if radiation is None:
+            self.radiation_summary_label.setText("No radiation result for this snapshot.")
+            self.radiation_metrics.clear()
+            self.radiation_plot_panel.clear()
+            return
+        self.radiation_summary_label.setText(radiation.summary)
+        if not radiation.available:
+            self.radiation_metrics.setPlainText(radiation.summary)
+            self.radiation_plot_panel.clear()
+            return
+        self.radiation_metrics.setPlainText(
+            "\n".join(
+                (
+                    f"Groups        {radiation.n_groups}",
+                    f"Flux dumps    {radiation.n_flux_dumps}",
+                    f"Spectral dumps {radiation.n_freq_snapshots}",
+                    f"Boundaries    {radiation.n_boundaries}",
+                    f"Regions       {radiation.n_regions}",
+                    f"Sampled       {self._format_time(radiation.sample_time_s)}",
+                    f"Requested     {self._format_time(radiation.requested_time_s)}",
+                    f"Total flux Rmin {_format_optional(radiation.total_flux_rmin, '{:.4g}')} J/(cm2 s)",
+                    f"Total flux Rmax {_format_optional(radiation.total_flux_rmax, '{:.4g}')} J/(cm2 s)",
+                    "Flux rows follow the hydro axis; the spectral field has its own, sparser axis.",
+                )
+            )
+        )
+        self.radiation_plot_panel.set_bundles(
+            radiation.time_plots,
+            self._with_snapshot_titles(radiation.profile_plots, snapshot_index=radiation.snapshot_index),
+            view_scope="radiation",
         )
 
     def _warning_brush(self, severity: str) -> tuple[QtGui.QBrush, QtGui.QBrush]:

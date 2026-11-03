@@ -42,15 +42,25 @@ import numpy as np
 
 import _test_bootstrap  # noqa: F401
 from _slow_tests import slow
+
+try:
+    from PySide6 import QtWidgets  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    QtWidgets = None  # type: ignore
 from helios.services.derived import integrate_over_groups, spectrum_at, spectrum_map
 from helios_parser.exodus import (
     GROUP_BOUNDS_DATASET,
     RADIATION_TIME_DATASET,
-    SPECTRAL_NODE_FIELDS,
     ExodusFormatError,
     read_exodus,
 )
+from helios.runtime import RunContext
+from helios.services.derived import DerivedAnalysisParameters, compute_analysis_result, load_run_data
 from helios_parser.hdf5 import write_hdf5
+
+if QtWidgets is not None:
+    from _viewer_test_utils import get_app, process_events, reset_test_settings
+    from helios_analysis.workspace import HeliosDerivedWorkspace
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 RADIATION = FIXTURES / "radiation"
@@ -60,6 +70,29 @@ LONG_EXO = RADIATION / "cu_freqrad_t0p3ns.exo"
 NO_RADIATION_EXO = FIXTURES / "v12" / "cu_v12_slice.exo"
 
 ENERGY_DENSITY_DATASET = "Freq. resolved radiation energy density for nodes [J per (cm3.group)]"
+
+
+def _context_from_dataset(path: Path, dataset) -> RunContext:
+    return RunContext(
+        path=path,
+        summary=dict(dataset.summary),
+        metadata=dict(dataset.metadata),
+        fields=("density", "velocity", "temperature_e", "temperature_i", "electron_density", "mean_charge"),
+        diagnostics=(),
+        time_values=np.asarray(dataset.time_s, dtype=np.float64).copy(),
+        static_x_values=np.asarray(dataset.static_x_cm, dtype=np.float64).copy(),
+        zone_region_id=np.asarray(dataset.zone_region_id, dtype=np.int32).copy(),
+        zone_material_index=np.asarray(dataset.zone_material_index, dtype=np.int32).copy(),
+        has_dynamic_radius=dataset.radius_cm is not None,
+        snapshot_index=min(20, max(0, dataset.time_s.size - 1)),
+        map_coordinate="moving_radius" if dataset.radius_cm is not None else "static_x",
+        slice_coordinate="moving_radius" if dataset.radius_cm is not None else "zone",
+        selected_region_ids=tuple(int(value) for value in np.asarray(dataset.regions["region_index"], dtype=np.int32)),
+        selected_material_ids=tuple(
+            int(abs(value))
+            for value in np.unique(np.abs(np.asarray(dataset.zone_material_index, dtype=np.int32)))
+        ),
+    )
 
 
 def _convert(source: Path, directory: Path) -> Path:
@@ -385,6 +418,136 @@ class RadiationHelperTests(unittest.TestCase):
     def test_a_run_without_radiation_is_rejected_with_a_reason(self) -> None:
         with self.assertRaises(ValueError):
             spectrum_map(self.off_h5)
+
+
+class RadiationAnalysisTests(unittest.TestCase):
+    """The derived module: bundles for the tab, and a reason when there are none."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._directory = tempfile.TemporaryDirectory()
+        directory = Path(cls._directory.name)
+        cls.stack_h5 = _convert(STACK_EXO, directory)
+        cls.off_h5 = _convert(NO_RADIATION_EXO, directory)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._directory.cleanup()
+
+    def _result(self, path: Path, key: str):
+        dataset = load_run_data(path)
+        context = _context_from_dataset(path, dataset)
+        return compute_analysis_result(
+            dataset,
+            context,
+            parameters=DerivedAnalysisParameters(),
+            context_key=(key,),
+        )
+
+    def test_one_profile_bundle_per_flux_dump_and_a_time_trace(self) -> None:
+        result = self._result(self.stack_h5, "radiation")
+        radiation = result.radiation
+        self.assertIsNotNone(radiation)
+        self.assertTrue(radiation.available)
+        self.assertEqual(radiation.n_groups, 250)
+        self.assertEqual(radiation.n_flux_dumps, 6)
+        self.assertEqual(radiation.n_freq_snapshots, 2)
+        self.assertEqual(radiation.n_boundaries, 4)
+        self.assertEqual(radiation.n_regions, 3)
+        self.assertEqual(len(radiation.profile_plots), 6)
+        self.assertEqual(radiation.profile_plots[0].y_series[0].shape, (250,))
+        self.assertEqual(radiation.profile_plots[0].curve_names, ("Rmin", "Rmax"))
+        self.assertEqual([bundle.key for bundle in radiation.time_plots], ["total_flux", "loss"])
+        # The time trace is the stored scalar, not a re-integration of the spectra.
+        with h5py.File(self.stack_h5) as handle:
+            np.testing.assert_array_equal(
+                radiation.time_plots[0].y_series[0],
+                handle["radiation/integrated/total_flux_rmin"][()],
+            )
+
+    def test_a_run_without_the_flag_reports_a_reason_instead_of_failing(self) -> None:
+        result = self._result(self.off_h5, "off")
+        radiation = result.radiation
+        self.assertIsNotNone(radiation)
+        self.assertFalse(radiation.available)
+        self.assertEqual(radiation.profile_plots, ())
+        self.assertIn("no radiation output", radiation.summary)
+        availability = {item.module: item for item in result.module_availability}
+        self.assertIn("radiation", availability)
+        self.assertFalse(availability["radiation"].available)
+
+    def test_the_flux_rows_follow_the_hydro_axis(self) -> None:
+        """`flux/` is on `time_whole`, so its sample time is the snapshot time.
+
+        Only the node-centred spectral field has the sparser `time_freq` axis;
+        `spectrum_at` is what snaps an arbitrary requested time onto a flux row.
+        """
+        dataset = load_run_data(self.stack_h5)
+        context = _context_from_dataset(self.stack_h5, dataset)
+        context.snapshot_index = 2
+        result = compute_analysis_result(
+            dataset,
+            context,
+            parameters=DerivedAnalysisParameters(),
+            context_key=("sample",),
+        )
+        radiation = result.radiation
+        self.assertEqual(radiation.snapshot_index, 2)
+        with h5py.File(self.stack_h5) as handle:
+            flux_times = np.asarray(handle["flux/time"][()], dtype=np.float64)
+        nearest = float(flux_times[int(np.abs(flux_times - radiation.requested_time_s).argmin())])
+        self.assertEqual(radiation.sample_time_s, nearest)
+        self.assertEqual(radiation.sample_time_s, float(dataset.time_s[2]))
+
+
+@unittest.skipIf(QtWidgets is None, "PySide6 is not available in this environment")
+class RadiationTabTests(unittest.TestCase):
+    """The tab renders the bundles and says so when the run has no radiation."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._app = get_app()
+        cls._directory = tempfile.TemporaryDirectory()
+        directory = Path(cls._directory.name)
+        cls.stack_h5 = _convert(STACK_EXO, directory)
+        cls.off_h5 = _convert(NO_RADIATION_EXO, directory)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._directory.cleanup()
+
+    def setUp(self) -> None:
+        reset_test_settings()
+
+    def _workspace(self, path: Path, key: str):
+        dataset = load_run_data(path)
+        context = _context_from_dataset(path, dataset)
+        result = compute_analysis_result(
+            dataset,
+            context,
+            parameters=DerivedAnalysisParameters(),
+            context_key=(key,),
+        )
+        workspace = HeliosDerivedWorkspace()
+        self.addCleanup(workspace.close)
+        workspace.set_context(context)
+        workspace.set_result(result)
+        process_events(20)
+        return workspace
+
+    def test_the_tab_lists_the_spectra_of_every_dump(self) -> None:
+        workspace = self._workspace(self.stack_h5, "tab")
+        titles = [workspace.result_tabs.tabText(index) for index in range(workspace.result_tabs.count())]
+        self.assertIn("Radiation", titles)
+        self.assertIn("250 groups", workspace.radiation_summary_label.text())
+        self.assertEqual(workspace.radiation_plot_panel.profile_combo.count(), 6)
+        self.assertEqual(workspace.radiation_plot_panel.time_combo.count(), 2)
+        self.assertIn("Groups", workspace.radiation_metrics.toPlainText())
+
+    def test_the_tab_explains_an_absent_radiation_block(self) -> None:
+        workspace = self._workspace(self.off_h5, "tab-off")
+        self.assertIn("no radiation output", workspace.radiation_summary_label.text())
+        self.assertEqual(workspace.radiation_plot_panel.profile_combo.count(), 0)
 
 
 @slow("reads the 26 MB six-spectral-dump fixture")

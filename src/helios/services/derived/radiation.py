@@ -6,12 +6,18 @@ me the spectrum at this instant".  Both are three lines of numpy, but the group
 integration convention is not obvious and getting it wrong is silent, so it lives
 here once with the measurement that fixes it.
 
-THE CONVENTION.  `sum(FdIntgPowerLossRmin * dE)` reproduces
-`FreqIntgRadEnLossRmin` to 1e-16 relative on all three reference fixtures, every
-dump, so HELIOS treats the per-group arrays as bin contents and weights them by
-the bin width.  Trapezoid weights are off by up to 1.5 % on the Rmin boundary,
-where the group grid is coarse next to the 10 keV split.  `integrate_over_groups`
-uses the rectangle rule and is checked against the stored integrated scalars.
+THE CONVENTION.  Two per-group families in the same file use opposite
+normalizations, and both are labelled "per eV" in the container:
+
+- `FdIntgPowerLoss*` is a density.  `sum(FdIntgPowerLossRmin * dE)` reproduces
+  `FreqIntgRadEnLossRmin` to 1e-16 relative on all three fixtures, every dump;
+  trapezoid weights are off by 1.5 % on the Rmin boundary, and a plain sum is off
+  by 1e15.  `integrate_over_groups` uses the rectangle rule for this family.
+- `net_interface` is a bin content.  `sum(net_interface[:, 0, :])` reproduces
+  `-TotalFluxRmin` exactly, while weighting by the group width is off by 1e4.  Sum
+  over groups, do not integrate.
+
+The writer records which is which in a `normalization` dataset attribute.
 
 THE TWO AXES.  The spectra here are on the `flux/` group, i.e. the `time_whole`
 axis.  The node-centred spectral field is on `radiation/`, whose axis is
@@ -25,6 +31,8 @@ from pathlib import Path
 
 import h5py
 import numpy as np
+
+from helios.services.derived.models import DerivedPlotBundle, DerivedWarning, RadiationResult
 
 # Boundary side -> the flux dataset that carries its spectrum, and which row of
 # it when the dataset is per-boundary.  `net` is the informative one in the
@@ -114,3 +122,162 @@ def spectrum_at(
         raise ValueError(f"{path} has an empty flux time axis, so there is no spectrum to sample.")
     index = int(np.abs(times - float(time_s)).argmin())
     return float(times[index]), group_edges[index], values[index]
+
+def evaluate_radiation(
+    dataset: object,
+    *,
+    snapshot_index: int,
+) -> RadiationResult:
+    """Build the plot bundles the Radiation tab renders for one snapshot.
+
+    Reads only the `flux/` block and the integrated scalars, never the
+    `(dump, zone, group)` spectral field: the tab shows boundary spectra, and a
+    26 MB container should not be re-read every time the snapshot slider moves.
+
+    A run whose deck left the radiation output off gets `available=False` and a
+    reason rather than an exception, because "this run has no spectra" is a
+    normal state, not a failure.
+    """
+    path = Path(getattr(dataset, "path"))
+    snapshot_index = int(snapshot_index)
+    requested_time_s = float("nan")
+    time_s = getattr(dataset, "time_s", None)
+    if time_s is not None and np.asarray(time_s).size > snapshot_index >= 0:
+        requested_time_s = float(np.asarray(time_s)[snapshot_index])
+
+    try:
+        with h5py.File(path, "r") as handle:
+            if "flux" not in handle or "radiation" not in handle:
+                return _unavailable_radiation(
+                    snapshot_index,
+                    requested_time_s,
+                    "This run carries no radiation output: the deck left "
+                    "`Write freq-dependent radiation output` off.",
+                )
+            flux_time = np.asarray(handle["flux/time"][()], dtype=np.float64)
+            group_edges = np.asarray(handle["flux/group_edges"][()], dtype=np.float64)
+            net_interface = np.asarray(handle["flux/net_interface"][()], dtype=np.float64)
+            integrated = {
+                name: np.asarray(handle[f"radiation/integrated/{name}"][()], dtype=np.float64)
+                for name in ("loss_rmax", "loss_rmin", "total_flux_rmax", "total_flux_rmin")
+                if f"radiation/integrated/{name}" in handle
+            }
+            metadata = {
+                name: int(handle[f"metadata/{name}"][()])
+                for name in ("n_groups", "n_freq_snapshots", "n_boundaries", "n_regions")
+                if f"metadata/{name}" in handle
+            }
+    except OSError as error:
+        return _unavailable_radiation(
+            snapshot_index,
+            requested_time_s,
+            f"The radiation block could not be read: {error}.",
+        )
+
+    if flux_time.size == 0 or group_edges.size == 0:
+        return _unavailable_radiation(snapshot_index, requested_time_s, "The flux group is empty.")
+
+    sample_index = int(np.abs(flux_time - requested_time_s).argmin()) if np.isfinite(requested_time_s) else flux_time.size - 1
+    sample_time_s = float(flux_time[sample_index])
+    n_groups = int(group_edges.shape[-1] - 1)
+    rmin_spectrum = net_interface[:, 0, :]
+    rmax_spectrum = net_interface[:, -1, :]
+
+    profile_plots = tuple(
+        DerivedPlotBundle(
+            key=f"spectrum_{row}",
+            title=f"Boundary spectra at {float(flux_time[row]):.4g} s",
+            x_label="photon energy [eV]",
+            y_label="net flux [J/(cm2 s eV)]",
+            x_values=np.sqrt(group_edges[row, :-1] * group_edges[row, 1:]),
+            y_series=(rmin_spectrum[row], rmax_spectrum[row]),
+            curve_names=("Rmin", "Rmax"),
+            value_scale_mode="symlog",
+        )
+        for row in range(flux_time.size)
+    )
+
+    # The time traces read the stored integrated scalars rather than integrating
+    # the spectra here: `net_interface` is a bin content, and the file already
+    # carries the vendor's own totals.
+    time_bundles: list[DerivedPlotBundle] = []
+    if "total_flux_rmin" in integrated and "total_flux_rmax" in integrated:
+        time_bundles.append(
+            DerivedPlotBundle(
+                key="total_flux",
+                title="Boundary flux",
+                x_label="time [s]",
+                y_label="total flux [J/(cm2 s)]",
+                x_values=flux_time,
+                y_series=(integrated["total_flux_rmin"], integrated["total_flux_rmax"]),
+                curve_names=("Rmin", "Rmax"),
+                value_scale_mode="symlog",
+            )
+        )
+    if "loss_rmin" in integrated and "loss_rmax" in integrated:
+        time_bundles.append(
+            DerivedPlotBundle(
+                key="loss",
+                title="Frequency-integrated radiation loss per boundary",
+                x_label="time [s]",
+                y_label="loss",
+                x_values=flux_time,
+                y_series=(integrated["loss_rmin"], integrated["loss_rmax"]),
+                curve_names=("Rmin", "Rmax"),
+                value_scale_mode="symlog",
+            )
+        )
+    time_plots = tuple(time_bundles)
+
+    summary = (
+        f"radiation output on | {n_groups} groups | {flux_time.size} flux dumps | "
+        f"{metadata.get('n_freq_snapshots', 0)} spectral dumps | "
+        f"{metadata.get('n_boundaries', 2)} boundaries | {metadata.get('n_regions', 1)} regions | "
+        f"sampled {sample_time_s:.4g} s"
+    )
+    warnings: tuple[DerivedWarning, ...] = ()
+    if not np.any(net_interface):
+        warnings = (
+            DerivedWarning(
+                "radiation",
+                "The net interface flux is zero in every dump of this run.",
+                severity="caution",
+            ),
+        )
+    return RadiationResult(
+        snapshot_index=snapshot_index,
+        available=True,
+        summary=summary,
+        n_groups=n_groups,
+        n_flux_dumps=int(flux_time.size),
+        n_freq_snapshots=int(metadata.get("n_freq_snapshots", 0)),
+        n_boundaries=int(net_interface.shape[1]),
+        n_regions=int(metadata.get("n_regions", 1)),
+        sample_time_s=sample_time_s,
+        requested_time_s=requested_time_s,
+        total_flux_rmin=float(integrated.get("total_flux_rmin", np.array([np.nan]))[sample_index]),
+        total_flux_rmax=float(integrated.get("total_flux_rmax", np.array([np.nan]))[sample_index]),
+        time_plots=time_plots,
+        profile_plots=profile_plots,
+        warnings=warnings,
+    )
+
+
+def _unavailable_radiation(snapshot_index: int, requested_time_s: float, reason: str) -> RadiationResult:
+    return RadiationResult(
+        snapshot_index=snapshot_index,
+        available=False,
+        summary=reason,
+        n_groups=0,
+        n_flux_dumps=0,
+        n_freq_snapshots=0,
+        n_boundaries=0,
+        n_regions=0,
+        sample_time_s=float("nan"),
+        requested_time_s=requested_time_s,
+        total_flux_rmin=float("nan"),
+        total_flux_rmax=float("nan"),
+        time_plots=(),
+        profile_plots=(),
+        warnings=(DerivedWarning("radiation", reason, severity="info"),),
+    )
