@@ -32,7 +32,9 @@ desktop = [
 ]
 
 [project.scripts]
-helios_to_hdf5 = "helios_parser.cli:main"
+helios_to_hdf5 = "helios_cli:main"
+helios_diag = "helios_diag.cli:main"
+helios_plot_radiation = "helios_viewer.radiation_plot:main"
 helios_hdf5_viewer = "helios_viewer.__main__:main"
 helios_parse_view = "helios_app.__main__:main"
 
@@ -41,6 +43,10 @@ Documentation = "docs/index.html"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+# Top-level modules, not submodules: importing helios_parser.<anything> or
+# helios_app.<anything> runs that package __init__ and pulls numpy, h5py or Qt,
+# which would make --help and --version cost a quarter of a second.
+py-modules = ["helios_cli", "helios_release"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
