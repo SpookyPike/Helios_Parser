@@ -1007,7 +1007,8 @@ def _write_hdf5_from_bpf_validated(
                 unit_resolver=lambda path: "s" if path[-1] == "last_valid_snapshot_time_s" else "",
             )
             emit_progress("finalize", layout.n_snapshots, layout.n_snapshots, 0.98, f"Finalizing {target.name}")
-            logger.info("Wrote %s BPF snapshots to %s", layout.n_snapshots, target)
+            # The caller publishes under a different name; the INFO line belongs there.
+            logger.debug("Wrote %s BPF snapshots to the staging file %s", layout.n_snapshots, target)
             del snapshot, first_snapshot
     record_duration("hdf5.write", time.perf_counter() - started_write)
     return target
@@ -1716,7 +1717,8 @@ def _write_hdf5_unpublished(
             metadata_group.create_dataset("diagnostic_schema_notes", data=np.asarray(diagnostic_schema_notes, dtype=STRING_DTYPE))
             _set_unit_attrs(metadata_group["diagnostic_schema_notes"], "")
         emit_progress("finalize", step, snapshot_capacity, 0.98, f"Finalizing {target.name}")
-        active_logger.info("Wrote %s snapshots to %s (%s)", step, target, stream_status.state)
+        # Staging path, not the published one: write_hdf5 logs the final name.
+        active_logger.debug("Wrote %s snapshots to the staging file %s (%s)", step, target, stream_status.state)
     elapsed_write = time.perf_counter() - started_write
     record_duration("hdf5.write", elapsed_write)
     if active_logger.isEnabledFor(logging.DEBUG):
@@ -1839,6 +1841,7 @@ def write_hdf5(
             os.link(temp_path, target)
             temp_path.unlink()
         published = True
+        active_logger.info("Wrote %s", target)
         if progress_callback is not None:
             try:
                 progress_callback(WriteProgress("done", 1, 1, 1.0, f"Wrote {target.name}"))

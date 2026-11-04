@@ -37,11 +37,43 @@ class CliErrorTests(unittest.TestCase):
                 capture_output=True,
                 check=False,
             )
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn("Parse error:", result.stderr)
-            self.assertIn("Reason:", result.stderr)
+            self.assertEqual(result.returncode, 4, result.stderr)
+            # The message names the input and what was wrong with it, not a blanket
+            # "Parse error:" that also appeared for a missing file or an existing output.
+            self.assertIn(str(truncated), result.stderr)
+            self.assertIn("cannot read as HELIOS output", result.stderr)
             self.assertNotIn("Traceback", result.stderr)
             self.assertFalse(output.exists())
+
+    def test_a_missing_input_is_not_reported_as_a_parse_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = subprocess.run(
+                [sys.executable, "-m", "helios_parser", str(Path(tmpdir) / "nope.log"), str(Path(tmpdir) / "x.h5")],
+                cwd=ROOT,
+                env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 3, result.stderr)
+            self.assertIn("no such file or directory", result.stderr)
+            self.assertNotIn("Parse error", result.stderr)
+
+    def test_an_existing_output_is_not_reported_as_a_parse_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "taken.h5"
+            output.write_bytes(b"")
+            result = subprocess.run(
+                [sys.executable, "-m", "helios_parser", str(BPF_SAMPLE), str(output)],
+                cwd=ROOT,
+                env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 5, result.stderr)
+            self.assertIn("--overwrite", result.stderr)
+            self.assertNotIn("Parse error", result.stderr)
 
 
 if __name__ == "__main__":
