@@ -201,6 +201,9 @@ class ConverterUnitTests(unittest.TestCase):
             for geometry_id, unit in expected.items():
                 source = Path(tmpdir) / f"g{geometry_id}.exo"
                 shutil.copy2(fixture, source)
+                # copy2 preserves the source mode, and the fixture is read-only in
+                # the materialised test tree.
+                source.chmod(0o600)
                 with h5py.File(source, "r+") as handle:
                     handle.attrs[attribute] = geometry_id
                 out = Path(tmpdir) / f"g{geometry_id}.h5"
