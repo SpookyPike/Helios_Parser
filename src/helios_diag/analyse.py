@@ -88,6 +88,7 @@ def _summarize_arrays(value: Any, limit: int) -> Any:
 
 def run(args: argparse.Namespace) -> envelope.Result:
     import dataclasses  # local
+    import os  # local
 
     import numpy as np  # local
 
@@ -105,12 +106,14 @@ def run(args: argparse.Namespace) -> envelope.Result:
             f"{', '.join(gated)} is hidden in the production backend; "
             "pass --include-experimental (or set HELIOS_ENABLE_EXPERIMENTAL=1) to run it"
         )
+    previous_flag: str | None = None
     if args.include_experimental:
-        # The backend reads the flag at call time, so this is enough and it does not
-        # leak past this process.
-        import os  # local
-
-        os.environ.setdefault("HELIOS_ENABLE_EXPERIMENTAL", "1")
+        # The backend reads the variable at call time. Set it unconditionally, since
+        # a preset "0" would otherwise win and the module would come back disabled
+        # while the note claimed it ran, and restore it afterwards so an embedded
+        # caller does not keep the opt-in.
+        previous_flag = os.environ.get("HELIOS_ENABLE_EXPERIMENTAL")
+        os.environ["HELIOS_ENABLE_EXPERIMENTAL"] = "1"
 
     optional: set[str] = set()
     for name in requested:
@@ -146,6 +149,27 @@ def run(args: argparse.Namespace) -> envelope.Result:
         name: _summarize_arrays(dataclasses.asdict(value) if dataclasses.is_dataclass(value) else value, args.max_array)
         for name, value in sorted(dataclasses.asdict(result).items())
     }
+    if previous_flag is None:
+        os.environ.pop("HELIOS_ENABLE_EXPERIMENTAL", None)
+    else:
+        os.environ["HELIOS_ENABLE_EXPERIMENTAL"] = previous_flag
+
+    if gated:
+        # A gated module that came back disabled despite the flag is a contradiction
+        # the caller must not have to detect from a null payload.
+        disabled = [
+            name
+            for name in gated
+            if str((modules.get(name) or {}).get("regime_label") or (modules.get(name) or {}).get("model_name") or "")
+            .lower()
+            == "disabled"
+        ]
+        if disabled:
+            raise envelope.UsageError(
+                f"{', '.join(disabled)} still reported disabled with --include-experimental; "
+                "the backend did not accept the flag"
+            )
+
     payload = envelope.envelope(
         "analyse",
         file=file_block,

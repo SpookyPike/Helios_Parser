@@ -27,6 +27,10 @@ _TABLE: dict[str, str] = {
     "hydro/boundary_temperature_rmin": "eV",
     "hydro/boundary_temperature_rmax": "eV",
     "hydro/quiet_start_temperature": "eV",
+    # The log column header says TW and prints watts; the converter records W, and
+    # inspect has to say so or the number is uninterpretable.
+    "laser_source/power_table/power": "W",
+    "laser_source/wavelength": "um",
     "laser_source/incident_angle_cosine": "1",
     "laser_source/origin_zone_index": "1",
 }
@@ -53,10 +57,7 @@ _DIMENSIONLESS: frozenset[str] = frozenset(
 )
 
 # A conventional unit the file does not record. Reported as prose, never as data.
-CONVENTIONS: dict[str, str] = {
-    "laser_source/wavelength": "HELIOS decks conventionally give this in micrometres",
-    "laser_source/power_table/power": "the deck does not state a power unit",
-}
+CONVENTIONS: dict[str, str] = {}
 
 
 def unit_for(path: str) -> tuple[str | None, str | None]:

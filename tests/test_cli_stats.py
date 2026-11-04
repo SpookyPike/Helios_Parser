@@ -183,11 +183,18 @@ class UnitTableTests(unittest.TestCase):
         self.assertEqual(unit_for("radiative_transfer/frequency_gridding/number_of_groups"), ("1", "table"))
         self.assertEqual(unit_for("radiative_transfer/frequency_gridding/section"), ("1", "table"))
 
+    def test_the_laser_power_is_watts_and_the_wavelength_microns(self) -> None:
+        from helios_diag.units import unit_for
+
+        # The log header says TW and prints watts; the converter records W.
+        self.assertEqual(unit_for("laser_source/power_table/power"), ("W", "table"))
+        self.assertEqual(unit_for("laser_source/wavelength"), ("um", "table"))
+
     def test_an_ungrounded_parameter_gets_no_unit(self) -> None:
         from helios_diag.units import unit_for
 
-        self.assertEqual(unit_for("laser_source/wavelength"), (None, None))
-        self.assertEqual(unit_for("laser_source/power_table/power"), (None, None))
+        self.assertEqual(unit_for("hydro/plasma_model"), (None, None))
+        self.assertEqual(unit_for("laser_source/propagation_direction"), (None, None))
 
 
 class NanHandlingTests(unittest.TestCase):

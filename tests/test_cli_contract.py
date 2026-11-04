@@ -148,6 +148,39 @@ class DiagContractTests(unittest.TestCase):
         self.assertNotEqual(plasmon.get("regime_label"), "disabled")
         self.assertTrue(any("experimental" in note for note in payload["notes"]))
 
+    def test_a_preset_flag_does_not_defeat_include_experimental(self) -> None:
+        """setdefault would let a preset HELIOS_ENABLE_EXPERIMENTAL=0 win, returning a
+        successful payload with the module disabled."""
+        result = subprocess.run(
+            [sys.executable, "-m", "helios_diag", "analyse", str(self.run_h5),
+             "--module", "plasmon", "--include-experimental"],
+            cwd=ROOT,
+            env={**os.environ, "PYTHONPATH": str(SRC), "HELIOS_ENABLE_EXPERIMENTAL": "0"},
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        plasmon = json.loads(result.stdout)["result"]["plasmon"]
+        self.assertNotEqual(plasmon.get("regime_label"), "disabled")
+
+    def test_include_experimental_does_not_leak_into_the_caller(self) -> None:
+        import types
+
+        from helios_diag import analyse
+
+        os.environ.pop("HELIOS_ENABLE_EXPERIMENTAL", None)
+        try:
+            analyse.run(
+                types.SimpleNamespace(
+                    path=str(self.run_h5), module=["xrd"], snapshot=None,
+                    max_array=1000, include_experimental=True,
+                )
+            )
+            self.assertNotIn("HELIOS_ENABLE_EXPERIMENTAL", os.environ)
+        finally:
+            os.environ.pop("HELIOS_ENABLE_EXPERIMENTAL", None)
+
     def test_the_headless_path_never_imports_qt(self) -> None:
         """A diagnostics run on a compute node must not need a display."""
         probe = (

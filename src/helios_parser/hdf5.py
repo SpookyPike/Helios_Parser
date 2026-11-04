@@ -1189,7 +1189,7 @@ def _write_hdf5_from_exodus(
                 grid_group,
                 "zone_mass",
                 np.asarray(run.zone_mass_g[0], dtype=np.float64),
-                _resolve_geometry_unit("g/cm**X", run.geometry),
+                _resolve_geometry_unit("g/cm**X", getattr(run, "geometry_kind", run.geometry)),
                 compression=compression,
             )
 

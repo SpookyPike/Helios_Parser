@@ -180,10 +180,38 @@ class ExodusRun:
     temperature_model: int | None
     zone_mass_g: np.ndarray | None = None
     radiation: "RadiationOutput | None" = None
+    geometry_id: int | None = None
+    geometry_text: str = ""
 
     @property
     def geometry(self) -> str:
         return "planar" if self.coordinate_name == "x" else self.coordinate_name
+
+    @property
+    def geometry_kind(self) -> str | None:
+        """The full geometry name, for units that depend on the exponent.
+
+        ``geometry`` collapses cylindrical and spherical into ``r`` because that is
+        what the coordinate axis is called, but a zone mass per unit length and per
+        unit area are different quantities. Returns None when the file does not say,
+        so a caller can leave the unit unresolved rather than guess.
+        """
+
+        geometry_id = self.geometry_id
+        if geometry_id == 0:
+            return "planar"
+        if geometry_id == 1:
+            return "cylindrical"
+        if geometry_id == 2:
+            return "spherical"
+        text = self.geometry_text
+        if "spher" in text:
+            return "spherical"
+        if "cyl" in text:
+            return "cylindrical"
+        if "plan" in text:
+            return "planar"
+        return None
 
 
 @dataclass(slots=True)
@@ -273,6 +301,11 @@ def _scalar_attr(handle: h5py.File, name: str) -> int | None:
         return int(array[0])
     except (TypeError, ValueError):
         return None
+
+
+def _geometry_text(handle: h5py.File) -> str:
+    geometry = handle.attrs.get("geometry", b"")
+    return geometry.decode("utf-8", "replace").lower() if isinstance(geometry, bytes) else str(geometry).lower()
 
 
 def _coordinate_name(handle: h5py.File) -> str:
@@ -556,6 +589,9 @@ def read_exodus(path: str | Path) -> ExodusRun:
 
         temperature_model = _scalar_attr(handle, TEMPERATURE_MODEL_ATTR)
         coordinate_name = _coordinate_name(handle)
+        # Read these while the file is open: the run is built after the with-block.
+        geometry_id = _scalar_attr(handle, GEOMETRY_ATTR)
+        geometry_text = _geometry_text(handle)
         radiation = _read_radiation(
             handle,
             source=source,
@@ -603,4 +639,6 @@ def read_exodus(path: str | Path) -> ExodusRun:
         temperature_model=temperature_model,
         zone_mass_g=zone_mass,
         radiation=radiation,
+        geometry_id=geometry_id,
+        geometry_text=geometry_text,
     )
