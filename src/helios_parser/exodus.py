@@ -106,10 +106,16 @@ SPECTRAL_NODE_FIELDS: dict[str, tuple[str, str]] = {
 # 1e4.  `FdIntgPowerLoss*` is the opposite: it needs the group width and its plain
 # sum is off by 1e15.  The container labels both "per eV", which is why the
 # normalization is written into the dataset attributes instead of inferred.
+#
+# The `unit` attribute follows the measured normalization, not the vendor's
+# dataset name.  A bin content carries one energy flux per group, so its unit is
+# `J/(cm2 s)/group`: writing `J/(cm2 s eV)` there is a per-eV claim the numbers do
+# not satisfy, and every consumer that reads `unit` (the radiation plot label, for
+# one) inherits the error.
 FLUX_FIELDS: dict[str, tuple[str, str]] = {
-    "Freq. resolved incident flux at Rmax [J per (cm2.sec.eV)]": ("incident_rmax", "J/(cm2 s eV)"),
-    "Freq. resolved incident flux at Rmin [J per (cm2.sec.eV)]": ("incident_rmin", "J/(cm2 s eV)"),
-    "Freq. resolved net flux at region interfaces [J per (cm2.sec.eV)]": ("net_interface", "J/(cm2 s eV)"),
+    "Freq. resolved incident flux at Rmax [J per (cm2.sec.eV)]": ("incident_rmax", "J/(cm2 s)/group"),
+    "Freq. resolved incident flux at Rmin [J per (cm2.sec.eV)]": ("incident_rmin", "J/(cm2 s)/group"),
+    "Freq. resolved net flux at region interfaces [J per (cm2.sec.eV)]": ("net_interface", "J/(cm2 s)/group"),
     "FdPowerLossRmax": ("power_loss_rmax", ""),
     "FdPowerLossRmin": ("power_loss_rmin", ""),
     "FdIntgPowerLossRmax": ("power_loss_rmax_integrated", ""),

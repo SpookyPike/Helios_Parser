@@ -345,8 +345,11 @@ class RadiationHdf5Tests(unittest.TestCase):
                 "radiation/node_axis": "cm",
                 "radiation/energy_density": "J/cm3/group",
                 "radiation/rosseland_opacity": "cm2/g",
-                "flux/incident_rmax": "J/(cm2 s eV)",
-                "flux/net_interface": "J/(cm2 s eV)",
+                # Bin contents, not densities: one energy flux per group.  The
+                # vendor name says "per eV", the group sum says otherwise, and
+                # the unit attribute follows the measurement.
+                "flux/incident_rmax": "J/(cm2 s)/group",
+                "flux/net_interface": "J/(cm2 s)/group",
                 "radiation/integrated/interface_flux": "J/(cm2 s)",
             }
             for path, unit in expected.items():
