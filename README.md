@@ -3,7 +3,7 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `2.0.1`
+- Release: `2.0.2`
 - Release date: `2026-11-04`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
@@ -87,7 +87,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parser-viewer-v2.0.1.zip`
+- `outputs/release/helios-parser-viewer-v2.0.2.zip`
 
 The bundle includes:
 
@@ -117,11 +117,32 @@ python scripts\build_linux_portable_tarball.py
 
 Expected artifact names:
 
-- `outputs/distributables/helios-parser-viewer-v2.0.1-windows-portable.zip`
-- `outputs/distributables/helios-parser-viewer_2.0.1_all.deb`
-- `outputs/distributables/helios-parser-viewer-v2.0.1-linux-portable.tar.gz`
+- `outputs/distributables/helios-parser-viewer-v2.0.2-windows-portable.zip`
+- `outputs/distributables/helios-parser-viewer_2.0.2_all.deb`
+- `outputs/distributables/helios-parser-viewer-v2.0.2-linux-portable.tar.gz`
 
-The v2.0.1 release provides the source bundle and checksums. The Debian package, Linux portable tarball and Windows portable ZIP are built from the same tree with the commands above and are not attached to this release. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+The v2.0.2 release provides the source bundle and checksums. The Debian package, Linux portable tarball and Windows portable ZIP are built from the same tree with the commands above and are not attached to this release. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+
+## Changelog 2.0.2
+
+A compressed conversion was leaving a third of the saving on the table because
+the HDF5 shuffle filter was never enabled. The filter reorders bytes inside each
+chunk so the high bytes of a float64 column become a long run of identical
+values, which is what a compressor can exploit.
+
+Measured end to end on the largest tracked deck, a 530 MB log of 1501 snapshots
+by 1200 zones, pinned to the P-cores: LZF goes from 184.4 MB to 118.6 MB with
+the filter, a 35.7 % saving, for 2.6 % more write time. Under gzip the filter
+costs 3 %, from 102.2 MB to 105.2 MB, so it stays off. A default conversion is
+still uncompressed and every stored value is identical.
+
+### Converter
+
+- `_shuffle_for()` decides the flag from the filter name and is wired into every site that creates a compressed dataset: field datasets, dynamic coordinates, the streaming coordinate pair, the BPF field builder, and the generic array writer.
+- `--compression lzf` now enables the shuffle filter; `--compression gzip` does not.
+- a run whose datasets are a single small chunk loses 8.5 %: the 8-snapshot tracked fixture goes from 1.53 MB to 1.66 MB. That is 130 kB against 66 MB on the large deck, so the trade is deliberate and recorded in the helper's docstring.
+- an empty family stays uncompressed and unshuffled, because h5py refuses the filter without chunked storage and a zero-extent axis cannot be chunked.
+- added `CompressionShuffleTest` to the core gate: the filter mapping, the flag on every compressed dataset of a real conversion, and the empty-family case.
 
 ## Changelog 2.0.1
 

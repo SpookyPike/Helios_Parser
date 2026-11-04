@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 APP_NAME = "HELIOS Parse / View"
-RELEASE_VERSION = "2.0.1"
+RELEASE_VERSION = "2.0.2"
 RELEASE_DATE = "2026-11-04"
 RELEASE_YEAR = "2026"
 AUTHOR_NAME = "Dmitrii Bespalov"

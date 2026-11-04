@@ -39,6 +39,12 @@ minor bump and readers need no change: chunk layout is invisible through the
 HDF5 API. Files written by 1.4.0 and earlier stay readable because the reader
 requires the group set, not the version attribute.
 
+Compression is optional and off by default, so a default conversion is
+uncompressed. `helios_to_hdf5 --compression lzf` enables the HDF5 shuffle filter
+as well, because on float64 fields the filter saves 35.7 % under LZF; under
+`--compression gzip` it is left off, because there it costs 3 %. Both are layout
+details that the HDF5 API hides, so a reader needs no change either way.
+
 ## Coordinate semantics
 
 HELIOS prints a `Radius` column per snapshot with one row per zone **boundary**,

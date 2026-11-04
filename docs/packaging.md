@@ -12,9 +12,9 @@ The real desktop entry point is `helios_parse_view`, implemented by
 `python -m helios_parser`. The HDF5-only viewer is `helios_hdf5_viewer`,
 implemented by `python -m helios_viewer`.
 
-## v2.0.1 availability
+## v2.0.2 availability
 
-The v2.0.1 release ships the source archive; GitHub generates the source ZIP and
+The v2.0.2 release ships the source archive; GitHub generates the source ZIP and
 tarball for the tag. The Debian package, Linux portable tarball and Windows
 portable ZIP are built from the same tree with the commands below and are not
 attached to this release. Public packages include the precomputed cold-XCOM
@@ -45,7 +45,7 @@ python scripts\validate_windows_portable.py
 Output:
 
 ```text
-outputs/distributables/helios-parser-viewer-v2.0.1-windows-portable.zip
+outputs/distributables/helios-parser-viewer-v2.0.2-windows-portable.zip
 ```
 
 Usage after extraction:
@@ -67,13 +67,13 @@ python scripts/build_debian_package.py
 Output:
 
 ```text
-outputs/distributables/helios-parser-viewer_2.0.1_all.deb
+outputs/distributables/helios-parser-viewer_2.0.2_all.deb
 ```
 
 Install on Debian/Ubuntu-like systems:
 
 ```bash
-sudo apt install ./outputs/distributables/helios-parser-viewer_2.0.1_all.deb
+sudo apt install ./outputs/distributables/helios-parser-viewer_2.0.2_all.deb
 ```
 
 Launchers:
@@ -101,7 +101,7 @@ python scripts/build_linux_portable_tarball.py
 Output:
 
 ```text
-outputs/distributables/helios-parser-viewer-v2.0.1-linux-portable.tar.gz
+outputs/distributables/helios-parser-viewer-v2.0.2-linux-portable.tar.gz
 ```
 
 This tarball is portable in the sense that it does not require an editable

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HELIOS Parse / View Release Notes 2.0.1</title>
+  <title>HELIOS Parse / View Release Notes 2.0.2</title>
   <link rel="stylesheet" href="assets/manual.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>Release Notes</h1>
         <p>
-          HELIOS Parse / View 2.0.1, released 2026-11-04.
+          HELIOS Parse / View 2.0.2, released 2026-11-04.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
       </div>
@@ -27,6 +27,27 @@
   </header>
 
   <main>
+    <section>
+      <h2>Why 2.0.2</h2>
+      <p>
+        A conversion can be compressed, and the compression was leaving a third of the saving on the table. The HDF5
+        shuffle filter reorders bytes inside each chunk so that the high bytes of a float64 column become a long run of
+        identical values, which is what a compressor can actually exploit. The writer never enabled it.
+      </p>
+      <p>
+        Measured end to end on the largest tracked deck, a 530 MB log of 1501 snapshots by 1200 zones, pinned to the
+        P-cores: LZF goes from 184.4 MB to 118.6 MB, a 35.7 % saving, for 2.6 % more write time. Under gzip the same
+        filter costs 3 %, from 102.2 MB to 105.2 MB, so it stays off there. Nothing else changes: a default conversion is
+        still uncompressed, and every stored value is identical.
+      </p>
+      <ul>
+        <li>the shuffle filter is enabled for <code>--compression lzf</code> and left off for <code>--compression gzip</code>, decided by the filter name rather than by the caller</li>
+        <li>LZF on the largest deck: 184.4 MB to 118.6 MB, a 35.7 % saving, 65.7 MB</li>
+        <li>a run short enough that each dataset is a single small chunk goes the other way: the 8-snapshot tracked fixture grows 8.5 %, from 1.53 MB to 1.66 MB. That is 130 kB against 66 MB, so the trade is deliberate</li>
+        <li>no new dependency, no reader change, and uncompressed output is byte-identical to 2.0.1</li>
+      </ul>
+    </section>
+
     <section>
       <h2>Why 2.0.1</h2>
       <p>
@@ -123,6 +144,15 @@
 
     <section>
       <h2>Changelog</h2>
+      <h3>2.0.2</h3>
+      <ul>
+        <li>enabled the HDF5 shuffle filter for <code>--compression lzf</code> through a single <code>_shuffle_for()</code> helper, wired into every site that creates a compressed dataset: field datasets, dynamic coordinates, the streaming coordinate pair, the BPF field builder, and the generic array writer</li>
+        <li>LZF on the largest tracked deck, measured end to end on a 530 MB log of 1501 by 1200: 184.4 MB to 118.6 MB, a 35.7 % saving, for 2.6 % more write time</li>
+        <li>the filter stays off for gzip, where it measured 3 % worse on the same conversion (102.2 MB to 105.2 MB)</li>
+        <li>a run whose datasets are a single small chunk loses 8.5 %: the 8-snapshot, 500-zone tracked fixture goes from 1.53 MB to 1.66 MB. Recorded in the helper's docstring so a later reader does not treat it as an oversight</li>
+        <li>an empty family stays uncompressed and unshuffled, because h5py refuses the filter without chunked storage and a zero-extent axis cannot be chunked</li>
+        <li>added <code>CompressionShuffleTest</code> to the core gate: the filter mapping, the flag on every compressed dataset of a real conversion, and the empty-family case</li>
+      </ul>
       <h3>2.0.1</h3>
       <ul>
         <li>write a zero-extent array contiguous and uncompressed in <code>_write_array_dataset</code>. Chunking one is impossible: every chunk dimension must be at least 1 and at most the data extent, and the time-major and spectral helpers clamp the zero axis to 1</li>
@@ -263,7 +293,7 @@
         <li>selected demo HDF5 examples under <code>examples/</code></li>
       </ul>
       <p>
-        The 2.0.1 bundle intentionally omits tests, internal audit and validation reports, old release outputs, legacy shadow source files, the vendor XCOM archive, and compiled native payloads. Experimental Transmission/XCOM support remains behind development flags.
+        The 2.0.2 bundle intentionally omits tests, internal audit and validation reports, old release outputs, legacy shadow source files, the vendor XCOM archive, and compiled native payloads. Experimental Transmission/XCOM support remains behind development flags.
       </p>
     </section>
 
@@ -287,7 +317,7 @@
       <ul>
         <li>Author: Dmitrii Bespalov</li>
         <li>Organization: European XFEL</li>
-        <li>Release: 2.0.1</li>
+        <li>Release: 2.0.2</li>
         <li>Date: 2026-11-04</li>
       </ul>
     </section>
