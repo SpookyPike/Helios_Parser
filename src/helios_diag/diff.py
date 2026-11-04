@@ -45,6 +45,16 @@ def _numeric_paths(path: str) -> dict[str, tuple[int, ...]]:
     return found
 
 
+def _unit(handle: Any, name: str) -> str | None:
+    """The recorded unit, because two identical arrays in different units differ."""
+    dataset = handle[name]
+    value = dataset.attrs.get("unit", dataset.attrs.get("units", ""))
+    if isinstance(value, bytes):
+        value = value.decode("utf-8", errors="replace")
+    text = str(value or "").strip()
+    return text or None
+
+
 def _compare(left: str, right: str, name: str, rtol: float, atol: float) -> dict[str, Any]:
     import h5py  # local
     import numpy as np  # local
@@ -52,11 +62,15 @@ def _compare(left: str, right: str, name: str, rtol: float, atol: float) -> dict
     with h5py.File(left, "r") as left_handle, h5py.File(right, "r") as right_handle:
         a = np.asarray(left_handle[name][()], dtype=np.float64)
         b = np.asarray(right_handle[name][()], dtype=np.float64)
+        unit_left = _unit(left_handle, name)
+        unit_right = _unit(right_handle, name)
     if a.shape != b.shape:
         return {
             "dataset": name,
             "shape_left": list(a.shape),
             "shape_right": list(b.shape),
+            "unit_left": unit_left,
+            "unit_right": unit_right,
             "status": "shape_mismatch",
             "max_abs_diff": None,
             "max_rel_diff": None,
@@ -67,11 +81,19 @@ def _compare(left: str, right: str, name: str, rtol: float, atol: float) -> dict
     delta = np.abs(a - b)
     scale = np.maximum(np.abs(a), np.abs(b))
     relative = np.divide(delta, scale, out=np.zeros_like(delta), where=scale > 0)
+    # Identical numbers in different units are not the same result, so a unit
+    # change fails the comparison even when every value matches.
+    if unit_left != unit_right:
+        status = "unit_mismatch"
+    else:
+        status = "ok" if differing == 0 else "differs"
     return {
         "dataset": name,
         "shape_left": list(a.shape),
         "shape_right": list(b.shape),
-        "status": "ok" if differing == 0 else "differs",
+        "unit_left": unit_left,
+        "unit_right": unit_right,
+        "status": status,
         "max_abs_diff": float(np.nanmax(delta)) if delta.size else 0.0,
         "max_rel_diff": float(np.nanmax(relative)) if relative.size else 0.0,
         "n_differing": differing,
@@ -95,11 +117,13 @@ def run(args: argparse.Namespace) -> envelope.Result:
     for name in sorted(set(left_paths) | set(right_paths)):
         if name not in left_paths:
             rows.append({"dataset": name, "shape_left": None, "shape_right": list(right_paths[name]),
-                         "status": "only_in_right", "max_abs_diff": None, "max_rel_diff": None, "n_differing": None})
+                         "unit_left": None, "unit_right": None, "status": "only_in_right",
+                         "max_abs_diff": None, "max_rel_diff": None, "n_differing": None})
             continue
         if name not in right_paths:
             rows.append({"dataset": name, "shape_left": list(left_paths[name]), "shape_right": None,
-                         "status": "only_in_left", "max_abs_diff": None, "max_rel_diff": None, "n_differing": None})
+                         "unit_left": None, "unit_right": None, "status": "only_in_left",
+                         "max_abs_diff": None, "max_rel_diff": None, "n_differing": None})
             continue
         rows.append(_compare(args.left, args.right, name, args.rtol, args.atol))
 
@@ -115,5 +139,8 @@ def run(args: argparse.Namespace) -> envelope.Result:
         candidate=right_block,
         request={"rtol": args.rtol, "atol": args.atol, "fields": args.field, "n_datasets": len(rows)},
     )
-    columns = ("dataset", "shape_left", "shape_right", "status", "max_abs_diff", "max_rel_diff", "n_differing")
+    columns = (
+        "dataset", "shape_left", "shape_right", "unit_left", "unit_right", "status",
+        "max_abs_diff", "max_rel_diff", "n_differing",
+    )
     return envelope.Result(payload, rows, columns, envelope.EXIT_ISSUES if differing else envelope.EXIT_OK)

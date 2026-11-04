@@ -27,7 +27,6 @@ _TABLE: dict[str, str] = {
     "hydro/boundary_temperature_rmin": "eV",
     "hydro/boundary_temperature_rmax": "eV",
     "hydro/quiet_start_temperature": "eV",
-    "radiative_transfer/number_of_frequency_groups": "1",
     "laser_source/incident_angle_cosine": "1",
     "laser_source/origin_zone_index": "1",
 }
@@ -35,8 +34,22 @@ _TABLE: dict[str, str] = {
 # Prefix matches for the sections whose every leaf shares a unit.
 _PREFIX_TABLE: tuple[tuple[str, str], ...] = (
     ("time_control/time_step_controls/", "1"),
-    ("radiative_transfer/frequency_gridding/", "eV"),
     ("laser_source/power_table/time", "s"),
+)
+
+# Suffix matches: the frequency grid mixes photon energies with group counts and
+# section ids, so a prefix rule would label a count as an energy.
+_SUFFIX_TABLE: tuple[tuple[str, str], ...] = (
+    ("photon_energy", "eV"),
+)
+
+# Explicit dimensionless entries, so the suffix rule cannot reach them.
+_DIMENSIONLESS: frozenset[str] = frozenset(
+    {
+        "radiative_transfer/frequency_gridding/number_of_groups",
+        "radiative_transfer/frequency_gridding/section",
+        "radiative_transfer/number_of_frequency_groups",
+    }
 )
 
 # A conventional unit the file does not record. Reported as prose, never as data.
@@ -48,10 +61,15 @@ CONVENTIONS: dict[str, str] = {
 
 def unit_for(path: str) -> tuple[str | None, str | None]:
     """Return ``(unit, unit_origin)``; ``(None, None)`` when nothing is grounded."""
+    if path in _DIMENSIONLESS:
+        return "1", "table"
     if path in _TABLE:
         return _TABLE[path], "table"
     for prefix, unit in _PREFIX_TABLE:
         if path.startswith(prefix):
+            return unit, "table"
+    for suffix, unit in _SUFFIX_TABLE:
+        if path.endswith(suffix):
             return unit, "table"
     return None, None
 

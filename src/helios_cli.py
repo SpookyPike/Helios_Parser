@@ -35,6 +35,10 @@ INPUT_HELP = "One or more HELIOS inputs: a .log deck output, a .bpf plot file, o
 LOGGER = logging.getLogger("helios_cli")
 
 
+class _OutputDirectoryMissing(OSError):
+    """Raised before conversion, so an output problem is never blamed on the input."""
+
+
 class _WarningCounter(logging.Handler):
     """Count WARNING and above so the summary can report them."""
 
@@ -119,6 +123,8 @@ def _describe_failure(kind: str, source: Path, target: Path, exc: BaseException)
         return f"{source}: no such file or directory"
     if kind == "output_exists":
         return f"{target} already exists; pass --overwrite to replace it"
+    if kind == "output_dir_missing":
+        return f"{target.parent}: the output directory does not exist"
     if kind == "parse_error":
         return f"{source}: cannot read as HELIOS output: {exc}"
     if kind == "write_error":
@@ -129,7 +135,11 @@ def _describe_failure(kind: str, source: Path, target: Path, exc: BaseException)
 
 
 def _classify(exc: BaseException) -> tuple[int, str]:
+    if isinstance(exc, _OutputDirectoryMissing):
+        return EXIT_WRITE, "output_dir_missing"
     if isinstance(exc, FileNotFoundError):
+        # The writer reports a missing output directory as a bare FileNotFoundError
+        # naming the directory, so the guard below is what disambiguates the two.
         return EXIT_INPUT, "input_missing"
     if isinstance(exc, FileExistsError):
         return EXIT_EXISTS, "output_exists"
@@ -190,6 +200,8 @@ def main(argv: list[str] | None = None) -> int:
             started = time.perf_counter()
             counter.count = 0
             try:
+                if not target.parent.is_dir():
+                    raise _OutputDirectoryMissing(str(target.parent))
                 write_hdf5(
                     source,
                     target,
