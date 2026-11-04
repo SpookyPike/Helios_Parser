@@ -34,6 +34,7 @@ desktop = [
 [project.scripts]
 helios_to_hdf5 = "helios_cli:main"
 helios_diag = "helios_diag.cli:main"
+helios_plot_radiation = "helios_viewer.radiation_plot:main"
 helios_hdf5_viewer = "helios_viewer.__main__:main"
 helios_parse_view = "helios_app.__main__:main"
 
