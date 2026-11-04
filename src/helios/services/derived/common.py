@@ -403,6 +403,34 @@ def _optional_zone_material_property(regions: dict[str, object], name: str, n_zo
     return build_zone_property_from_regions(regions, np.asarray(values, dtype=np.float64), n_zones)
 
 
+def make_run_context(dataset: DerivedRunData, path: Path, *, snapshot_index: int) -> RunContext:
+    """Build the run context a headless caller needs for ``compute_analysis_result``.
+
+    The Qt application owns a live context; this constructs the same shape from a
+    loaded dataset alone, which is what the command line and the validation
+    scripts need. It reads no fields, so it costs dict copies only.
+    """
+    return RunContext(
+        path=Path(path),
+        summary=dict(dataset.summary),
+        metadata=dict(dataset.metadata),
+        fields=("density", "velocity", "temperature_e", "temperature_i", "electron_density", "mean_charge"),
+        diagnostics=(),
+        time_values=np.asarray(dataset.time_s, dtype=np.float64).copy(),
+        static_x_values=np.asarray(dataset.static_x_cm, dtype=np.float64).copy(),
+        zone_region_id=np.asarray(dataset.zone_region_id, dtype=np.int32).copy(),
+        zone_material_index=np.asarray(dataset.zone_material_index, dtype=np.int32).copy(),
+        has_dynamic_radius=dataset.radius_cm is not None,
+        snapshot_index=int(snapshot_index),
+        map_coordinate="moving_radius" if dataset.radius_cm is not None else "static_x",
+        slice_coordinate="zone",
+        selected_region_ids=tuple(int(value) for value in np.unique(np.asarray(dataset.zone_region_id, dtype=np.int32))),
+        selected_material_ids=tuple(
+            int(value) for value in np.unique(np.abs(np.asarray(dataset.zone_material_index, dtype=np.int32)))
+        ),
+    )
+
+
 def load_run_data(
     path: str | Path,
     *,
