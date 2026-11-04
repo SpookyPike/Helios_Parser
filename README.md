@@ -3,8 +3,8 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `2.0.0`
-- Release date: `2026-11-03`
+- Release: `2.0.1`
+- Release date: `2026-11-04`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
 Top-level application modes:
@@ -87,7 +87,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parser-viewer-v2.0.0.zip`
+- `outputs/release/helios-parser-viewer-v2.0.1.zip`
 
 The bundle includes:
 
@@ -117,11 +117,32 @@ python scripts\build_linux_portable_tarball.py
 
 Expected artifact names:
 
-- `outputs/distributables/helios-parser-viewer-v2.0.0-windows-portable.zip`
-- `outputs/distributables/helios-parser-viewer_2.0.0_all.deb`
-- `outputs/distributables/helios-parser-viewer-v2.0.0-linux-portable.tar.gz`
+- `outputs/distributables/helios-parser-viewer-v2.0.1-windows-portable.zip`
+- `outputs/distributables/helios-parser-viewer_2.0.1_all.deb`
+- `outputs/distributables/helios-parser-viewer-v2.0.1-linux-portable.tar.gz`
 
-The v2.0.0 release provides the source bundle, Debian package, Linux portable tarball, standalone lookup tables, and checksums. Windows users can run the source bundle or build the portable ZIP locally using the instructions in the packaging guide. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+The v2.0.1 release provides the source bundle and checksums. The Debian package, Linux portable tarball and Windows portable ZIP are built from the same tree with the commands above and are not attached to this release. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+
+## Changelog 2.0.1
+
+The HDF5 writer refused every Exodus run from a deck that leaves the
+frequency-resolved radiation output off. That is the default deck and every
+production deck in the campaign, so this blocked ordinary runs.
+
+A flag-off run still carries the nine radiation families, and they are empty:
+`(0,)` for the per-dump arrays and `(0, n_zones, 250)` for the spectral ones.
+HDF5 requires every chunk dimension to be at least 1 and at most the data
+extent, and the chunk helpers clamp the zero axis to 1, so `create_dataset`
+refused with `Chunk shape must not be greater than data shape in any dimension.
+(1, 251) is not compatible with (0, 251)` and the writer aborted the whole file
+rather than the family.
+
+### Converter
+
+- `_write_array_dataset` writes a zero-extent array contiguous and uncompressed. It is the single function every array dataset routes through, so the guard covers the radiation, flux and diagnostic families together. The axes are kept, so a consumer reads "this family is empty" rather than "this family is missing". Non-empty arrays are unchanged and still chunked and compressed.
+- added `tests/fixtures/radiation/zm0_nofreqrad.exo` with its deck, real HELIOS 12.0.0 output from the default deck: 300 zones, 2 snapshots, 1 region, 250 photon groups. The pre-fix writer reproduces the production error on it exactly.
+- added `test_a_flag_off_run_writes_its_empty_families_contiguously`, which asserts shape 0 on all nine families plus `chunks is None` and `compression is None`.
+- the previous "no radiation" fixture could not have caught this. `cu_v12_slice.exo` was cut from a run whose radiation group was already absent, so it never reaches the empty-family path.
 
 ## Changelog 2.0.0
 

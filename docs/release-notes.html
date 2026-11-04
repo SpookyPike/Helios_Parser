@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HELIOS Parse / View Release Notes 2.0.0</title>
+  <title>HELIOS Parse / View Release Notes 2.0.1</title>
   <link rel="stylesheet" href="assets/manual.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>Release Notes</h1>
         <p>
-          HELIOS Parse / View 2.0.0, released 2026-11-03.
+          HELIOS Parse / View 2.0.1, released 2026-11-04.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
       </div>
@@ -27,6 +27,29 @@
   </header>
 
   <main>
+    <section>
+      <h2>Why 2.0.1</h2>
+      <p>
+        The HDF5 writer refused every Exodus run from a deck that leaves the frequency-resolved radiation output
+        off. That is the default deck, and every production deck in the campaign uses it, so this blocked ordinary
+        runs.
+      </p>
+      <p>
+        A flag-off run still carries the nine radiation families, and they are empty: <code>(0,)</code> for the
+        per-dump arrays and <code>(0, n_zones, 250)</code> for the spectral ones. HDF5 requires every chunk
+        dimension to be at least 1 and at most the data extent, and the chunk helpers clamp the zero axis to 1,
+        so <code>create_dataset</code> refused with <code>Chunk shape must not be greater than data shape in any
+        dimension. (1, 251) is not compatible with (0, 251)</code> and the writer aborted the whole file rather
+        than the family.
+      </p>
+      <ul>
+        <li>zero-extent arrays are written contiguous and uncompressed; the axes are kept, so a consumer reads "this family is empty" rather than "this family is missing"</li>
+        <li>the guard sits in the one function every array dataset routes through, so it covers the radiation, flux and diagnostic families together</li>
+        <li>non-empty arrays are unchanged: still chunked, still compressed</li>
+        <li>a new fixture is real 12.0.0 output from the default deck, and the pre-fix writer reproduces the production error on it exactly</li>
+      </ul>
+    </section>
+
     <section>
       <h2>Why 2.0.0</h2>
       <p>
@@ -100,6 +123,14 @@
 
     <section>
       <h2>Changelog</h2>
+      <h3>2.0.1</h3>
+      <ul>
+        <li>write a zero-extent array contiguous and uncompressed in <code>_write_array_dataset</code>. Chunking one is impossible: every chunk dimension must be at least 1 and at most the data extent, and the time-major and spectral helpers clamp the zero axis to 1</li>
+        <li>this refused every flag-off run, which is the default deck: the nine empty radiation families made <code>create_dataset</code> fail with <code>(1, 251) is not compatible with (0, 251)</code> and the writer aborted the whole file</li>
+        <li>added <code>tests/fixtures/radiation/zm0_nofreqrad.exo</code> and its deck, real HELIOS 12.0.0 output from the default deck with 300 zones, 2 snapshots, 1 region and 250 photon groups, registered in <code>tests/fixture_manifest.json</code></li>
+        <li>added <code>test_a_flag_off_run_writes_its_empty_families_contiguously</code>, which asserts shape 0 on all nine families plus <code>chunks is None</code> and <code>compression is None</code>; the pre-fix writer fails it</li>
+        <li>the existing "no radiation" fixture could not catch this, because <code>cu_v12_slice.exo</code> was cut from a run whose radiation group was already absent</li>
+      </ul>
       <h3>2.0.0</h3>
       <ul>
         <li>removed the per-block regex pre-scan from the log parser, which cost 1.70 s of a 3.72 s conversion; the parse now guards with <code>try/except ValueError</code> because <code>np.fromstring</code> raises on a malformed token rather than truncating</li>
@@ -232,7 +263,7 @@
         <li>selected demo HDF5 examples under <code>examples/</code></li>
       </ul>
       <p>
-        The 2.0.0 bundle intentionally omits tests, internal audit and validation reports, old release outputs, legacy shadow source files, the vendor XCOM archive, and compiled native payloads. Experimental Transmission/XCOM support remains behind development flags.
+        The 2.0.1 bundle intentionally omits tests, internal audit and validation reports, old release outputs, legacy shadow source files, the vendor XCOM archive, and compiled native payloads. Experimental Transmission/XCOM support remains behind development flags.
       </p>
     </section>
 
@@ -242,6 +273,8 @@
         <li>XCOM remains a neutral-atom cold baseline. The interpolation tolerance does not establish physical accuracy for warm dense matter or near-edge chemical structure.</li>
         <li>The native Orca screen-reader and keyboard walkthrough remains unverified. Automated accessibility checks and Windows UI checks pass.</li>
         <li>Performance comparisons found no repeatable median regression above the review threshold, but speedup measurements for several scenarios remain inconclusive.</li>
+        <li>The flag-off fixture covers the Exodus reader and writer only. The log and BPF paths write the same radiation families and have no flag-off fixture: every tracked log fixture either carries real spectral data or predates the schema.</li>
+        <li>The writer is tested against empty families. Reader, derived analysis and viewer behaviour on a zero-length family is asserted only where the conversion tests exercise it.</li>
       </ul>
     </section>
 
@@ -254,8 +287,8 @@
       <ul>
         <li>Author: Dmitrii Bespalov</li>
         <li>Organization: European XFEL</li>
-        <li>Release: 2.0.0</li>
-        <li>Date: 2026-10-21</li>
+        <li>Release: 2.0.1</li>
+        <li>Date: 2026-11-04</li>
       </ul>
     </section>
   </main>

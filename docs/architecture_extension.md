@@ -1,6 +1,6 @@
 # HELIOS Parse / View Architecture Reference
 
-This is the concise code-facing architecture note for the current 2.0.0 tree.
+This is the concise code-facing architecture note for the current 2.0.1 tree.
 Use it together with:
 
 - [Documentation index](index.html)
