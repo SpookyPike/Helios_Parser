@@ -1,0 +1,1 @@
+"""Quick diagnostics over a converted HELIOS run. See ``helios_diag.cli``."""
