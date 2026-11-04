@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import signal
 import subprocess
 import sys
 import tempfile
@@ -58,6 +59,33 @@ class CliErrorTests(unittest.TestCase):
             self.assertEqual(result.returncode, 3, result.stderr)
             self.assertIn("no such file or directory", result.stderr)
             self.assertNotIn("Parse error", result.stderr)
+
+    def test_an_interrupted_conversion_reports_130_and_publishes_nothing(self) -> None:
+        """Falling through to the success path after SIGINT reported success on a
+        conversion that never published a file."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "interrupted.h5"
+            process = subprocess.Popen(
+                [sys.executable, "-m", "helios_parser", str(BPF_SAMPLE), str(output), "--progress", "--overwrite"],
+                cwd=ROOT,
+                env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                bufsize=1,
+            )
+            sent = False
+            try:
+                assert process.stderr is not None
+                for line in process.stderr:
+                    if not sent and line.startswith("progress"):
+                        process.send_signal(signal.SIGINT)
+                        sent = True
+            finally:
+                process.communicate(timeout=60)
+            self.assertTrue(sent, "the conversion never emitted a progress line")
+            self.assertEqual(process.returncode, 130)
+            self.assertFalse(output.exists())
 
     def test_a_missing_output_directory_is_a_write_error_not_an_input_error(self) -> None:
         """The writer raises FileNotFoundError for a missing output directory too,

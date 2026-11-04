@@ -78,6 +78,8 @@ def _compare(left: str, right: str, name: str, rtol: float, atol: float) -> dict
         }
     close = np.isclose(a, b, rtol=rtol, atol=atol, equal_nan=True)
     differing = int((~close).sum())
+    nan_left = int(np.isnan(a).sum()) if a.dtype.kind == "f" else 0
+    nan_right = int(np.isnan(b).sum()) if b.dtype.kind == "f" else 0
     delta = np.abs(a - b)
     scale = np.maximum(np.abs(a), np.abs(b))
     relative = np.divide(delta, scale, out=np.zeros_like(delta), where=scale > 0)
@@ -97,6 +99,9 @@ def _compare(left: str, right: str, name: str, rtol: float, atol: float) -> dict
         "max_abs_diff": float(np.nanmax(delta)) if delta.size else 0.0,
         "max_rel_diff": float(np.nanmax(relative)) if relative.size else 0.0,
         "n_differing": differing,
+        "_n_values": int(a.size),
+        "_n_nan_left": nan_left,
+        "_n_nan_right": nan_right,
     }
 
 
@@ -127,6 +132,12 @@ def run(args: argparse.Namespace) -> envelope.Result:
             continue
         rows.append(_compare(args.left, args.right, name, args.rtol, args.atol))
 
+    # The accounting belongs to the comparison, not to one field: strip the
+    # per-dataset counters out of the rows and total them here.
+    totals = {"n_values": 0, "n_nan_left": 0, "n_nan_right": 0}
+    for row in rows:
+        for key in totals:
+            totals[key] += int(row.pop(f"_{key}", 0) or 0)
     differing = [row for row in rows if row["status"] != "ok"]
     if differing:
         notes.append(
@@ -138,6 +149,13 @@ def run(args: argparse.Namespace) -> envelope.Result:
         notes=notes,
         candidate=right_block,
         request={"rtol": args.rtol, "atol": args.atol, "fields": args.field, "n_datasets": len(rows)},
+        accounting={
+            "n_datasets": len(rows),
+            "n_datasets_differing": len(differing),
+            "n_values": totals["n_values"],
+            "n_nan_left": totals["n_nan_left"],
+            "n_nan_right": totals["n_nan_right"],
+        },
     )
     columns = (
         "dataset", "shape_left", "shape_right", "unit_left", "unit_right", "status",

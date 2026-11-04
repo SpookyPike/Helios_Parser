@@ -12,6 +12,7 @@ import unittest
 from pathlib import Path
 
 import _test_bootstrap  # noqa: F401
+import h5py
 import numpy as np
 
 from helios_diag import stats as stats_module
@@ -98,6 +99,28 @@ class StatsNumericTests(unittest.TestCase):
         self.assertIn("p01", result.rows[0])
         self.assertIn("p99", result.rows[0])
         self.assertNotIn("p95", result.rows[0])
+
+
+class AllNanZoneTests(unittest.TestCase):
+    """A readable file can hold a zone that is NaN for every snapshot."""
+
+    def test_an_all_nan_zone_reports_nulls_not_an_error(self) -> None:
+        import tempfile
+        from pathlib import Path as _Path
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = _Path(tmpdir) / "nan_zone.h5"
+            write_hdf5(LOG_SAMPLE, path, overwrite=True)
+            with h5py.File(path, "r+") as handle:
+                data = handle["fields/density"][()]
+                data[:, 3] = np.nan
+                handle["fields/density"][...] = data
+            result = stats_module.run(_args(path=str(path)))
+            row = result.rows[3]
+            self.assertIsNone(row["mean"])
+            self.assertIsNone(row["max"])
+            self.assertIsNone(row["peak_time_s"], "an all-NaN zone has no peak to report")
+            self.assertGreater(result.payload["accounting"]["n_nan"], 0)
 
 
 class FlatZoneGuardTests(unittest.TestCase):

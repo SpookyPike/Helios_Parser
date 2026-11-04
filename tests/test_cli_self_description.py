@@ -156,9 +156,9 @@ class SelfDescriptionTests(unittest.TestCase):
             ["validate", str(self.legacy)],
         ):
             result = _run("helios_diag", *argv)
-            self.assertNotIn("NaN", result.stdout, argv)
-            self.assertNotIn("Infinity", result.stdout, argv)
-            _strict_json(result.stdout)  # raises if one slipped through
+            # A note may legitimately name NaN in prose, so the check is the strict
+            # parser, which raises on a non-finite literal wherever it appears.
+            _strict_json(result.stdout)
 
 
 if __name__ == "__main__":
