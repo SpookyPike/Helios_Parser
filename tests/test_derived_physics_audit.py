@@ -180,6 +180,34 @@ class ConverterUnitTests(unittest.TestCase):
                 width = handle["grid/zone_width"][()]
                 np.testing.assert_allclose(mass / (density * width), 1.0, rtol=1e-9)
 
+    def test_the_exodus_geometry_id_keeps_cylindrical_and_spherical_apart(self) -> None:
+        """Both report the axis name 'r', but a mass per unit length and a mass are
+        different quantities, so the exponent cannot come from the axis name."""
+        import shutil
+        import tempfile
+        from pathlib import Path
+
+        import h5py
+
+        from helios_parser import write_hdf5
+
+        root = Path(__file__).resolve().parents[1]
+        fixture = root / "tests" / "fixtures" / "radiation" / "cu_freqrad_tiny_t0p02ns.exo"
+        if not fixture.is_file():
+            self.skipTest("the exodus fixture is not in this tree")
+        attribute = "Geometry ID (0 = planar, 1 = cylindrical, 2 = spherical)"
+        expected = {0: "g/cm2", 1: "g/cm", 2: "g"}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for geometry_id, unit in expected.items():
+                source = Path(tmpdir) / f"g{geometry_id}.exo"
+                shutil.copy2(fixture, source)
+                with h5py.File(source, "r+") as handle:
+                    handle.attrs[attribute] = geometry_id
+                out = Path(tmpdir) / f"g{geometry_id}.h5"
+                write_hdf5(source, out, overwrite=True)
+                with h5py.File(out, "r") as handle:
+                    self.assertEqual(handle["grid/zone_mass"].attrs["unit"], unit, f"id={geometry_id}")
+
     def test_geometry_placeholder_resolves_per_geometry(self) -> None:
         self.assertEqual(_resolve_geometry_unit("g/cm**X", "PLANAR"), "g/cm2")
         self.assertEqual(_resolve_geometry_unit("g/cm**X", "CYLINDRICAL"), "g/cm")
