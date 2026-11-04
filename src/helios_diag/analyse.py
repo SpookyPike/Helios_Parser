@@ -87,13 +87,7 @@ def _summarize_arrays(value: Any, limit: int) -> Any:
 
 
 def run(args: argparse.Namespace) -> envelope.Result:
-    import dataclasses  # local
     import os  # local
-
-    import numpy as np  # local
-
-    from helios.services.derived import analysis as derived_analysis
-    from helios.services.derived.common import load_run_data, make_run_context
 
     requested = [name for name in args.module if name]
     unknown = [name for name in requested if name not in MODULE_OPTIONAL_FIELDS]
@@ -114,6 +108,25 @@ def run(args: argparse.Namespace) -> envelope.Result:
         # caller does not keep the opt-in.
         previous_flag = os.environ.get("HELIOS_ENABLE_EXPERIMENTAL")
         os.environ["HELIOS_ENABLE_EXPERIMENTAL"] = "1"
+
+    try:
+        return _run_with_flag(args, requested, gated)
+    finally:
+        # Restore on every path: a raise must not leave the caller's process opted in.
+        if args.include_experimental:
+            if previous_flag is None:
+                os.environ.pop("HELIOS_ENABLE_EXPERIMENTAL", None)
+            else:
+                os.environ["HELIOS_ENABLE_EXPERIMENTAL"] = previous_flag
+
+
+def _run_with_flag(args: argparse.Namespace, requested: list[str], gated: list[str]) -> envelope.Result:
+    import dataclasses  # local
+
+    import numpy as np  # local
+
+    from helios.services.derived import analysis as derived_analysis
+    from helios.services.derived.common import load_run_data, make_run_context
 
     optional: set[str] = set()
     for name in requested:
@@ -149,11 +162,6 @@ def run(args: argparse.Namespace) -> envelope.Result:
         name: _summarize_arrays(dataclasses.asdict(value) if dataclasses.is_dataclass(value) else value, args.max_array)
         for name, value in sorted(dataclasses.asdict(result).items())
     }
-    if previous_flag is None:
-        os.environ.pop("HELIOS_ENABLE_EXPERIMENTAL", None)
-    else:
-        os.environ["HELIOS_ENABLE_EXPERIMENTAL"] = previous_flag
-
     if gated:
         # A gated module that came back disabled despite the flag is a contradiction
         # the caller must not have to detect from a null payload.
