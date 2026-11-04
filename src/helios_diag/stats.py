@@ -22,6 +22,7 @@ Two correctness rules that are easy to get wrong:
 from __future__ import annotations
 
 import argparse
+import warnings
 from typing import Any
 
 from . import envelope
@@ -75,14 +76,20 @@ def _reduce(block, axis: int | None, quantiles: list[float], clean: bool) -> dic
             "peak_index": np.argmax(block, axis=axis) if axis is not None else None,
             "quantiles": np.percentile(block, quantiles, axis=axis),
         }
-    return {
-        "mean": np.nanmean(block, axis=axis),
-        "min": np.nanmin(block, axis=axis),
-        "max": np.nanmax(block, axis=axis),
-        "std": np.nanstd(block, axis=axis),
-        "peak_index": np.nanargmax(block, axis=axis) if axis is not None else None,
-        "quantiles": np.nanpercentile(block, quantiles, axis=axis),
-    }
+    with np.errstate(invalid="ignore", all="ignore"), warnings.catch_warnings():
+        # nanmean and friends warn "Mean of empty slice" on an all-NaN zone, and
+        # that warning would land on stderr in the middle of a machine contract.
+        warnings.simplefilter("ignore", RuntimeWarning)
+        filled = np.where(np.isnan(block), -np.inf, block)
+        return {
+            "mean": np.nanmean(block, axis=axis),
+            "min": np.nanmin(block, axis=axis),
+            "max": np.nanmax(block, axis=axis),
+            "std": np.nanstd(block, axis=axis),
+            "peak_index": np.argmax(filled, axis=axis) if axis is not None else None,
+            "all_nan": np.all(np.isnan(block), axis=axis) if axis is not None else None,
+            "quantiles": np.nanpercentile(block, quantiles, axis=axis),
+        }
 
 
 def _accounting(block, clean: bool) -> dict[str, int]:
@@ -96,19 +103,41 @@ def _accounting(block, clean: bool) -> dict[str, int]:
     return {"n_values": total, "n_nan": nan, "n_used": total - nan}
 
 
+def _column(values) -> list[Any]:
+    """One column as Python values, with non-finite floats turned into None.
+
+    The JSON writer does this too, but rows are also the API and feed the csv
+    writer, and a bare ``nan`` in a CSV breaks strict readers.
+    """
+    import math
+
+    out: list[Any] = []
+    for value in values.tolist():
+        if isinstance(value, float) and not math.isfinite(value):
+            out.append(None)
+        else:
+            out.append(value)
+    return out
+
+
 def _rows_from_columns(columns_data: dict[str, list]) -> list[dict[str, Any]]:
     """Transpose column lists into row dicts in one zip, not one dict per cell."""
     keys = list(columns_data)
     return [dict(zip(keys, values, strict=True)) for values in zip(*columns_data.values(), strict=True)]
 
 
-def _peak_times(peak_index, low, high, times, flat_atol: float, flat_rtol: float) -> list[float | None]:
-    """Peak time per zone, with flat zones reported as no peak rather than t=0."""
+def _peak_times(peak_index, low, high, times, flat_atol: float, flat_rtol: float, all_nan=None) -> list[float | None]:
+    """Peak time per zone, with flat and all-NaN zones reported as no peak."""
     import numpy as np  # local
 
     spread = np.asarray(high, dtype=np.float64) - np.asarray(low, dtype=np.float64)
     magnitude = np.abs(np.asarray(high, dtype=np.float64))
-    flat = spread <= np.maximum(flat_atol, flat_rtol * magnitude)
+    with np.errstate(invalid="ignore"):
+        flat = spread <= np.maximum(flat_atol, flat_rtol * magnitude)
+    # A NaN spread compares False, so an all-NaN zone would otherwise claim a peak.
+    flat = np.asarray(flat) | np.isnan(spread)
+    if all_nan is not None:
+        flat = flat | np.asarray(all_nan, dtype=bool)
     out: list[float | None] = []
     for index, is_flat in zip(np.asarray(peak_index), flat, strict=True):
         out.append(None if bool(is_flat) else float(times[int(index)]))
@@ -238,13 +267,19 @@ def run(args: argparse.Namespace) -> envelope.Result:
         column_data: dict[str, list] = {}
         if mode == MODE_OVER_ZONES:
             peaks = _peak_times(
-                stats["peak_index"], stats["min"], stats["max"], times, args.flat_atol, args.flat_rtol
+                stats["peak_index"],
+                stats["min"],
+                stats["max"],
+                times,
+                args.flat_atol,
+                args.flat_rtol,
+                stats.get("all_nan"),
             )
             flat_count = sum(1 for value in peaks if value is None)
             if flat_count:
                 notes.append(
-                    f"{flat_count} zones are flat within tolerance and report no peak time; "
-                    "argmax would have said t=0 for them"
+                    f"{flat_count} zones report no peak time: either flat within tolerance, "
+                    "or entirely NaN, where argmax would have said t=0"
                 )
             column_data["zone"] = list(range(data.shape[1]))
             column_data["peak_time_s"] = peaks
@@ -264,10 +299,10 @@ def run(args: argparse.Namespace) -> envelope.Result:
                 "quantiles": quantiles,
             }
         for key in ("mean", "min", "max"):
-            column_data[key] = np.asarray(stats[key]).tolist()
+            column_data[key] = _column(np.asarray(stats[key]))
         for column, values in zip(quantile_columns, stats["quantiles"], strict=True):
-            column_data[column] = np.asarray(values).tolist()
-        column_data["std"] = np.asarray(stats["std"]).tolist()
+            column_data[column] = _column(np.asarray(values))
+        column_data["std"] = _column(np.asarray(stats["std"]))
         # Keep the JSON key order identical to the declared column order, so a human
         # reading the payload sees the same table the csv and table writers produce.
         column_data = {key: column_data[key] for key in columns}

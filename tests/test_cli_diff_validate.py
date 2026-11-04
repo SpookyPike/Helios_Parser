@@ -6,6 +6,7 @@ pipeline, so the exit code is asserted rather than the prose.
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -67,6 +68,14 @@ class DiffTests(unittest.TestCase):
         self.assertEqual(result.returncode, 7, result.stderr)
         self.assertIn("fields/density", result.stdout)
         self.assertIn("differs", result.stdout)
+
+    def test_the_comparison_reports_its_accounting(self) -> None:
+        result = _run("diff", str(self.base), str(self.base))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertIn("accounting", payload)
+        self.assertGreater(payload["accounting"]["n_datasets"], 0)
+        self.assertEqual(payload["accounting"]["n_datasets_differing"], 0)
 
     def test_a_unit_change_fails_even_when_every_value_matches(self) -> None:
         """Identical numbers in different units are not the same result."""
@@ -133,6 +142,17 @@ class ValidateTests(unittest.TestCase):
         result = _run("validate", str(broken))
         self.assertEqual(result.returncode, 7, result.stderr)
         self.assertIn("materials", result.stdout)
+
+    def test_a_chunked_empty_dataset_inside_a_group_is_caught(self) -> None:
+        """The empty families live under radiation/, so a root-only walk misses them."""
+        broken = Path(self._tmpdir.name) / "nested_empty.h5"
+        shutil.copy2(self.good, broken)
+        with h5py.File(broken, "r+") as handle:
+            group = handle.create_group("radiation")
+            group.create_dataset("bad_empty", shape=(0, 3), maxshape=(None, 3), dtype="f8")
+        result = _run("validate", str(broken))
+        self.assertEqual(result.returncode, 7, result.stderr)
+        self.assertIn("bad_empty", result.stdout)
 
     def test_the_zero_extent_check_does_not_false_positive(self) -> None:
         """A chunked zero-extent dataset cannot exist: HDF5 refuses to create one.

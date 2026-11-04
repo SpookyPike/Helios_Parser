@@ -210,7 +210,27 @@ def main(argv: list[str] | None = None) -> int:
                     progress_callback=progress,
                 )
             except KeyboardInterrupt:
-                code, kind = EXIT_INTERRUPTED, "interrupted"
+                # Report it and stop: falling through would summarize an output
+                # that was never published and exit 0 on an interrupted run.
+                print(f"helios_to_hdf5: {source}: interrupted", file=sys.stderr)
+                if args.json:
+                    print(
+                        json.dumps(
+                            {
+                                "command": "convert",
+                                "version": RELEASE_VERSION,
+                                "input": str(source),
+                                "output": str(target),
+                                "status": "error",
+                                "error_kind": "interrupted",
+                                "error": "interrupted",
+                            },
+                            allow_nan=False,
+                        ),
+                        flush=True,
+                    )
+                exit_code = EXIT_INTERRUPTED
+                break
             except BaseException as exc:  # noqa: BLE001 - classified below
                 code, kind = _classify(exc)
                 if args.verbose:

@@ -75,16 +75,25 @@ def _counts(handle) -> list[dict[str, Any]]:
 
 
 def _zero_extent(handle) -> list[dict[str, Any]]:
-    """A zero-extent dataset cannot be chunked, so the writer must not have tried."""
+    """A zero-extent dataset cannot be chunked, so the writer must not have tried.
+
+    Walks the whole tree: the empty families live under ``radiation/``, so a check
+    over the root entries alone would never see one.
+    """
+    import h5py  # local
+
     offenders: list[str] = []
     checked = 0
-    for name, item in handle.items():
-        if not hasattr(item, "shape"):
-            continue
-        if 0 in item.shape:
-            checked += 1
-            if item.chunks is not None or item.compression is not None:
-                offenders.append(f"{name} (chunks={item.chunks}, compression={item.compression})")
+
+    def visit(name: str, item: Any) -> None:
+        nonlocal checked
+        if not isinstance(item, h5py.Dataset) or 0 not in item.shape:
+            return
+        checked += 1
+        if item.chunks is not None or item.compression is not None:
+            offenders.append(f"{name} (chunks={item.chunks}, compression={item.compression})")
+
+    handle.visititems(visit)
     if offenders:
         return [_row("zero_extent_families", "fail", "chunked or compressed: " + ", ".join(offenders))]
     if not checked:
