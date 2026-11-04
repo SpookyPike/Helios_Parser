@@ -26,7 +26,11 @@ CORE_NAMES = {
     "smoke_test.py",
     "test_bpf_pipeline.py",
     "test_chunk_layout.py",
+    "test_cli_contract.py",
+    "test_cli_diff_validate.py",
     "test_cli_errors.py",
+    "test_cli_self_description.py",
+    "test_cli_stats.py",
     "test_test_runner.py",
 }
 TIMEOUT_SECONDS = 120
