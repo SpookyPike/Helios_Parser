@@ -760,6 +760,9 @@ class SpectroscopyResult:
     bulk_velocity_cm_s: float
     los_velocity_cm_s: float
     doppler_shift_nm: float
+    # Doppler broadening as a full width at half maximum (NRL 2023 Eq. 25), both
+    # as a fraction of the line wavelength and in nm at that wavelength.  Not a
+    # Gaussian sigma: divide by 2.355 for that.
     thermal_width_fraction: float
     thermal_width_nm: float
     ion_temperature_ev: float

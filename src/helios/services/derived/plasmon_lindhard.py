@@ -32,6 +32,47 @@ from helios.services.derived.plasmon_units import (
 _PI2 = math.pi * math.pi
 _MIN_IMAG_SHIFT_EV = 1.0e-9
 
+# Quadrature order needed to resolve the Fermi surface.
+#
+# The k integrand carries a Fermi step of width ~k_th = sqrt(Theta) k_F inside a
+# [0, k_max] interval with k_max ~ 6 k_F, so a fixed 64-point Gauss rule is blind
+# to that step once the gas is degenerate.  Measured against the exact
+# Thomas-Fermi static limit chi(q->0) = k_TF^2/q^2 at ne = 1e22 cm^-3, q = 1e-2 k_F:
+#
+#   Theta=0.030, k_order= 64 -> 1.85x the limit   (128: 1.08, 256: 0.999)
+#   Theta=0.006, k_order= 64 -> 1.46x the limit   (512: 1.10, 1024: 1.004)
+#   Theta=0.001, k_order= 64 -> 0.04x the limit   (1024: 1.32, still short)
+#
+# The rule below asks for enough points to sample the thermal width across the
+# whole k range and caps the cost.  With 16 points per thermal width the benchmark
+# cap is converged (1.003) at the cold, solid-density state a real run starts
+# from, Te = 0.025 eV at 8.5e22 cm^-3 (Theta = 3.5e-3), and the quicklook cap is
+# converged for Theta >= 0.03 but reads 1.24x at that same cold state: quicklook
+# trades that accuracy for speed, benchmark does not.
+_LINHARD_K_POINTS_PER_THERMAL_WIDTH = 16.0
+_LINHARD_MIN_K_ORDER = 64
+_LINHARD_MAX_K_ORDER_QUICKLOOK = 512
+_LINHARD_MAX_K_ORDER_BENCHMARK = 2048
+
+
+def _resolve_k_order(ne_cm3: float, te_ev: float, q_m_inv: float, *, benchmark: bool) -> int:
+    base = 96 if benchmark else _LINHARD_MIN_K_ORDER
+    cap = _LINHARD_MAX_K_ORDER_BENCHMARK if benchmark else _LINHARD_MAX_K_ORDER_QUICKLOOK
+    try:
+        _, kth, k_max = _k_scales(ne_cm3, te_ev, q_m_inv)
+    except (ValueError, ZeroDivisionError):
+        return base
+    if not math.isfinite(kth) or kth <= 0.0 or not math.isfinite(k_max):
+        return base
+    needed = _LINHARD_K_POINTS_PER_THERMAL_WIDTH * k_max / kth
+    return int(min(max(base, math.ceil(needed)), cap))
+
+
+def lindhard_k_order(ne_cm3: float, te_ev: float, q_m_inv: float, *, benchmark: bool = False) -> int:
+    """The k quadrature order this degeneracy needs, clamped to the shipped cap."""
+
+    return _resolve_k_order(ne_cm3, te_ev, q_m_inv, benchmark=benchmark)
+
 
 def _bracketed_root_solve(
     func,
@@ -224,7 +265,9 @@ def _finite_t_lindhard_susceptibility_uncached(
 ) -> np.ndarray:
     """Return the dielectric correction ``chi = epsilon - 1``.
 
-    Benchmark mode uses a somewhat denser quadrature than quicklook mode.
+    The k quadrature order follows the degeneracy: a degenerate gas puts a Fermi
+    step inside the integration range that a fixed order cannot see.  See
+    `_LINHARD_K_POINTS_PER_THERMAL_WIDTH` for the measurement that sets the rule.
     """
 
     q = float(k_m_inv)
@@ -236,7 +279,7 @@ def _finite_t_lindhard_susceptibility_uncached(
         te_ev=float(te_ev),
         ne_cm3=float(ne_cm3),
         imag_shift_ev=float(imag_shift_ev),
-        k_order=(96 if benchmark else 64),
+        k_order=_resolve_k_order(float(ne_cm3), float(te_ev), q, benchmark=bool(benchmark)),
         mu_order=(64 if benchmark else 40),
         batch_size=(384 if benchmark else 256),
     )
@@ -308,6 +351,13 @@ def finite_t_lindhard_susceptibility(
     across Lindhard, Lindhard+LFC, and Mermin-style closures. Caching this level keeps the
     full hydro-driven Lindhard family practical for validation runs without changing the
     underlying numerical quadrature.
+
+    Accuracy limit, measured against the exact Thomas-Fermi static limit
+    chi(q->0) = k_TF^2/q^2.  With `benchmark=True` the quadrature is converged
+    (within 1 %) down to Theta = Te/E_F = 3.5e-3, which is a cold solid-density
+    state (Te = 0.025 eV at 8.5e22 cm^-3).  The default quicklook path is
+    converged for Theta >= 0.03, reads 10 % high at Theta = 6e-3 and 24 % high at
+    Theta = 3.5e-3, because it caps the k quadrature at 512 points.
     """
 
     return np.asarray(
