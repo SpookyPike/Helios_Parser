@@ -23,7 +23,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--atol", type=float, default=0.0, help="Absolute tolerance. Default 0.")
     parser.add_argument(
         "-f",
-        "--field",
+        "--fields",
         action="append",
         default=[],
         metavar="NAME",
@@ -111,11 +111,15 @@ def run(args: argparse.Namespace) -> envelope.Result:
 
     left_paths = _numeric_paths(args.left)
     right_paths = _numeric_paths(args.right)
-    if args.field:
-        wanted = [name.lower() for name in args.field]
+    if args.fields:
+        wanted = [name.lower() for name in args.fields]
         keep = {path for path in set(left_paths) | set(right_paths) if any(token in path.lower() for token in wanted)}
         left_paths = {path: shape for path, shape in left_paths.items() if path in keep}
         right_paths = {path: shape for path, shape in right_paths.items() if path in keep}
+        if not left_paths and not right_paths:
+            # An empty comparison looks exactly like a clean one, and a pipeline
+            # would accept it. Say the filter selected nothing instead.
+            raise envelope.UsageError(f"--fields {', '.join(args.fields)} matches no dataset in either file")
 
     notes = left_notes + right_notes
     rows: list[dict[str, Any]] = []
@@ -148,7 +152,7 @@ def run(args: argparse.Namespace) -> envelope.Result:
         file=left_block,
         notes=notes,
         candidate=right_block,
-        request={"rtol": args.rtol, "atol": args.atol, "fields": args.field, "n_datasets": len(rows)},
+        request={"rtol": args.rtol, "atol": args.atol, "fields": args.fields, "n_datasets": len(rows)},
         accounting={
             "n_datasets": len(rows),
             "n_datasets_differing": len(differing),

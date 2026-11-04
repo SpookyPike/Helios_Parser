@@ -77,6 +77,13 @@ class DiffTests(unittest.TestCase):
         self.assertGreater(payload["accounting"]["n_datasets"], 0)
         self.assertEqual(payload["accounting"]["n_datasets_differing"], 0)
 
+    def test_a_filter_that_matches_nothing_is_a_usage_error(self) -> None:
+        """An empty comparison looks exactly like a clean one, and a pipeline would
+        accept it as a pass."""
+        result = _run("diff", str(self.base), str(self.base), "--fields", "definitely_missing")
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("matches no dataset", result.stderr)
+
     def test_a_unit_change_fails_even_when_every_value_matches(self) -> None:
         """Identical numbers in different units are not the same result."""
         changed = Path(self._tmpdir.name) / "reunited.h5"

@@ -181,6 +181,24 @@ class DiagContractTests(unittest.TestCase):
         finally:
             os.environ.pop("HELIOS_ENABLE_EXPERIMENTAL", None)
 
+    def test_include_experimental_does_not_leak_when_analysis_raises(self) -> None:
+        import types
+
+        from helios_diag import analyse
+
+        os.environ["HELIOS_ENABLE_EXPERIMENTAL"] = "0"
+        try:
+            with self.assertRaises(FileNotFoundError):
+                analyse.run(
+                    types.SimpleNamespace(
+                        path="/tmp/definitely-not-a-run.h5", module=["xrd"], snapshot=None,
+                        max_array=1000, include_experimental=True,
+                    )
+                )
+            self.assertEqual(os.environ.get("HELIOS_ENABLE_EXPERIMENTAL"), "0")
+        finally:
+            os.environ.pop("HELIOS_ENABLE_EXPERIMENTAL", None)
+
     def test_the_headless_path_never_imports_qt(self) -> None:
         """A diagnostics run on a compute node must not need a display."""
         probe = (
