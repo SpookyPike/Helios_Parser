@@ -7,10 +7,21 @@ HELIOS Parse / View ships three release-oriented artifact types:
 - Linux portable tarball: source-runtime fallback for Linux systems where an
   AppImage is not built.
 
-The real desktop entry point is `helios_parse_view`, implemented by
-`python -m helios_app`. The parser CLI is `helios_to_hdf5`, implemented by
-`python -m helios_parser`. The HDF5-only viewer is `helios_hdf5_viewer`,
-implemented by `python -m helios_viewer`.
+Five console scripts are installed. The desktop shell is `helios_parse_view`
+(`python -m helios_app`), the HDF5-only viewer is `helios_hdf5_viewer`
+(`python -m helios_viewer`), and the command line is three scripts:
+
+| script | module | what it does |
+|---|---|---|
+| `helios_to_hdf5` | `helios_cli` | convert `.log`, `.bpf` or `.exo` to HDF5 |
+| `helios_diag` | `helios_diag.cli` | inspect, stats, query, diff, validate, analyse a converted run |
+| `helios_plot_radiation` | `helios_viewer.radiation_plot` | radiation figures; needs the `plot` extra |
+
+`helios_to_hdf5` and `helios_diag` live in top-level modules on purpose: importing
+anything under `helios_parser` or `helios_app` runs that package's `__init__`, which
+pulls numpy, h5py or Qt, and `--version` would cost a quarter of a second instead of
+30 ms. `python -m helios_parser` still works and re-exports the same entry point.
+See [the command line reference](cli.md).
 
 ## v2.1.0 availability
 

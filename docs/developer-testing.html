@@ -62,7 +62,7 @@
         The suite is driven by <code>scripts/run_test_suite.py</code>, not by test discovery. It has exactly two profiles and they exist for
         different moments:
       </p>
-      <pre><code># commit gate: five entries, about 8 s
+      <pre><code># commit gate: ten entries, about 15 s
 .venv/bin/python scripts/run_test_suite.py --profile core
 
 # milestone gate: every discovered entry, about 17 min, with the coverage floor
@@ -72,7 +72,9 @@
 .venv/bin/python scripts/run_test_suite.py --profile full --only test_reader.py</code></pre>
       <p>
         The core gate is a fixed list in <code>CORE_NAMES</code>: <code>smoke_test.py</code>, <code>test_bpf_pipeline.py</code>,
-        <code>test_chunk_layout.py</code>, <code>test_cli_errors.py</code> and <code>test_test_runner.py</code>. Add an entry there only if it
+        <code>test_chunk_layout.py</code>, <code>test_test_runner.py</code>, and the five command-line entries
+        <code>test_cli_contract.py</code>, <code>test_cli_errors.py</code>, <code>test_cli_stats.py</code>,
+        <code>test_cli_self_description.py</code> and <code>test_cli_diff_validate.py</code>. Add an entry there only if it
         runs in a second or two and would catch a mistake you would otherwise ship.
       </p>
       <p>

@@ -19,6 +19,14 @@ The application is intentionally split into layers:
 - [`src/helios_viewer/`](../src/helios_viewer/): production HDF5 viewer, plotting, settings, and viewer controller
 - [`src/helios_analysis/`](../src/helios_analysis/): Derived / Analysis workspace and controller
 - [`src/helios_app/`](../src/helios_app/): top-level shell, About dialog, session state, and shell routing
+- [`src/helios_diag/`](../src/helios_diag/): the diagnostics command. Each subcommand owns its flags and its
+  heavy imports; `envelope.py` holds the JSON contract every subcommand emits, and `units.py` holds the
+  parameter-unit table. It reads the reader and the derived services and writes nothing.
+- [`src/helios_cli.py`](../src/helios_cli.py) and [`src/helios_release.py`](../src/helios_release.py):
+  top-level modules on purpose. Importing any submodule of `helios_parser` or `helios_app` executes that
+  package's `__init__`, which pulls numpy, h5py or Qt, so a converter entry point inside the package would
+  make `--version` cost 230 ms instead of 30. `helios_app.release` re-exports the version constants, so it
+  stays the public face for the packaging scripts.
 
 The shell lives in [`src/helios_app/main_app.py`](../src/helios_app/main_app.py) and owns the registered
 top-level modes:

@@ -53,6 +53,30 @@
       </div>
     </section>
 
+    <section id="command-line">
+      <h2>Without the window</h2>
+      <p>
+        Everything the tabs show is also reachable from a terminal, which is what you want for a batch of runs or
+        a script. Two commands: <code>helios_to_hdf5</code> converts, <code>helios_diag</code> reads a converted run.
+      </p>
+      <pre><code>helios_to_hdf5 run.log run.h5                    # .log, .bpf or .exo
+helios_diag inspect run.h5                       # the deck setup, the laser, the fields
+helios_diag stats run.h5 -f density              # per zone, with the time it peaked
+helios_diag query run.h5 -f density --zone 900   # one time trace
+helios_diag diff before.h5 after.h5              # exits 7 when they differ
+helios_diag analyse run.h5 --module xrd          # a derived module, no window</code></pre>
+      <p>
+        The output is JSON by default, so it pipes into <code>jq</code>, and every answer states its own context:
+        the units and where they came from, the geometry, how many values were skipped, and a note for anything
+        the file did not record. Read the notes before the numbers. A <code>null</code> unit means the file did
+        not record one, not that the quantity is dimensionless.
+      </p>
+      <p>
+        The full surface, with exit codes and the measured cost, is in the
+        <a href="cli.md">command line reference</a>.
+      </p>
+    </section>
+
     <section id="parser">
       <h2>Parser mode</h2>
       <div class="two-col">

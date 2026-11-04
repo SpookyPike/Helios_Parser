@@ -47,11 +47,25 @@
   helios_viewer/   production viewer window, settings, plotting, controller
   helios_analysis/ derived workspace and derived controller
   helios_app/      top-level Parse / View shell and About / release surface
+  helios_diag/     diagnostics command: envelope, units, inspect, stats, query, diff, validate, analyse
+  helios_cli.py    converter entry point, top-level so --version skips numpy and h5py
+  helios_release.py version constants, top-level so --version skips Qt
 </code></pre>
       <p>
         The important rule is still the same: <strong>do not bypass layer boundaries without a specific reason</strong>.
         Parser remains the canonical raw log ingestion path, the reader remains the canonical HDF5 access layer,
         and derived modules should consume normalized runtime/derived data rather than re-reading ad hoc files or inventing parallel coordinate semantics.
+      </p>
+      <p>
+        The two top-level modules exist for a measured reason: importing any submodule of
+        <code>helios_parser</code> or <code>helios_app</code> executes that package's <code>__init__</code>, which
+        pulls numpy, h5py or Qt. Measured, that is 228 ms and 986 ms. A command whose entry point lives inside
+        the package therefore cannot answer <code>--version</code> in under a quarter of a second, so
+        <code>helios_cli.py</code> and <code>helios_release.py</code> sit beside the packages instead.
+        <code>helios_app.release</code> re-exports the constants and stays the public face for the packaging
+        scripts. The command line surface itself is documented in the
+        <a href="cli.md">command line reference</a>; <code>helios_diag/envelope.py</code> is the one place the
+        JSON contract lives, and every subcommand goes through it.
       </p>
     </section>
 
