@@ -283,11 +283,26 @@ class RadiationHdf5Tests(unittest.TestCase):
         with h5py.File(self.empty_h5) as handle:
             self.assertEqual(handle["time/time"].shape, (2,))
             self.assertEqual(handle["fields/density"].shape, (2, 300))
-            for name in ("time", "cycle", "hydro_index", "group_edges", "group_centre",
-                         "energy_density", "heating_rate", "cooling_rate",
-                         "rosseland_opacity"):
+            n_zones = handle["fields/density"].shape[1]
+            groups = handle["radiation/group_centre"].shape[1]
+            self.assertEqual(groups, 250)
+            # The whole shape, not only the empty axis: the fix keeps every axis,
+            # and a test that checked shape[0] alone would pass if a regression
+            # dropped the zone and group axes from the spectral families.
+            expected = {
+                "time": (0,),
+                "cycle": (0,),
+                "hydro_index": (0,),
+                "group_edges": (0, groups + 1),
+                "group_centre": (0, groups),
+                "energy_density": (0, n_zones, groups),
+                "heating_rate": (0, n_zones, groups),
+                "cooling_rate": (0, n_zones, groups),
+                "rosseland_opacity": (0, n_zones, groups),
+            }
+            for name, shape in expected.items():
                 dataset = handle[f"radiation/{name}"]
-                self.assertEqual(dataset.shape[0], 0, name)
+                self.assertEqual(dataset.shape, shape, name)
                 self.assertIsNone(dataset.chunks, f"{name} is chunked at zero extent")
                 self.assertIsNone(dataset.compression, f"{name} is compressed at zero extent")
 
