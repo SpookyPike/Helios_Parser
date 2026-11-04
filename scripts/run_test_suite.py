@@ -30,6 +30,7 @@ CORE_NAMES = {
     "test_cli_diff_validate.py",
     "test_cli_errors.py",
     "test_cli_self_description.py",
+    "test_cli_skill_consistency.py",
     "test_cli_stats.py",
     "test_test_runner.py",
 }
@@ -174,7 +175,19 @@ def materialize_test_tree(
     target = Path(temporary.name) / "workspace"
     target.mkdir()
     ignore = shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo", "*.egg-info", ".pytest_cache")
-    for directory in ("src", "tests", "scripts", "new_data", "x-com_fallback", "packaging", "docs", "release_assets"):
+    for directory in (
+        "src",
+        "tests",
+        "scripts",
+        "new_data",
+        "x-com_fallback",
+        "packaging",
+        "docs",
+        "release_assets",
+        # The agent skill is shipped content and a test asserts it matches the
+        # command line, so it has to be in the tree the test runs against.
+        "skills",
+    ):
         source = source_root / directory
         if source.is_dir():
             shutil.copytree(source, target / directory, ignore=ignore)

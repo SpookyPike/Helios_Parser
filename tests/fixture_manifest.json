@@ -416,6 +416,9 @@
     ],
     "test_cli_diff_validate.py": [
       "v12_log_prefix"
+    ],
+    "test_cli_skill_consistency.py": [
+      "v12_log_prefix"
     ]
   },
   "entry_prefix_requirements": {
