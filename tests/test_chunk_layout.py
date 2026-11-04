@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,8 +14,10 @@ from helios_parser.exodus import BoundaryFlux, RadiationOutput, SpectralRadiatio
 from helios_parser.hdf5 import (
     _create_bpf_field_dataset,
     _field_chunk_shape,
+    _shuffle_for,
     _spectral_chunk_shape,
     _time_major_chunk_shape,
+    _write_array_dataset,
     _write_radiation_groups,
 )
 
@@ -195,6 +198,53 @@ class RadiationChunkTest(unittest.TestCase):
                 _write_radiation_groups(handle, radiation, compression="gzip")
                 stored = handle["radiation/spectral_energy_density"][()]
             np.testing.assert_array_equal(stored, radiation.spectral.fields["spectral_energy_density"])
+
+
+class CompressionShuffleTest(unittest.TestCase):
+    """The shuffle filter pays for LZF and costs for DEFLATE.
+
+    Measured end to end on the largest tracked deck: LZF 184.4 MB -> 118.6 MB
+    with shuffle, gzip 102.2 MB -> 105.2 MB. Nothing else in the suite would
+    notice if the flag silently reverted, because shuffle is invisible through
+    the HDF5 API.
+    """
+
+    def test_only_lzf_gets_the_shuffle_filter(self) -> None:
+        self.assertTrue(_shuffle_for("lzf"))
+        self.assertFalse(_shuffle_for("gzip"))
+        self.assertFalse(_shuffle_for(None))
+
+    def test_a_compressed_conversion_sets_shuffle_on_every_numeric_dataset(self) -> None:
+        fixture = ROOT / "new_data" / "5Fe+4.9TW+light" / "5Fe+4.9TW+light.bpf"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for compression, expected in (("lzf", True), ("gzip", False)):
+                path = Path(tmpdir) / f"shuffle_{compression}.h5"
+                write_hdf5(fixture, path, compression=compression, overwrite=True, logger=logging.getLogger("quiet"))
+                checked = 0
+                with h5py.File(path, "r") as handle:
+
+                    def visit(name, obj):
+                        nonlocal checked
+                        if isinstance(obj, h5py.Dataset) and obj.compression == compression:
+                            self.assertEqual(obj.shuffle, expected, name)
+                            checked += 1
+
+                    handle.visititems(visit)
+                # The conversion must actually have compressed something, or the
+                # loop above would pass by visiting nothing.
+                self.assertGreater(checked, 10, compression)
+
+    def test_an_empty_family_stays_uncompressed_and_unshuffled(self) -> None:
+        """h5py refuses the filter without chunked storage, and an empty axis
+        cannot be chunked, so the two guards have to agree."""
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with h5py.File(Path(tmpdir) / "empty.h5", "w") as handle:
+                _write_array_dataset(handle, "empty", np.zeros((0, 12)), "", compression="lzf")
+                dataset = handle["empty"]
+                self.assertEqual(dataset.shape, (0, 12))
+                self.assertIsNone(dataset.compression)
+                self.assertFalse(dataset.shuffle)
 
 
 if __name__ == "__main__":

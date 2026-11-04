@@ -115,6 +115,24 @@ def _time_chunk_shape(capacity: int) -> tuple[int]:
     return (min(max(1, capacity), 1024),)
 
 
+def _shuffle_for(compression: str | None) -> bool:
+    """The shuffle filter pays for LZF and costs for DEFLATE on float64 data.
+
+    Measured end to end on 10ns+100Al+60CH+6.1TW (530 MB log, 1501 snapshots by
+    1200 zones, taskset -c 0-11): LZF goes from 184.4 MB to 118.6 MB with the
+    filter, a 35.7% saving for 2.6% more write time, while gzip rises from
+    102.2 MB to 105.2 MB.  So enable the filter for LZF only.
+
+    A run short enough that each dataset is a single small chunk goes the other
+    way: the 8-snapshot, 500-zone tracked fixture grows 8.5% (1.53 MB to 1.66
+    MB).  That is 130 kB against 66 MB, so the trade is deliberate rather than
+    an oversight; do not add a size branch for it.
+
+    h5py needs chunked storage for the filter, which every caller here uses.
+    """
+    return compression == "lzf"
+
+
 def _create_field_dataset(
     group: h5py.Group,
     name: str,
@@ -133,6 +151,7 @@ def _create_field_dataset(
         dtype=np.float64,
         fillvalue=np.nan,
         compression=compression,
+        shuffle=_shuffle_for(compression),
         chunks=_field_chunk_shape(capacity, n_zones),
     )
     if metadata is None:
@@ -166,6 +185,7 @@ def _create_dynamic_dataset(
         dtype=np.float64,
         fillvalue=np.nan,
         compression=compression,
+        shuffle=_shuffle_for(compression),
         chunks=chunks,
     )
     _set_unit_attrs(dataset, unit)
@@ -209,6 +229,7 @@ def _write_array_dataset(
             name,
             data=array,
             compression=None if empty else compression,
+            shuffle=False if empty else _shuffle_for(compression),
             chunks=None if empty else chunks,
         )
     _set_unit_attrs(dataset, unit)
@@ -402,11 +423,13 @@ def _create_bpf_field_dataset(
 ) -> h5py.Dataset:
     array = np.asarray(sample)
     shape = (int(n_snapshots),) + tuple(int(value) for value in array.shape)
+    compressed = compression if array.dtype.kind == "f" else None
     dataset = fields_group.create_dataset(
         name,
         shape=shape,
         dtype=array.dtype,
-        compression=compression if array.dtype.kind == "f" else None,
+        compression=compressed,
+        shuffle=_shuffle_for(compressed),
         chunks=_time_major_chunk_shape(shape, time_chunk=32),
     )
     _set_field_metadata(dataset, metadata)
@@ -812,6 +835,7 @@ def _write_hdf5_from_bpf_validated(
                 shape=(layout.n_snapshots, layout.n_zones),
                 dtype=np.float64,
                 compression=compression,
+                shuffle=_shuffle_for(compression),
                 chunks=_field_chunk_shape(layout.n_snapshots, layout.n_zones),
             )
             _set_unit_attrs(dynamic_center, "cm")
@@ -821,6 +845,7 @@ def _write_hdf5_from_bpf_validated(
                 shape=(layout.n_snapshots, layout.n_nodes),
                 dtype=np.float64,
                 compression=compression,
+                shuffle=_shuffle_for(compression),
                 chunks=_field_chunk_shape(layout.n_snapshots, layout.n_nodes),
             )
             _set_unit_attrs(dynamic_edge, "cm")
