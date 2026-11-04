@@ -33,23 +33,10 @@ def q_to_angle_deg(q_ang_inv: float, photon_energy_kev: float) -> float:
 
 
 def make_run_context(dataset: DerivedRunData, path: Path, *, snapshot_index: int) -> RunContext:
-    return RunContext(
-        path=Path(path),
-        summary=dict(dataset.summary),
-        metadata=dict(dataset.metadata),
-        fields=("density", "velocity", "temperature_e", "temperature_i", "electron_density", "mean_charge"),
-        diagnostics=(),
-        time_values=np.asarray(dataset.time_s, dtype=np.float64).copy(),
-        static_x_values=np.asarray(dataset.static_x_cm, dtype=np.float64).copy(),
-        zone_region_id=np.asarray(dataset.zone_region_id, dtype=np.int32).copy(),
-        zone_material_index=np.asarray(dataset.zone_material_index, dtype=np.int32).copy(),
-        has_dynamic_radius=dataset.radius_cm is not None,
-        snapshot_index=int(snapshot_index),
-        map_coordinate="moving_radius" if dataset.radius_cm is not None else "static_x",
-        slice_coordinate="zone",
-        selected_region_ids=tuple(int(v) for v in np.unique(np.asarray(dataset.zone_region_id, dtype=np.int32))),
-        selected_material_ids=tuple(int(v) for v in np.unique(np.abs(np.asarray(dataset.zone_material_index, dtype=np.int32)))),
-    )
+    """Kept as a re-export so existing validation call sites keep working."""
+    from helios.services.derived.common import make_run_context as _build
+
+    return _build(dataset, path, snapshot_index=snapshot_index)
 
 
 def uniform_al_dataset(rho_g_cm3: float, te_ev: float, *, zones: int = 12) -> tuple[DerivedRunData, RunContext]:
