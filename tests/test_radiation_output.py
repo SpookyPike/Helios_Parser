@@ -367,6 +367,18 @@ class RadiationHdf5Tests(unittest.TestCase):
             self.assertNotIn("flux", handle)
             self.assertNotIn("n_groups", handle["metadata"])
 
+    def test_a_flag_off_run_with_empty_families_still_says_off(self) -> None:
+        """Container presence is not output. A 12.0 deck with the flag off carries
+        the nine families with a zero dump axis, so the marker must follow the
+        dump count rather than the group, or it claims radiation that is not there.
+        """
+        with h5py.File(self.empty_h5) as handle:
+            self.assertEqual(handle["metadata/radiation_output"][()].decode(), "off")
+            self.assertEqual(int(handle["metadata/n_freq_snapshots"][()]), 0)
+            # The families stay, so a consumer reads "empty" rather than "missing".
+            self.assertIn("radiation", handle)
+            self.assertEqual(handle["radiation/energy_density"].shape[0], 0)
+
     def test_the_published_file_still_satisfies_the_reader(self) -> None:
         """The new groups must not break the required-group contract."""
         with h5py.File(self.tiny_h5) as handle:

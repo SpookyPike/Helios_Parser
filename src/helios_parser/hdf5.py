@@ -1206,17 +1206,28 @@ def _write_hdf5_from_exodus(
         # file carries no footer, so the state is reported as what it is: the
         # container itself is complete, and no completion marker was read.
         metadata_group = handle.create_group("metadata")
-        radiation_metadata = (
-            (("radiation_output", "on"),
-             ("n_groups", run.radiation.n_groups),
-             ("n_freq_snapshots", run.radiation.n_freq_snapshots),
-             ("n_boundaries", run.radiation.n_boundaries))
-            if run.radiation is not None
-            else (("radiation_output", "off"),)
-        )
+        # "on" means the run actually produced dumps.  A 12.0 deck with the flag
+        # off still carries the nine families, but with a zero dump axis, so
+        # container presence alone would claim output that does not exist.  The
+        # empty families stay written (a consumer reads "empty", not "missing");
+        # the marker is what has to stay truthful.
+        has_radiation = run.radiation is not None
+        produced_dumps = bool(has_radiation and int(run.radiation.n_freq_snapshots) > 0)
+        if produced_dumps:
+            radiation_metadata = (
+                ("radiation_output", "on"),
+                ("n_groups", run.radiation.n_groups),
+                ("n_freq_snapshots", run.radiation.n_freq_snapshots),
+                ("n_boundaries", run.radiation.n_boundaries),
+            )
+        elif has_radiation:
+            # The families exist but hold no dump: flag-off on a 12.0 deck.
+            radiation_metadata = (("radiation_output", "off"), ("n_freq_snapshots", 0))
+        else:
+            radiation_metadata = (("radiation_output", "off"),)
         # The Exodus reader resolves the region count from the interface index,
         # which is better than the placeholder single region used before.
-        n_regions = run.radiation.n_regions if run.radiation is not None else 1
+        n_regions = run.radiation.n_regions if has_radiation else 1
         for name, value in (*radiation_metadata, *(
             ("n_snapshots", run.n_snapshots),
             ("n_zones", run.n_zones),
