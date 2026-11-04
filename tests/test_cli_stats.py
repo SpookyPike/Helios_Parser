@@ -124,6 +124,25 @@ class FlatZoneGuardTests(unittest.TestCase):
         self.assertEqual(peaks[0], 2.0)
 
 
+class UnitTableTests(unittest.TestCase):
+    """A wrong unit is worse than an absent one, so the table is asserted directly."""
+
+    def test_photon_energies_are_ev_and_group_counts_are_dimensionless(self) -> None:
+        from helios_diag.units import unit_for
+
+        self.assertEqual(unit_for("radiative_transfer/frequency_gridding/max_photon_energy"), ("eV", "table"))
+        self.assertEqual(unit_for("radiative_transfer/frequency_gridding/min_photon_energy"), ("eV", "table"))
+        # A prefix rule over the whole gridding section used to label these eV.
+        self.assertEqual(unit_for("radiative_transfer/frequency_gridding/number_of_groups"), ("1", "table"))
+        self.assertEqual(unit_for("radiative_transfer/frequency_gridding/section"), ("1", "table"))
+
+    def test_an_ungrounded_parameter_gets_no_unit(self) -> None:
+        from helios_diag.units import unit_for
+
+        self.assertEqual(unit_for("laser_source/wavelength"), (None, None))
+        self.assertEqual(unit_for("laser_source/power_table/power"), (None, None))
+
+
 class NanHandlingTests(unittest.TestCase):
     def test_accounting_counts_skipped_values(self) -> None:
         import numpy as np

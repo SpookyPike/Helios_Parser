@@ -68,6 +68,17 @@ class DiffTests(unittest.TestCase):
         self.assertIn("fields/density", result.stdout)
         self.assertIn("differs", result.stdout)
 
+    def test_a_unit_change_fails_even_when_every_value_matches(self) -> None:
+        """Identical numbers in different units are not the same result."""
+        changed = Path(self._tmpdir.name) / "reunited.h5"
+        shutil.copy2(self.base, changed)
+        with h5py.File(changed, "r+") as handle:
+            handle["fields/density"].attrs["unit"] = "kg/m3"
+            handle["fields/density"].attrs["units"] = "kg/m3"
+        result = _run("diff", str(self.base), str(changed), "-f", "density")
+        self.assertEqual(result.returncode, 7, result.stderr)
+        self.assertIn("unit_mismatch", result.stdout)
+
     def test_a_shape_mismatch_is_reported_not_raised(self) -> None:
         changed = Path(self._tmpdir.name) / "reshaped.h5"
         shutil.copy2(self.base, changed)
