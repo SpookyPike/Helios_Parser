@@ -101,6 +101,30 @@ class StatsNumericTests(unittest.TestCase):
         self.assertNotIn("p95", result.rows[0])
 
 
+class RegionZoneLabelTests(unittest.TestCase):
+    """The zone column is the mesh index, not the position inside the selection."""
+
+    def test_a_region_selection_keeps_the_real_zone_indices(self) -> None:
+        import tempfile
+        from pathlib import Path as _Path
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = _Path(tmpdir) / "region.h5"
+            write_hdf5(LOG_SAMPLE, path, overwrite=True)
+            handle = HeliosRun(path)
+            try:
+                regions = handle.list_region_ids()
+                if len(regions) < 2:
+                    self.skipTest("the fixture declares a single region")
+                mask = handle.get_region_mask(regions[-1])
+                expected = np.nonzero(mask)[0]
+            finally:
+                handle.close()
+            result = stats_module.run(_args(path=str(path), region=int(regions[-1])))
+            self.assertEqual([row["zone"] for row in result.rows], expected.tolist())
+            self.assertNotEqual(result.rows[0]["zone"], 0, "the selection does not start at zone 0")
+
+
 class AllNanZoneTests(unittest.TestCase):
     """A readable file can hold a zone that is NaN for every snapshot."""
 

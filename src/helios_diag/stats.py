@@ -281,7 +281,10 @@ def run(args: argparse.Namespace) -> envelope.Result:
                     f"{flat_count} zones report no peak time: either flat within tolerance, "
                     "or entirely NaN, where argmax would have said t=0"
                 )
-            column_data["zone"] = list(range(data.shape[1]))
+            # The zone label must be the zone index on the mesh, not the position inside
+            # the selection: with --region, `data` holds only the masked zones.
+            zone_indices = np.nonzero(mask)[0] if mask is not None else np.arange(data.shape[1])
+            column_data["zone"] = zone_indices.tolist()
             column_data["peak_time_s"] = peaks
             request = {
                 "mode": MODE_OVER_ZONES,
