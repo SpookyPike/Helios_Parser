@@ -3,7 +3,7 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `2.0.2`
+- Release: `2.1.0`
 - Release date: `2026-11-04`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
@@ -64,6 +64,27 @@ python -m pip install -e .[desktop]
 python -m helios_app
 ```
 
+## Command line
+
+Two commands, both writing JSON to stdout and logs to stderr. Full reference in
+[docs/cli.md](docs/cli.md); `just` lists the repository recipes.
+
+```bash
+helios_to_hdf5 run.log run.h5 --json          # convert; .log, .bpf and .exo
+helios_diag inspect run.h5                    # the deck setup, the laser, the fields
+helios_diag stats run.h5 -f density           # per zone, with the peak time
+helios_diag query run.h5 -f density --zone 900
+helios_diag diff before.h5 after.h5           # exits 7 when they differ
+helios_diag validate run.h5                   # exits 7 on a failed check
+helios_diag analyse run.h5 --module xrd       # derived modules, no Qt
+```
+
+Every output states its own context: geometry, versions, units and their origin, the
+request that produced the numbers, the NaN accounting, and a note for anything it could
+not determine. A unit is never guessed.
+
+An agent skill ships in [skills/helios-cli](skills/helios-cli/SKILL.md).
+
 ## Documentation
 
 Start with the documentation index:
@@ -87,7 +108,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parser-viewer-v2.0.2.zip`
+- `outputs/release/helios-parser-viewer-v2.1.0.zip`
 
 The bundle includes:
 
@@ -117,11 +138,47 @@ python scripts\build_linux_portable_tarball.py
 
 Expected artifact names:
 
-- `outputs/distributables/helios-parser-viewer-v2.0.2-windows-portable.zip`
-- `outputs/distributables/helios-parser-viewer_2.0.2_all.deb`
-- `outputs/distributables/helios-parser-viewer-v2.0.2-linux-portable.tar.gz`
+- `outputs/distributables/helios-parser-viewer-v2.1.0-windows-portable.zip`
+- `outputs/distributables/helios-parser-viewer_2.1.0_all.deb`
+- `outputs/distributables/helios-parser-viewer-v2.1.0-linux-portable.tar.gz`
 
-The v2.0.2 release provides the source bundle and checksums. The Debian package, Linux portable tarball and Windows portable ZIP are built from the same tree with the commands above and are not attached to this release. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+The v2.1.0 release provides the source bundle and checksums. The Debian package, Linux portable tarball and Windows portable ZIP are built from the same tree with the commands above and are not attached to this release. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+
+## Changelog 2.1.0
+
+The library could already answer questions about a converted run; the command line
+could only convert. This release puts that surface on a command line, with an output
+contract an agent can consume.
+
+On the largest tracked run, 1501 snapshots by 1200 zones, a per-zone statistic takes
+52 ms and reading one field 3 ms. `--version` costs 30 ms because the version constant
+moved out of the package whose `__init__` imports numpy and Qt.
+
+### Command line
+
+- `helios_diag` with `inspect`, `stats`, `query`, `diff`, `validate` and `analyse`. JSON on stdout by default, `--format table|csv` for humans.
+- every output carries the file provenance, the field unit and label with the origin of each, the request, the NaN accounting, and a note for every degradation.
+- `inspect` decodes the deck setup and the laser pulse from `metadata/input_parameters` without reading field data.
+- `stats` reports the time of each zone's maximum and no peak for a flat zone, rather than the t=0 that `argmax` returns.
+- the converter gains exit codes 3 to 6, `--json`, `--progress`, `--quiet`, `--outdir`, and names `.exo` in its help.
+
+### Performance
+
+- quantiles in one numpy call and the non-NaN reduction path when the field holds no NaN: 31.2 ms against 71.0 ms for the per-zone set.
+- `--at` reads one snapshot row rather than the whole field: 9.6 KB instead of 14.4 MB.
+- `--version` and `--help` answer in about 30 ms, against 230 ms before.
+
+### Packaging and agents
+
+- the radiation plotter ships as `helios_plot_radiation`.
+- an agent skill ships in `skills/helios-cli/` with adapters for harnesses without a skill loader; a test asserts every command it names answers `--help`.
+- a `justfile` collects the workflows.
+- the core gate grows from five entries to ten.
+
+### Fixed
+
+- `helios_diag validate` found a defect on its first run: a flag-off 12.0 deck published `radiation_output = on` with `n_freq_snapshots = 0` and every family empty. The marker now follows the dump count.
+- the radiation plotter crashed on a run with flux dumps but an empty spectral axis; it now skips that figure and says why.
 
 ## Changelog 2.0.2
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HELIOS Parse / View Release Notes 2.0.2</title>
+  <title>HELIOS Parse / View Release Notes 2.1.0</title>
   <link rel="stylesheet" href="assets/manual.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>Release Notes</h1>
         <p>
-          HELIOS Parse / View 2.0.2, released 2026-11-04.
+          HELIOS Parse / View 2.1.0, released 2026-11-04.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
       </div>
@@ -27,6 +27,32 @@
   </header>
 
   <main>
+    <section>
+      <h2>Why 2.1.0</h2>
+      <p>
+        The library could already answer questions about a converted run; the command line could only convert.
+        Everything below was reachable through Python and nothing else. This release puts the same surface on a
+        command line, with an output contract an agent can consume without parsing prose.
+      </p>
+      <p>
+        The contract is the point. Every command writes JSON to stdout, logs to stderr, and carries enough context to
+        be read by someone who has never seen the source deck: the geometry, the versions, the units, the coordinate
+        semantics, the accounting, and a note for everything it could not determine. A unit is never guessed. On the
+        largest tracked run a per-zone statistic takes 52 ms and reading one field takes 3 ms, so the diagnostics are
+        cheap enough to run while thinking.
+      </p>
+      <ul>
+        <li><code>helios_diag inspect</code> reports the deck setup, the laser pulse, and every field with its unit and shape, without reading field data</li>
+        <li><code>helios_diag stats</code> gives per-zone or per-snapshot statistics, including the time each zone peaked</li>
+        <li><code>helios_diag query</code> extracts a profile, a time trace, or the snapshot nearest a requested time</li>
+        <li><code>helios_diag diff</code> compares two conversions dataset by dataset and exits 7 when they differ</li>
+        <li><code>helios_diag validate</code> checks a file against the writer contract and exits 7 on a failed check</li>
+        <li><code>helios_diag analyse</code> runs the derived modules without the desktop application</li>
+        <li>the converter gains distinct exit codes, a JSON summary, stage progress, and batch conversion</li>
+        <li>an agent skill ships with the repository, and a test keeps it matching the binary</li>
+      </ul>
+    </section>
+
     <section>
       <h2>Why 2.0.2</h2>
       <p>
@@ -144,6 +170,22 @@
 
     <section>
       <h2>Changelog</h2>
+      <h3>2.1.0</h3>
+      <ul>
+        <li>new <code>helios_diag</code> with <code>inspect</code>, <code>stats</code>, <code>query</code>, <code>diff</code>, <code>validate</code> and <code>analyse</code>; JSON on stdout by default, <code>--format table|csv</code> for humans</li>
+        <li>every output carries the file provenance, the field unit and label with the origin of each, the request that produced the numbers, the NaN accounting, and a note for every degradation; a unit is emitted only where the repository itself declares one</li>
+        <li><code>inspect</code> decodes the deck setup from <code>metadata/input_parameters</code>: laser wavelength, incidence angle in degrees, propagation direction, the power table, the frequency grid and the time controls</li>
+        <li><code>stats</code> reports the time of each zone's maximum, and reports no peak for a zone that is flat rather than the t=0 that <code>argmax</code> would return</li>
+        <li>quantiles go to numpy in one call and the reductions take the non-NaN path when the field holds no NaN: 31.2 ms against 71.0 ms for the per-zone set</li>
+        <li>the converter gains exit codes 3 to 6, <code>--json</code>, <code>--progress</code>, <code>--quiet</code>, <code>--outdir</code> for batch, and names <code>.exo</code> in its help, which it always accepted</li>
+        <li>the version is read from a module that imports neither numpy nor Qt: <code>--version</code> costs 30 ms instead of 230</li>
+        <li><code>HeliosRun.get_file_attributes</code> exposes the root attributes, the only place a modern file records <code>schema_version</code></li>
+        <li>the radiation plotter ships as <code>helios_plot_radiation</code>, tolerates a missing matplotlib with a message, and skips the spectral figure when the spectral axis is empty instead of crashing on it</li>
+        <li><code>helios_diag validate</code> found a real defect on its first run: a flag-off 12.0 deck published <code>radiation_output = on</code> with <code>n_freq_snapshots = 0</code> and every family empty. The marker now follows the dump count</li>
+        <li>an agent skill ships in <code>skills/helios-cli/</code> with adapters for harnesses without a skill loader, and a test asserts every command it names answers <code>--help</code></li>
+        <li>a <code>justfile</code> collects the workflows: the two gates, one entry, lint, the diagnostics, fixtures, performance and the release steps</li>
+        <li>the core gate grows from five entries to ten</li>
+      </ul>
       <h3>2.0.2</h3>
       <ul>
         <li>enabled the HDF5 shuffle filter for <code>--compression lzf</code> through a single <code>_shuffle_for()</code> helper, wired into every site that creates a compressed dataset: field datasets, dynamic coordinates, the streaming coordinate pair, the BPF field builder, and the generic array writer</li>
@@ -293,7 +335,7 @@
         <li>selected demo HDF5 examples under <code>examples/</code></li>
       </ul>
       <p>
-        The 2.0.2 bundle intentionally omits tests, internal audit and validation reports, old release outputs, legacy shadow source files, the vendor XCOM archive, and compiled native payloads. Experimental Transmission/XCOM support remains behind development flags.
+        The 2.1.0 bundle intentionally omits tests, internal audit and validation reports, old release outputs, legacy shadow source files, the vendor XCOM archive, and compiled native payloads. Experimental Transmission/XCOM support remains behind development flags.
       </p>
     </section>
 
@@ -317,7 +359,7 @@
       <ul>
         <li>Author: Dmitrii Bespalov</li>
         <li>Organization: European XFEL</li>
-        <li>Release: 2.0.2</li>
+        <li>Release: 2.1.0</li>
         <li>Date: 2026-11-04</li>
       </ul>
     </section>
