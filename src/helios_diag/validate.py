@@ -11,6 +11,7 @@ layout report ``skip`` with a reason rather than ``fail``.
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 from typing import Any
 
 from . import envelope
@@ -163,7 +164,16 @@ def run(args: argparse.Namespace) -> envelope.Result:
 
     failed = [row for row in rows if row["status"] == "fail"]
     skipped = [row for row in rows if row["status"] == "skip"]
-    file_block, notes = envelope.file_block_for_path(args.path)
+    try:
+        file_block, notes = envelope.file_block_for_path(args.path)
+    except (KeyError, OSError, ValueError) as exc:
+        # The file is broken enough that the reader will not open it. That is
+        # exactly what this command is for, so report it rather than crash.
+        file_block = {"path": str(args.path), "bytes": Path(args.path).stat().st_size}
+        notes = [f"the reader cannot open this file: {exc}"]
+        if not any(row["check"] == "required_entries" for row in rows):
+            rows.insert(0, _row("required_entries", "fail", str(exc)))
+            failed.append(rows[0])
     if failed:
         notes.append(f"{len(failed)} checks failed")
     if skipped:

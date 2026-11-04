@@ -403,6 +403,19 @@
     "test_radiation_output.py": [
       "radiation_tiny_exodus",
       "radiation_stack_exodus"
+    ],
+    "test_cli_contract.py": [
+      "tracked_fe_bpf",
+      "v12_log_prefix"
+    ],
+    "test_cli_stats.py": [
+      "v12_log_prefix"
+    ],
+    "test_cli_self_description.py": [
+      "v12_log_prefix"
+    ],
+    "test_cli_diff_validate.py": [
+      "v12_log_prefix"
     ]
   },
   "entry_prefix_requirements": {
