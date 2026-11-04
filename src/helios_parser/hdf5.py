@@ -197,7 +197,20 @@ def _write_array_dataset(
     if array.dtype.kind in {"O", "U"}:
         dataset = group.create_dataset(name, data=array.astype(STRING_DTYPE), dtype=STRING_DTYPE)
     else:
-        dataset = group.create_dataset(name, data=array, compression=compression, chunks=chunks)
+        # HDF5 requires every chunk dimension to be >= 1 and <= the data extent,
+        # so a dataset with a zero axis cannot be chunked at all: the time-major
+        # helpers return an extent of 1 for it and create_dataset then refuses
+        # with "(1, 251) is not compatible with (0, 251)".  A run without
+        # frequency-resolved radiation output parses to exactly that, so write
+        # such a dataset contiguous and keep the axis, which still tells a
+        # consumer that the family is empty rather than missing.
+        empty = any(dim == 0 for dim in array.shape)
+        dataset = group.create_dataset(
+            name,
+            data=array,
+            compression=None if empty else compression,
+            chunks=None if empty else chunks,
+        )
     _set_unit_attrs(dataset, unit)
 
 

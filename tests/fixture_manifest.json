@@ -284,6 +284,26 @@
       "sha256": "8fb47e344983f9475d45d5b518a0e8a84e92fbc0eac89d13d273355917a16469",
       "format": "HELIOS RHC deck",
       "provenance": "the deck that produced radiation_long_exodus; the provenance record that makes the local-only fixture reproducible."
+    },
+    "radiation_off_exodus": {
+      "path": "tests/fixtures/radiation/zm0_nofreqrad.exo",
+      "size_bytes": 1061310,
+      "sha256": "6486f79f5f2c1aa7a7e78eb932accf75801d2961749f77c431ba3480107b0110",
+      "format": "HELIOS EXODUS II (HDF5/NetCDF-4), Write freq-dependent radiation output = 0",
+      "dimensions": {
+        "zones": 300,
+        "snapshots": 2,
+        "groups": 250,
+        "regions": 1
+      },
+      "provenance": "the default deck, i.e. the radiation output OFF. Every run without the flag carries nine empty radiation families (0, n_zones, 250) and (0,), and the writer created them chunked with a chunk extent of 1, which HDF5 refuses: '(1, 251) is not compatible with (0, 251)'. Real 12.0.0 output from run _probe_zoning/zm0 on Maxwell, downloaded 2026-11-03."
+    },
+    "radiation_off_deck": {
+      "path": "tests/fixtures/radiation/zm0_nofreqrad.rhc",
+      "size_bytes": 41995,
+      "sha256": "8315112866608d7b204b4cb2c5428facca85ea2fd0a9a1de6adcd17fa2372868",
+      "format": "HELIOS RHC deck",
+      "provenance": "the deck that produced radiation_off_exodus; Write freq-dependent radiation output = 0, Plot file type = 0."
     }
   },
   "entry_requirements": {

@@ -74,6 +74,11 @@ TINY_EXO = RADIATION / "cu_freqrad_tiny_t0p02ns.exo"
 STACK_EXO = RADIATION / "stack_freqrad_t0p2ns.exo"
 LONG_EXO = RADIATION / "cu_freqrad_t0p3ns.exo"
 NO_RADIATION_EXO = FIXTURES / "v12" / "cu_v12_slice.exo"
+# A run from the DEFAULT deck, i.e. the flag off, that still carries the empty
+# radiation families.  `cu_v12_slice.exo` above does not: it was cut from a run
+# whose radiation group was already absent, so it cannot witness the writer bug
+# that refused every flag-off run with "(1, 251) is not compatible with (0, 251)".
+OFF_EXO = RADIATION / "zm0_nofreqrad.exo"
 
 ENERGY_DENSITY_DATASET = "Freq. resolved radiation energy density for nodes [J per (cm3.group)]"
 
@@ -263,6 +268,28 @@ class RadiationHdf5Tests(unittest.TestCase):
         directory = Path(cls._directory.name)
         cls.tiny_h5 = _convert(TINY_EXO, directory)
         cls.off_h5 = _convert(NO_RADIATION_EXO, directory)
+        cls.empty_h5 = _convert(OFF_EXO, directory)
+
+    def test_a_flag_off_run_writes_its_empty_families_contiguously(self) -> None:
+        """HDF5 cannot chunk a zero-extent dataset, so the writer must not try.
+
+        Every default deck carries nine empty radiation families, (0, n_zones,
+        250) and (0,).  Chunking them with the time-major extent of 1 raised
+        "Chunk shape must not be greater than data shape in any dimension.
+        (1, 251) is not compatible with (0, 251)", so no flag-off run could be
+        parsed at all.  The axes are kept, so a consumer still learns that the
+        family is empty rather than missing.
+        """
+        with h5py.File(self.empty_h5) as handle:
+            self.assertEqual(handle["time/time"].shape, (2,))
+            self.assertEqual(handle["fields/density"].shape, (2, 300))
+            for name in ("time", "cycle", "hydro_index", "group_edges", "group_centre",
+                         "energy_density", "heating_rate", "cooling_rate",
+                         "rosseland_opacity"):
+                dataset = handle[f"radiation/{name}"]
+                self.assertEqual(dataset.shape[0], 0, name)
+                self.assertIsNone(dataset.chunks, f"{name} is chunked at zero extent")
+                self.assertIsNone(dataset.compression, f"{name} is compressed at zero extent")
 
     @classmethod
     def tearDownClass(cls) -> None:
