@@ -32,7 +32,17 @@ if TYPE_CHECKING:
 
 
 def doppler_width_fraction(temperature_ev: float, ion_mass_mu: float) -> float:
-    """NRL 2023 p. 58 Eq. (25), fractional Doppler width ``Delta(lambda) / lambda``."""
+    """NRL 2023 p. 58 Eq. (25), fractional Doppler width ``Delta(lambda) / lambda``.
+
+    This is the FULL WIDTH AT HALF MAXIMUM, not a 1/e half-width or a Gaussian
+    sigma.  The NRL coefficient is pinned by its companion formula: 7.7e-5 equals
+    ``2 sqrt(ln 2) sqrt(2 k T / m) / c`` for T = 1 eV and mu = 1, and NRL Eq. (26)
+    for the line-centre optical depth is the same expression halved, which is the
+    consistency check that the width there is the FWHM.  Dividing this by 1.665
+    gives the 1/e half-width and by 2.355 the Gaussian sigma, so quoting it as
+    "the thermal width" without the FWHM qualifier is off by a constant for a
+    reader who assumes sigma.
+    """
 
     if not math.isfinite(float(temperature_ev)) or not math.isfinite(float(ion_mass_mu)) or temperature_ev < 0.0 or ion_mass_mu <= 0.0:
         return float("nan")
@@ -262,12 +272,12 @@ def evaluate_spectroscopy(
             ),
             DerivedPlotBundle(
                 key="thermal_width",
-                title="Thermal broadening vs time",
+                title="Thermal broadening vs time (FWHM)",
                 x_label="Time [ns]",
-                y_label="Thermal width [nm]",
+                y_label="Thermal width (FWHM) [nm]",
                 x_values=time_ns,
                 y_series=(width_series,),
-                curve_names=("Thermal width",),
+                curve_names=("Thermal width (FWHM)",),
             ),
         )
 

@@ -7,17 +7,19 @@ integration convention is not obvious and getting it wrong is silent, so it live
 here once with the measurement that fixes it.
 
 THE CONVENTION.  Two per-group families in the same file use opposite
-normalizations, and both are labelled "per eV" in the container:
+normalizations, and the vendor's dataset names call both "per eV":
 
 - `FdIntgPowerLoss*` is a density.  `sum(FdIntgPowerLossRmin * dE)` reproduces
   `FreqIntgRadEnLossRmin` to 1e-16 relative on all three fixtures, every dump;
   trapezoid weights are off by 1.5 % on the Rmin boundary, and a plain sum is off
   by 1e15.  `integrate_over_groups` uses the rectangle rule for this family.
 - `net_interface` is a bin content.  `sum(net_interface[:, 0, :])` reproduces
-  `-TotalFluxRmin` exactly, while weighting by the group width is off by 1e4.  Sum
-  over groups, do not integrate.
+  `-TotalFluxRmin` exactly, while weighting by the group width is off by a factor
+  of 13 to 2.8e3 depending on the dump.  Sum over groups, do not integrate.
 
-The writer records which is which in a `normalization` dataset attribute.
+The writer records which is which in a `normalization` dataset attribute, and the
+`unit` attribute follows that measurement (`J/(cm2 s)/group` for a bin content)
+rather than the vendor's "per eV" name.
 
 THE TWO AXES.  The spectra here are on the `flux/` group, i.e. the `time_whole`
 axis.  The node-centred spectral field is on `radiation/`, whose axis is
@@ -207,7 +209,11 @@ def evaluate_radiation(
             key=f"spectrum_{row}",
             title=f"Boundary spectra at {float(flux_time[row]):.4g} s",
             x_label="photon energy [eV]",
-            y_label="net flux [J/(cm2 s eV)]",
+            # `net_interface` is a per-group bin content: the group sum, not a
+            # dE-weighted integral, reproduces TotalFluxRmin/Rmax.  Labelling it
+            # per-eV would invite an integration that overstates the total by
+            # the group width.
+            y_label="net flux per group [J/(cm2 s)]",
             x_values=np.sqrt(group_edges[row, :-1] * group_edges[row, 1:]),
             y_series=(rmin_spectrum[row], rmax_spectrum[row]),
             curve_names=("Rmin", "Rmax"),

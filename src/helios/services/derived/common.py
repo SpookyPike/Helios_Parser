@@ -246,6 +246,53 @@ def _finite_allclose(left: np.ndarray, right: np.ndarray, *, rtol: float, atol: 
     return bool(np.allclose(lhs[valid], rhs[valid], rtol=rtol, atol=atol))
 
 
+def _finite_allclose_residual(
+    residual: np.ndarray,
+    scale: np.ndarray,
+    *,
+    rtol: float,
+    atol: float,
+) -> tuple[bool | None, float]:
+    """Compare a *cancelling* difference against the size of the terms it cancels.
+
+    ``heating - cooling`` reproduces ``radiation_net_heating`` only to the
+    precision the log prints, and in the normal case the two large terms cancel
+    to a small residual: on `Cu_0166_stabilized.h5` heating and cooling are both
+    1.2e10 J/g/s while the net is 10.8 J/g/s.  Comparing that residual against
+    itself (``allclose(net, heating - cooling)``) therefore reports a mismatch on
+    every real run for a reason that is not a physics defect.  Normalizing by the
+    magnitude of the cancelled terms is the test that means something.
+
+    Returns the verdict and the worst relative residual so a caller can say how
+    much of the field disagrees instead of only that something does.
+    """
+
+    values = np.asarray(residual, dtype=np.float64)
+    reference = np.asarray(scale, dtype=np.float64)
+    valid = np.isfinite(values) & np.isfinite(reference)
+    if not np.any(valid):
+        return None, float("nan")
+    values = values[valid]
+    reference = reference[valid]
+    tolerance = np.maximum(float(atol), float(rtol) * reference)
+    worst = float(np.max(np.abs(values) / tolerance)) if values.size else float("nan")
+    return bool(np.all(np.abs(values) <= tolerance)), worst
+
+
+def _disagreeing_fraction(left: np.ndarray, right: np.ndarray, *, rtol: float, atol: float) -> float:
+    """Share of samples outside tolerance, so a note can name the size of a mismatch."""
+
+    lhs = np.asarray(left, dtype=np.float64)
+    rhs = np.asarray(right, dtype=np.float64)
+    valid = np.isfinite(lhs) & np.isfinite(rhs)
+    if not np.any(valid):
+        return float("nan")
+    lhs = lhs[valid]
+    rhs = rhs[valid]
+    tolerance = np.maximum(float(atol), float(rtol) * np.abs(rhs))
+    return float(np.count_nonzero(np.abs(lhs - rhs) > tolerance) / lhs.size)
+
+
 def _specific_kinetic_energy_from_velocity_j_g(velocity_cm_s: np.ndarray) -> np.ndarray:
     velocity = np.asarray(velocity_cm_s, dtype=np.float64)
     return 0.5 * np.square(velocity) * 1.0e-7
@@ -293,28 +340,51 @@ def _build_field_capabilities(
     radiation_net = optional_field_values.get("radiation_net_heating")
     if radiation_heating is not None and radiation_cooling is not None and radiation_net is not None:
         radiation_sink = optional_field_values.get("radiation_sink")
-        reconstructed_net = np.asarray(radiation_heating, dtype=np.float64) - np.asarray(radiation_cooling, dtype=np.float64)
+        heating = np.asarray(radiation_heating, dtype=np.float64)
+        cooling = np.asarray(radiation_cooling, dtype=np.float64)
+        reconstructed_net = heating - cooling
         if radiation_sink is not None:
             reconstructed_net = reconstructed_net - np.asarray(radiation_sink, dtype=np.float64)
-        radiation_net_matches = _finite_allclose(
-            radiation_net,
-            reconstructed_net,
-            rtol=1.0e-6,
+        term_scale = np.maximum(np.abs(heating), np.abs(cooling))
+        if radiation_sink is not None:
+            term_scale = np.maximum(term_scale, np.abs(np.asarray(radiation_sink, dtype=np.float64)))
+        radiation_net_matches, worst_ratio = _finite_allclose_residual(
+            np.asarray(radiation_net, dtype=np.float64) - reconstructed_net,
+            term_scale,
+            # The log prints four significant digits, so a difference of two
+            # large terms carries an absolute error of about 1e-3 of the terms.
+            rtol=2.0e-3,
             atol=1.0e-9,
         )
         if radiation_net_matches is False:
-            notes.append("radiation_net_heating differs from radiation_heating - radiation_cooling - radiation_sink")
+            notes.append(
+                "radiation_net_heating differs from radiation_heating - radiation_cooling - radiation_sink "
+                f"by up to {worst_ratio:.3g}x the printing precision of the cancelled terms "
+                "(heating and cooling cancel, so this comparison is only meaningful relative to their magnitude)"
+            )
 
     kinetic_energy = optional_field_values.get("kinetic_energy")
     if kinetic_energy is not None:
+        kinetic_reference = _specific_kinetic_energy_from_velocity_j_g(velocity)
         kinetic_matches = _finite_allclose(
             kinetic_energy,
-            _specific_kinetic_energy_from_velocity_j_g(velocity),
-            rtol=1.0e-5,
+            kinetic_reference,
+            # `kinetic_energy` and `velocity` are two independently printed log
+            # columns, not one derived from the other, so they only agree to the
+            # vendor's own consistency: measured 4.5e-4 relative on
+            # Cu_0166, 2.6e-2 on 10ns+100Al+60CH+6.1TW and 1.3e-2 on
+            # 5Fe+4.9TW+light.  A 1e-5 tolerance reported every real run as
+            # inconsistent.
+            rtol=5.0e-2,
             atol=1.0e-10,
         )
         if kinetic_matches is False:
-            notes.append("kinetic_energy is not consistent with 0.5*v^2 in J/g within tolerance")
+            disagreeing = _disagreeing_fraction(kinetic_energy, kinetic_reference, rtol=5.0e-2, atol=1.0e-10)
+            notes.append(
+                "kinetic_energy is not consistent with 0.5*v^2 in J/g within 5% "
+                f"({disagreeing:.3%} of cells disagree; both are printed log columns, so check "
+                "whether the disagreement is confined to boundary zones before reading it as a defect)"
+            )
 
     consistency = DerivedFieldConsistency(
         total_pressure_matches_components=total_pressure_matches,
