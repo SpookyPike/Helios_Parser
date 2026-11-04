@@ -106,7 +106,12 @@ The derived analysis, headless.
 ```bash
 helios_diag analyse run.h5 --module xrd
 helios_diag analyse run.h5 --module shock,preheat --snapshot 1139
+helios_diag analyse run.h5 --module plasmon --include-experimental   # hidden by default
 ```
+
+`plasmon` and `transmission` are hidden in the production backend. Without
+`--include-experimental` the command exits 2 and tells you; it never returns a payload of
+nulls pretending to be a result.
 
 ## Reading the output
 

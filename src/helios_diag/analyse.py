@@ -32,6 +32,11 @@ MODULE_OPTIONAL_FIELDS: dict[str, tuple[str, ...]] = {
 
 ALL_MODULES = tuple(MODULE_OPTIONAL_FIELDS)
 
+# Modules the derived backend hides unless HELIOS_DEV_MODE or
+# HELIOS_ENABLE_EXPERIMENTAL is set (helios.feature_flags). They are reachable from
+# here with --include-experimental rather than by exporting a variable first.
+EXPERIMENTAL_MODULES = frozenset({"plasmon", "transmission"})
+
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("path", help="Converted HDF5 run.")
@@ -43,6 +48,14 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         help=f"Module to run. May be repeated. Known: {', '.join(ALL_MODULES)}.",
     )
     parser.add_argument("--snapshot", type=int, default=None, help="Snapshot index. Default: the last snapshot.")
+    parser.add_argument(
+        "--include-experimental",
+        action="store_true",
+        help=(
+            "Also run the modules the backend hides by default (plasmon, transmission). "
+            "Equivalent to setting HELIOS_ENABLE_EXPERIMENTAL=1 for this invocation."
+        ),
+    )
     parser.add_argument(
         "--max-array",
         type=int,
@@ -84,7 +97,20 @@ def run(args: argparse.Namespace) -> envelope.Result:
     requested = [name for name in args.module if name]
     unknown = [name for name in requested if name not in MODULE_OPTIONAL_FIELDS]
     if unknown:
-        raise ValueError(f"unknown module(s): {', '.join(unknown)}; known: {', '.join(ALL_MODULES)}")
+        raise envelope.UsageError(f"unknown module(s): {', '.join(unknown)}; known: {', '.join(ALL_MODULES)}")
+
+    gated = sorted(set(requested) & EXPERIMENTAL_MODULES)
+    if gated and not args.include_experimental:
+        raise envelope.UsageError(
+            f"{', '.join(gated)} is hidden in the production backend; "
+            "pass --include-experimental (or set HELIOS_ENABLE_EXPERIMENTAL=1) to run it"
+        )
+    if args.include_experimental:
+        # The backend reads the flag at call time, so this is enough and it does not
+        # leak past this process.
+        import os  # local
+
+        os.environ.setdefault("HELIOS_ENABLE_EXPERIMENTAL", "1")
 
     optional: set[str] = set()
     for name in requested:
@@ -112,6 +138,10 @@ def run(args: argparse.Namespace) -> envelope.Result:
     notes.append(
         "the six core fields are always loaded; --module bounds only the optional set"
     )
+    if gated:
+        notes.append(
+            f"ran {', '.join(gated)} with the experimental backend enabled by --include-experimental"
+        )
     modules = {
         name: _summarize_arrays(dataclasses.asdict(value) if dataclasses.is_dataclass(value) else value, args.max_array)
         for name, value in sorted(dataclasses.asdict(result).items())

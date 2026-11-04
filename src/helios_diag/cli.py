@@ -15,6 +15,8 @@ import sys
 
 from helios_release import RELEASE_VERSION
 
+from .envelope import UsageError
+
 EXIT_OK = 0
 EXIT_USAGE = 2
 EXIT_UNREADABLE = 3
@@ -81,6 +83,24 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("helios_diag: interrupted", file=sys.stderr)
         return EXIT_INTERRUPTED
+    except UsageError as exc:
+        # A bad request is not an unreadable file, and a caller branches on the code.
+        print(f"helios_diag: {exc}", file=sys.stderr)
+        if args.format == "json":
+            print(
+                json.dumps(
+                    {
+                        "command": args.command,
+                        "tool_version": RELEASE_VERSION,
+                        "path": path,
+                        "status": "error",
+                        "error_kind": "usage",
+                        "error": str(exc),
+                    }
+                ),
+                flush=True,
+            )
+        return EXIT_USAGE
     except (FileNotFoundError, OSError, ValueError) as exc:
         print(f"helios_diag: {_describe(exc, path)}", file=sys.stderr)
         if args.format == "json":
