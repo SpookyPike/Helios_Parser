@@ -115,8 +115,11 @@ def emit(
 
     handle = sys.stdout if out is None else open(out, "w", encoding="utf-8", newline="")
     try:
-        for line in _preamble(payload):
-            handle.write(line + "\n")
+        # A CSV file is data: a '#' preamble would break every naive reader, so
+        # the context lines belong to the table format only.
+        if fmt == "table":
+            for line in _preamble(payload):
+                handle.write(line + "\n")
         if rows is not None:
             if fmt == "csv":
                 _csv(rows, columns, handle)
