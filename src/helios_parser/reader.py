@@ -145,6 +145,7 @@ class HeliosRun:
             self._diagnostic_datasets = self._index_diagnostics(self._groups["diagnostics"])
             self._field_metadata_group = self._handle.get("field_metadata")
         self._metadata_cache: dict[str, Any] | None = None
+        self._file_attrs_cache: dict[str, Any] | None = None
         self._regions_cache: dict[str, Any] | None = None
         self._materials_cache: dict[str, Any] | None = None
         self._coordinate_model_cache: dict[str, Any] | None = None
@@ -877,6 +878,18 @@ class HeliosRun:
         if self._metadata_cache is None:
             self._metadata_cache = _read_group(self._groups["metadata"])
         return self._metadata_cache
+
+    def get_file_attributes(self) -> dict[str, Any]:
+        """Return the file-level attributes: format, geometry, versions, source.
+
+        These live on the root group rather than in ``metadata/``, and they are the
+        only place a modern file records ``schema_version``. A pre-2.0 file carries
+        a subset, so callers must treat every key as optional.
+        """
+
+        if self._file_attrs_cache is None:
+            self._file_attrs_cache = {key: _decode_attr(value) for key, value in self._handle.attrs.items()}
+        return self._file_attrs_cache
 
     def get_region_mask(self, region_id: int) -> np.ndarray:
         if self._zone_region_ids is None:
