@@ -60,6 +60,34 @@ def _set_unit_attrs(dataset: h5py.Dataset, unit: str) -> None:
     dataset.attrs["units"] = unit
 
 
+# HELIOS prints mass per zone with a geometry placeholder that was never
+# substituted: the log header reads `Total Mass (g/cm**X)`.  For a 1D run the mass
+# of a zone is rho*dx*r^(d-1), so the exponent follows the geometry.  Measured:
+# `zone_mass/(density*zone_width)` is 1.000 on every planar conversion and equals
+# the zone radius on the cylindrical one.
+_GEOMETRY_MASS_EXPONENT = {"PLANAR": 2, "CYLINDRICAL": 1, "SPHERICAL": 0}
+_MASS_UNIT_BY_EXPONENT = {2: "g/cm2", 1: "g/cm", 0: "g"}
+
+
+def _resolve_geometry_unit(unit: str, geometry: object) -> str:
+    """Replace the literal ``g/cm**X`` placeholder with the geometry's real unit.
+
+    An unknown geometry keeps the placeholder: a wrong unit is worse than an
+    obviously unresolved one.
+    """
+
+    if str(unit) != "g/cm**X":
+        return unit
+    exponent = _GEOMETRY_MASS_EXPONENT.get(str(geometry or "").strip().upper())
+    if exponent is None:
+        return unit
+    return _MASS_UNIT_BY_EXPONENT[exponent]
+
+
+def _units_with_geometry(units: dict[str, str], geometry: object) -> dict[str, str]:
+    return {name: _resolve_geometry_unit(unit, geometry) for name, unit in units.items()}
+
+
 def _json_attr(value: Any) -> str:
     return json.dumps(value, separators=(",", ":"))
 
@@ -310,7 +338,11 @@ def _input_parameter_unit(path: tuple[str, ...]) -> str:
         ("radiative_transfer", "frequency_gridding", "max_photon_energy"): "eV",
         ("laser_source", "wavelength"): "microns",
         ("laser_source", "power_table", "time"): "s",
-        ("laser_source", "power_table", "power"): "TW",
+        # The log column header says "Laser power (TW)" but the printed values are
+        # watts: `25Cu+9.33TW.log` reads 9.3300E+12 under that header, and
+        # `5Fe+4.9TW+light.log` reads 4.9000E+12. Declaring TW here would put a
+        # 1e12 error on the one number every drive calculation starts from.
+        ("laser_source", "power_table", "power"): "W",
         ("time_control", "max_simulation_time"): "s",
         ("time_control", "initial_time_step"): "s",
         ("time_control", "min_time_step"): "s",
@@ -520,9 +552,12 @@ def _write_log_header_groups(
 ) -> None:
     coordinate_model = dict(header.metadata.get("coordinate_model", {})) if isinstance(header.metadata.get("coordinate_model", {}), dict) else {}
     coordinate_name = str(coordinate_model.get("coordinate_name", "x"))
+    geometry = header.metadata.get("geometry")
+    grid_units = _units_with_geometry(header.grid_units, geometry)
+    region_units = _units_with_geometry(header.region_units, geometry)
     grid_group = handle.create_group("grid")
     for name, values in header.grid.items():
-        _write_array_dataset(grid_group, name, np.asarray(values), header.grid_units.get(name, ""), compression=compression)
+        _write_array_dataset(grid_group, name, np.asarray(values), grid_units.get(name, ""), compression=compression)
     for dataset_name, location, dynamic, legacy_alias, role in (
         ("coordinate_center", "center", False, False, "coordinate"),
         ("coordinate_edge", "edge", False, False, "coordinate"),
@@ -540,9 +575,9 @@ def _write_log_header_groups(
             )
     regions_group = handle.create_group("regions")
     for name, values in header.regions.items():
-        _write_array_dataset(regions_group, name, np.asarray(values), header.region_units.get(name, ""), compression=compression)
+        _write_array_dataset(regions_group, name, np.asarray(values), region_units.get(name, ""), compression=compression)
     if header.metadata.get("total_mass") is not None:
-        _write_scalar_dataset(regions_group, "total_mass", header.metadata["total_mass"], "g/cm**X")
+        _write_scalar_dataset(regions_group, "total_mass", header.metadata["total_mass"], _resolve_geometry_unit("g/cm**X", geometry))
     materials_group = handle.create_group("materials")
     for name, values in header.materials.items():
         _write_array_dataset(materials_group, name, np.asarray(values), header.material_units.get(name, ""), compression=compression)
@@ -1147,7 +1182,16 @@ def _write_hdf5_from_exodus(
         _write_array_dataset(grid_group, "zone_region_id", np.ones(run.n_zones, dtype=np.int32), "", compression=None)
         _write_array_dataset(grid_group, "zone_material_index", np.ones(run.n_zones, dtype=np.int32), "", compression=None)
         if run.zone_mass_g is not None:
-            _write_array_dataset(grid_group, "zone_mass", np.asarray(run.zone_mass_g[0], dtype=np.float64), "g", compression=compression)
+            # Same geometry substitution as the log path: the vendor's zone mass is
+            # rho*dx per unit area for a planar run, so a bare "g" overstates it by
+            # the cross-section. Measured: zone_mass/(density*zone_width) == 1.0.
+            _write_array_dataset(
+                grid_group,
+                "zone_mass",
+                np.asarray(run.zone_mass_g[0], dtype=np.float64),
+                _resolve_geometry_unit("g/cm**X", run.geometry),
+                compression=compression,
+            )
 
         regions_group = handle.create_group("regions")
         _write_array_dataset(regions_group, "region_index", np.asarray([1], dtype=np.int32), "", compression=None)
@@ -1330,9 +1374,12 @@ def _write_hdf5_unpublished(
         handle.attrs["format"] = "HELIOS log converted to HDF5"
         handle.attrs["schema_version"] = H5D_SCHEMA_VERSION
 
+        geometry = header.metadata.get("geometry")
+        grid_units = _units_with_geometry(header.grid_units, geometry)
+        region_units = _units_with_geometry(header.region_units, geometry)
         grid_group = handle.create_group("grid")
         for name, values in header.grid.items():
-            _write_array_dataset(grid_group, name, np.asarray(values), header.grid_units.get(name, ""), compression=compression)
+            _write_array_dataset(grid_group, name, np.asarray(values), grid_units.get(name, ""), compression=compression)
         for dataset_name, location, dynamic, legacy_alias, role in (
             ("coordinate_center", "center", False, False, "coordinate"),
             ("coordinate_edge", "edge", False, False, "coordinate"),
@@ -1351,9 +1398,9 @@ def _write_hdf5_unpublished(
 
         regions_group = handle.create_group("regions")
         for name, values in header.regions.items():
-            _write_array_dataset(regions_group, name, np.asarray(values), header.region_units.get(name, ""), compression=compression)
+            _write_array_dataset(regions_group, name, np.asarray(values), region_units.get(name, ""), compression=compression)
         if header.metadata.get("total_mass") is not None:
-            _write_scalar_dataset(regions_group, "total_mass", header.metadata["total_mass"], "g/cm**X")
+            _write_scalar_dataset(regions_group, "total_mass", header.metadata["total_mass"], _resolve_geometry_unit("g/cm**X", geometry))
 
         materials_group = handle.create_group("materials")
         for name, values in header.materials.items():
