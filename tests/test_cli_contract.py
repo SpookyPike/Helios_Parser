@@ -131,6 +131,23 @@ class DiagContractTests(unittest.TestCase):
         self.assertEqual(payload["command"], "stats")
         self.assertEqual(len(payload["rows"]), 300)
 
+    def test_an_experimental_module_needs_the_flag_and_is_a_usage_error_without_it(self) -> None:
+        """The backend hides plasmon and transmission; the CLI must say so and exit 2
+        rather than report the file as unreadable."""
+        result = _run("helios_diag", "analyse", str(self.run_h5), "--module", "plasmon")
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("--include-experimental", result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["error_kind"], "usage")
+
+    def test_the_experimental_flag_actually_runs_the_module(self) -> None:
+        result = _run("helios_diag", "analyse", str(self.run_h5), "--module", "plasmon", "--include-experimental")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        plasmon = payload["result"]["plasmon"]
+        self.assertNotEqual(plasmon.get("regime_label"), "disabled")
+        self.assertTrue(any("experimental" in note for note in payload["notes"]))
+
     def test_the_headless_path_never_imports_qt(self) -> None:
         """A diagnostics run on a compute node must not need a display."""
         probe = (

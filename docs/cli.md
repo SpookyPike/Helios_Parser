@@ -120,6 +120,17 @@ Known modules: `shock`, `wavefront`, `preheat`, `xrd`, `spectroscopy`, `plasmon`
 `transmission`. Arrays larger than `--max-array` elements are summarized rather than
 dumped.
 
+`plasmon` and `transmission` are hidden in the production backend. Asking for one without
+`--include-experimental` exits 2 and says so, rather than returning a payload of nulls.
+The flag enables them for that invocation only:
+
+```bash
+helios_diag analyse run.h5 --module plasmon --include-experimental
+```
+
+`radiation` is production and needs no flag; it reports "this run carries no radiation
+output" when the deck left the flag off.
+
 One limit, stated in the output too: the loader always reads the six core fields, so
 `--module` bounds the optional set rather than the core.
 

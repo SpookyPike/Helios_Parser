@@ -25,8 +25,13 @@ from helios_release import RELEASE_VERSION
 _INFERRED_STATUS = "legacy"
 
 EXIT_OK = 0
+EXIT_USAGE = 2
 EXIT_UNREADABLE = 3
 EXIT_ISSUES = 7
+
+
+class UsageError(ValueError):
+    """A request the CLI cannot honour, as opposed to a file it cannot read."""
 
 
 class Result(NamedTuple):
