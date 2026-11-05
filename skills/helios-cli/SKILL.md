@@ -1,12 +1,16 @@
 ---
 name: helios-cli
-description: Drive the HELIOS Parse / View command line to convert HELIOS radiation-hydrodynamics output and to run quick diagnostics on it. Use when asked to convert a HELIOS .log, .bpf or .exo file to HDF5; to inspect what simulation a converted run holds; to get per-zone or per-snapshot statistics such as mean, percentiles or peak time for a field; to extract a profile or a time trace; to compare two conversions; to check a converted file; or to run the derived analysis (shock, wavefront, preheat, XRD, spectroscopy, plasmon, transmission) without the desktop application. Triggers include "inspect a HELIOS run", "zone statistics", "compare two conversions", "is this HDF5 file valid", "convert this deck".
+description: Drive the HELIOS Parse / View command line to convert HELIOS radiation-hydrodynamics output and to run quick diagnostics on it. Use when asked to convert a HELIOS .log, .bpf or .exo file to HDF5; to inspect what simulation a run holds, converted or still raw; to get per-zone or per-snapshot statistics such as mean, percentiles or peak time for a field; to extract a profile or a time trace; to compare two conversions; to check a converted file; or to run the derived analysis (shock, wavefront, preheat, XRD, spectroscopy, plasmon, transmission) without the desktop application. Triggers include "inspect a HELIOS run", "zone statistics", "compare two conversions", "is this HDF5 file valid", "convert this deck".
 ---
 
 # HELIOS command line
 
-Two commands. `helios_to_hdf5` converts; `helios_diag` reads a converted run and
-answers questions about it. Both write JSON to stdout and logs to stderr.
+Two commands. `helios_to_hdf5` converts; `helios_diag` answers questions about a
+run. Both write JSON to stdout and logs to stderr.
+
+`inspect`, `stats`, `query` and `analyse` accept the deck itself as well as a
+converted file, so a quick look never needs the conversion step. `validate` and
+`diff` need a converted run, because both check the writer contract.
 
 ## The contract
 
@@ -16,7 +20,7 @@ stable; it is versioned and test-covered.
 ```json
 {
   "command": "stats",
-  "tool_version": "2.1.0",
+  "tool_version": "2.2.0",
   "generated_at": "2026-11-04T18:20:00Z",
   "file": {
     "path": "run.h5", "bytes": 410672400,
@@ -66,6 +70,7 @@ helios_to_hdf5 runs/*.log --outdir out/ --json           # one object per input
 What simulation is this, and what did the laser do?
 
 ```bash
+helios_diag inspect run.log | jq '.physics.laser'   # straight from the deck
 helios_diag inspect run.h5 | jq '.physics.laser'
 # wavelength, incidence angle in degrees, propagation direction, power table
 ```
@@ -107,11 +112,16 @@ The derived analysis, headless.
 helios_diag analyse run.h5 --module xrd
 helios_diag analyse run.h5 --module shock,preheat --snapshot 1139
 helios_diag analyse run.h5 --module plasmon --include-experimental   # hidden by default
+helios_diag analyse run.log --module shock --breakout-fraction 0.25  # raw deck, tighter threshold
 ```
 
 `plasmon` and `transmission` are hidden in the production backend. Without
 `--include-experimental` the command exits 2 and tells you; it never returns a payload of
 nulls pretending to be a result.
+
+`--breakout-fraction` sets where the tracked shock front counts as broken out, as a
+fraction of the interface axis from the starting side. The default 0.5 is the value the
+code used before the flag existed, so an unchanged run reports the same breakout time.
 
 ## Reading the output
 
@@ -148,6 +158,8 @@ code, so one bad file does not hide the others.
 
 - Do not parse stderr as data. It carries logs; stdout carries the answer.
 - Do not assume a field exists. Run `inspect` first.
+- Do not convert a deck just to read its parameters, statistics or derived modules;
+  point the command at the deck. Convert when you need `validate` or `diff`.
 - Do not treat `unit: null` or `peak_time_s: null` as zero.
 - Do not read a statistic without its `request` block; `mean` over zones and
   `mean` over snapshots are different numbers.
