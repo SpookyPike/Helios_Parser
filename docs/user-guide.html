@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>User Guide</h1>
         <p>
-          Practical guide for scientists and analysts using HELIOS Parse / View 2.1.0.
+          Practical guide for scientists and analysts using HELIOS Parse / View 2.2.0.
           This page explains the actual current UI: Parser, Viewer, legacy Shock, WaveFront,
           XRD, Spectroscopy, Warnings, and Preheat. Plasmon/XRTS and Transmission are development-flagged experimental panels.
         </p>
@@ -59,8 +59,15 @@
         Everything the tabs show is also reachable from a terminal, which is what you want for a batch of runs or
         a script. Two commands: <code>helios_to_hdf5</code> converts, <code>helios_diag</code> reads a converted run.
       </p>
+      <p>
+        <code>helios_diag inspect</code>, <code>stats</code>, <code>query</code> and
+        <code>analyse</code> also accept the deck itself, so a quick look does not need the conversion step.
+        <code>validate</code> and <code>diff</code> still require a converted run, because both check the writer
+        contract rather than the physics.
+      </p>
       <pre><code>helios_to_hdf5 run.log run.h5                    # .log, .bpf or .exo
-helios_diag inspect run.h5                       # the deck setup, the laser, the fields
+helios_diag inspect run.log                      # the deck setup, straight from the deck
+helios_diag inspect run.h5                       # the same, from a converted run
 helios_diag stats run.h5 -f density              # per zone, with the time it peaked
 helios_diag query run.h5 -f density --zone 900   # one time trace
 helios_diag diff before.h5 after.h5              # exits 7 when they differ

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HELIOS Parse / View Release Notes 2.1.0</title>
+  <title>HELIOS Parse / View Release Notes 2.2.0</title>
   <link rel="stylesheet" href="assets/manual.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>Release Notes</h1>
         <p>
-          HELIOS Parse / View 2.1.0, released 2026-11-04.
+          HELIOS Parse / View 2.2.0, released 2026-11-05.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
       </div>
@@ -27,6 +27,28 @@
   </header>
 
   <main>
+    <section>
+      <h2>Why 2.2.0</h2>
+      <p>
+        Two things stood between a user and an answer: the deck had to be converted first, and the parse itself cost
+        nine seconds on the largest reference deck. This release removes both. The diagnostics commands read a raw
+        <code>.log</code>, <code>.bpf</code> or HDF5 <code>.exo</code> directly, and a native field-table parser cuts
+        the conversion of that deck from 9.03 s to 2.67 s.
+      </p>
+      <p>
+        The native parser is optional. It ships as a small library beside the package; without it the parser runs the
+        existing Python path at the old speed, so a source checkout needs no Rust toolchain and an unsupported platform
+        loses speed rather than function.
+      </p>
+      <h2>Highlights in this release</h2>
+      <ul>
+        <li><code>helios_diag inspect</code>, <code>stats</code>, <code>query</code> and <code>analyse</code> accept an unconverted deck, so parameters, densities, temperatures and the derived modules are readable without a conversion step</li>
+        <li>a native LOG field-table parser: the 530.7 MB reference deck parses in 2.67 s instead of 9.03 s, and <code>write_hdf5</code> drops from 8.43 s to 3.93 s, with a byte-identical output digest</li>
+        <li>the cycle-header scan no longer walks the whole buffer with one regex: 2.12 s to 0.32 s, identical block spans</li>
+        <li><code>analyse --breakout-fraction</code> replaces the fixed 0.5 threshold; the default reproduces the previous breakout time exactly</li>
+      </ul>
+    </section>
+
     <section>
       <h2>Why 2.1.0</h2>
       <p>
@@ -170,6 +192,18 @@
 
     <section>
       <h2>Changelog</h2>
+      <h3>2.2.0</h3>
+      <ul>
+        <li><code>inspect</code>, <code>stats</code>, <code>query</code> and <code>analyse</code> read a raw <code>.log</code>, <code>.bpf</code> or HDF5 <code>.exo</code> directly; a converted file still answers the same, and a test converts the tracked prefix log once and compares the payloads</li>
+        <li><code>validate</code> and <code>diff</code> report a usage error for a raw input, because neither has a writer contract to check before conversion</li>
+        <li>a native field-table parser in <code>native/table_parser</code> parses one LOG table in a single pass: 0.213 ms against 1.318 ms for a 1200 by 14 block, 6.2x, correctly rounded including the Fortran forms <code>1.234-123</code> and <code>1.0D+00</code></li>
+        <li>the full parse of the 530.7 MB deck drops from 9.03 s to 2.67 s and <code>write_hdf5</code> from 8.43 s to 3.93 s; four reference decks produce byte-identical snapshot digests and HDF5 output</li>
+        <li>the library is optional. Without it the parser runs the existing <code>np.fromstring</code> path at the old speed, so a source checkout needs no Rust toolchain</li>
+        <li>the cycle-header scan uses <code>bytes.find</code> plus an anchored pattern instead of one MULTILINE regex over the whole buffer: 2.12 s to 0.32 s on the 530.7 MB deck, with identical block, cycle-header and diagnostics spans</li>
+        <li><code>DerivedAnalysisParameters.breakout_threshold_fraction</code> and <code>helios_diag analyse --breakout-fraction</code> make the shock breakout threshold configurable; the default 0.5 reproduces the previous fixed 0.5 and <code>n_interfaces - 1.5</code> pair exactly</li>
+        <li><code>parse_full</code> takes a field filter and stacks the per-snapshot coordinate arrays, so a headless analysis of the largest deck holds about 100 MB instead of 400 MB</li>
+        <li>the core gate grows from ten entries to twelve</li>
+      </ul>
       <h3>2.1.0</h3>
       <ul>
         <li>new <code>helios_diag</code> with <code>inspect</code>, <code>stats</code>, <code>query</code>, <code>diff</code>, <code>validate</code> and <code>analyse</code>; JSON on stdout by default, <code>--format table|csv</code> for humans</li>
@@ -359,8 +393,8 @@
       <ul>
         <li>Author: Dmitrii Bespalov</li>
         <li>Organization: European XFEL</li>
-        <li>Release: 2.1.0</li>
-        <li>Date: 2026-11-04</li>
+        <li>Release: 2.2.0</li>
+        <li>Date: 2026-11-05</li>
       </ul>
     </section>
   </main>

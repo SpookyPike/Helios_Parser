@@ -44,9 +44,27 @@ helios_to_hdf5 runs/*.log --outdir out/ --json --compression lzf
 
 Every subcommand accepts `--format {json,table,csv}` (default `json`) and `--out FILE`.
 
-### `helios_diag inspect RUN`
+`inspect`, `stats`, `query` and `analyse` accept a raw deck as well as a converted run:
+a `.log`, a `.bpf`, or an HDF5 `.exo`. Nothing has to be converted first, and the answers
+are the same numbers the converted file holds. `validate` and `diff` still require a
+converted run, because both check the writer contract rather than the physics.
 
-What simulation is this file, and what does it hold. No field data is read.
+| input | `inspect` | `stats`, `query` | `analyse` |
+|---|---|---|---|
+| converted `.h5` | metadata only | one field read | six core fields plus the optional set |
+| raw `.log` | header plus the first snapshot | one full parse, then the field | one full parse, then the derived modules |
+| raw `.bpf` | layout plus the first snapshot | one full parse | one full parse |
+| HDF5 `.exo` | full read | full read | full read |
+
+A raw deck carries no `schema_version`, no writer contract and no VISAR structure. The
+output says so in `notes` instead of guessing, and a classic NetCDF-3 `.exo` is named as
+the unsupported variant rather than failing as a broken HDF5 file.
+
+### `helios_diag inspect RUN_OR_DECK`
+
+What simulation is this file, and what does it hold. No field data is read; for a raw
+deck the header and the first snapshot are parsed, which is 10 ms of work on the 530 MB
+reference log plus one sequential scan to count the snapshots.
 
 It reports the file provenance, the deck setup and the laser pulse decoded from
 `metadata/input_parameters` (wavelength, incidence angle, propagation direction, power
@@ -128,6 +146,16 @@ The flag enables them for that invocation only:
 helios_diag analyse run.h5 --module plasmon --include-experimental
 ```
 
+`--breakout-fraction F` sets where the tracked front counts as broken out, as a fraction
+of the interface index axis from the starting side. The default 0.5 reproduces the
+threshold the code used before it was configurable, so an unchanged run reports the same
+breakout time. The value enters the derived cache key, so changing it recomputes rather
+than reusing a cached shock result.
+
+```bash
+helios_diag analyse run.h5 --module shock --breakout-fraction 0.25
+```
+
 `radiation` is production and needs no flag; it reports "this run carries no radiation
 output" when the deck left the flag off.
 
@@ -202,6 +230,9 @@ to the P-cores with `taskset -c 0-11`, work time excluding interpreter startup:
 | `stats --over time` | 41 ms |
 | `stats --at N` | 11 ms |
 | `query --snapshot N` | 11 ms |
+| `inspect` on the raw 530.7 MB `.log` | 0.5 s, one sequential scan to count snapshots |
+| `inspect` on the raw 40 MB `.bpf` | 61 ms |
+| `stats` on the raw 43 MB `.log` | 0.3 s, one full parse |
 
 The reductions are the floor: 31 ms of the 52 is numpy, and the rest is opening the file
 and building the envelope. Reading one field is 3 ms; reading one snapshot row is under

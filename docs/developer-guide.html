@@ -14,7 +14,7 @@
         <h1>Developer Guide</h1>
         <p>
           Architecture and implementation guide for engineers working on parser, runtime, viewer,
-          derived analysis, WaveFront, Preheat, BPF-primary parsing, production feature gates, packaging, and experimental Transmission/XCOM integration in HELIOS Parse / View 2.1.0.
+          derived analysis, WaveFront, Preheat, BPF-primary parsing, production feature gates, packaging, and experimental Transmission/XCOM integration in HELIOS Parse / View 2.2.0.
         </p>
       </div>
     </div>
@@ -219,6 +219,22 @@
     </section>
 
     <section id="performance">
+      <h2>The native table parser</h2>
+      <p>
+        <code>native/table_parser</code> is a small Rust <code>cdylib</code> that parses one LOG field table in a
+        single pass. <code>scripts/build_native_table.py</code> builds it with the toolchain pinned in
+        <code>native/table_parser/rust-toolchain.toml</code> and copies it beside the package;
+        <code>just native</code> is the short form, and <code>just rust-lint</code> runs
+        <code>cargo fmt --check</code> and <code>cargo clippy -D warnings</code>.
+      </p>
+      <p>
+        The library is optional by design. <code>helios_parser/native_table.py</code> sets its binding to
+        <code>None</code> when the file is missing, and <code>_parse_field_table_rows</code> then runs its existing
+        <code>np.fromstring</code> path. A kernel return code of <code>-1</code> or <code>-2</code> means the block
+        does not fit the fast-path contract and takes the same fallback, so the two implementations never have to
+        agree on malformed input.
+      </p>
+
       <h2>Reasoning about performance-sensitive paths</h2>
       <ul>
         <li>Do not trigger advanced WaveFront or Preheat work during a normal legacy Shock refresh.</li>
