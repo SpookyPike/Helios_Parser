@@ -45,6 +45,7 @@ fn parse_f64_fallback(tok: &[u8]) -> Option<f64> {
     let mut exp10: i32 = 0;
     let mut p = 0usize;
     let mut neg = false;
+    let mut dropped_nonzero = false;
     if p < tok.len() && (tok[p] == b'+' || tok[p] == b'-') {
         neg = tok[p] == b'-';
         p += 1;
@@ -59,6 +60,11 @@ fn parse_f64_fallback(tok: &[u8]) -> Option<f64> {
                 }
             } else if !seen_dot {
                 exp10 += 1;
+            } else if b != b'0' {
+                // A non-zero fractional digit past the 19th cannot be
+                // represented by the mantissa; the reference parser must
+                // handle this token instead of silently losing its value.
+                dropped_nonzero = true;
             }
             digits += 1;
             p += 1;
@@ -69,7 +75,7 @@ fn parse_f64_fallback(tok: &[u8]) -> Option<f64> {
             break;
         }
     }
-    if digits == 0 {
+    if digits == 0 || dropped_nonzero {
         return None;
     }
     let mant_end = p;
@@ -199,9 +205,12 @@ pub unsafe extern "C" fn parse_table_block(
                 i += 1;
             }
             let digit_start = i;
-            let mut zone: i64 = 0;
+            // Saturating, because a wrapped index could land on a valid zone and
+            // overwrite a real row. Anything past u64::MAX is out of range, which
+            // is what saturation gives us.
+            let mut zone: u64 = 0;
             while i < line_end && s[i].is_ascii_digit() {
-                zone = zone * 10 + (s[i] - b'0') as i64;
+                zone = zone.saturating_mul(10).saturating_add((s[i] - b'0') as u64);
                 i += 1;
             }
             // Not an integer zone index: the Python filter drops the line.
@@ -212,11 +221,8 @@ pub unsafe extern "C" fn parse_table_block(
                 line_start = line_end + 1;
                 continue;
             }
-            if neg {
-                zone = -zone;
-            }
             if zone != 0 {
-                let in_range = zone >= 1 && zone <= rows as i64;
+                let in_range = !neg && zone <= rows as u64;
                 let row_base = if in_range {
                     (zone as usize - 1) * cols
                 } else {
@@ -240,6 +246,7 @@ pub unsafe extern "C" fn parse_table_block(
                     let mut ndig = 0u32;
                     let mut dot = false;
                     let mut exp10: i32 = 0;
+                    let mut dropped_nonzero = false;
                     while i < line_end {
                         let b = s[i];
                         if b.is_ascii_digit() {
@@ -250,6 +257,8 @@ pub unsafe extern "C" fn parse_table_block(
                                 }
                             } else if !dot {
                                 exp10 += 1;
+                            } else if b != b'0' {
+                                dropped_nonzero = true;
                             }
                             ndig += 1;
                             i += 1;
@@ -305,7 +314,11 @@ pub unsafe extern "C" fn parse_table_block(
                             simple = false;
                         }
                     }
-                    let value = if simple && mant <= (1u64 << 53) && exp10.abs() <= 22 {
+                    let value = if simple
+                        && !dropped_nonzero
+                        && mant <= (1u64 << 53)
+                        && exp10.abs() <= 22
+                    {
                         let m = mant as f64;
                         let v = if exp10 >= 0 {
                             m * POW10[exp10 as usize]
@@ -410,6 +423,44 @@ mod tests {
         let (rc, out) = run(text, 2, 2);
         assert_eq!(rc, 2);
         assert_eq!(out, vec![1.5, 2.5, 3.5, 4.5]);
+    }
+
+    #[test]
+    fn long_fractional_token_is_not_truncated() {
+        // 20 fractional digits: the mantissa cannot hold them all, and the
+        // dropped digit is non-zero, so the token must reach the reference
+        // parser instead of collapsing to zero.
+        let text = "     1  0.00000000000000000001\n";
+        let (rc, out) = run(text, 1, 1);
+        assert_eq!(rc, 1);
+        assert_eq!(out[0], 1e-20);
+    }
+
+    #[test]
+    fn long_mantissa_matches_the_reference_parser() {
+        let token = "1.234567890123456789012345";
+        let text = format!("     1  {token}\n");
+        let (rc, out) = run(&text, 1, 1);
+        assert_eq!(rc, 1);
+        assert_eq!(out[0], token.parse::<f64>().unwrap());
+    }
+
+    #[test]
+    fn huge_zone_index_does_not_wrap_into_a_valid_row() {
+        let text = "     1  1.0\n18446744073709551617  9.0\n";
+        let (rc, out) = run(text, 2, 1);
+        assert_eq!(rc, 1);
+        assert_eq!(out[0], 1.0);
+        assert!(out[1].is_nan());
+    }
+
+    #[test]
+    fn negative_zone_index_is_dropped() {
+        let text = "     1  1.0\n    -1  9.0\n";
+        let (rc, out) = run(text, 2, 1);
+        assert_eq!(rc, 1);
+        assert_eq!(out[0], 1.0);
+        assert!(out[1].is_nan());
     }
 
     #[test]
