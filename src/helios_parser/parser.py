@@ -355,10 +355,14 @@ def _parse_field_table_rows(
                 parsed_block = np.fromstring(normalize_numeric_text(block_text), sep=" ", dtype=np.float64)
             if parsed_block.size == expected_size:
                 rows = parsed_block.reshape((-1, expected_row_width))
-                zone_indices = rows[:, 0].astype(np.int32)
-                valid = (zone_indices >= 1) & (zone_indices <= n_zones)
+                # Validate the index as a float before casting. `astype(np.int32)`
+                # wraps 2**32 + 1 to zone 1, which would overwrite a real row;
+                # the range check has to happen on the values the file holds.
+                zone_values = rows[:, 0]
+                valid = (zone_values >= 1) & (zone_values <= n_zones)
+                zone_indices = zone_values[valid].astype(np.int64)
                 matrix = np.full((n_zones, column_count), np.nan, dtype=np.float64)
-                matrix[zone_indices[valid] - 1, :] = rows[valid, 1:]
+                matrix[zone_indices - 1, :] = rows[valid, 1:]
                 parsed_rows = int(np.count_nonzero(valid))
     if matrix is not None:
         if parsed_rows != n_zones:

@@ -124,6 +124,23 @@ class ParserFallbackTests(unittest.TestCase):
         result = _parse(lines, zones=1)
         self.assertEqual(result["arrays"]["artificial_viscosity"][0], 1e-20)
 
+    def test_oversized_zone_index_is_dropped_on_both_paths(self) -> None:
+        # 2**32 + 1 narrows to zone 1 under an int32 cast, so this row must be
+        # dropped rather than overwrite the real zone 1 row.
+        lines = [
+            "     0  0.000E+00" + "  0.000E+00" * 13,
+            "     1  5.000E-09  1.000E-08  1.000E+00  4.000E+00  5.000E+00  6.000E+00"
+            "  7.000E+00  8.000E+00  9.000E+00  1.000E+01  1.100E+01  1.200E+01  1.300E+01  1.400E+01",
+            "4294967297  5.000E-09  1.000E-08  9.000E+00  4.000E+00  5.000E+00  6.000E+00"
+            "  7.000E+00  8.000E+00  9.000E+00  1.000E+01  1.100E+01  1.200E+01  1.300E+01  1.400E+01",
+        ]
+        native_result = _parse(lines, zones=1)
+        self.assertEqual(native_result["arrays"]["density"][0], 1.0)
+        with mock.patch("helios_parser.parser.parse_table_block", return_value=None):
+            fallback_result = _parse(lines, zones=1)
+        self.assertEqual(fallback_result["arrays"]["density"][0], 1.0)
+        self.assertEqual(fallback_result["extras"]["parsed_row_count"], 1)
+
     def test_crlf_block_parses(self) -> None:
         lines = _block(crlf=True)
         native_result = _parse(lines)
