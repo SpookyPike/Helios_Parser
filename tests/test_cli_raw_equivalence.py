@@ -117,6 +117,14 @@ class RawInputEquivalenceTests(unittest.TestCase):
         self.assertEqual(raw_shock["breakout_time_s"], converted_shock["breakout_time_s"])
         self.assertEqual(payloads["raw"], payloads["converted"])
 
+    def test_bpf_stats_match_the_converted_run(self) -> None:
+        converted = Path(self._tmpdir.name) / "bpf.h5"
+        write_hdf5(BPF_SAMPLE, converted, overwrite=True)
+        raw = stats_module.run(_stats_args(str(BPF_SAMPLE)))
+        from_file = stats_module.run(_stats_args(str(converted)))
+        self.assertEqual(raw.exit_code, from_file.exit_code)
+        self.assertEqual(_normalize(raw.payload), _normalize(from_file.payload))
+
     def test_bpf_header_lookup(self) -> None:
         from helios_diag.source import raw_header
 

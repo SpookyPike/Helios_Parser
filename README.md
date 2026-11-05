@@ -161,7 +161,7 @@ with a byte-identical output digest on four decks.
 
 - a native field-table parser parses one LOG table in a single pass: 0.213 ms against 1.318 ms for a 1200 by 14 block, 6.2x, correctly rounded including `1.234-123` and `1.0D+00`.
 - the cycle-header scan uses `bytes.find` plus an anchored pattern instead of one MULTILINE regex over the whole buffer: 2.12 s to 0.32 s, with identical block spans.
-- `parse_full` takes a field filter and stacks the per-snapshot coordinates, so the headless analysis of the largest deck holds about 100 MB instead of 400 MB.
+- `parse_full` takes a field filter and stacks the per-snapshot coordinates: a single-field statistic stacks one field, and a raw analysis stacks the same set the converted path would.
 
 ### Packaging
 

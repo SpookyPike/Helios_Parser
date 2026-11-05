@@ -66,8 +66,10 @@ def _pinned_channel() -> str:
 
 
 def _rustc_version() -> str:
+    # cwd=CRATE so the rustup proxy selects the toolchain pinned by
+    # rust-toolchain.toml, the same one `cargo build` will use.
     result = subprocess.run(
-        ["rustc", "--version"], capture_output=True, text=True, check=False
+        ["rustc", "--version"], cwd=CRATE, capture_output=True, text=True, check=False
     )
     if result.returncode != 0:
         raise SystemExit(

@@ -51,12 +51,15 @@ def _parse(data_lines: list[str], zones: int = 3) -> dict:
 
 
 class NativeKernelTests(unittest.TestCase):
-    def test_library_is_loaded(self) -> None:
-        # The release bundles ship the library; a source checkout may not. The
-        # test asserts the contract either way, so skip only the direct kernel
-        # assertions rather than the whole module.
+    def setUp(self) -> None:
+        # The release bundles ship the library; a source checkout may not. Every
+        # test here calls the kernel directly, so skip the class rather than
+        # failing on a clean clone. `ParserFallbackTests` covers the other path.
         if not native_table.available():
             self.skipTest("native library not built; run scripts/build_native_table.py")
+
+    def test_library_is_loaded(self) -> None:
+        self.assertTrue(native_table.available())
 
     def test_kernel_matches_fromstring(self) -> None:
         lines = _block()

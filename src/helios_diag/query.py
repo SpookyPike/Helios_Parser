@@ -104,7 +104,7 @@ def run(args: argparse.Namespace) -> envelope.Result:
 
     from .source import open_any
 
-    run_handle = open_any(args.path)
+    run_handle = open_any(args.path, fields=(args.field,))
     try:
         if args.zone is not None:
             return _trace(run_handle, args.field, int(args.zone), args)
