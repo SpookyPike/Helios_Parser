@@ -11,6 +11,7 @@ read here.
 """
 from __future__ import annotations
 
+import itertools
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -498,18 +499,40 @@ def _bpf_header_view(path: str | Path) -> RawHeaderView:
     )
 
 
+class _RawRunRevision:
+    """A cache key that is unique to one call.
+
+    `load_run_data` keys its session cache on the file identity: resolved path,
+    size and mtime. For a converted run that is the right key. For a raw deck it
+    is not, because a caller can rewrite the deck, restore its size and mtime, and
+    then reuse arrays parsed from the previous content. A key that never repeats
+    removes the hazard outright; the cost is that a raw analysis is never served
+    from the cache, which is what the CLI does anyway.
+    """
+
+    __slots__ = ("cache_key",)
+
+    def __init__(self, path: Path, fmt: str) -> None:
+        self.cache_key = ("raw_run", str(path), fmt, next(_RAW_RUN_SEQUENCE))
+
+
+_RAW_RUN_SEQUENCE = itertools.count()
+
+
 def load_raw_run_data(path: str | Path, *, requested_fields: Iterable[str] | None = None):
     """Build the derived-analysis dataset straight from a raw deck.
 
     `load_run_data` is written against the `HeliosRun` accessor surface; passing
-    it a `RawRun` factory reuses its assembly, cache keying and capability
-    metadata instead of duplicating them here.
+    it a `RawRun` factory reuses its assembly, capability metadata and shape
+    validation instead of duplicating them here.
     """
     from helios.services.derived.common import load_run_data
 
     run = open_any(path)
+    revision = _RawRunRevision(run.path, run.format)
     return load_run_data(
         run.path,
+        revision=revision,
         requested_fields=requested_fields,
         run_factory=lambda _source: run,
     )

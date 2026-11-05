@@ -110,6 +110,17 @@ class ParserFallbackTests(unittest.TestCase):
         result = _parse(lines, zones=1)
         self.assertAlmostEqual(result["arrays"]["density"][0], 2.978e-116)
 
+    def test_long_fractional_token_keeps_its_value(self) -> None:
+        # Twenty fractional digits: a mantissa that stops at nineteen would
+        # collapse this to zero, so the value is the guard on both paths.
+        lines = [
+            "     0  0.000E+00" + "  0.000E+00" * 13,
+            "     1  5.000E-09  1.000E-08  1.000E-02  4.000E+00  5.000E+00  6.000E+00"
+            "  7.000E+00  8.000E+00  9.000E+00  1.000E+01  1.100E+01  1.200E+01  1.300E+01  0.00000000000000000001",
+        ]
+        result = _parse(lines, zones=1)
+        self.assertEqual(result["arrays"]["artificial_viscosity"][0], 1e-20)
+
     def test_crlf_block_parses(self) -> None:
         lines = _block(crlf=True)
         native_result = _parse(lines)
