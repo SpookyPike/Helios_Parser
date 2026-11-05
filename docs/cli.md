@@ -146,15 +146,20 @@ The flag enables them for that invocation only:
 helios_diag analyse run.h5 --module plasmon --include-experimental
 ```
 
-`--breakout-fraction F` sets where the tracked front counts as broken out, as a fraction
-of the interface index axis from the starting side. The default 0.5 reproduces the
-threshold the code used before it was configurable, so an unchanged run reports the same
-breakout time. The value enters the derived cache key, so changing it recomputes rather
-than reusing a cached shock result.
+`--breakout-fraction F` sets where along its track the front counts as broken out, as a
+fraction of the distance from the starting face: 0.5 is the midpoint, a value near 1 is
+the rear face. The default is 0.5, so the reported time is the midpoint crossing; use
+`--breakout-fraction 0.95` for the near-face reading. The value enters the derived cache
+key, so changing it recomputes rather than reusing a cached shock result.
 
 ```bash
-helios_diag analyse run.h5 --module shock --breakout-fraction 0.25
+helios_diag analyse run.h5 --module shock --breakout-fraction 0.25   # earlier, quarter way
+helios_diag analyse run.h5 --module shock --breakout-fraction 0.95   # near the rear face
 ```
+
+When the front stops on a material interface and never reaches the threshold, the result
+carries a `caution` warning naming the interface zone and the two regions. That is a
+different diagnosis from "the shock did not arrive", which stays an `info` note.
 
 `radiation` is production and needs no flag; it reports "this run carries no radiation
 output" when the deck left the flag off.

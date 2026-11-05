@@ -119,15 +119,17 @@ helios_diag analyse run.log --module shock --breakout-fraction 0.25  # raw deck,
 `--include-experimental` the command exits 2 and tells you; it never returns a payload of
 nulls pretending to be a result.
 
-`--breakout-fraction` sets where the tracked shock front counts as broken out, as a
-fraction of the interface axis from the starting side. The default 0.5 is the value the
-code used before the flag existed, so an unchanged run reports the same breakout time.
+`--breakout-fraction` sets where along its track the front counts as broken out, as a
+fraction of the distance from the starting face: 0.5 is the midpoint, 0.95 is near the
+rear face. The default is 0.5. When the front stops on a material interface the result
+carries a `caution` warning naming the interface zone and the two regions.
 
 ## Reading the output
 
 - **Read `notes` before the numbers.** Every degradation is written there: a
   missing schema version, a label inferred from a dataset name, a zone that never
-  peaked, a requested time resolved to a different snapshot.
+  peaked, a requested time resolved to a different snapshot, and which parser ran
+  (`native table parser: on|off`).
 - **`null` is not zero.** `unit: null` means the file did not record the unit.
   `peak_time_s: null` means the zone is flat and has no peak. Never substitute a
   value.

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HELIOS Parse / View Release Notes 2.2.0</title>
+  <title>HELIOS Parse / View Release Notes 2.2.1</title>
   <link rel="stylesheet" href="assets/manual.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
       <div class="brand-copy">
         <h1>Release Notes</h1>
         <p>
-          HELIOS Parse / View 2.2.0, released 2026-11-05.
+          HELIOS Parse / View 2.2.1, released 2026-11-05.
           Code developed by Dmitrii Bespalov at European XFEL.
         </p>
       </div>
@@ -27,6 +27,25 @@
   </header>
 
   <main>
+    <section>
+      <h2>Why 2.2.1</h2>
+      <p>
+        Seven findings from real use of 2.2.0 on the Maxwell cluster, recorded in
+        <code>docs/findings-2026-11-05-cluster-use.md</code>. The first is a defect: the new
+        breakout fraction was compared against a zone index, so every value meant the same
+        thing. The rest are about what the command line tells a caller, which matters because
+        the CLI is the surface an analysis agent reads.
+      </p>
+      <h2>Highlights in this release</h2>
+      <ul>
+        <li><code>--breakout-fraction</code> is a position along the track: 0.5 is the midpoint, 0.95 is near the rear face. The default 0.5 therefore reports the midpoint crossing, which is a change from 2.2.0: on the reference fixture 1.995e-9 s instead of 4.079e-9 s</li>
+        <li>a front that stops on a material interface now reports that interface, its zone and the two regions at <code>caution</code>, instead of an <code>info</code> "no breakout time was inferred"</li>
+        <li>every file block names the parser in use: <code>native table parser: on (libhelios_native.so, sha256 …)</code> or <code>off (Python fallback)</code></li>
+        <li>the coordinate mismatch that fires on every conversion is <code>info</code> with an explanation, because it is the rounding of the printed positions, not a defect; a table that disagrees materially with its own widths stays a <code>warning</code></li>
+        <li><code>analyse --help</code> names the raw formats, and <code>stats</code> says its peak time is not a threshold crossing</li>
+      </ul>
+    </section>
+
     <section>
       <h2>Why 2.2.0</h2>
       <p>
@@ -192,6 +211,17 @@
 
     <section>
       <h2>Changelog</h2>
+      <h3>2.2.1</h3>
+      <ul>
+        <li><code>breakout_threshold_index</code> returned the fraction itself while the tracker compares it against an interface index, so 0.2, 0.5 and 0.8 all meant "reach the rear-most cell". It now returns <code>(1-f)*L</code> for <code>high_to_low</code> and <code>f*L</code> for <code>low_to_high</code>, with <code>L</code> the last interface index</li>
+        <li><strong>the default reading changes.</strong> 0.5 is now the midpoint of the track, so the reported breakout time moves earlier: 1.995e-9 s against 4.079e-9 s on <code>Cu_0166_stabilized.h5</code>. <code>--breakout-fraction 0.95</code> gives the near-face time, 3.877e-9 s</li>
+        <li>a track that ends on a region boundary reports it at <code>caution</code> with the boundary zone and both regions, which separates "the tracker stopped" from "the shock did not arrive"</li>
+        <li><code>native_table.describe()</code> and a file-block note name the active parser and its digest, so a silent fallback is visible from the command line</li>
+        <li>the monotonic edge/width mismatch is <code>info</code> when the cumulative width grid reproduces the parsed edges within file precision, because that is the rounding of the printed positions; a material mismatch stays a <code>warning</code>. The non-monotonic reconstruction drops to <code>info</code> as well</li>
+        <li>an <code>info</code> coordinate issue is logged at <code>info</code> level instead of through the warning channel</li>
+        <li><code>analyse --help</code> names the raw formats; <code>stats</code> documents that its peak time is the time of each zone's own maximum</li>
+        <li><code>docs/packaging.md</code> records the <code>setuptools</code> requirement for a fresh virtual environment</li>
+      </ul>
       <h3>2.2.0</h3>
       <ul>
         <li><code>inspect</code>, <code>stats</code>, <code>query</code> and <code>analyse</code> read a raw <code>.log</code>, <code>.bpf</code> or HDF5 <code>.exo</code> directly; a converted file still answers the same, and a test converts the tracked prefix log once and compares the payloads</li>
@@ -393,7 +423,7 @@
       <ul>
         <li>Author: Dmitrii Bespalov</li>
         <li>Organization: European XFEL</li>
-        <li>Release: 2.2.0</li>
+        <li>Release: 2.2.1</li>
         <li>Date: 2026-11-05</li>
       </ul>
     </section>

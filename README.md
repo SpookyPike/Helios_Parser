@@ -3,7 +3,7 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `2.2.0`
+- Release: `2.2.1`
 - Release date: `2026-11-04`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
@@ -108,7 +108,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parser-viewer-v2.2.0.zip`
+- `outputs/release/helios-parser-viewer-v2.2.1.zip`
 
 The bundle includes:
 
@@ -138,11 +138,27 @@ python scripts\build_linux_portable_tarball.py
 
 Expected artifact names:
 
-- `outputs/distributables/helios-parser-viewer-v2.2.0-windows-portable.zip`
-- `outputs/distributables/helios-parser-viewer_2.2.0_all.deb`
-- `outputs/distributables/helios-parser-viewer-v2.2.0-linux-portable.tar.gz`
+- `outputs/distributables/helios-parser-viewer-v2.2.1-windows-portable.zip`
+- `outputs/distributables/helios-parser-viewer_2.2.1_all.deb`
+- `outputs/distributables/helios-parser-viewer-v2.2.1-linux-portable.tar.gz`
 
-The v2.2.0 release provides the source bundle and checksums. The Debian package, Linux portable tarball and Windows portable ZIP are built from the same tree with the commands above and are not attached to this release. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+The v2.2.1 release provides the source bundle and checksums. The Debian package, Linux portable tarball and Windows portable ZIP are built from the same tree with the commands above and are not attached to this release. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+
+## Changelog 2.2.1
+
+Seven findings from real use of 2.2.0 on the Maxwell cluster
+(`docs/findings-2026-11-05-cluster-use.md`).
+
+### Fixed
+
+- `--breakout-fraction` returned the fraction itself while the tracker compares it against an interface index, so 0.2, 0.5 and 0.8 all meant "reach the rear-most cell". It is now a position along the track: 0.5 is the midpoint, 0.95 near the rear face. **The default reading changes**: 1.995e-9 s instead of 4.079e-9 s on `Cu_0166_stabilized.h5`, with 3.877e-9 s at 0.95.
+- a front that stops on a material interface reports that interface, its zone and both regions at `caution`, instead of an `info` note that reads like "no breakout".
+- the coordinate mismatch that fired on every conversion is `info` with an explanation when the cumulative width grid reproduces the parsed edges, because it is the rounding of the printed positions; a material mismatch stays a `warning`.
+- `analyse --help` names the raw formats; `stats` documents that its peak time is not a threshold crossing.
+
+### Added
+
+- every file block names the parser in use: `native table parser: on (libhelios_native.so, sha256 …)` or `off (Python fallback)`.
 
 ## Changelog 2.2.0
 

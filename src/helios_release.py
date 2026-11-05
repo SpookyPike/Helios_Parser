@@ -15,5 +15,5 @@ from __future__ import annotations
 
 DISTRIBUTION_NAME = "helios-parser"
 APP_NAME = "HELIOS Parse / View"
-RELEASE_VERSION = "2.2.0"
+RELEASE_VERSION = "2.2.1"
 RELEASE_DATE = "2026-11-05"
