@@ -250,7 +250,7 @@ class RawRun:
             "n_snapshots": self.n_snapshots,
             "n_regions": self.n_regions,
             "n_materials": self.n_materials,
-            "available_fields": list(self.simulation.fields),
+            "available_fields": self.list_fields(),
             "run_status": self.get_run_status(),
             "metadata": {
                 key: metadata.get(key)
