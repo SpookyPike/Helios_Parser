@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterable, Iterator
 
 import numpy as np
 
@@ -395,7 +395,15 @@ class HeliosDocument:
         _, status = self._load_snapshots(active_header)
         return status
 
-    def parse_full(self) -> Simulation:
+    def parse_full(self, *, fields: Iterable[str] | None = None) -> Simulation:
+        """Parse every snapshot into stacked arrays.
+
+        ``fields`` limits the stacked field set. The parse still reads every
+        column of each table, so this bounds memory rather than time; the
+        headless analysis uses it to keep six core fields instead of all
+        twenty-nine.
+        """
+        selected_fields = None if fields is None else {str(name) for name in fields}
         header = self.inspect()
         snapshots, run_status = self._load_snapshots(header)
         n_snapshots = len(snapshots)
@@ -406,23 +414,46 @@ class HeliosDocument:
         field_names = list(first_snapshot.fields.keys())
         field_units = dict(first_snapshot.field_units)
         raw_field_map = dict(first_snapshot.raw_field_map)
-        stacked_fields = {name: np.full((n_snapshots, header.n_zones), np.nan, dtype=np.float64) for name in field_names}
+        stacked_names = [
+            name for name in field_names if selected_fields is None or name in selected_fields
+        ]
+        stacked_fields = {
+            name: np.full((n_snapshots, header.n_zones), np.nan, dtype=np.float64)
+            for name in stacked_names
+        }
         time = {
             "time": np.empty(n_snapshots, dtype=np.float64),
             "cycle": np.empty(n_snapshots, dtype=np.int64),
             "time_step": np.empty(n_snapshots, dtype=np.float64),
             "time_step_control": np.empty(n_snapshots, dtype=object),
         }
+        dynamic_center: np.ndarray | None = None
+        dynamic_edge: np.ndarray | None = None
         diagnostic_buffers: dict[tuple[str, ...], np.ndarray] = {}
         diagnostic_schema: dict[tuple[str, ...], int | None] = {}
         diagnostic_schema_notes: list[str] = []
 
         def assign_snapshot(index: int, snapshot: Snapshot) -> None:
+            nonlocal dynamic_center, dynamic_edge
             time["time"][index] = snapshot.time
             time["cycle"][index] = snapshot.cycle
             time["time_step"][index] = snapshot.time_step
             time["time_step_control"][index] = snapshot.time_step_control
+            # Dynamic coordinates are per-snapshot extras, not table columns.
+            # Stacking them here matches the converted layout, so a raw run and
+            # its HDF5 carry the same arrays.
+            if snapshot.coordinate_center is not None:
+                if dynamic_center is None:
+                    dynamic_center = np.full((n_snapshots, header.n_zones), np.nan, dtype=np.float64)
+                dynamic_center[index, :] = np.asarray(snapshot.coordinate_center, dtype=np.float64)
+            if snapshot.coordinate_edge is not None:
+                if dynamic_edge is None:
+                    width = int(np.asarray(snapshot.coordinate_edge).size)
+                    dynamic_edge = np.full((n_snapshots, width), np.nan, dtype=np.float64)
+                dynamic_edge[index, :] = np.asarray(snapshot.coordinate_edge, dtype=np.float64)
             for name, values in snapshot.fields.items():
+                if selected_fields is not None and name not in selected_fields:
+                    continue
                 if name not in stacked_fields:
                     stacked_fields[name] = np.full((n_snapshots, header.n_zones), np.nan, dtype=np.float64)
                     field_names.append(name)
@@ -484,10 +515,19 @@ class HeliosDocument:
         if diagnostic_schema_notes:
             metadata["diagnostic_schema_notes"] = diagnostic_schema_notes
 
+        grid = dict(header.grid)
+        grid_units = dict(header.grid_units)
+        if dynamic_center is not None:
+            grid["dynamic_coordinate_center"] = dynamic_center
+            grid_units["dynamic_coordinate_center"] = grid_units.get("coordinate_center", "cm")
+        if dynamic_edge is not None:
+            grid["dynamic_coordinate_edge"] = dynamic_edge
+            grid_units["dynamic_coordinate_edge"] = grid_units.get("coordinate_edge", "cm")
+
         return Simulation(
             source=header.source,
-            grid=header.grid,
-            grid_units=header.grid_units,
+            grid=grid,
+            grid_units=grid_units,
             regions=header.regions,
             region_units=header.region_units,
             materials=header.materials,

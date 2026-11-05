@@ -1253,7 +1253,18 @@ class HeliosParser:
         with self.open_document(path, access_mode=access_mode) as document:
             return document.parsed_snapshot_count()
 
-    def parse(self, path: str | Path, *, access_mode: str | None = None) -> Simulation:
+    def parse(
+        self,
+        path: str | Path,
+        *,
+        access_mode: str | None = None,
+        fields: Iterable[str] | None = None,
+    ) -> Simulation:
+        """Parse a deck into stacked arrays.
+
+        ``fields`` bounds the stacked set, which is what keeps the headless
+        analysis to six core fields instead of every column.
+        """
         with timed_block("parser.parse_full", logger=LOGGER, details=Path(path).name):
             with self.open_document(path, access_mode=access_mode) as document:
-                return document.parse_full()
+                return document.parse_full(fields=fields)
