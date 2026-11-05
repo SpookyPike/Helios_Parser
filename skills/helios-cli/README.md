@@ -4,7 +4,7 @@ Portable copy of `SKILL.md` for harnesses that read plain markdown.
 
 # HELIOS command line
 
-Two commands. `helios_to_hdf5` converts; `helios_diag` reads a converted run and
+Two commands. `helios_to_hdf5` converts; `helios_diag` reads a run, converted or raw, and
 answers questions about it. Both write JSON to stdout and logs to stderr.
 
 ## The contract
@@ -15,7 +15,7 @@ stable; it is versioned and test-covered.
 ```json
 {
   "command": "stats",
-  "tool_version": "2.1.0",
+  "tool_version": "2.2.0",
   "generated_at": "2026-11-04T18:20:00Z",
   "file": {
     "path": "run.h5", "bytes": 410672400,

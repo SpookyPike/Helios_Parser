@@ -1,7 +1,7 @@
 # HELIOS command line
 
 This repository ships two commands. `helios_to_hdf5` converts HELIOS `.log` /
-`.bpf` / `.exo` output to HDF5; `helios_diag` reads a converted run.
+`.bpf` / `.exo` output to HDF5; `helios_diag` reads a run, converted or still raw.
 
 Both write JSON to stdout and logs to stderr. Every `helios_diag` subcommand
 emits one object with `command`, `tool_version`, `generated_at`, `file`, and

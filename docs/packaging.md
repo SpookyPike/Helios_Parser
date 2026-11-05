@@ -14,7 +14,7 @@ Five console scripts are installed. The desktop shell is `helios_parse_view`
 | script | module | what it does |
 |---|---|---|
 | `helios_to_hdf5` | `helios_cli` | convert `.log`, `.bpf` or `.exo` to HDF5 |
-| `helios_diag` | `helios_diag.cli` | inspect, stats, query, diff, validate, analyse a converted run |
+| `helios_diag` | `helios_diag.cli` | inspect, stats, query and analyse a run (converted or raw); diff and validate a converted run |
 | `helios_plot_radiation` | `helios_viewer.radiation_plot` | radiation figures; needs the `plot` extra |
 
 `helios_to_hdf5` and `helios_diag` live in top-level modules on purpose: importing
