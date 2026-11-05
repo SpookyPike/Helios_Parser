@@ -202,7 +202,7 @@
         <li>the cycle-header scan uses <code>bytes.find</code> plus an anchored pattern instead of one MULTILINE regex over the whole buffer: 2.12 s to 0.32 s on the 530.7 MB deck, with identical block, cycle-header and diagnostics spans</li>
         <li><code>DerivedAnalysisParameters.breakout_threshold_fraction</code> and <code>helios_diag analyse --breakout-fraction</code> make the shock breakout threshold configurable; the default 0.5 reproduces the previous fixed 0.5 and <code>n_interfaces - 1.5</code> pair exactly</li>
         <li><code>parse_full</code> takes a field filter and stacks the per-snapshot coordinate arrays: a single-field statistic stacks one field, and a raw analysis stacks the same set the converted path would, which is the six core fields plus the optional ones the named module needs</li>
-        <li>the core gate grows from ten entries to twelve</li>
+        <li>the core gate grows from ten entries to thirteen</li>
       </ul>
       <h3>2.1.0</h3>
       <ul>

@@ -104,10 +104,12 @@ def run(args: argparse.Namespace) -> envelope.Result:
     if unknown:
         raise envelope.UsageError(f"unknown module(s): {', '.join(unknown)}; known: {', '.join(ALL_MODULES)}")
 
-    fraction = float(args.breakout_fraction)
+    # `getattr`: the flag is new, and a programmatic caller that builds its own
+    # namespace gets the documented default rather than an AttributeError.
+    fraction = float(getattr(args, "breakout_fraction", 0.5))
     if not 0.0 < fraction < 1.0:
         raise envelope.UsageError(
-            f"--breakout-fraction must be between 0 and 1, got {args.breakout_fraction!r}"
+            f"--breakout-fraction must be between 0 and 1, got {fraction!r}"
         )
 
     gated = sorted(set(requested) & EXPERIMENTAL_MODULES)
@@ -169,7 +171,7 @@ def _run_with_flag(args: argparse.Namespace, requested: list[str], gated: list[s
         dataset,
         context,
         parameters=derived_analysis.DerivedAnalysisParameters(
-            breakout_threshold_fraction=float(args.breakout_fraction)
+            breakout_threshold_fraction=float(getattr(args, "breakout_fraction", 0.5))
         ),
         context_key=("helios_diag", str(args.path), snapshot),
         requested_modules=frozenset(requested) or None,

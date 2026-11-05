@@ -166,7 +166,7 @@ with a byte-identical output digest on four decks.
 ### Packaging
 
 - the native parser ships as a small library built by `scripts/build_native_table.py` and copied into every bundle. It is optional: without it the parser runs the existing Python path at the old speed.
-- the core gate grows from ten entries to twelve.
+- the core gate grows from ten entries to thirteen.
 
 ## Changelog 2.1.0
 
