@@ -33,6 +33,7 @@ CORE_NAMES = {
     "test_cli_skill_consistency.py",
     "test_cli_stats.py",
     "test_cli_raw_equivalence.py",
+    "test_breakout_fraction.py",
     "test_native_table.py",
     "test_test_runner.py",
 }

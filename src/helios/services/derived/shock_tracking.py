@@ -2159,6 +2159,26 @@ def build_interface_event_compatibility_result(shock: ShockTrackingResult) -> In
     )
 
 
+def breakout_threshold_index(
+    n_interfaces: int,
+    propagation_direction: str,
+    fraction: float = 0.5,
+) -> float:
+    """Interface-index threshold that counts as breakout.
+
+    The front starts at one end of the interface axis and breaks out when it
+    reaches the other. `fraction` is how far in, measured from the starting end,
+    so 0.5 is the midpoint and reproduces the fixed 0.5 / ``n_interfaces - 1.5``
+    pair the code used before the threshold was configurable.
+    """
+    value = float(fraction)
+    if not 0.0 < value < 1.0:
+        raise ValueError(f"breakout threshold fraction must be between 0 and 1, got {fraction!r}")
+    if propagation_direction == "high_to_low":
+        return value
+    return float(max(0.0, (int(n_interfaces) - 1) - value))
+
+
 def track_shock_front(
     dataset: DerivedRunData,
     context: RunContext,
@@ -2408,10 +2428,15 @@ def track_shock_front(
             )
         )
 
-    if propagation_direction == "high_to_low":
-        _, breakout_time = _interpolate_threshold_crossing(event_scaffold.time_s, smoothed_track, threshold=0.5, direction=propagation_direction)
-    else:
-        _, breakout_time = _interpolate_threshold_crossing(event_scaffold.time_s, smoothed_track, threshold=float(max(0, n_interfaces - 1.5)), direction=propagation_direction)
+    breakout_threshold = breakout_threshold_index(
+        n_interfaces, propagation_direction, parameters.breakout_threshold_fraction
+    )
+    _, breakout_time = _interpolate_threshold_crossing(
+        event_scaffold.time_s,
+        smoothed_track,
+        threshold=breakout_threshold,
+        direction=propagation_direction,
+    )
 
     if activation_snapshot is not None and np.isfinite(detector_trace[activation_snapshot]):
         warnings.append(DerivedWarning("shock", f"Primary front activated at snapshot {activation_snapshot} with detector score {detector_trace[activation_snapshot]:.3g}.", severity="info"))
