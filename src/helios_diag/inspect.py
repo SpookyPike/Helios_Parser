@@ -88,7 +88,7 @@ def collect(run: Any) -> dict[str, Any]:
     file_block, file_notes = envelope.file_block(run)
     physics, physics_notes = _physics_block(run)
     fields, field_notes = _fields_block(run)
-    notes = file_notes + physics_notes + field_notes
+    notes = file_notes + physics_notes + field_notes + list(getattr(run, "notes", ()))
     return envelope.envelope(
         "inspect",
         file=file_block,

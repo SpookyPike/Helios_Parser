@@ -90,11 +90,15 @@ class RawRun:
         label = self.simulation.raw_field_map.get(field_name, field_name)
         alias_of = (self.alias_map or {}).get(field_name)
         quantity = ""
+        status = "validated" if unit else "legacy"
         if self.format == "bpf":
             from .bpf import field_metadata_for_bpf_key
 
             spec = field_metadata_for_bpf_key(alias_of or field_name)
             quantity = str(spec.get("quantity") or "")
+            # The BPF spec table is the repository's own declaration, so a field
+            # it names is recorded, not inferred, even when it carries no unit.
+            status = str(spec.get("status") or status)
         return FieldMetadata(
             name=field_name,
             shape=tuple(int(size) for size in values.shape),
@@ -103,7 +107,7 @@ class RawRun:
             dimensions=("time", "zone"),
             unit=unit,
             label=label,
-            status="validated" if unit else "legacy",
+            status=status,
             alias_of=alias_of,
             quantity=quantity,
         )
