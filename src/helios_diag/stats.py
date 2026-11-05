@@ -34,7 +34,7 @@ MODE_GLOBAL = "global"
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("path", help="Converted HDF5 run.")
+    parser.add_argument("path", help="Converted HDF5 run, or a raw .log, .bpf or HDF5 .exo deck.")
     parser.add_argument("-f", "--field", required=True, help="Field to summarise, e.g. density.")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--over", choices=("zones", "time"), help="Reduce over zones (default) or over snapshots.")
@@ -169,11 +169,11 @@ def _row_for_zones(name, values, quantiles, columns) -> dict[str, Any]:
 def run(args: argparse.Namespace) -> envelope.Result:
     import numpy as np  # local: the whole command needs numpy, --help does not
 
-    from helios_parser import HeliosRun
+    from .source import open_any
 
     quantiles = _parse_quantiles(args.quantiles)
     quantile_columns = [_column_name(value) for value in quantiles]
-    run_handle = HeliosRun(args.path)
+    run_handle = open_any(args.path)
     try:
         file_block, file_notes = envelope.file_block(run_handle)
         field_block, field_notes = envelope.field_block(run_handle, args.field)

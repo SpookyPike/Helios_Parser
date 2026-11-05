@@ -419,6 +419,10 @@
     ],
     "test_cli_skill_consistency.py": [
       "v12_log_prefix"
+    ],
+    "test_cli_raw_equivalence.py": [
+      "v12_log_prefix",
+      "tracked_cu_bpf"
     ]
   },
   "entry_prefix_requirements": {

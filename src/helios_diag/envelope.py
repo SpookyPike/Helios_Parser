@@ -104,16 +104,25 @@ def file_block(run: Any) -> tuple[dict[str, Any], list[str]]:
     parse_mode = metadata.get("parse_mode") or None
     coordinate_model = metadata.get("coordinate_model") or None
 
+    raw_input = str(attributes.get("format") or "") in {"log", "bpf", "exodus"}
     notes: list[str] = []
     if schema_version is None:
         notes.append(
-            "schema_version not recorded: the file predates 2.0 or was written by another tool, "
+            "a raw HELIOS deck records no schema_version; the writer contract applies only "
+            "after conversion"
+            if raw_input
+            else "schema_version not recorded: the file predates 2.0 or was written by another tool, "
             "so layout claims cannot be checked against it"
         )
     if parse_mode is None:
         notes.append("parse_mode not recorded")
     if coordinate_model is None:
-        notes.append("coordinate_model not recorded; coordinate semantics are reported per accessor")
+        notes.append(
+            "a raw deck carries no coordinate_model attribute; coordinate semantics come from the "
+            "parsed coordinate arrays"
+            if raw_input
+            else "coordinate_model not recorded; coordinate semantics are reported per accessor"
+        )
     if helios_version is None:
         notes.append("helios_version not recorded")
 
@@ -138,8 +147,17 @@ def file_block(run: Any) -> tuple[dict[str, Any], list[str]]:
 
 
 def file_block_for_path(path: str | Path) -> tuple[dict[str, Any], list[str]]:
-    """Open a converted run, describe it, and close it again."""
-    from helios_parser import HeliosRun  # local: envelope stays importable without numpy
+    """Describe a converted run or a raw deck, then close it again."""
+    from .source import detect_input, raw_header  # local: envelope stays importable without numpy
+
+    if detect_input(path) != "hdf5":
+        view = raw_header(path)
+        try:
+            return file_block(view)
+        finally:
+            view.close()
+
+    from helios_parser import HeliosRun  # local
 
     run = HeliosRun(path)
     try:

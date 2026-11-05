@@ -37,6 +37,9 @@ import numpy as np
 from helios.services.derived.common import cached_run_container, run_cache_key
 from helios.services.derived.models import DerivedPlotBundle, DerivedWarning, RadiationResult
 
+# An HDF5 container starts with this signature; a raw HELIOS deck does not.
+HDF5_MAGIC = b"\x89HDF\r\n\x1a\n"
+
 # Boundary side -> the flux dataset that carries its spectrum, and which row of
 # it when the dataset is per-boundary.  `net` is the informative one in the
 # reference fixtures: the incident arrays are identically zero there.
@@ -149,6 +152,15 @@ def evaluate_radiation(
         requested_time_s = float(np.asarray(time_s)[snapshot_index])
 
     def _read_container() -> dict[str, object]:
+        # A raw deck is not an HDF5 container, so it carries no radiation group.
+        # Report that as the normal "output was off" state instead of an OSError
+        # about a file signature, which is what a converted run reports too.
+        try:
+            with path.open("rb") as probe:
+                if probe.read(8) != HDF5_MAGIC:
+                    return {"missing": True}
+        except OSError:
+            return {"missing": True}
         with h5py.File(path, "r") as handle:
             if "flux" not in handle or "radiation" not in handle:
                 return {"missing": True}

@@ -106,6 +106,14 @@ def _compare(left: str, right: str, name: str, rtol: float, atol: float) -> dict
 
 
 def run(args: argparse.Namespace) -> envelope.Result:
+    from .source import detect_input
+
+    for label, path in (("left", args.left), ("right", args.right)):
+        if detect_input(path) != "hdf5":
+            raise envelope.UsageError(
+                f"diff compares two converted runs; the {label} input is a raw deck. "
+                "Run helios_to_hdf5 first."
+            )
     left_block, left_notes = envelope.file_block_for_path(args.left)
     right_block, right_notes = envelope.file_block_for_path(args.right)
 

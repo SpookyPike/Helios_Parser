@@ -161,6 +161,13 @@ def _chunk_layout(handle) -> list[dict[str, Any]]:
 def run(args: argparse.Namespace) -> envelope.Result:
     import h5py  # local
 
+    from .source import detect_input
+
+    if detect_input(args.path) != "hdf5":
+        raise envelope.UsageError(
+            "validate checks the writer contract on a converted run; a raw deck has no "
+            "writer contract. Run helios_to_hdf5 first."
+        )
     with h5py.File(args.path, "r") as handle:
         rows: list[dict[str, Any]] = []
         rows += _required(handle)

@@ -16,7 +16,7 @@ from . import envelope, units
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("path", help="Converted HDF5 run.")
+    parser.add_argument("path", help="Converted HDF5 run, or a raw .log, .bpf or HDF5 .exo deck.")
 
 # Fields are listed compactly: the full metadata is available per field, but a
 # 29-field run should stay readable.
@@ -101,6 +101,16 @@ def collect(run: Any) -> dict[str, Any]:
 
 def run(args: argparse.Namespace) -> envelope.Result:
     from helios_parser import HeliosRun  # local: --help must not import numpy
+
+    from .source import detect_input, raw_header
+
+    kind = detect_input(args.path)
+    if kind != "hdf5":
+        view = raw_header(args.path)
+        try:
+            return envelope.Result(collect(view))
+        finally:
+            view.close()
 
     run_handle = HeliosRun(args.path)
     try:
