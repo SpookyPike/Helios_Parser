@@ -36,6 +36,11 @@ MODE_GLOBAL = "global"
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.epilog = (
+        "peak_time_s is the time of each zone's own maximum, not a threshold crossing. "
+        "For the shock breakout time with a configurable threshold, use "
+        "`helios_diag analyse --module shock --breakout-fraction`."
+    )
     parser.add_argument("path", help="Converted HDF5 run, or a raw .log, .bpf or HDF5 .exo deck.")
     parser.add_argument("-f", "--field", required=True, help="Field to summarise, e.g. density.")
     mode = parser.add_mutually_exclusive_group()
