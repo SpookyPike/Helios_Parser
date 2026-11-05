@@ -371,6 +371,7 @@ class RawHeaderView:
         n_regions: int = 0,
         n_materials: int = 0,
         alias_map: dict[str, str] | None = None,
+        notes: tuple[str, ...] = (),
         extra_metadata: dict[str, Any] | None = None,
         attributes: dict[str, Any] | None = None,
     ) -> None:
@@ -386,6 +387,7 @@ class RawHeaderView:
         self.n_regions = int(n_regions)
         self.n_materials = int(n_materials)
         self.alias_map = dict(alias_map or {})
+        self.notes = tuple(notes)
         self.extra_metadata = dict(extra_metadata or {})
         self.attributes = dict(attributes or {})
 
@@ -398,10 +400,15 @@ class RawHeaderView:
         unit = self.field_units.get(field_name, "")
         alias_of = self.alias_map.get(field_name)
         quantity = ""
+        status = "validated" if unit else "legacy"
         if self.format == "bpf":
             from helios_parser.bpf import field_metadata_for_bpf_key
 
-            quantity = str(field_metadata_for_bpf_key(alias_of or field_name).get("quantity") or "")
+            spec = field_metadata_for_bpf_key(alias_of or field_name)
+            quantity = str(spec.get("quantity") or "")
+            # The BPF spec table is the repository's own declaration, so a field
+            # it names is recorded, not inferred, even when it carries no unit.
+            status = str(spec.get("status") or status)
         return FieldMetadata(
             name=field_name,
             shape=(self.n_snapshots, self.n_zones),
@@ -410,7 +417,7 @@ class RawHeaderView:
             dimensions=("time", "zone"),
             unit=unit,
             label=self.raw_field_map.get(field_name, field_name),
-            status="validated" if unit else "legacy",
+            status=status,
             alias_of=alias_of,
             quantity=quantity,
         )
@@ -559,6 +566,11 @@ def _bpf_header_view(path: str | Path) -> RawHeaderView:
         n_snapshots=int(layout.n_snapshots),
         n_regions=1,
         n_materials=1,
+        notes=(
+            "a BPF carries no laser-source integration record: conversion synthesises "
+            "laser_source_j_g from a companion log, or zeros when there is none",
+            "node positions are exposed as the dynamic coordinate, not as a field",
+        ),
         extra_metadata={
             "bpf_run_date": layout.run_date,
             "bpf_run_clock": layout.run_clock,
