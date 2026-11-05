@@ -67,10 +67,25 @@ class CoordinateIssueSeverityTests(unittest.TestCase):
         build_coordinate_edge_array(outer, widths, boundary_edge=1.0, issues=issues)
         self.assertEqual(issues[0].severity, "warning")
 
+    def test_non_monotonic_reconstruction_can_still_warn(self) -> None:
+        # Non-monotonic and only accepted by the conservative tolerance: the
+        # reconstruction is used, but the severity follows the extent check.
+        widths = np.full(20, 1.0e-7)
+        exact = np.arange(21) * 1.0e-7
+        outer = np.round(exact[1:], 9)
+        outer[5] = outer[4] - 1.0e-8
+        outer[10] = outer[9] + 1.0e-4  # a jump that breaks the extent
+        issues: list = []
+        build_coordinate_edge_array(outer, widths, boundary_edge=0.0, issues=issues)
+        self.assertEqual(issues[0].code, "rounded_edge_fallback")
+        self.assertEqual(issues[0].severity, "warning")
+
     def test_non_monotonic_reconstruction_is_informational(self) -> None:
-        widths, printed = _rounded_grid(20)
+        # 300 cells, so one cell is a third of a percent of the extent: the two
+        # grids agree across the span and the dip is a printed plateau.
+        widths, printed = _rounded_grid(300)
         outer = printed[1:].copy()
-        outer[5] = outer[4] - 1.0e-7
+        outer[5] = outer[4] - 1.0e-9
         issues: list = []
         build_coordinate_edge_array(
             outer, widths, boundary_edge=float(printed[0]), issues=issues

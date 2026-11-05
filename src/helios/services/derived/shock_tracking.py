@@ -2199,7 +2199,9 @@ def stalled_interface(
     """
     values = np.asarray(smoothed_track, dtype=np.float64)
     finite = values[np.isfinite(values)]
-    if finite.size == 0:
+    # One or two samples cannot show that the front stopped; a one-value tail is
+    # trivially flat.
+    if finite.size < 3:
         return None
     last = float(finite[-1])
     # "Stopped" means the tail is flat. A stalled tracker holds the same index,

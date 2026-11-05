@@ -62,8 +62,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         default=0.5,
         metavar="F",
         help=(
-            "Interface-index fraction that counts as shock breakout, measured from the "
-            "starting side. Default 0.5, which reproduces the previous fixed threshold."
+            "Position along the tracked front where breakout counts, as a fraction of the "
+            "distance from the starting face: 0.5 is the midpoint, 0.95 near the rear face. "
+            "Default 0.5."
         ),
     )
     parser.add_argument(

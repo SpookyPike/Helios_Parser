@@ -89,6 +89,10 @@ class StalledInterfaceTests(unittest.TestCase):
     def test_empty_track_is_not_a_stall(self) -> None:
         self.assertIsNone(stalled_interface(np.array([np.nan, np.nan]), [(1, 2, 10)]))
 
+    def test_one_or_two_samples_cannot_show_a_stall(self) -> None:
+        self.assertIsNone(stalled_interface(np.array([10.0]), [(1, 2, 10)]))
+        self.assertIsNone(stalled_interface(np.array([12.0, 10.0]), [(1, 2, 10)]))
+
 
 class BreakoutFractionCliTests(unittest.TestCase):
     def _args(self, fraction: float) -> types.SimpleNamespace:

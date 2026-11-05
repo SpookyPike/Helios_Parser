@@ -185,16 +185,22 @@ def build_coordinate_edge_array(
         # edges, not for merely width-inconsistent but still monotonic grids.
         if _edges_close_to_cumulative(parsed_edges, cumulative_edges):
             if issues is not None:
+                # Acceptance keeps the conservative tolerance so no deck that
+                # parses today starts raising, but the severity follows the
+                # extent check: a grid that only agrees near the boundary needs
+                # a look even though reconstruction was used.
+                agreed = _edges_agree_with_cumulative(parsed_edges, cumulative_edges)
                 issues.append(
                     CoordinateValidationIssue(
                         code="rounded_edge_fallback",
                         message=(
                             "Parsed coordinate edges were non-monotonic but matched the boundary+width cumulative "
                             "grid within file-precision tolerance, so cumulative-width reconstruction was used."
+                            if agreed
+                            else "Parsed coordinate edges were non-monotonic and only the boundary+width cumulative "
+                            "grid is usable. The two grids disagree across the extent, so this needs a look."
                         ),
-                        # The reconstruction is within file precision, so this is
-                        # a property of the printed table, not a defect to act on.
-                        severity="info",
+                        severity="info" if agreed else "warning",
                     )
                 )
             return validate_coordinate_edges(cumulative_edges)

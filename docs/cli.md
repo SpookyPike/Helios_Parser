@@ -178,7 +178,7 @@ spectral axis skips the third figure and says why.
 ```json
 {
   "command": "stats",
-  "tool_version": "2.2.0",
+  "tool_version": "2.2.1",
   "generated_at": "2026-11-04T18:20:00Z",
   "file": {"path": "...", "bytes": 0, "format": "...", "schema_version": "2.2",
            "geometry": "planar", "geometry_raw": "planar", "source_file": "...",

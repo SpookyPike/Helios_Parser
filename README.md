@@ -4,7 +4,7 @@ HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
 - Release: `2.2.1`
-- Release date: `2026-11-04`
+- Release date: `2026-11-05`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
 Top-level application modes:
