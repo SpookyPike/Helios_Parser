@@ -50,12 +50,21 @@ class CoordinateIssueSeverityTests(unittest.TestCase):
         self.assertEqual(issues[0].severity, "warning")
 
     def test_small_target_cannot_be_excused_as_rounding(self) -> None:
-        # A micrometre-scale extent must not get millimetre-scale slack: here the
-        # widths are 8.33e-6 and the edges are spaced 3.3e-5, four times wider.
-        widths = np.full(300, WIDTH)
-        outer = np.linspace(WIDTH, 1.0e-2, 300)
+        # A sub-millimetre extent must not get millimetre-scale slack: widths are
+        # 1e-7 and the edges are spaced 4e-7, four times wider.
+        widths = np.full(300, 1.0e-7)
+        outer = np.linspace(1.0e-7, 1.2e-4, 300)
         issues: list = []
         build_coordinate_edge_array(outer, widths, boundary_edge=0.0, issues=issues)
+        self.assertEqual(issues[0].severity, "warning")
+
+    def test_offset_grid_cannot_be_excused_as_rounding(self) -> None:
+        # The grid sits at 1.0, so a tolerance proportional to the magnitude
+        # rather than the extent would swallow a four-fold spacing error.
+        widths = np.full(300, 1.0e-6)
+        outer = np.linspace(1.0 + 1.0e-6, 1.0 + 1.2e-3, 300)
+        issues: list = []
+        build_coordinate_edge_array(outer, widths, boundary_edge=1.0, issues=issues)
         self.assertEqual(issues[0].severity, "warning")
 
     def test_non_monotonic_reconstruction_is_informational(self) -> None:

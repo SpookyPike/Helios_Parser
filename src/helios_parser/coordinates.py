@@ -84,10 +84,12 @@ def _edges_agree_with_cumulative(parsed_edges: np.ndarray, cumulative_edges: np.
         return False
     if not (np.all(np.isfinite(parsed)) and np.all(np.isfinite(cumulative))):
         return False
-    scale = float(max(np.max(np.abs(parsed)), np.max(np.abs(cumulative))))
-    if scale <= 0.0:
+    # The extent, not the magnitude: a compact grid offset from zero would
+    # otherwise get a tolerance proportional to its offset rather than its size.
+    span = float(max(np.ptp(parsed), np.ptp(cumulative)))
+    if span <= 0.0:
         return bool(np.array_equal(parsed, cumulative))
-    return bool(np.allclose(parsed, cumulative, rtol=0.0, atol=scale * float(rtol)))
+    return bool(np.allclose(parsed, cumulative, rtol=0.0, atol=span * float(rtol)))
 
 
 def _edges_close_to_cumulative(parsed_edges: np.ndarray, cumulative_edges: np.ndarray) -> bool:

@@ -81,6 +81,11 @@ class StalledInterfaceTests(unittest.TestCase):
         track = np.array([20.0, 16.0, 12.0, 10.8, 10.4, 10.1])
         self.assertIsNone(stalled_interface(track, [(1, 2, 10)]))
 
+    def test_a_slowly_moving_track_near_a_boundary_is_not_a_stall(self) -> None:
+        # Three samples spanning 0.6 interface units: moving, not parked.
+        track = np.array([20.0, 16.0, 12.0, 10.9, 10.6, 10.3])
+        self.assertIsNone(stalled_interface(track, [(1, 2, 10)]))
+
     def test_empty_track_is_not_a_stall(self) -> None:
         self.assertIsNone(stalled_interface(np.array([np.nan, np.nan]), [(1, 2, 10)]))
 
