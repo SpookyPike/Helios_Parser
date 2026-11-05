@@ -60,10 +60,15 @@ fn parse_f64_fallback(tok: &[u8]) -> Option<f64> {
                 }
             } else if !seen_dot {
                 exp10 += 1;
+                if b != b'0' {
+                    dropped_nonzero = true;
+                }
             } else if b != b'0' {
-                // A non-zero fractional digit past the 19th cannot be
-                // represented by the mantissa; the reference parser must
-                // handle this token instead of silently losing its value.
+                // A non-zero digit past the mantissa budget cannot be
+                // represented; the reference parser must handle this token
+                // instead of silently losing its value. Leading zeros consume
+                // that budget, so the dropped digit can be the only one that
+                // matters.
                 dropped_nonzero = true;
             }
             digits += 1;
@@ -257,6 +262,9 @@ pub unsafe extern "C" fn parse_table_block(
                                 }
                             } else if !dot {
                                 exp10 += 1;
+                                if b != b'0' {
+                                    dropped_nonzero = true;
+                                }
                             } else if b != b'0' {
                                 dropped_nonzero = true;
                             }
@@ -434,6 +442,16 @@ mod tests {
         let (rc, out) = run(text, 1, 1);
         assert_eq!(rc, 1);
         assert_eq!(out[0], 1e-20);
+    }
+
+    #[test]
+    fn long_integer_token_is_not_truncated() {
+        // Twenty digits with no decimal point: the leading zeros consume the
+        // mantissa budget, so the only significant digit is the one dropped.
+        let text = "     1  00000000000000000001\n";
+        let (rc, out) = run(text, 1, 1);
+        assert_eq!(rc, 1);
+        assert_eq!(out[0], 1.0);
     }
 
     #[test]

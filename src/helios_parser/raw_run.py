@@ -36,6 +36,9 @@ class RawRun:
     simulation: Simulation
     format: str
     source_precedence: str = ""
+    # LOG-compatible alias -> canonical BPF key. The writer hard-links the same
+    # pair into the converted file, so the metadata has to match too.
+    alias_map: dict[str, str] | None = None
 
     # ------------------------------------------------------------------ shape
 
@@ -67,6 +70,12 @@ class RawRun:
     # ----------------------------------------------------------------- fields
 
     def list_fields(self) -> list[str]:
+        # A filtered parse stacks only what the caller asked for, but the deck
+        # still holds every field. Reporting the stacked subset would make the
+        # raw run claim fewer capabilities than its own converted file.
+        available = self.simulation.metadata.get("available_fields")
+        if isinstance(available, (list, tuple)) and available:
+            return [str(name) for name in available]
         return list(self.simulation.fields)
 
     def has_field(self, field_name: str) -> bool:
@@ -79,6 +88,13 @@ class RawRun:
         values = self.simulation.fields[field_name]
         unit = self.simulation.field_units.get(field_name, "")
         label = self.simulation.raw_field_map.get(field_name, field_name)
+        alias_of = (self.alias_map or {}).get(field_name)
+        quantity = ""
+        if self.format == "bpf":
+            from .bpf import field_metadata_for_bpf_key
+
+            spec = field_metadata_for_bpf_key(alias_of or field_name)
+            quantity = str(spec.get("quantity") or "")
         return FieldMetadata(
             name=field_name,
             shape=tuple(int(size) for size in values.shape),
@@ -88,6 +104,8 @@ class RawRun:
             unit=unit,
             label=label,
             status="validated" if unit else "legacy",
+            alias_of=alias_of,
+            quantity=quantity,
         )
 
     def get_field_unit(self, field_name: str) -> str:
@@ -101,6 +119,11 @@ class RawRun:
         zone_slice: slice | int | None = None,
         selection: Any = None,
     ) -> np.ndarray:
+        if field_name not in self.simulation.fields:
+            raise KeyError(
+                f"field {field_name!r} was not stacked for this raw run; "
+                "open it with a field set that includes it"
+            )
         values = self.simulation.fields[field_name]
         if selection is not None:
             return np.asarray(values[selection])

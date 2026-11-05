@@ -68,8 +68,28 @@ def is_raw(path: str | Path) -> bool:
     return detect_input(path) in {"log", "bpf", "exodus"}
 
 
-def open_any(path: str | Path) -> Any:
-    """Return a run view for a converted file or a raw deck."""
+# The six fields every derived module needs; `load_run_data` reads them whether
+# or not the caller asked, so a raw open must stack them.
+CORE_FIELDS = (
+    "density",
+    "velocity",
+    "temperature_e",
+    "temperature_i",
+    "electron_density",
+    "mean_charge",
+    # `load_run_data` reads the width whenever the run lists it, so a filtered
+    # raw open has to stack it or the derived assembly raises.
+    "zone_width",
+)
+
+
+def open_any(path: str | Path, *, fields: Iterable[str] | None = None) -> Any:
+    """Return a run view for a converted file or a raw deck.
+
+    ``fields`` bounds the stacked field set for a raw deck, which is what keeps a
+    single-field `stats` from stacking every column. A converted file is lazy and
+    ignores it.
+    """
     kind = detect_input(path)
     if kind == "hdf5":
         from helios_parser import HeliosRun
@@ -77,13 +97,18 @@ def open_any(path: str | Path) -> Any:
         return HeliosRun(path)
     if kind == "netcdf3":
         _raise_netcdf3(path)
+    from helios_parser.bpf import LOG_COMPATIBLE_BPF_ALIASES
     from helios_parser.raw_run import RawRun
 
     if kind == "log":
-        return RawRun(_simulation_from_log(path), "log")
+        return RawRun(_simulation_from_log(path, fields=fields), "log")
     if kind == "bpf":
-        return RawRun(_simulation_from_bpf(path), "bpf")
-    return RawRun(_simulation_from_exodus(path), "exodus")
+        return RawRun(
+            _simulation_from_bpf(path, fields=fields),
+            "bpf",
+            alias_map={alias: canonical for canonical, alias in LOG_COMPATIBLE_BPF_ALIASES.items()},
+        )
+    return RawRun(_simulation_from_exodus(path, fields=fields), "exodus")
 
 
 # --------------------------------------------------------------------- helpers
@@ -104,10 +129,18 @@ def _simulation_from_bpf(path: str | Path, *, fields: Iterable[str] | None = Non
     second, different derivation would make the raw and converted runs disagree,
     which is exactly what `test_cli_raw_equivalence.py` exists to catch.
     """
-    from helios_parser.bpf import BpfFile, field_metadata_for_bpf_key
+    from helios_parser.bpf import LOG_COMPATIBLE_BPF_ALIASES, BpfFile, field_metadata_for_bpf_key
     from helios_parser.model import Simulation
 
-    selected = None if fields is None else {str(name) for name in fields}
+    requested = None if fields is None else {str(name) for name in fields}
+    # A requested LOG-compatible name (`density`) is not a BPF key
+    # (`mass_density_g_cm3`), so stack the canonical too and alias it below.
+    selected = requested
+    if requested is not None:
+        selected = set(requested)
+        for canonical, alias in LOG_COMPATIBLE_BPF_ALIASES.items():
+            if alias in requested:
+                selected.add(canonical)
     with BpfFile(path) as bpf:
         layout = bpf.layout
         snapshots = list(bpf.iter_snapshots())
@@ -186,12 +219,29 @@ def _simulation_from_bpf(path: str | Path, *, fields: Iterable[str] | None = Non
         name: field_metadata_for_bpf_key(name).get("label", name)
         for name in stacked
     }
+    # The writer hard-links a LOG-compatible alias for every BPF field it can, so
+    # a converted BPF answers `density` as well as `mass_density_g_cm3`. Mirror
+    # that here with the same array, not a copy, or the two runs disagree about
+    # which fields exist.
+    for canonical, alias in LOG_COMPATIBLE_BPF_ALIASES.items():
+        if canonical in stacked and alias not in stacked:
+            stacked[alias] = stacked[canonical]
+            field_units[alias] = field_units[canonical]
+            raw_field_map[alias] = raw_field_map[canonical]
+    if requested is not None:
+        # Drop the canonicals that were stacked only to satisfy an alias.
+        keep = {name for name in requested if name in stacked}
+        stacked = {name: stacked[name] for name in stacked if name in keep}
+    all_field_names = [name for name in first.fields if name != "node_position_cm"]
+    for canonical, alias in LOG_COMPATIBLE_BPF_ALIASES.items():
+        if canonical in all_field_names and alias not in all_field_names:
+            all_field_names.append(alias)
     metadata: dict[str, Any] = {
         "format": "bpf",
         "geometry": "planar",
         "n_zones": int(layout.n_zones),
         "n_snapshots": n_snapshots,
-        "available_fields": list(stacked),
+        "available_fields": all_field_names,
         "bpf_run_date": layout.run_date,
         "bpf_run_clock": layout.run_clock,
         "bpf_record_count": int(layout.record_count),
@@ -320,6 +370,7 @@ class RawHeaderView:
         n_snapshots: int = 0,
         n_regions: int = 0,
         n_materials: int = 0,
+        alias_map: dict[str, str] | None = None,
         extra_metadata: dict[str, Any] | None = None,
         attributes: dict[str, Any] | None = None,
     ) -> None:
@@ -334,6 +385,7 @@ class RawHeaderView:
         self.n_snapshots = int(n_snapshots)
         self.n_regions = int(n_regions)
         self.n_materials = int(n_materials)
+        self.alias_map = dict(alias_map or {})
         self.extra_metadata = dict(extra_metadata or {})
         self.attributes = dict(attributes or {})
 
@@ -344,6 +396,12 @@ class RawHeaderView:
         from helios_parser.reader import FieldMetadata
 
         unit = self.field_units.get(field_name, "")
+        alias_of = self.alias_map.get(field_name)
+        quantity = ""
+        if self.format == "bpf":
+            from helios_parser.bpf import field_metadata_for_bpf_key
+
+            quantity = str(field_metadata_for_bpf_key(alias_of or field_name).get("quantity") or "")
         return FieldMetadata(
             name=field_name,
             shape=(self.n_snapshots, self.n_zones),
@@ -353,6 +411,8 @@ class RawHeaderView:
             unit=unit,
             label=self.raw_field_map.get(field_name, field_name),
             status="validated" if unit else "legacy",
+            alias_of=alias_of,
+            quantity=quantity,
         )
 
     def get_metadata(self) -> dict[str, Any]:
@@ -472,18 +532,28 @@ def _log_header_view(path: str | Path) -> RawHeaderView:
 
 
 def _bpf_header_view(path: str | Path) -> RawHeaderView:
-    from helios_parser.bpf import BpfFile, field_metadata_for_bpf_key
+    from helios_parser.bpf import LOG_COMPATIBLE_BPF_ALIASES, BpfFile, field_metadata_for_bpf_key
 
     with BpfFile(path) as bpf:
         layout = bpf.layout
         snapshot = bpf.extract_snapshot(0)
     field_names = [name for name in snapshot.fields if name != "node_position_cm"]
+    field_units = {name: field_metadata_for_bpf_key(name).get("unit", "") for name in field_names}
+    raw_field_map = {name: field_metadata_for_bpf_key(name).get("label", name) for name in field_names}
+    alias_map: dict[str, str] = {}
+    for canonical, alias in LOG_COMPATIBLE_BPF_ALIASES.items():
+        if canonical in field_names and alias not in field_names:
+            field_names.append(alias)
+            field_units[alias] = field_units[canonical]
+            raw_field_map[alias] = raw_field_map[canonical]
+            alias_map[alias] = canonical
     return RawHeaderView(
         path,
         "bpf",
         field_names=field_names,
-        field_units={name: field_metadata_for_bpf_key(name).get("unit", "") for name in field_names},
-        raw_field_map={name: field_metadata_for_bpf_key(name).get("label", name) for name in field_names},
+        field_units=field_units,
+        raw_field_map=raw_field_map,
+        alias_map=alias_map,
         geometry="planar",
         n_zones=int(layout.n_zones),
         n_snapshots=int(layout.n_snapshots),
@@ -528,7 +598,11 @@ def load_raw_run_data(path: str | Path, *, requested_fields: Iterable[str] | Non
     """
     from helios.services.derived.common import load_run_data
 
-    run = open_any(path)
+    if requested_fields is None:
+        # The loader's None means "every field", so stack everything.
+        run = open_any(path)
+    else:
+        run = open_any(path, fields=set(CORE_FIELDS) | {str(name) for name in requested_fields})
     revision = _RawRunRevision(run.path, run.format)
     return load_run_data(
         run.path,

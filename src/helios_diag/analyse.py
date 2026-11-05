@@ -150,10 +150,15 @@ def _run_with_flag(args: argparse.Namespace, requested: list[str], gated: list[s
     for name in requested:
         optional.update(MODULE_OPTIONAL_FIELDS[name])
 
+    # `optional or None` is the loader's existing convention: no optional module
+    # named means the full optional set, and naming one narrows it. The raw path
+    # follows the same rule so both inputs run the same modules on the same
+    # fields; the equivalence test would catch a drift here.
+    requested_optional = optional or None
     if detect_input(args.path) == "hdf5":
-        dataset = load_run_data(args.path, requested_fields=optional or None)
+        dataset = load_run_data(args.path, requested_fields=requested_optional)
     else:
-        dataset = load_raw_run_data(args.path, requested_fields=optional or None)
+        dataset = load_raw_run_data(args.path, requested_fields=requested_optional)
     n_snapshots = int(np.asarray(dataset.time_s).size)
     snapshot = n_snapshots - 1 if args.snapshot is None else int(args.snapshot)
     if not 0 <= snapshot < n_snapshots:

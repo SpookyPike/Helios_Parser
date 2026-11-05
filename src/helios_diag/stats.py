@@ -173,7 +173,7 @@ def run(args: argparse.Namespace) -> envelope.Result:
 
     quantiles = _parse_quantiles(args.quantiles)
     quantile_columns = [_column_name(value) for value in quantiles]
-    run_handle = open_any(args.path)
+    run_handle = open_any(args.path, fields=(args.field,))
     try:
         file_block, file_notes = envelope.file_block(run_handle)
         field_block, field_notes = envelope.field_block(run_handle, args.field)
