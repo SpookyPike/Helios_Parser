@@ -23,6 +23,7 @@ from helios.instrumentation import timed_block
 
 from .coordinates import CoordinateValidationIssue, build_coordinate_model, coordinate_name_for_geometry
 from .model import HeliosHeader, HeliosPreview, Simulation, Snapshot
+from .native_table import parse_table_block
 from .quantities import plasma_pressure, total_pressure
 from .tokenizer import RegexTokenizer
 
@@ -313,73 +314,84 @@ def _parse_field_table_rows(
         "coordinate_issues": (),
     }
 
-    filtered_lines: list[str] = []
-    for raw_line in data_lines:
-        stripped = raw_line.lstrip()
-        if not stripped:
-            continue
-        first_space = stripped.find(" ")
-        first_token = stripped if first_space < 0 else stripped[:first_space]
-        if not _is_int_token(first_token) or _is_zero_int_token(first_token):
-            continue
-        filtered_lines.append(stripped)
+    # The native kernel does the line filter and the float parse in one pass and
+    # fills the matrix itself. It returns None for a block it will not vouch for
+    # (a row of the wrong width, or a token it cannot parse), and the
+    # `np.fromstring` path below then handles that block unchanged.
+    matrix: np.ndarray | None = None
+    parsed_rows = 0
+    native = parse_table_block("\n".join(data_lines), n_zones, column_count)
+    if native is not None:
+        matrix, parsed_rows = native
+    else:
+        filtered_lines: list[str] = []
+        for raw_line in data_lines:
+            stripped = raw_line.lstrip()
+            if not stripped:
+                continue
+            first_space = stripped.find(" ")
+            first_token = stripped if first_space < 0 else stripped[:first_space]
+            if not _is_int_token(first_token) or _is_zero_int_token(first_token):
+                continue
+            filtered_lines.append(stripped)
 
-    if filtered_lines:
-        block_text = "\n".join(filtered_lines)
-        expected_size = len(filtered_lines) * expected_row_width
-        # Parse first, normalise only if the fast path fails. `np.fromstring`
-        # raises on unmatched trailing data (a malformed exponent such as
-        # `1.234-123`), so the exception is the detector; the size check below
-        # still catches a short parse. Pre-scanning every block with the
-        # malformed-exponent regex cost about 45% of a conversion because its
-        # negative lookbehind defeats the engine's literal scan.
-        parsed_block = np.empty(0, dtype=np.float64)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            try:
-                parsed_block = np.fromstring(block_text, sep=" ", dtype=np.float64)
-            except ValueError:
-                parsed_block = np.empty(0, dtype=np.float64)
-        if parsed_block.size != expected_size:
-            parsed_block = np.fromstring(normalize_numeric_text(block_text), sep=" ", dtype=np.float64)
-        if parsed_block.size == expected_size:
-            rows = parsed_block.reshape((-1, expected_row_width))
-            zone_indices = rows[:, 0].astype(np.int32)
-            valid = (zone_indices >= 1) & (zone_indices <= n_zones)
-            matrix = np.full((n_zones, column_count), np.nan, dtype=np.float64)
-            matrix[zone_indices[valid] - 1, :] = rows[valid, 1:]
-            parsed_rows = int(np.count_nonzero(valid))
-            if parsed_rows != n_zones:
-                logger.warning("Parsed %s zone rows for a table, expected %s.", parsed_rows, n_zones)
-            arrays = {name: matrix[:, index] for index, name in enumerate(canonical_labels) if index in selected_indexes}
-            if layout_key == "primary" and "radius" in arrays and "zone_width" in arrays:
-                boundary_edge = extract_zone_zero_boundary()
-                coordinate_issues: list[CoordinateValidationIssue] = []
-                coordinate_edge, coordinate_center = build_coordinate_model(
-                    arrays["radius"],
-                    arrays["zone_width"],
-                    boundary_edge=boundary_edge,
-                    geometry=geometry,
-                    issues=coordinate_issues,
-                )
-                extras = {
-                    "coordinate_edge": coordinate_edge,
-                    "coordinate_center": coordinate_center,
-                    "boundary_edge": boundary_edge,
-                    "parsed_row_count": int(parsed_rows),
-                    "expected_row_count": int(n_zones),
-                    "padded_row_count": 0,
-                    "truncated_row_count": 0,
-                    "coordinate_issues": tuple(
-                        {"code": issue.code, "message": issue.message, "severity": issue.severity}
-                        for issue in coordinate_issues
-                    ),
-                }
-                arrays["radius"] = coordinate_center
-                raw_field_map["radius"] = "Radius (zone-center alias derived from HELIOS edge coordinates)"
-            else:
-                extras["parsed_row_count"] = int(parsed_rows)
-            return arrays, units, raw_field_map, extras
+        if filtered_lines:
+            block_text = "\n".join(filtered_lines)
+            expected_size = len(filtered_lines) * expected_row_width
+            # Parse first, normalise only if the fast path fails. `np.fromstring`
+            # raises on unmatched trailing data (a malformed exponent such as
+            # `1.234-123`), so the exception is the detector; the size check below
+            # still catches a short parse. Pre-scanning every block with the
+            # malformed-exponent regex cost about 45% of a conversion because its
+            # negative lookbehind defeats the engine's literal scan.
+            parsed_block = np.empty(0, dtype=np.float64)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                try:
+                    parsed_block = np.fromstring(block_text, sep=" ", dtype=np.float64)
+                except ValueError:
+                    parsed_block = np.empty(0, dtype=np.float64)
+            if parsed_block.size != expected_size:
+                parsed_block = np.fromstring(normalize_numeric_text(block_text), sep=" ", dtype=np.float64)
+            if parsed_block.size == expected_size:
+                rows = parsed_block.reshape((-1, expected_row_width))
+                zone_indices = rows[:, 0].astype(np.int32)
+                valid = (zone_indices >= 1) & (zone_indices <= n_zones)
+                matrix = np.full((n_zones, column_count), np.nan, dtype=np.float64)
+                matrix[zone_indices[valid] - 1, :] = rows[valid, 1:]
+                parsed_rows = int(np.count_nonzero(valid))
+    if matrix is not None:
+        if parsed_rows != n_zones:
+            logger.warning("Parsed %s zone rows for a table, expected %s.", parsed_rows, n_zones)
+        arrays = {name: matrix[:, index] for index, name in enumerate(canonical_labels) if index in selected_indexes}
+        if layout_key == "primary" and "radius" in arrays and "zone_width" in arrays:
+            boundary_edge = extract_zone_zero_boundary()
+            coordinate_issues: list[CoordinateValidationIssue] = []
+            coordinate_edge, coordinate_center = build_coordinate_model(
+                arrays["radius"],
+                arrays["zone_width"],
+                boundary_edge=boundary_edge,
+                geometry=geometry,
+                issues=coordinate_issues,
+            )
+            extras = {
+                "coordinate_edge": coordinate_edge,
+                "coordinate_center": coordinate_center,
+                "boundary_edge": boundary_edge,
+                "parsed_row_count": int(parsed_rows),
+                "expected_row_count": int(n_zones),
+                "padded_row_count": 0,
+                "truncated_row_count": 0,
+                "coordinate_issues": tuple(
+                    {"code": issue.code, "message": issue.message, "severity": issue.severity}
+                    for issue in coordinate_issues
+                ),
+            }
+            arrays["radius"] = coordinate_center
+            raw_field_map["radius"] = "Radius (zone-center alias derived from HELIOS edge coordinates)"
+        else:
+            extras["parsed_row_count"] = int(parsed_rows)
+        return arrays, units, raw_field_map, extras
 
     matrix = np.full((n_zones, column_count), np.nan, dtype=np.float64)
 

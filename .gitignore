@@ -78,3 +78,10 @@ _tmp_plasmon_fourth_pass/
 /outputs/screenshots/*/report.json
 /outputs/screenshots/*/*_report.json
 /outputs/wave*_retest.txt
+
+# Native parser build output and the installed artifact. The library is built by
+# scripts/build_native_table.py and copied into bundles; the source checkout
+# falls back to Python when it is absent.
+/native/*/target/
+/src/helios_parser/libhelios_native.*
+/src/helios_parser/helios_native.dll

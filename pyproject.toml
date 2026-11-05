@@ -52,6 +52,9 @@ py-modules = ["helios_cli", "helios_release"]
 where = ["src"]
 
 [tool.setuptools.package-data]
+# The native table parser is built by scripts/build_native_table.py; when it is
+# absent the parser runs its pure-Python fallback.
+helios_parser = ["libhelios_native*"]
 helios_viewer = ["assets/fonts/*.ttf", "assets/*.png", "assets/*.ico", "assets/icons/*.svg"]
 "helios.services.derived" = [
   "resources/*.json",

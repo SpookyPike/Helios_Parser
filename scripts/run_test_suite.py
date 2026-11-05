@@ -32,6 +32,7 @@ CORE_NAMES = {
     "test_cli_self_description.py",
     "test_cli_skill_consistency.py",
     "test_cli_stats.py",
+    "test_native_table.py",
     "test_test_runner.py",
 }
 TIMEOUT_SECONDS = 120

@@ -35,6 +35,14 @@ core:
 full:
     taskset -c 0-11 {{python}} scripts/run_test_suite.py --profile full --coverage
 
+# Build the native LOG table parser into src/helios_parser (needs cargo).
+native:
+    {{python}} scripts/build_native_table.py
+
+# Verify the installed native parser without building it.
+native-check:
+    {{python}} scripts/build_native_table.py --check
+
 # One entry by module name, e.g. `just one test_radiation_output.py`.
 one entry:
     taskset -c 0-11 {{python}} scripts/run_test_suite.py --profile full --only {{entry}}
@@ -46,6 +54,15 @@ entries profile="core":
 # Ruff, which lives outside the venv on this machine.
 lint:
     {{ruff}} check src tests scripts
+
+# The Rust gate for native/table_parser: formatting plus clippy at deny level.
+rust-lint:
+    cargo fmt --manifest-path native/table_parser/Cargo.toml --check
+    cargo clippy --manifest-path native/table_parser/Cargo.toml --all-targets -- -D warnings
+
+# Rust unit tests for the kernel contract.
+rust-test:
+    cargo test --manifest-path native/table_parser/Cargo.toml
 
 # What a commit has to pass: lint plus the core gate.
 check: lint core
