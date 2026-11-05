@@ -1,6 +1,6 @@
 # HELIOS Parse / View Architecture Reference
 
-This is the concise code-facing architecture note for the current 2.1.0 tree.
+This is the concise code-facing architecture note for the current 2.2.0 tree.
 Use it together with:
 
 - [Documentation index](index.html)
@@ -12,6 +12,8 @@ Use it together with:
 The application is intentionally split into layers:
 
 - [`src/helios_parser/`](../src/helios_parser/): HELIOS log parser, schema normalization, HDF5 writing, lazy HDF5 reader.
+  `native_table.py` binds the optional native field-table parser and `raw_run.py` exposes a parsed deck
+  behind the same accessor surface as the HDF5 reader, which is what lets `helios_diag` read an unconverted file.
   The writer owns the chunk layout for schema `2.2` and the centre/edge coordinate contract; see
   [the H5D schema](bpf_h5d_schema.md). The reader never reads `schema_version`, only the required group set, so older
   files stay readable and no version gate may be added.

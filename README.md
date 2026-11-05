@@ -3,7 +3,7 @@
 HELIOS Parse / View is the current cross-platform desktop workflow in this
 repository for HELIOS post-processing.
 
-- Release: `2.1.0`
+- Release: `2.2.0`
 - Release date: `2026-11-04`
 - Code developed by `Dmitrii Bespalov` at `European XFEL`
 
@@ -108,7 +108,7 @@ Start with the documentation index:
 
 The shareable Windows/Linux source bundle is generated to:
 
-- `outputs/release/helios-parser-viewer-v2.1.0.zip`
+- `outputs/release/helios-parser-viewer-v2.2.0.zip`
 
 The bundle includes:
 
@@ -138,11 +138,35 @@ python scripts\build_linux_portable_tarball.py
 
 Expected artifact names:
 
-- `outputs/distributables/helios-parser-viewer-v2.1.0-windows-portable.zip`
-- `outputs/distributables/helios-parser-viewer_2.1.0_all.deb`
-- `outputs/distributables/helios-parser-viewer-v2.1.0-linux-portable.tar.gz`
+- `outputs/distributables/helios-parser-viewer-v2.2.0-windows-portable.zip`
+- `outputs/distributables/helios-parser-viewer_2.2.0_all.deb`
+- `outputs/distributables/helios-parser-viewer-v2.2.0-linux-portable.tar.gz`
 
-The v2.1.0 release provides the source bundle and checksums. The Debian package, Linux portable tarball and Windows portable ZIP are built from the same tree with the commands above and are not attached to this release. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+The v2.2.0 release provides the source bundle and checksums. The Debian package, Linux portable tarball and Windows portable ZIP are built from the same tree with the commands above and are not attached to this release. Public packages omit the vendor XCOM archive and compiled native payload; the cold-XCOM tables remain included and usable.
+
+## Changelog 2.2.0
+
+The diagnostics commands read a deck that was never converted, and the LOG parse
+itself got faster. On the 530.7 MB reference deck, 1501 snapshots by 1200 zones,
+the full parse drops from 9.03 s to 2.67 s and `write_hdf5` from 8.43 s to 3.93 s,
+with a byte-identical output digest on four decks.
+
+### Command line
+
+- `inspect`, `stats`, `query` and `analyse` accept a raw `.log`, `.bpf` or HDF5 `.exo`. Nothing has to be converted first, and the answers match the converted file, which `test_cli_raw_equivalence.py` asserts command by command.
+- `validate` and `diff` report a usage error for a raw input: both check the writer contract, which only exists after conversion.
+- `analyse --breakout-fraction F` replaces the fixed 0.5 shock breakout threshold. The default reproduces the previous breakout time exactly and joins the derived cache key.
+
+### Performance
+
+- a native field-table parser parses one LOG table in a single pass: 0.213 ms against 1.318 ms for a 1200 by 14 block, 6.2x, correctly rounded including `1.234-123` and `1.0D+00`.
+- the cycle-header scan uses `bytes.find` plus an anchored pattern instead of one MULTILINE regex over the whole buffer: 2.12 s to 0.32 s, with identical block spans.
+- `parse_full` takes a field filter and stacks the per-snapshot coordinates, so the headless analysis of the largest deck holds about 100 MB instead of 400 MB.
+
+### Packaging
+
+- the native parser ships as a small library built by `scripts/build_native_table.py` and copied into every bundle. It is optional: without it the parser runs the existing Python path at the old speed.
+- the core gate grows from ten entries to twelve.
 
 ## Changelog 2.1.0
 

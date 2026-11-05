@@ -23,15 +23,31 @@ pulls numpy, h5py or Qt, and `--version` would cost a quarter of a second instea
 30 ms. `python -m helios_parser` still works and re-exports the same entry point.
 See [the command line reference](cli.md).
 
-## v2.1.0 availability
+## v2.2.0 availability
 
-The v2.1.0 release ships the source archive; GitHub generates the source ZIP and
+The v2.2.0 release ships the source archive; GitHub generates the source ZIP and
 tarball for the tag. The Debian package, Linux portable tarball and Windows
 portable ZIP are built from the same tree with the commands below and are not
 attached to this release. Public packages include the precomputed cold-XCOM
 tables. They do not include a compiled native XCOM runtime or the vendor source
 archive; native payload bundling remains opt-in pending confirmation of
 redistribution terms.
+
+## The native table parser
+
+`native/table_parser` is a Rust `cdylib` that parses one LOG field table in a single
+pass. It is optional: `helios_parser/native_table.py` falls back to the existing
+`np.fromstring` path when the library is absent, so a source checkout needs no Rust
+toolchain and an unsupported platform loses speed rather than function.
+
+`scripts/build_native_table.py` builds it with the toolchain pinned in
+`native/table_parser/rust-toolchain.toml` and copies the artifact to
+`src/helios_parser/libhelios_native.<ext>`. The Debian, Linux portable, Windows portable
+and source-bundle scripts call it before copying `src`, so a release either ships the
+library or fails to build. The PyInstaller spec adds it to `NATIVE_BINARIES`.
+
+The two shipped crates are licence-compatible with the rest of the package:
+`fast-float` is MIT OR Apache-2.0, `memchr` is Unlicense OR MIT.
 
 ## Maintainer Build Requirements
 
@@ -56,7 +72,7 @@ python scripts\validate_windows_portable.py
 Output:
 
 ```text
-outputs/distributables/helios-parser-viewer-v2.1.0-windows-portable.zip
+outputs/distributables/helios-parser-viewer-v2.2.0-windows-portable.zip
 ```
 
 Usage after extraction:
@@ -78,13 +94,13 @@ python scripts/build_debian_package.py
 Output:
 
 ```text
-outputs/distributables/helios-parser-viewer_2.1.0_all.deb
+outputs/distributables/helios-parser-viewer_2.2.0_all.deb
 ```
 
 Install on Debian/Ubuntu-like systems:
 
 ```bash
-sudo apt install ./outputs/distributables/helios-parser-viewer_2.1.0_all.deb
+sudo apt install ./outputs/distributables/helios-parser-viewer_2.2.0_all.deb
 ```
 
 Launchers:
@@ -112,7 +128,7 @@ python scripts/build_linux_portable_tarball.py
 Output:
 
 ```text
-outputs/distributables/helios-parser-viewer-v2.1.0-linux-portable.tar.gz
+outputs/distributables/helios-parser-viewer-v2.2.0-linux-portable.tar.gz
 ```
 
 This tarball is portable in the sense that it does not require an editable
