@@ -3,8 +3,10 @@
 Three questions, one field at a time:
 
 - ``--over zones``: what did each zone do across the whole run, and when did it
-  peak. The peak time is the time breakout: on the reference run it separates
-  zone 900 at 4.69e-9 s from zone 300 at 1.14e-8 s.
+  peak. The peak time is the time of that zone's own maximum, not a threshold
+  crossing: on the reference run it separates zone 900 at 4.69e-9 s from zone 300
+  at 1.14e-8 s. For the shock breakout time with a configurable threshold, use
+  `helios_diag analyse --module shock --breakout-fraction`.
 - ``--over time``: what did the field look like at each snapshot, summarised
   across zones.
 - ``--at`` / ``--at-time``: the profile at one moment.

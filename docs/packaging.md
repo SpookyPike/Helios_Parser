@@ -51,6 +51,20 @@ The two shipped crates are licence-compatible with the rest of the package:
 
 ## Maintainer Build Requirements
 
+A fresh virtual environment needs the build backend before an editable install:
+
+```bash
+python3 -m venv venv
+venv/bin/pip install --upgrade pip setuptools
+venv/bin/pip install -e .
+```
+
+Without `setuptools`, `pip install -e .` fails with
+`Cannot import build backend 'setuptools.build_meta'` while the previous editable
+install keeps working through its `.pth`. The result is a stale
+`helios_parser-<old>.dist-info`: `pip show helios-parser` reports the old version
+and `helios_to_hdf5 --version` reports the new one, on the same interpreter.
+
 From a clean checkout on the target build machine:
 
 ```bash

@@ -39,7 +39,7 @@ EXPERIMENTAL_MODULES = frozenset({"plasmon", "transmission"})
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("path", help="Converted HDF5 run.")
+    parser.add_argument("path", help="Converted HDF5 run, or a raw .log, .bpf or HDF5 .exo deck.")
     parser.add_argument(
         "--module",
         action="append",
