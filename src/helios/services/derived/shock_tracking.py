@@ -2202,6 +2202,11 @@ def stalled_interface(
     if finite.size == 0:
         return None
     last = float(finite[-1])
+    # "Stopped" means the tail is flat. A front still moving through the boundary
+    # when the window ends would otherwise be reported as stalled.
+    tail = finite[-3:]
+    if float(np.max(tail) - np.min(tail)) > float(tolerance):
+        return None
     for left_region, right_region, boundary_zone in interface_boundaries:
         boundary_index = float(int(boundary_zone) - 1)
         if abs(last - boundary_index) <= float(tolerance):

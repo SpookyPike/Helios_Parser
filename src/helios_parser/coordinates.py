@@ -70,6 +70,26 @@ def _edges_match_widths(edges: np.ndarray, widths: np.ndarray) -> bool:
     return bool(np.allclose(edge_array[1:] - edge_array[:-1], width_array, rtol=0.0, atol=_width_consistency_tolerance(width_array)))
 
 
+def _edges_agree_with_cumulative(parsed_edges: np.ndarray, cumulative_edges: np.ndarray, *, rtol: float = 1.0e-2) -> bool:
+    """True when the two edge grids agree to within ``rtol`` of their extent.
+
+    This is the severity discriminator for a per-cell mismatch, so it must scale
+    with the coordinate extent. A fixed absolute tolerance is meaningless here:
+    on a micrometre-scale target, one millimetre of slack would accept a table
+    that disagrees with its own widths by a factor of a hundred.
+    """
+    parsed = np.asarray(parsed_edges, dtype=np.float64).reshape(-1)
+    cumulative = np.asarray(cumulative_edges, dtype=np.float64).reshape(-1)
+    if parsed.shape != cumulative.shape or parsed.size == 0:
+        return False
+    if not (np.all(np.isfinite(parsed)) and np.all(np.isfinite(cumulative))):
+        return False
+    scale = float(max(np.max(np.abs(parsed)), np.max(np.abs(cumulative))))
+    if scale <= 0.0:
+        return bool(np.array_equal(parsed, cumulative))
+    return bool(np.allclose(parsed, cumulative, rtol=0.0, atol=scale * float(rtol)))
+
+
 def _edges_close_to_cumulative(parsed_edges: np.ndarray, cumulative_edges: np.ndarray) -> bool:
     parsed = np.asarray(parsed_edges, dtype=np.float64).reshape(-1)
     cumulative = np.asarray(cumulative_edges, dtype=np.float64).reshape(-1)
@@ -183,7 +203,7 @@ def build_coordinate_edge_array(
     # printed with fewer significant digits than the widths, so `diff(edges)`
     # cannot reproduce a thin cell. The two representations still agree
     # globally, and that is the difference between rounding and a bad file.
-    rounded_positions = _edges_close_to_cumulative(validated, cumulative_edges)
+    rounded_positions = _edges_agree_with_cumulative(validated, cumulative_edges)
     if issues is not None:
         if rounded_positions:
             issues.append(

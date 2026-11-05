@@ -84,7 +84,7 @@ helios_diag inspect run.h5 | jq '.physics.laser'
 | `--at N` / `--at-time S` | zone | zone, value |
 | `--global` | the whole field | every statistic |
 
-`peak_time_s` is the time of that zone's maximum, which is the time breakout. A zone
+`peak_time_s` is the time of that zone's own maximum, not a threshold crossing. For the shock breakout time with a configurable threshold, use `analyse --breakout-fraction`. A zone
 whose spread is inside `--flat-atol` / `--flat-rtol` reports no peak, because `argmax`
 on a constant array returns index 0 and that reads as a peak at t=0.
 

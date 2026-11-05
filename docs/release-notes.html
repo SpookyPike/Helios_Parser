@@ -64,7 +64,7 @@
         <li><code>helios_diag inspect</code>, <code>stats</code>, <code>query</code> and <code>analyse</code> accept an unconverted deck, so parameters, densities, temperatures and the derived modules are readable without a conversion step</li>
         <li>a native LOG field-table parser: the 530.7 MB reference deck parses in 2.67 s instead of 9.03 s, and <code>write_hdf5</code> drops from 8.43 s to 3.93 s, with a byte-identical output digest</li>
         <li>the cycle-header scan no longer walks the whole buffer with one regex: 2.12 s to 0.32 s, identical block spans</li>
-        <li><code>analyse --breakout-fraction</code> replaces the fixed 0.5 threshold; the default reproduces the previous breakout time exactly</li>
+        <li><code>analyse --breakout-fraction</code> replaces the fixed 0.5 threshold; the default reproduced the previous breakout time exactly at 2.2.0. Superseded in 2.2.1, where the fraction became a position on the track and the default moved to the midpoint</li>
       </ul>
     </section>
 

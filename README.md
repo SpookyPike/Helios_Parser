@@ -171,7 +171,7 @@ with a byte-identical output digest on four decks.
 
 - `inspect`, `stats`, `query` and `analyse` accept a raw `.log`, `.bpf` or HDF5 `.exo`. Nothing has to be converted first, and the answers match the converted file, which `test_cli_raw_equivalence.py` asserts command by command.
 - `validate` and `diff` report a usage error for a raw input: both check the writer contract, which only exists after conversion.
-- `analyse --breakout-fraction F` replaces the fixed 0.5 shock breakout threshold. The default reproduces the previous breakout time exactly and joins the derived cache key.
+- `analyse --breakout-fraction F` replaces the fixed 0.5 shock breakout threshold. At 2.2.0 the default reproduced the previous breakout time exactly; 2.2.1 changed the fraction to a position on the track, so the default moved to the midpoint.
 
 ### Performance
 

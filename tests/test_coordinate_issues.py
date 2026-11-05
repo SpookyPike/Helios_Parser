@@ -49,6 +49,15 @@ class CoordinateIssueSeverityTests(unittest.TestCase):
         self.assertEqual(issues[0].code, "edge_width_mismatch")
         self.assertEqual(issues[0].severity, "warning")
 
+    def test_small_target_cannot_be_excused_as_rounding(self) -> None:
+        # A micrometre-scale extent must not get millimetre-scale slack: here the
+        # widths are 8.33e-6 and the edges are spaced 3.3e-5, four times wider.
+        widths = np.full(300, WIDTH)
+        outer = np.linspace(WIDTH, 1.0e-2, 300)
+        issues: list = []
+        build_coordinate_edge_array(outer, widths, boundary_edge=0.0, issues=issues)
+        self.assertEqual(issues[0].severity, "warning")
+
     def test_non_monotonic_reconstruction_is_informational(self) -> None:
         widths, printed = _rounded_grid(20)
         outer = printed[1:].copy()
