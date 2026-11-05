@@ -68,6 +68,7 @@ def _analyse_args(path: str) -> types.SimpleNamespace:
         module=["shock"],
         snapshot=None,
         include_experimental=False,
+        breakout_fraction=0.5,
         max_array=64,
     )
 

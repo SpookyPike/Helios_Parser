@@ -132,6 +132,10 @@ class DerivedAnalysisParameters:
     zone_index_upper: int | None = None
     weighting_mode: str = "auto"
     preheat_target_region_id: int | None = None
+    # Where the tracked front counts as broken out, as a fraction of the
+    # interface index axis from the near side. 0.5 reproduces the fixed
+    # threshold the code used before it was configurable.
+    breakout_threshold_fraction: float = 0.5
 
     def key(self) -> tuple[object, ...]:
         """Stable cache/task key for the full parameter set.
@@ -171,6 +175,7 @@ class DerivedAnalysisParameters:
             self.zone_index_lower,
             self.zone_index_upper,
             str(self.weighting_mode),
+            float(self.breakout_threshold_fraction),
         )
 
     def module_key(self) -> tuple[object, ...]:

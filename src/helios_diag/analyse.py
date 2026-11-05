@@ -57,6 +57,16 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         ),
     )
     parser.add_argument(
+        "--breakout-fraction",
+        type=float,
+        default=0.5,
+        metavar="F",
+        help=(
+            "Interface-index fraction that counts as shock breakout, measured from the "
+            "starting side. Default 0.5, which reproduces the previous fixed threshold."
+        ),
+    )
+    parser.add_argument(
         "--max-array",
         type=int,
         default=1000,
@@ -93,6 +103,12 @@ def run(args: argparse.Namespace) -> envelope.Result:
     unknown = [name for name in requested if name not in MODULE_OPTIONAL_FIELDS]
     if unknown:
         raise envelope.UsageError(f"unknown module(s): {', '.join(unknown)}; known: {', '.join(ALL_MODULES)}")
+
+    fraction = float(args.breakout_fraction)
+    if not 0.0 < fraction < 1.0:
+        raise envelope.UsageError(
+            f"--breakout-fraction must be between 0 and 1, got {args.breakout_fraction!r}"
+        )
 
     gated = sorted(set(requested) & EXPERIMENTAL_MODULES)
     if gated and not args.include_experimental:
@@ -147,7 +163,9 @@ def _run_with_flag(args: argparse.Namespace, requested: list[str], gated: list[s
     result = derived_analysis.compute_analysis_result(
         dataset,
         context,
-        parameters=derived_analysis.DerivedAnalysisParameters(),
+        parameters=derived_analysis.DerivedAnalysisParameters(
+            breakout_threshold_fraction=float(args.breakout_fraction)
+        ),
         context_key=("helios_diag", str(args.path), snapshot),
         requested_modules=frozenset(requested) or None,
     )
