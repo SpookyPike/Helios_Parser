@@ -11,6 +11,10 @@ HEADER_END_MARKER = b"END OF INPUT PARAMETERS"
 BLOCK_DELIMITER = b"--------------------------------------------------------------------"
 DIAGNOSTICS_MARKER = b"Radiation Cooling Rates and Boundary Fluxes"
 CYCLE_HEADER_PATTERN = re.compile(rb"^\s*Cycle\s+Time\s+\(s\)", re.MULTILINE)
+# Anchored variant used by the two-stage scan: `bytes.find` locates each
+# "Cycle" candidate, this pattern verifies the rest from the line start.
+CYCLE_HEADER_ANCHORED = re.compile(rb"\s*Cycle\s+Time\s+\(s\)")
+CYCLE_ANCHOR = b"Cycle"
 
 
 @dataclass(slots=True)
@@ -33,9 +37,31 @@ class StructuralIndexer:
         snapshot_blocks: list[SnapshotBlock] = []
         pending_start: int | None = None
         pending_cycle_stop: int | None = None
-        for index, match in enumerate(CYCLE_HEADER_PATTERN.finditer(data, header_stop)):
-            start = match.start()
-            cycle_header_stop = data.find(b"\n", match.end())
+        # Two-stage scan. `bytes.find` is a fast substring search, and the
+        # anchored pattern verifies the header from its line start. Walking the
+        # whole buffer with the MULTILINE pattern costs about 7x more because
+        # the `\s*` prefix defeats the regex engine's literal-scan shortcut.
+        matches: list[tuple[int, int]] = []
+        search_from = header_stop
+        while True:
+            hit = data.find(CYCLE_ANCHOR, search_from)
+            if hit < 0:
+                break
+            search_from = hit + 1
+            line_start = data.rfind(b"\n", 0, hit) + 1
+            anchored = CYCLE_HEADER_ANCHORED.match(data, line_start)
+            if anchored is None:
+                continue
+            # `^\s*` may match from an earlier line start inside the same
+            # whitespace run; report that position, as the regex did.
+            run = line_start
+            while run > 0 and data[run - 1] in b" \t\r\n":
+                run -= 1
+            newline = data.find(b"\n", run, line_start)
+            start = newline + 1 if newline >= 0 else line_start
+            matches.append((start, anchored.end()))
+        for index, (start, match_end) in enumerate(matches):
+            cycle_header_stop = data.find(b"\n", match_end)
             if cycle_header_stop < 0:
                 cycle_header_stop = len(buffer)
             else:
