@@ -818,7 +818,10 @@ class HeaderSemanticParser:
         if issue.code in self._emitted_coordinate_issue_codes:
             return
         self._emitted_coordinate_issue_codes.add(issue.code)
-        self.logger.warning("Coordinate validation issue in %s: %s", source_name, issue.message)
+        # An `info` issue is a documented property of the file, not a defect, so
+        # it must not use the warning channel that operators grep for.
+        emit = self.logger.info if issue.severity == "info" else self.logger.warning
+        emit("Coordinate validation issue in %s: %s", source_name, issue.message)
 
     def parse(self, source: Path, header_text: str) -> HeliosHeader:
         header_lines = header_text.splitlines()
@@ -998,7 +1001,8 @@ class SnapshotBlockSemanticParser:
         if code in self._emitted_coordinate_issue_codes:
             return
         self._emitted_coordinate_issue_codes.add(code)
-        self.logger.warning(
+        emit = self.logger.info if str(issue.get("severity", "")).strip() == "info" else self.logger.warning
+        emit(
             "Coordinate validation issue first observed at snapshot cycle %s: %s",
             cycle,
             issue.get("message", ""),

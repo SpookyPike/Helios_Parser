@@ -170,24 +170,44 @@ def build_coordinate_edge_array(
                             "Parsed coordinate edges were non-monotonic but matched the boundary+width cumulative "
                             "grid within file-precision tolerance, so cumulative-width reconstruction was used."
                         ),
-                        severity="warning",
+                        # The reconstruction is within file precision, so this is
+                        # a property of the printed table, not a defect to act on.
+                        severity="info",
                     )
                 )
             return validate_coordinate_edges(cumulative_edges)
         raise
     if _edges_match_widths(validated, widths):
         return validated
+    # A per-cell mismatch is normal on a HELIOS text table: the positions are
+    # printed with fewer significant digits than the widths, so `diff(edges)`
+    # cannot reproduce a thin cell. The two representations still agree
+    # globally, and that is the difference between rounding and a bad file.
+    rounded_positions = _edges_close_to_cumulative(validated, cumulative_edges)
     if issues is not None:
-        issues.append(
-            CoordinateValidationIssue(
-                code="edge_width_mismatch",
-                message=(
-                    "Parsed coordinate edges are monotonic but materially inconsistent with the zone-width-implied "
-                    "edge grid. The parsed edges were preserved and this mismatch should be treated as a validation issue."
-                ),
-                severity="warning",
+        if rounded_positions:
+            issues.append(
+                CoordinateValidationIssue(
+                    code="edge_width_mismatch_rounded_positions",
+                    message=(
+                        "Parsed coordinate edges differ from the zone-width column per cell, but the cumulative "
+                        "width grid reproduces them within file precision, so the difference is the rounding of "
+                        "the printed positions. The parsed edges were preserved."
+                    ),
+                    severity="info",
+                )
             )
-        )
+        else:
+            issues.append(
+                CoordinateValidationIssue(
+                    code="edge_width_mismatch",
+                    message=(
+                        "Parsed coordinate edges are monotonic but materially inconsistent with the zone-width-implied "
+                        "edge grid. The parsed edges were preserved and this mismatch should be treated as a validation issue."
+                    ),
+                    severity="warning",
+                )
+            )
     return validated
 
 
