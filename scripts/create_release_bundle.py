@@ -206,7 +206,15 @@ def assert_clean_bundle() -> None:
         raise RuntimeError(f"Release bundle contains forbidden test, report, cache, or legacy artifacts:\n{joined}")
 
 
+def _build_native_table() -> None:
+    """Build the native table parser so the bundle ships with it."""
+    from build_native_table import ensure_native_library
+
+    ensure_native_library()
+
+
 def main() -> int:
+    _build_native_table()
     OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
     if BUNDLE_DIR.exists():
         shutil.rmtree(BUNDLE_DIR)

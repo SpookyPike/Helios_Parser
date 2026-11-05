@@ -1,0 +1,6 @@
+[toolchain]
+# Pinned so a release artifact is reproducible. `rustup` installs this
+# toolchain on the first build; `scripts/build_native_table.py --check`
+# refuses a different compiler.
+channel = "1.99.1"
+profile = "minimal"

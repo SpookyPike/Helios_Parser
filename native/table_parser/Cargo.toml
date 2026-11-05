@@ -1,0 +1,22 @@
+[package]
+name = "helios_table_parser"
+version = "0.1.0"
+edition = "2021"
+description = "Fast HELIOS LOG field-table block parser"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[dependencies]
+# Eisel-Lemire correctly rounded float parsing, MIT OR Apache-2.0.
+fast-float = "0.2"
+# SIMD line scanning, Unlicense OR MIT.
+memchr = "2.8"

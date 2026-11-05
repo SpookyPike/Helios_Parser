@@ -79,7 +79,15 @@ def _zip_portable(portable_dir: Path, zip_path: Path) -> None:
             archive.write(path, path.relative_to(portable_dir.parent))
 
 
+def _build_native_table() -> None:
+    """Build the native table parser so the portable bundle ships with it."""
+    from build_native_table import ensure_native_library
+
+    ensure_native_library()
+
+
 def main() -> int:
+    _build_native_table()
     parser = argparse.ArgumentParser(description="Build the Windows portable bundle.")
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--work-root", type=Path, default=ROOT)

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import os
+import sys
 
 
 ROOT = Path.cwd()
@@ -34,6 +35,21 @@ if NATIVE_BUNDLE:
     manifest = native_root / "manifest.json"
     NATIVE_DATA.append((str(manifest), native_destination))
     NATIVE_DATA.append((str(native_root / "XCOM_NOTICE.txt"), native_destination))
+
+# The native LOG table parser is optional: when the artifact is missing the
+# parser runs its pure-Python fallback. Bundles build it first, so a release
+# includes it.
+if os.name == "nt":
+    NATIVE_TABLE_NAME = "helios_native.dll"
+elif sys.platform == "darwin":
+    NATIVE_TABLE_NAME = "libhelios_native.dylib"
+else:
+    NATIVE_TABLE_NAME = "libhelios_native.so"
+NATIVE_TABLE_LIBRARY = SRC / "helios_parser" / NATIVE_TABLE_NAME
+if NATIVE_TABLE_LIBRARY.is_file():
+    NATIVE_BINARIES.append((str(NATIVE_TABLE_LIBRARY), "helios_parser"))
+else:
+    print(f"warning: {NATIVE_TABLE_LIBRARY} is missing; the bundle will use the Python fallback")
 
 COMMON_EXCLUDES = [
     "Cryptodome",

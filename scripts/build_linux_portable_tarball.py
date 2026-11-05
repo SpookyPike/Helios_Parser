@@ -67,7 +67,15 @@ exec python3 -m {module} "$@"
 """
 
 
+def _build_native_table() -> None:
+    """Build the native table parser so the bundle ships with it."""
+    from build_native_table import ensure_native_library
+
+    ensure_native_library()
+
+
 def _populate_bundle(bundle_dir: Path) -> None:
+    _build_native_table()
     shutil.copytree(SRC, bundle_dir / "src", ignore=_ignore_runtime_junk)
     shutil.copytree(ROOT / "docs", bundle_dir / "docs", ignore=_ignore_internal_doc_artifacts)
     shutil.copy2(ROOT / "README.md", bundle_dir / "README.md")
