@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Iterable
 
 import numpy as np
 
@@ -2167,16 +2167,46 @@ def breakout_threshold_index(
     """Interface-index threshold that counts as breakout.
 
     The front starts at one end of the interface axis and breaks out when it
-    reaches the other. `fraction` is how far in, measured from the starting end,
-    so 0.5 is the midpoint and reproduces the fixed 0.5 / ``n_interfaces - 1.5``
-    pair the code used before the threshold was configurable.
+    reaches the other. `fraction` is the position along that axis as a fraction
+    of the distance from the starting face, so 0.5 is the midpoint of the track's
+    index range in both directions and a value near 1 is the far face.
+
+    The threshold has to be in interface-index units, because that is what the
+    tracked front is measured in. Returning the fraction itself, as 2.2.0 did,
+    made every value in (0, 1) mean "reach the rear-most cell".
     """
     value = float(fraction)
     if not 0.0 < value < 1.0:
         raise ValueError(f"breakout threshold fraction must be between 0 and 1, got {fraction!r}")
+    last_interface = float(max(0, int(n_interfaces) - 1))
     if propagation_direction == "high_to_low":
-        return value
-    return float(max(0.0, (int(n_interfaces) - 1) - value))
+        return (1.0 - value) * last_interface
+    return value * last_interface
+
+
+def stalled_interface(
+    smoothed_track: np.ndarray,
+    interface_boundaries: Iterable[tuple[int, int, int]],
+    *,
+    tolerance: float = 1.0,
+) -> tuple[int, int, int] | None:
+    """Return the region boundary the track stopped on, if it stopped on one.
+
+    A track that ends within ``tolerance`` interface units of a material
+    boundary never left that boundary, so a missing breakout time means "the
+    tracker stopped", not "the shock never arrived". Both look the same in the
+    result unless the caller says which one happened.
+    """
+    values = np.asarray(smoothed_track, dtype=np.float64)
+    finite = values[np.isfinite(values)]
+    if finite.size == 0:
+        return None
+    last = float(finite[-1])
+    for left_region, right_region, boundary_zone in interface_boundaries:
+        boundary_index = float(int(boundary_zone) - 1)
+        if abs(last - boundary_index) <= float(tolerance):
+            return int(left_region), int(right_region), int(boundary_zone)
+    return None
 
 
 def track_shock_front(
@@ -2441,7 +2471,20 @@ def track_shock_front(
     if activation_snapshot is not None and np.isfinite(detector_trace[activation_snapshot]):
         warnings.append(DerivedWarning("shock", f"Primary front activated at snapshot {activation_snapshot} with detector score {detector_trace[activation_snapshot]:.3g}.", severity="info"))
     if breakout_time is None:
-        warnings.append(DerivedWarning("shock", "No breakout time was inferred from the tracked primary front within the active time window.", severity="info"))
+        stalled = stalled_interface(smoothed_track, event_scaffold.interface_boundaries)
+        if stalled is not None:
+            left_region, right_region, boundary_zone = stalled
+            warnings.append(
+                DerivedWarning(
+                    "shock",
+                    f"Tracked front stopped at the interface between regions {left_region} and "
+                    f"{right_region} (zone {boundary_zone}) and did not reach the rear face within "
+                    "the active time window.",
+                    severity="caution",
+                )
+            )
+        else:
+            warnings.append(DerivedWarning("shock", "No breakout time was inferred from the tracked primary front within the active time window.", severity="info"))
     if not [item for item in interface_crossings if item.crossing_time_s is not None] and len(interface_crossings) > 0:
         warnings.append(DerivedWarning("shock", "Interface crossing times are unavailable because the tracked front did not cross the material boundaries within the active time window.", severity="caution"))
 
