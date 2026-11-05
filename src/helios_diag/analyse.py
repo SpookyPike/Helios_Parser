@@ -128,11 +128,16 @@ def _run_with_flag(args: argparse.Namespace, requested: list[str], gated: list[s
     from helios.services.derived import analysis as derived_analysis
     from helios.services.derived.common import load_run_data, make_run_context
 
+    from .source import detect_input, load_raw_run_data
+
     optional: set[str] = set()
     for name in requested:
         optional.update(MODULE_OPTIONAL_FIELDS[name])
 
-    dataset = load_run_data(args.path, requested_fields=optional or None)
+    if detect_input(args.path) == "hdf5":
+        dataset = load_run_data(args.path, requested_fields=optional or None)
+    else:
+        dataset = load_raw_run_data(args.path, requested_fields=optional or None)
     n_snapshots = int(np.asarray(dataset.time_s).size)
     snapshot = n_snapshots - 1 if args.snapshot is None else int(args.snapshot)
     if not 0 <= snapshot < n_snapshots:

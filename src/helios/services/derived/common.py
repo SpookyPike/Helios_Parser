@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import Any, Callable, Iterable
 
 import numpy as np
 
@@ -506,6 +506,7 @@ def load_run_data(
     *,
     revision: RunRevision | None = None,
     requested_fields: Iterable[str] | None = None,
+    run_factory: Callable[[Path], Any] | None = None,
 ) -> DerivedRunData:
     """Load the field subset needed by the current Derived mode.
 
@@ -587,7 +588,8 @@ def load_run_data(
         )
         if needs_open:
             increment_counter("shared_raw_cache.run.miss")
-            with HeliosRun(source) as run:
+            opener = run_factory or HeliosRun
+            with opener(source) as run:
                 if summary is None:
                     summary = _share_meta(run_key, "summary", run.summary())
                 if metadata is None:
@@ -604,12 +606,12 @@ def load_run_data(
                     coordinate_model = run.get_metadata().get("coordinate_model", {})
                     center_name = str(coordinate_model.get("dynamic_center_dataset", "dynamic_coordinate_center"))
                     edge_name = str(coordinate_model.get("dynamic_edge_dataset", "dynamic_coordinate_edge"))
-                    legacy_radius = "radius" in run._field_datasets
+                    legacy_radius = "radius" in run.list_fields()
                     dynamic_center_present = _share_meta(
-                        run_key, "dynamic_center_present", bool(legacy_radius or center_name in run._grid_datasets)
+                        run_key, "dynamic_center_present", bool(legacy_radius or run.has_grid(center_name))
                     )
                     dynamic_edge_present = _share_meta(
-                        run_key, "dynamic_edge_present", bool(legacy_radius or edge_name in run._grid_datasets)
+                        run_key, "dynamic_edge_present", bool(legacy_radius or run.has_grid(edge_name))
                     )
                 if run_status is None:
                     run_status = _share_meta(run_key, "run_status", run.get_run_status())

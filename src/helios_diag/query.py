@@ -16,7 +16,7 @@ MODE_ZONE = "trace_for_zone"
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("path", help="Converted HDF5 run.")
+    parser.add_argument("path", help="Converted HDF5 run, or a raw .log, .bpf or HDF5 .exo deck.")
     parser.add_argument("-f", "--field", required=True, help="Field to read, e.g. density.")
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--snapshot", type=int, metavar="N", help="Profile across zones at this snapshot index.")
@@ -102,9 +102,9 @@ def _trace(run_handle, field: str, zone: int, args) -> envelope.Result:
 def run(args: argparse.Namespace) -> envelope.Result:
     import numpy as np  # local
 
-    from helios_parser import HeliosRun
+    from .source import open_any
 
-    run_handle = HeliosRun(args.path)
+    run_handle = open_any(args.path)
     try:
         if args.zone is not None:
             return _trace(run_handle, args.field, int(args.zone), args)
