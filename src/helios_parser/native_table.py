@@ -10,6 +10,7 @@ slower, never broken.
 from __future__ import annotations
 
 import ctypes
+import hashlib
 import sys
 from pathlib import Path
 
@@ -61,6 +62,30 @@ _LIBRARY = _load()
 def available() -> bool:
     """True when the native library loaded and the fast path can be used."""
     return _LIBRARY is not None
+
+
+_DESCRIPTION: str | None = None
+
+
+def describe() -> str:
+    """One line naming the active path, for the CLI's file block.
+
+    A silent fallback produces correct output at the old speed, so without this
+    there is no way to answer "is the native path live on this machine" from the
+    command line.
+    """
+    global _DESCRIPTION
+    if _DESCRIPTION is None:
+        if _LIBRARY is None:
+            _DESCRIPTION = "off (Python fallback, np.fromstring)"
+        else:
+            path = Path(__file__).with_name(_library_name())
+            try:
+                digest = hashlib.sha256(path.read_bytes()).hexdigest()[:16]
+            except OSError:
+                digest = "unreadable"
+            _DESCRIPTION = f"on ({path.name}, sha256 {digest})"
+    return _DESCRIPTION
 
 
 def parse_table_block(

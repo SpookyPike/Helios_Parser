@@ -61,6 +61,11 @@ class NativeKernelTests(unittest.TestCase):
     def test_library_is_loaded(self) -> None:
         self.assertTrue(native_table.available())
 
+    def test_describe_names_the_active_path(self) -> None:
+        text = native_table.describe()
+        self.assertTrue(text.startswith("on ("), text)
+        self.assertIn("libhelios_native", text)
+
     def test_kernel_matches_fromstring(self) -> None:
         lines = _block()
         matrix, rows = native_table.parse_table_block("\n".join(lines), 3, 14)
@@ -150,9 +155,12 @@ class ParserFallbackTests(unittest.TestCase):
             np.testing.assert_array_equal(values, fallback_result["arrays"][name])
 
     def test_missing_library_is_not_an_import_error(self) -> None:
-        with mock.patch.object(native_table, "_LIBRARY", None):
+        with mock.patch.object(native_table, "_LIBRARY", None), mock.patch.object(
+            native_table, "_DESCRIPTION", None
+        ):
             self.assertFalse(native_table.available())
             self.assertIsNone(native_table.parse_table_block("     1  1.0\n", 1, 1))
+            self.assertEqual(native_table.describe(), "off (Python fallback, np.fromstring)")
 
 
 if __name__ == "__main__":

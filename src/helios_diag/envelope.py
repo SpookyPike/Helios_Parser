@@ -126,6 +126,10 @@ def file_block(run: Any) -> tuple[dict[str, Any], list[str]]:
     if helios_version is None:
         notes.append("helios_version not recorded")
 
+    from helios_parser.native_table import describe as describe_native  # local
+
+    notes.append(f"native table parser: {describe_native()}")
+
     block = {
         "path": str(run.path),
         "bytes": Path(run.path).stat().st_size,

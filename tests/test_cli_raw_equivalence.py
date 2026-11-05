@@ -153,6 +153,8 @@ class RawInputEquivalenceTests(unittest.TestCase):
         self.assertGreater(len(result.payload["fields"]), 20)
         self.assertTrue(result.payload["physics"]["laser"])
         self.assertIsNone(result.payload["visar"])
+        native_notes = [note for note in result.payload["notes"] if note.startswith("native table parser:")]
+        self.assertEqual(len(native_notes), 1)
 
 
 if __name__ == "__main__":
