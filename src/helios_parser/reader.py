@@ -695,6 +695,9 @@ class HeliosRun:
     def has_field(self, field_name: str) -> bool:
         return field_name in self._field_datasets
 
+    def has_grid(self, name: str) -> bool:
+        return name in self._grid_datasets
+
     def get_field_axes(self, field_name: str) -> tuple[str, ...]:
         return self.get_field_metadata(field_name).dimensions
 
